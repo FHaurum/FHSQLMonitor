@@ -1,0 +1,605 @@
+SET NOCOUNT ON;
+
+--
+-- Test if we are in a database with FHSM registered
+--
+IF (dbo.fhsmFNIsValidInstallation() = 0)
+BEGIN
+	RAISERROR('Can not install as it appears the database is not correct installed', 0, 1) WITH NOWAIT;
+END
+ELSE BEGIN
+	--
+	-- Declare variables
+	--
+	BEGIN
+		DECLARE @myUserName nvarchar(128);
+		DECLARE @nowUTC datetime;
+		DECLARE @nowUTCStr nvarchar(128);
+		DECLARE @objectName nvarchar(128);
+		DECLARE @objName nvarchar(128);
+		DECLARE @pbiSchema nvarchar(128);
+		DECLARE @schName nvarchar(128);
+		DECLARE @stmt nvarchar(max);
+		DECLARE @version nvarchar(128);
+
+		SET @myUserName = SUSER_NAME();
+		SET @nowUTC = SYSUTCDATETIME();
+		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
+		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
+		SET @version = '1.0';
+	END;
+
+	--
+	-- Create tables
+	--
+	BEGIN
+		--
+		-- Create table dbo.fhsmIndexPhysical if it not already exists
+		--
+		IF OBJECT_ID('dbo.fhsmIndexPhysical', 'U') IS NULL
+		BEGIN
+			RAISERROR('Creating table dbo.fhsmIndexPhysical', 0, 1) WITH NOWAIT;
+
+			CREATE TABLE dbo.fhsmIndexPhysical(
+				Id int identity(1,1) NOT NULL
+				,DatabaseName nvarchar(128) NOT NULL
+				,SchemaName nvarchar(128) NOT NULL
+				,ObjectName nvarchar(128) NOT NULL
+				,IndexName nvarchar(128) NULL
+				,Mode nvarchar(8) NOT NULL
+				,PartitionNumber int NOT NULL
+				,IndexTypeDesc nvarchar(60) NOT NULL
+				,AllocUnitTypeDesc nvarchar(60) NOT NULL
+				,IndexDepth tinyint NOT NULL
+				,IndexLevel tinyint NOT NULL
+				,ColumnstoreDeleteBufferStateDesc nvarchar(60) NULL
+				,AvgFragmentationInPercent float NOT NULL
+				,FragmentCount bigint NULL
+				,AvgFragmentSizeInPages float NULL
+				,PageCount bigint NOT NULL
+				,AvgPageSpaceUsedInPercent float NULL
+				,RecordCount bigint NULL
+				,GhostRecordCount bigint NULL
+				,VersionGhostRecordCount bigint NULL
+				,MinRecordSizeInBytes int NULL
+				,MaxRecordSizeInBytes int NULL
+				,AvgRecordSizeInBytes float NULL
+				,ForwardedRecordCount bigint NULL
+				,CompressedPageCount bigint NULL
+				,VersionRecordCount bigint NULL
+				,InrowVersionRecordCount bigint NULL
+				,InrowDiffVersionRecordCount bigint NULL
+				,TotalInrowVersionPayloadSizeInBytes bigint NULL
+				,OffrowRegularVersionRecordCount bigint NULL
+				,OffrowLongTermVersionRecordCount bigint NULL
+				,LastSQLServiceRestart datetime NOT NULL
+				,TimestampUTC datetime NOT NULL
+				,Timestamp datetime NOT NULL
+				,CONSTRAINT PK_fhsmIndexPhysical PRIMARY KEY(Id)
+			);
+
+			CREATE NONCLUSTERED INDEX NC_fhsmIndexPhysical_TimestampUTC ON dbo.fhsmIndexPhysical(TimestampUTC);
+			CREATE NONCLUSTERED INDEX NC_fhsmIndexPhysical_Timestamp ON dbo.fhsmIndexPhysical(Timestamp);
+			CREATE NONCLUSTERED INDEX NC_fhsmIndexPhysical_DatabaseName_SchemaName_ObjectName_IndexName ON dbo.fhsmIndexPhysical(DatabaseName, SchemaName, ObjectName, IndexName);
+		END;
+
+		--
+		-- Register extended properties on the table dbo.fhsmIndexPhysical
+		--
+		BEGIN
+			SET @objectName = 'dbo.fhsmIndexPhysical';
+			SET @objName = PARSENAME(@objectName, 1);
+			SET @schName = PARSENAME(@objectName, 2);
+
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+		END;
+	END;
+
+	--
+	-- Create functions
+	--
+
+	--
+	-- Create views
+	--
+	BEGIN
+		--
+		-- Create fact view @pbiSchema.[Index physical]
+		--
+		BEGIN
+			SET @stmt = '
+				IF OBJECT_ID(''' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Index physical') + ''', ''V'') IS NULL
+				BEGIN
+					EXEC(''CREATE VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Index physical') + ' AS SELECT ''''dummy'''' AS Txt'');
+				END;
+			';
+			EXEC(@stmt);
+
+			SET @stmt = '
+				ALTER VIEW  ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Index physical') + '
+				AS
+				SELECT
+					rankedData.Mode
+					,rankedData.PartitionNumber
+					,rankedData.IndexTypeDesc
+					,rankedData.AllocUnitTypeDesc
+					,rankedData.IndexDepth
+					,rankedData.IndexLevel
+					,rankedData.ColumnstoreDeleteBufferStateDesc
+					,rankedData.AvgFragmentationInPercent
+					,rankedData.FragmentCount
+					,rankedData.AvgFragmentSizeInPages
+					,rankedData.PageCount
+					,rankedData.AvgPageSpaceUsedInPercent
+					,rankedData.RecordCount
+					,rankedData.GhostRecordCount
+					,rankedData.VersionGhostRecordCount
+					,rankedData.MinRecordSizeInBytes
+					,rankedData.MaxRecordSizeInBytes
+					,rankedData.AvgRecordSizeInBytes
+					,rankedData.ForwardedRecordCount
+					,rankedData.CompressedPageCount
+					,rankedData.VersionRecordCount
+					,rankedData.InrowVersionRecordCount
+					,rankedData.InrowDiffVersionRecordCount
+					,rankedData.TotalInrowVersionPayloadSizeInBytes
+					,rankedData.OffrowRegularVersionRecordCount
+					,rankedData.OffrowLongTermVersionRecordCount
+					,CAST(rankedData.Timestamp AS date) AS Date
+					,(DATEPART(HOUR, rankedData.Timestamp) * 60 * 60) + (DATEPART(MINUTE, rankedData.Timestamp) * 60) + (DATEPART(SECOND, rankedData.Timestamp)) AS TimeKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(rankedData.DatabaseName, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(rankedData.DatabaseName, rankedData.SchemaName, DEFAULT, DEFAULT) AS k) AS SchemaKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(rankedData.DatabaseName, rankedData.SchemaName, rankedData.ObjectName, DEFAULT) AS k) AS ObjectKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(rankedData.DatabaseName, rankedData.SchemaName, rankedData.ObjectName, COALESCE(rankedData.IndexName, ''N.A.'')) AS k) AS IndexKey
+				FROM (
+					SELECT
+						ip.*
+						,RANK() OVER(PARTITION BY ip.DatabaseName, ip.SchemaName, ip.ObjectName ORDER BY CASE ip.Mode WHEN ''Detailed'' THEN 1 WHEN ''SAMPLED'' THEN 2 ELSE 3 END, ip.TimestampUTC DESC) AS _Rnk_
+					FROM dbo.fhsmIndexPhysical AS ip
+					WHERE (ip.TimestampUTC >= (
+						SELECT DATEADD(HOUR, -24, MAX(ip2.TimestampUTC))
+						FROM dbo.fhsmIndexPhysical AS ip2
+					))
+				) AS rankedData
+				WHERE (rankedData._Rnk_ = 1);
+			';
+			EXEC(@stmt);
+		END;
+
+		--
+		-- Register extended properties on fact view @pbiSchema.[Index physical]
+		--
+		BEGIN
+			SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Index physical');
+			SET @objName = PARSENAME(@objectName, 1);
+			SET @schName = PARSENAME(@objectName, 2);
+
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+		END;
+	END;
+
+	--
+	-- Create stored procedures
+	--
+	BEGIN
+		--
+		-- Create stored procedure dbo.fhsmSPIndexPhysical
+		--
+		BEGIN
+			SET @stmt = '
+				IF OBJECT_ID(''dbo.fhsmSPIndexPhysical'', ''P'') IS NULL
+				BEGIN
+					EXEC(''CREATE PROC dbo.fhsmSPIndexPhysical AS SELECT ''''dummy'''' AS Txt'');
+				END;
+			';
+			EXEC(@stmt);
+
+			SET @stmt = '
+				ALTER PROC dbo.fhsmSPIndexPhysical (
+					@name nvarchar(128)
+				)
+				AS
+				BEGIN
+					SET NOCOUNT ON;
+
+					DECLARE @columnstoreDeleteBufferStateDescGroupByStmt nvarchar(max);
+					DECLARE @columnstoreDeleteBufferStateDescStmt nvarchar(max);
+					DECLARE @database nvarchar(128);
+					DECLARE @databases nvarchar(max);
+					DECLARE @inrowDiffVersionRecordCountStmt nvarchar(max);
+					DECLARE @inrowVersionRecordCountStmt nvarchar(max);
+					DECLARE @message nvarchar(max);
+					DECLARE @mode nvarchar(128);
+					DECLARE @now datetime;
+					DECLARE @nowUTC datetime;
+					DECLARE @object nvarchar(128);
+					DECLARE @offrowLongTermVersionRecordCountStmt nvarchar(max);
+					DECLARE @offrowRegularVersionRecordCountStmt nvarchar(max);
+					DECLARE @parameters nvarchar(max);
+					DECLARE @parametersTable TABLE([Key] nvarchar(128) NOT NULL, Value nvarchar(128) NULL);
+					DECLARE @stmt nvarchar(max);
+					DECLARE @thisTask nvarchar(128);
+					DECLARE @totalInrowVersionPayloadSizeInBytesStmt nvarchar(max);
+					DECLARE @versionRecordCountStmt nvarchar(max);
+
+					SET @thisTask = OBJECT_NAME(@@PROCID);
+
+					--
+					-- Get the parametrs for the command
+					--
+					BEGIN
+						SET @parameters = dbo.fhsmFNGetTaskParameter(@thisTask, @name);
+
+						INSERT INTO @parametersTable([Key], Value)
+						SELECT
+							(SELECT s.Txt FROM dbo.fhsmFNSplitString(p.Txt, ''='') AS s WHERE (s.Part = 1)) AS [Key]
+							,(SELECT s.Txt FROM dbo.fhsmFNSplitString(p.Txt, ''='') AS s WHERE (s.Part = 2)) AS Value
+						FROM dbo.fhsmFNSplitString(@parameters, '';'') AS p;
+
+						SET @databases = (SELECT pt.Value FROM @parametersTable AS pt WHERE (pt.[Key] = ''@Databases''));
+						SET @object = (SELECT pt.Value FROM @parametersTable AS pt WHERE (pt.[Key] = ''@Object''));
+						SET @mode = (SELECT pt.Value FROM @parametersTable AS pt WHERE (pt.[Key] = ''@Mode''));
+		
+						--
+						-- Trim @databases if Ola Hallengren style has been chosen
+						--
+						BEGIN
+							SET @databases = LTRIM(RTRIM(@databases));
+							WHILE (LEFT(@databases, 1) = '''''''') AND (LEFT(@databases, 1) = '''''''')
+							BEGIN
+								SET @databases = SUBSTRING(@databases, 2, LEN(@databases) - 2);
+							END;
+						END;
+
+						--
+						-- Trim @object if Ola Hallengren style has been chosen
+						--
+						BEGIN
+							SET @object = LTRIM(RTRIM(@object));
+							WHILE (LEFT(@object, 1) = '''''''') AND (LEFT(@object, 1) = '''''''')
+							BEGIN
+								SET @object = SUBSTRING(@object, 2, LEN(@object) - 2);
+							END;
+						END;
+
+						--
+						-- Trim @mode if Ola Hallengren style has been chosen
+						--
+						BEGIN
+							SET @mode = LTRIM(RTRIM(@mode));
+							WHILE (LEFT(@mode, 1) = '''''''') AND (LEFT(@mode, 1) = '''''''')
+							BEGIN
+								SET @mode = SUBSTRING(@mode, 2, LEN(@mode) - 2);
+							END;
+						END;
+					END;
+
+					--
+					-- Verify the @mode parameter
+					--
+					BEGIN
+						IF (@mode IS NULL) OR (@mode NOT IN (''LIMITED'', ''SAMPLED'', ''DETAILED''))
+						BEGIN
+							SET @message = ''Mode is invalied - '' + COALESCE(@mode, ''<NULL>'');
+							EXEC dbo.fhsmSPLog @name = @name, @task = @thisTask, @type = ''Error'', @message = @message;
+
+							RETURN -1;
+						END;
+					END;
+
+					--
+					-- Get the list of databases to process
+					--
+					BEGIN
+						SELECT d.DatabaseName, d.[Order]
+						INTO #dbList
+						FROM dbo.fhsmFNParseDatabasesStr(@databases) AS d;
+					END;
+
+					--
+					-- Collect data
+					--
+					BEGIN
+						SET @now = SYSDATETIME();
+						SET @nowUTC = SYSUTCDATETIME();
+
+						--
+						-- Test if columnstore_delete_buffer_state_desc exists on dm_db_index_physical_stats
+						--
+						BEGIN
+							IF EXISTS(
+								SELECT *
+								FROM master.sys.system_columns AS sc
+								INNER JOIN master.sys.system_objects AS so ON (so.object_id = sc.object_id)
+								WHERE (so.name = ''dm_db_index_physical_stats'') AND (sc.name = ''columnstore_delete_buffer_state_desc'')
+							)
+							BEGIN
+								SET @columnstoreDeleteBufferStateDescStmt = ''ddips.columnstore_delete_buffer_state_desc'';
+								SET @columnstoreDeleteBufferStateDescGroupByStmt = '',ddips.columnstore_delete_buffer_state_desc'';
+							END
+							ELSE BEGIN
+								SET @columnstoreDeleteBufferStateDescStmt = ''NULL'';
+								SET @columnstoreDeleteBufferStateDescGroupByStmt = '''';
+							END;
+						END;
+
+						--
+						-- Test if version_record_count (and thereby all other *version*) exists on dm_db_index_physical_stats
+						--
+						BEGIN
+							IF EXISTS(
+								SELECT *
+								FROM master.sys.system_columns AS sc
+								INNER JOIN master.sys.system_objects AS so ON (so.object_id = sc.object_id)
+								WHERE (so.name = ''dm_db_index_physical_stats'') AND (sc.name = ''version_record_count'')
+							)
+							BEGIN
+								SET @versionRecordCountStmt = ''SUM(ddips.version_record_count)'';
+								SET @inrowVersionRecordCountStmt = ''SUM(ddips.inrow_version_record_count)'';
+								SET @inrowDiffVersionRecordCountStmt = ''SUM(ddips.inrow_diff_version_record_count)'';
+								SET @totalInrowVersionPayloadSizeInBytesStmt = ''SUM(ddips.total_inrow_version_payload_size_in_bytes)'';
+								SET @offrowRegularVersionRecordCountStmt = ''SUM(ddips.offrow_regular_version_record_count)'';
+								SET @offrowLongTermVersionRecordCountStmt = ''SUM(ddips.offrow_long_term_version_record_count)'';
+							END
+							ELSE BEGIN
+								SET @versionRecordCountStmt = ''NULL'';
+								SET @inrowVersionRecordCountStmt = ''NULL'';
+								SET @inrowDiffVersionRecordCountStmt = ''NULL'';
+								SET @totalInrowVersionPayloadSizeInBytesStmt = ''NULL'';
+								SET @offrowRegularVersionRecordCountStmt = ''NULL'';
+								SET @offrowLongTermVersionRecordCountStmt = ''NULL'';
+							END;
+						END;
+
+						DECLARE dCur CURSOR LOCAL READ_ONLY FAST_FORWARD FOR
+						SELECT d.DatabaseName
+						FROM #dbList AS d
+						ORDER BY d.[Order];
+
+						OPEN dCur;
+
+						WHILE (1 = 1)
+						BEGIN
+							FETCH NEXT FROM dCur
+							INTO @database;
+
+							IF (@@FETCH_STATUS <> 0)
+							BEGIN
+								BREAK;
+							END;
+
+							SET @stmt = ''
+								USE '' + QUOTENAME(@database) + '';
+
+								IF
+									(@object IS NULL)
+									OR ((@object IS NOT NULL) AND (OBJECT_ID(@object) IS NOT NULL))
+								BEGIN
+									SELECT
+										DB_NAME() AS DatabaseName
+										,sch.name AS SchemaName
+										,o.name AS ObjectName
+										,i.name AS IndexName
+										,@mode AS Mode
+										,ddips.partition_number AS PartitionNumber
+										,ddips.index_type_desc AS IndexTypeDesc
+										,ddips.alloc_unit_type_desc AS AllocUnitTypeDesc
+										,ddips.index_depth AS IndexDepth
+										,ddips.index_level AS IndexLevel
+										,'' + @columnstoreDeleteBufferStateDescStmt + '' AS ColumnstoreDeleteBufferStateDesc
+										,AVG(ddips.avg_fragmentation_in_percent) AS AvgFragmentationInPercent
+										,SUM(ddips.fragment_count) AS FragmentCount
+										,AVG(ddips.avg_fragment_size_in_pages) AS AvgFragmentSizeInPages
+										,SUM(ddips.page_count) AS PageCount
+										,AVG(ddips.avg_page_space_used_in_percent) AS AvgPageSpaceUsedInPercent
+										,SUM(ddips.record_count) AS RecordCount
+										,SUM(ddips.ghost_record_count) AS GhostRecordCount
+										,SUM(ddips.version_ghost_record_count) AS VersionGhostRecordCount
+										,AVG(ddips.min_record_size_in_bytes) AS MinRecordSizeInBytes
+										,AVG(ddips.max_record_size_in_bytes) AS MaxRecordSizeInBytes
+										,AVG(ddips.avg_record_size_in_bytes) AS AvgRecordSizeInBytes
+										,SUM(ddips.forwarded_record_count) AS ForwardedRecordCount
+										,SUM(ddips.compressed_page_count) AS CompressedPageCount
+										,'' + @versionRecordCountStmt + '' AS VersionRecordCount
+										,'' + @inrowVersionRecordCountStmt + '' AS InrowVersionRecordCount
+										,'' + @inrowDiffVersionRecordCountStmt + '' AS InrowDiffVersionRecordCount
+										,'' + @totalInrowVersionPayloadSizeInBytesStmt + '' AS TotalInrowVersionPayloadSizeInBytes
+										,'' + @offrowRegularVersionRecordCountStmt + '' AS OffrowRegularVersionRecordCount
+										,'' + @offrowLongTermVersionRecordCountStmt + '' AS OffrowLongTermVersionRecordCount
+										,(SELECT d.create_date FROM sys.databases AS d WITH (NOLOCK) WHERE (d.name = ''''tempdb'''')) AS LastSQLServiceRestart
+										,@nowUTC, @now
+									FROM sys.dm_db_index_physical_stats(DB_ID(), OBJECT_ID(@object), NULL, NULL, @mode) AS ddips
+									INNER JOIN sys.objects AS o ON (o.object_id = ddips.object_id)
+									INNER JOIN sys.schemas AS sch ON (sch.schema_id = o.schema_id)
+									LEFT OUTER JOIN sys.indexes AS i ON (ddips.object_id = i.object_id) AND (ddips.index_id = i.index_id)
+									WHERE (o.type IN (''''U'''', ''''V''''))
+									GROUP BY
+										sch.name
+										,o.name
+										,i.name
+										,ddips.partition_number
+										,ddips.index_type_desc
+										,ddips.alloc_unit_type_desc
+										,ddips.index_depth
+										,ddips.index_level
+										'' + @columnstoreDeleteBufferStateDescGroupByStmt + '';
+								END;
+							'';
+							INSERT INTO dbo.fhsmIndexPhysical(
+								DatabaseName, SchemaName, ObjectName, IndexName, Mode
+								,PartitionNumber, IndexTypeDesc, AllocUnitTypeDesc, IndexDepth, IndexLevel, ColumnstoreDeleteBufferStateDesc
+								,AvgFragmentationInPercent, FragmentCount, AvgFragmentSizeInPages
+								,PageCount, AvgPageSpaceUsedInPercent, RecordCount
+								,GhostRecordCount, VersionGhostRecordCount
+								,MinRecordSizeInBytes, MaxRecordSizeInBytes, AvgRecordSizeInBytes
+								,ForwardedRecordCount
+								,CompressedPageCount
+								,VersionRecordCount, InrowVersionRecordCount, InrowDiffVersionRecordCount, TotalInrowVersionPayloadSizeInBytes
+								,OffrowRegularVersionRecordCount, OffrowLongTermVersionRecordCount
+								,LastSQLServiceRestart
+								,TimestampUTC, Timestamp
+							)
+							EXEC sp_executesql
+								@stmt
+								,N''@mode nvarchar(8), @object nvarchar(128), @now datetime, @nowUTC datetime''
+								,@mode = @mode, @object = @object, @now = @now, @nowUTC = @nowUTC;
+						END;
+
+						CLOSE dCur;
+						DEALLOCATE dCur;
+					END;
+
+					RETURN 0;
+				END;
+			';
+			EXEC(@stmt);
+		END;
+
+		--
+		-- Register extended properties on the stored procedure dbo.fhsmSPIndexPhysical
+		--
+		BEGIN
+			SET @objectName = 'dbo.fhsmSPIndexPhysical';
+			SET @objName = PARSENAME(@objectName, 1);
+			SET @schName = PARSENAME(@objectName, 2);
+
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+		END;
+	END;
+
+	--
+	-- Register retention
+	--
+	BEGIN
+		WITH
+		retention(Enabled, TableName, TimeColumn, IsUtc, Days) AS(
+			SELECT
+				1
+				,'dbo.fhsmIndexPhysical'
+				,'TimestampUTC'
+				,1
+				,90
+		)
+		MERGE dbo.fhsmRetentions AS tgt
+		USING retention AS src ON (src.TableName = tgt.TableName)
+		WHEN NOT MATCHED BY TARGET
+			THEN INSERT(Enabled, TableName, TimeColumn, IsUtc, Days)
+			VALUES(src.Enabled, src.TableName, src.TimeColumn, src.IsUtc, src.Days);
+	END;
+
+	--
+	-- Register schedules
+	--
+	BEGIN
+		WITH
+		schedules(Enabled, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters) AS(
+			SELECT
+				1
+				,'Index physical'
+				,PARSENAME('dbo.fhsmSPIndexPhysical', 1)
+				,12 * 60 * 60
+				,TIMEFROMPARTS(22, 0, 0, 0, 0)
+				,TIMEFROMPARTS(23, 0, 0, 0, 0)
+				,1, 1, 1, 1, 1, 1, 1
+				,'@Databases = ''USER_DATABASES, msdb'' ; @Mode = LIMITED'
+		)
+		MERGE dbo.fhsmSchedules AS tgt
+		USING schedules AS src ON (src.Name = tgt.Name)
+		WHEN NOT MATCHED BY TARGET
+			THEN INSERT(Enabled, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters)
+			VALUES(src.Enabled, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameters);
+	END;
+
+	--
+	-- Register dimensions
+	--
+	BEGIN
+		WITH
+		dimensions(DimensionName, DimensionKey, SrcTable, SrcAlias, SrcWhere, SrcDateColumn, SrcColumn1, SrcColumn2, SrcColumn3, SrcColumn4, OutputColumn1, OutputColumn2, OutputColumn3, OutputColumn4) AS(
+			SELECT
+				'Database' AS DimensionName
+				,'DatabaseKey' AS DimensionKey
+				,'dbo.fhsmIndexPhysical' AS SrcTable
+				,'src' AS SrcAlias
+				,NULL AS SrcWhere
+				,'src.[Timestamp]' AS SrcDateColumn
+				,'src.[DatabaseName]', NULL, NULL, NULL
+				,'Database', NULL, NULL, NULL
+
+			UNION ALL
+
+			SELECT
+				'Schema' AS DimensionName
+				,'SchemaKey' AS DimensionKey
+				,'dbo.fhsmIndexPhysical' AS SrcTable
+				,'src' AS SrcAlias
+				,NULL AS SrcWhere
+				,'src.[Timestamp]' AS SrcDateColumn
+				,'src.[DatabaseName]', 'src.[SchemaName]', NULL, NULL
+				,'Database', 'Schema', NULL, NULL
+
+			UNION ALL
+
+			SELECT
+				'Object' AS DimensionName
+				,'ObjectKey' AS DimensionKey
+				,'dbo.fhsmIndexPhysical' AS SrcTable
+				,'src' AS SrcAlias
+				,NULL AS SrcWhere
+				,'src.[Timestamp]' AS SrcDateColumn
+				,'src.[DatabaseName]', 'src.[SchemaName]', 'src.[ObjectName]', NULL
+				,'Database', 'Schema', 'Object', NULL
+
+			UNION ALL
+
+			SELECT
+				'Index' AS DimensionName
+				,'IndexKey' AS DimensionKey
+				,'dbo.fhsmIndexPhysical' AS SrcTable
+				,'src' AS SrcAlias
+				,NULL AS SrcWhere
+				,'src.[Timestamp]' AS SrcDateColumn
+				,'src.[DatabaseName]', 'src.[SchemaName]', 'src.[ObjectName]', 'COALESCE(src.[IndexName], ''N.A.'')'
+				,'Database', 'Schema', 'Object', 'Index'
+		)
+		MERGE dbo.fhsmDimensions AS tgt
+		USING dimensions AS src ON (src.DimensionName = tgt.DimensionName) AND (src.SrcTable = tgt.SrcTable)
+		WHEN MATCHED
+			THEN UPDATE SET
+				tgt.DimensionKey = src.DimensionKey
+				,tgt.SrcTable = src.SrcTable
+				,tgt.SrcAlias = src.SrcAlias
+				,tgt.SrcWhere = src.SrcWhere
+				,tgt.SrcDateColumn = src.SrcDateColumn
+				,tgt.SrcColumn1 = src.SrcColumn1
+				,tgt.SrcColumn2 = src.SrcColumn2
+				,tgt.SrcColumn3 = src.SrcColumn3
+				,tgt.SrcColumn4 = src.SrcColumn4
+				,tgt.OutputColumn1 = src.OutputColumn1
+				,tgt.OutputColumn2 = src.OutputColumn2
+				,tgt.OutputColumn3 = src.OutputColumn3
+				,tgt.OutputColumn4 = src.OutputColumn4
+		WHEN NOT MATCHED BY TARGET
+			THEN INSERT(DimensionName, DimensionKey, SrcTable, SrcAlias, SrcWhere, SrcDateColumn, SrcColumn1, SrcColumn2, SrcColumn3, SrcColumn4, OutputColumn1, OutputColumn2, OutputColumn3, OutputColumn4)
+			VALUES(src.DimensionName, src.DimensionKey, src.SrcTable, src.SrcAlias, src.SrcWhere, src.SrcDateColumn, src.SrcColumn1, src.SrcColumn2, src.SrcColumn3, src.SrcColumn4, src.OutputColumn1, src.OutputColumn2, src.OutputColumn3, src.OutputColumn4);
+	END;
+
+	--
+	-- Update dimensions based upon the fact tables
+	--
+	BEGIN
+		EXEC dbo.fhsmSPUpdateDimensions @table = 'dbo.fhsmIndexPhysical';
+	END;
+END;
