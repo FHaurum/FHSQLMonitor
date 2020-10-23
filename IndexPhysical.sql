@@ -1,32 +1,47 @@
 SET NOCOUNT ON;
 
 --
+-- Declare variables
+--
+BEGIN
+	DECLARE @myUserName nvarchar(128);
+	DECLARE @nowUTC datetime;
+	DECLARE @nowUTCStr nvarchar(128);
+	DECLARE @objectName nvarchar(128);
+	DECLARE @objName nvarchar(128);
+	DECLARE @pbiSchema nvarchar(128);
+	DECLARE @returnValue int;
+	DECLARE @schName nvarchar(128);
+	DECLARE @stmt nvarchar(max);
+	DECLARE @version nvarchar(128);
+END;
+
+--
 -- Test if we are in a database with FHSM registered
 --
-IF (dbo.fhsmFNIsValidInstallation() = 0)
+BEGIN
+	SET @returnValue = 0;
+
+	IF OBJECT_ID('dbo.fhsmFNIsValidInstallation') IS NOT NULL
+	BEGIN
+		SET @returnValue = dbo.fhsmFNIsValidInstallation();
+	END;
+END;
+
+IF (@returnValue = 0)
 BEGIN
 	RAISERROR('Can not install as it appears the database is not correct installed', 0, 1) WITH NOWAIT;
 END
 ELSE BEGIN
 	--
-	-- Declare variables
+	-- Initialize variables
 	--
 	BEGIN
-		DECLARE @myUserName nvarchar(128);
-		DECLARE @nowUTC datetime;
-		DECLARE @nowUTCStr nvarchar(128);
-		DECLARE @objectName nvarchar(128);
-		DECLARE @objName nvarchar(128);
-		DECLARE @pbiSchema nvarchar(128);
-		DECLARE @schName nvarchar(128);
-		DECLARE @stmt nvarchar(max);
-		DECLARE @version nvarchar(128);
-
 		SET @myUserName = SUSER_NAME();
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '1.0';
+		SET @version = '1.1';
 	END;
 
 	--
@@ -151,14 +166,16 @@ ELSE BEGIN
 					,rankedData.OffrowLongTermVersionRecordCount
 					,CAST(rankedData.Timestamp AS date) AS Date
 					,(DATEPART(HOUR, rankedData.Timestamp) * 60 * 60) + (DATEPART(MINUTE, rankedData.Timestamp) * 60) + (DATEPART(SECOND, rankedData.Timestamp)) AS TimeKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(rankedData.DatabaseName, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(rankedData.DatabaseName, rankedData.SchemaName, DEFAULT, DEFAULT) AS k) AS SchemaKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(rankedData.DatabaseName, rankedData.SchemaName, rankedData.ObjectName, DEFAULT) AS k) AS ObjectKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(rankedData.DatabaseName, rankedData.SchemaName, rankedData.ObjectName, COALESCE(rankedData.IndexName, ''N.A.'')) AS k) AS IndexKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(rankedData.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(rankedData.DatabaseName, rankedData.SchemaName, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS SchemaKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(rankedData.DatabaseName, rankedData.SchemaName, rankedData.ObjectName, DEFAULT, DEFAULT, DEFAULT) AS k) AS ObjectKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(rankedData.DatabaseName, rankedData.SchemaName, rankedData.ObjectName, COALESCE(rankedData.IndexName, ''N.A.''), DEFAULT, DEFAULT) AS k) AS IndexKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(rankedData.DatabaseName, rankedData.SchemaName, rankedData.ObjectName, COALESCE(rankedData.IndexName, ''N.A.''), rankedData.IndexTypeDesc, DEFAULT) AS k) AS IndexTypeKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(rankedData.DatabaseName, rankedData.SchemaName, rankedData.ObjectName, COALESCE(rankedData.IndexName, ''N.A.''), rankedData.IndexTypeDesc, rankedData.AllocUnitTypeDesc) AS k) AS IndexAllocTypeKey
 				FROM (
 					SELECT
 						ip.*
-						,RANK() OVER(PARTITION BY ip.DatabaseName, ip.SchemaName, ip.ObjectName ORDER BY CASE ip.Mode WHEN ''Detailed'' THEN 1 WHEN ''SAMPLED'' THEN 2 ELSE 3 END, ip.TimestampUTC DESC) AS _Rnk_
+						,DENSE_RANK() OVER(PARTITION BY ip.DatabaseName, ip.SchemaName, ip.ObjectName ORDER BY CASE ip.Mode WHEN ''DETAILED'' THEN 1 WHEN ''SAMPLED'' THEN 2 ELSE 3 END, ip.TimestampUTC DESC) AS _Rnk_
 					FROM dbo.fhsmIndexPhysical AS ip
 					WHERE (ip.TimestampUTC >= (
 						SELECT DATEADD(HOUR, -24, MAX(ip2.TimestampUTC))
@@ -175,6 +192,181 @@ ELSE BEGIN
 		--
 		BEGIN
 			SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Index physical');
+			SET @objName = PARSENAME(@objectName, 1);
+			SET @schName = PARSENAME(@objectName, 2);
+
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+		END;
+
+		--
+		-- Create fact view @pbiSchema.[Index physical detailed]
+		--
+		BEGIN
+			SET @stmt = '
+				IF OBJECT_ID(''' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Index physical detailed') + ''', ''V'') IS NULL
+				BEGIN
+					EXEC(''CREATE VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Index physical detailed') + ' AS SELECT ''''dummy'''' AS Txt'');
+				END;
+			';
+			EXEC(@stmt);
+
+			SET @stmt = '
+				ALTER VIEW  ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Index physical detailed') + '
+				AS
+				SELECT
+					ip.Mode
+					,ip.PartitionNumber
+					,ip.IndexTypeDesc
+					,ip.AllocUnitTypeDesc
+					,ip.IndexDepth
+					,ip.IndexLevel
+					,ip.ColumnstoreDeleteBufferStateDesc
+					,ip.AvgFragmentationInPercent
+					,ip.FragmentCount
+					,ip.AvgFragmentSizeInPages
+					,ip.PageCount
+					,ip.AvgPageSpaceUsedInPercent
+					,ip.RecordCount
+					,ip.GhostRecordCount
+					,ip.VersionGhostRecordCount
+					,ip.MinRecordSizeInBytes
+					,ip.MaxRecordSizeInBytes
+					,ip.AvgRecordSizeInBytes
+					,ip.ForwardedRecordCount
+					,ip.CompressedPageCount
+					,ip.VersionRecordCount
+					,ip.InrowVersionRecordCount
+					,ip.InrowDiffVersionRecordCount
+					,ip.TotalInrowVersionPayloadSizeInBytes
+					,ip.OffrowRegularVersionRecordCount
+					,ip.OffrowLongTermVersionRecordCount
+					,ip.Timestamp
+					,CAST(ip.Timestamp AS date) AS Date
+					,(DATEPART(HOUR, ip.Timestamp) * 60 * 60) + (DATEPART(MINUTE, ip.Timestamp) * 60) + (DATEPART(SECOND, ip.Timestamp)) AS TimeKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ip.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ip.DatabaseName, ip.SchemaName, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS SchemaKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ip.DatabaseName, ip.SchemaName, ip.ObjectName, DEFAULT, DEFAULT, DEFAULT) AS k) AS ObjectKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ip.DatabaseName, ip.SchemaName, ip.ObjectName, COALESCE(ip.IndexName, ''N.A.''), DEFAULT, DEFAULT) AS k) AS IndexKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ip.DatabaseName, ip.SchemaName, ip.ObjectName, COALESCE(ip.IndexName, ''N.A.''), ip.IndexTypeDesc, DEFAULT) AS k) AS IndexTypeKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ip.DatabaseName, ip.SchemaName, ip.ObjectName, COALESCE(ip.IndexName, ''N.A.''), ip.IndexTypeDesc, ip.AllocUnitTypeDesc) AS k) AS IndexAllocTypeKey
+				FROM dbo.fhsmIndexPhysical AS ip
+				WHERE (ip.Mode = ''DETAILED'')
+			';
+			SET @stmt += '
+
+				UNION ALL
+
+				SELECT
+					ip.Mode
+					,ip.PartitionNumber
+					,ip.IndexTypeDesc
+					,ip.AllocUnitTypeDesc
+					,ip.IndexDepth
+					,ip.IndexLevel
+					,ip.ColumnstoreDeleteBufferStateDesc
+					,ip.AvgFragmentationInPercent
+					,ip.FragmentCount
+					,ip.AvgFragmentSizeInPages
+					,ip.PageCount
+					,ip.AvgPageSpaceUsedInPercent
+					,ip.RecordCount
+					,ip.GhostRecordCount
+					,ip.VersionGhostRecordCount
+					,ip.MinRecordSizeInBytes
+					,ip.MaxRecordSizeInBytes
+					,ip.AvgRecordSizeInBytes
+					,ip.ForwardedRecordCount
+					,ip.CompressedPageCount
+					,ip.VersionRecordCount
+					,ip.InrowVersionRecordCount
+					,ip.InrowDiffVersionRecordCount
+					,ip.TotalInrowVersionPayloadSizeInBytes
+					,ip.OffrowRegularVersionRecordCount
+					,ip.OffrowLongTermVersionRecordCount
+					,ip.Timestamp
+					,CAST(ip.Timestamp AS date) AS Date
+					,(DATEPART(HOUR, ip.Timestamp) * 60 * 60) + (DATEPART(MINUTE, ip.Timestamp) * 60) + (DATEPART(SECOND, ip.Timestamp)) AS TimeKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ip.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ip.DatabaseName, ip.SchemaName, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS SchemaKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ip.DatabaseName, ip.SchemaName, ip.ObjectName, DEFAULT, DEFAULT, DEFAULT) AS k) AS ObjectKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ip.DatabaseName, ip.SchemaName, ip.ObjectName, COALESCE(ip.IndexName, ''N.A.''), DEFAULT, DEFAULT) AS k) AS IndexKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ip.DatabaseName, ip.SchemaName, ip.ObjectName, COALESCE(ip.IndexName, ''N.A.''), ip.IndexTypeDesc, DEFAULT) AS k) AS IndexTypeKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ip.DatabaseName, ip.SchemaName, ip.ObjectName, COALESCE(ip.IndexName, ''N.A.''), ip.IndexTypeDesc, ip.AllocUnitTypeDesc) AS k) AS IndexAllocTypeKey
+				FROM dbo.fhsmIndexPhysical AS ip
+				WHERE (ip.Mode = ''SAMPLED'')
+					AND NOT EXISTS (
+						SELECT *
+						FROM dbo.fhsmIndexPhysical AS ip2
+						WHERE (ip2.DatabaseName = ip.DatabaseName)
+							AND (ip2.SchemaName = ip.SchemaName)
+							AND (ip2.ObjectName = ip.ObjectName)
+							AND (CAST(ip2.TimestampUTC AS date) = CAST(ip.TimestampUTC AS date))
+							AND (ip2.Mode = ''DETAILED'')
+					)
+			';
+			SET @stmt += '
+
+				UNION ALL
+
+				SELECT
+					ip.Mode
+					,ip.PartitionNumber
+					,ip.IndexTypeDesc
+					,ip.AllocUnitTypeDesc
+					,ip.IndexDepth
+					,ip.IndexLevel
+					,ip.ColumnstoreDeleteBufferStateDesc
+					,ip.AvgFragmentationInPercent
+					,ip.FragmentCount
+					,ip.AvgFragmentSizeInPages
+					,ip.PageCount
+					,ip.AvgPageSpaceUsedInPercent
+					,ip.RecordCount
+					,ip.GhostRecordCount
+					,ip.VersionGhostRecordCount
+					,ip.MinRecordSizeInBytes
+					,ip.MaxRecordSizeInBytes
+					,ip.AvgRecordSizeInBytes
+					,ip.ForwardedRecordCount
+					,ip.CompressedPageCount
+					,ip.VersionRecordCount
+					,ip.InrowVersionRecordCount
+					,ip.InrowDiffVersionRecordCount
+					,ip.TotalInrowVersionPayloadSizeInBytes
+					,ip.OffrowRegularVersionRecordCount
+					,ip.OffrowLongTermVersionRecordCount
+					,ip.Timestamp
+					,CAST(ip.Timestamp AS date) AS Date
+					,(DATEPART(HOUR, ip.Timestamp) * 60 * 60) + (DATEPART(MINUTE, ip.Timestamp) * 60) + (DATEPART(SECOND, ip.Timestamp)) AS TimeKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ip.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ip.DatabaseName, ip.SchemaName, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS SchemaKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ip.DatabaseName, ip.SchemaName, ip.ObjectName, DEFAULT, DEFAULT, DEFAULT) AS k) AS ObjectKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ip.DatabaseName, ip.SchemaName, ip.ObjectName, COALESCE(ip.IndexName, ''N.A.''), DEFAULT, DEFAULT) AS k) AS IndexKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ip.DatabaseName, ip.SchemaName, ip.ObjectName, COALESCE(ip.IndexName, ''N.A.''), ip.IndexTypeDesc, DEFAULT) AS k) AS IndexTypeKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ip.DatabaseName, ip.SchemaName, ip.ObjectName, COALESCE(ip.IndexName, ''N.A.''), ip.IndexTypeDesc, ip.AllocUnitTypeDesc) AS k) AS IndexAllocTypeKey
+				FROM dbo.fhsmIndexPhysical AS ip
+				WHERE NOT EXISTS (
+						SELECT *
+						FROM dbo.fhsmIndexPhysical AS ip2
+						WHERE (ip2.DatabaseName = ip.DatabaseName)
+							AND (ip2.SchemaName = ip.SchemaName)
+							AND (ip2.ObjectName = ip.ObjectName)
+							AND (CAST(ip2.TimestampUTC AS date) = CAST(ip.TimestampUTC AS date))
+							AND (ip2.Mode IN (''DETAILED'', ''SAMPLED''))
+					)
+			';
+			EXEC(@stmt);
+		END;
+
+		--
+		-- Register extended properties on fact view @pbiSchema.[Index physical detailed]
+		--
+		BEGIN
+			SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Index physical detailed');
 			SET @objName = PARSENAME(@objectName, 1);
 			SET @schName = PARSENAME(@objectName, 2);
 
@@ -527,7 +719,12 @@ ELSE BEGIN
 	--
 	BEGIN
 		WITH
-		dimensions(DimensionName, DimensionKey, SrcTable, SrcAlias, SrcWhere, SrcDateColumn, SrcColumn1, SrcColumn2, SrcColumn3, SrcColumn4, OutputColumn1, OutputColumn2, OutputColumn3, OutputColumn4) AS(
+		dimensions(
+			DimensionName, DimensionKey
+			,SrcTable, SrcAlias, SrcWhere, SrcDateColumn
+			,SrcColumn1, SrcColumn2, SrcColumn3, SrcColumn4, SrcColumn5, SrcColumn6
+			,OutputColumn1, OutputColumn2, OutputColumn3, OutputColumn4, OutputColumn5, OutputColumn6
+		) AS (
 			SELECT
 				'Database' AS DimensionName
 				,'DatabaseKey' AS DimensionKey
@@ -535,8 +732,8 @@ ELSE BEGIN
 				,'src' AS SrcAlias
 				,NULL AS SrcWhere
 				,'src.[Timestamp]' AS SrcDateColumn
-				,'src.[DatabaseName]', NULL, NULL, NULL
-				,'Database', NULL, NULL, NULL
+				,'src.[DatabaseName]', NULL, NULL, NULL, NULL, NULL
+				,'Database', NULL, NULL, NULL, NULL, NULL
 
 			UNION ALL
 
@@ -547,8 +744,8 @@ ELSE BEGIN
 				,'src' AS SrcAlias
 				,NULL AS SrcWhere
 				,'src.[Timestamp]' AS SrcDateColumn
-				,'src.[DatabaseName]', 'src.[SchemaName]', NULL, NULL
-				,'Database', 'Schema', NULL, NULL
+				,'src.[DatabaseName]', 'src.[SchemaName]', NULL, NULL, NULL, NULL
+				,'Database', 'Schema', NULL, NULL, NULL, NULL
 
 			UNION ALL
 
@@ -559,8 +756,8 @@ ELSE BEGIN
 				,'src' AS SrcAlias
 				,NULL AS SrcWhere
 				,'src.[Timestamp]' AS SrcDateColumn
-				,'src.[DatabaseName]', 'src.[SchemaName]', 'src.[ObjectName]', NULL
-				,'Database', 'Schema', 'Object', NULL
+				,'src.[DatabaseName]', 'src.[SchemaName]', 'src.[ObjectName]', NULL, NULL, NULL
+				,'Database', 'Schema', 'Object', NULL, NULL, NULL
 
 			UNION ALL
 
@@ -571,8 +768,32 @@ ELSE BEGIN
 				,'src' AS SrcAlias
 				,NULL AS SrcWhere
 				,'src.[Timestamp]' AS SrcDateColumn
-				,'src.[DatabaseName]', 'src.[SchemaName]', 'src.[ObjectName]', 'COALESCE(src.[IndexName], ''N.A.'')'
-				,'Database', 'Schema', 'Object', 'Index'
+				,'src.[DatabaseName]', 'src.[SchemaName]', 'src.[ObjectName]', 'COALESCE(src.[IndexName], ''N.A.'')', NULL, NULL
+				,'Database', 'Schema', 'Object', 'Index', NULL, NULL
+
+			UNION ALL
+
+			SELECT
+				'Index type' AS DimensionName
+				,'IndexTypeKey' AS DimensionKey
+				,'dbo.fhsmIndexPhysical' AS SrcTable
+				,'src' AS SrcAlias
+				,NULL AS SrcWhere
+				,'src.[Timestamp]' AS SrcDateColumn
+				,'src.[DatabaseName]', 'src.[SchemaName]', 'src.[ObjectName]', 'COALESCE(src.[IndexName], ''N.A.'')', 'src.[IndexTypeDesc]', NULL
+				,'Database', 'Schema', 'Object', 'Index', 'IndexType', NULL
+
+			UNION ALL
+
+			SELECT
+				'Index alloc type' AS DimensionName
+				,'IndexAllocTypeKey' AS DimensionKey
+				,'dbo.fhsmIndexPhysical' AS SrcTable
+				,'src' AS SrcAlias
+				,NULL AS SrcWhere
+				,'src.[Timestamp]' AS SrcDateColumn
+				,'src.[DatabaseName]', 'src.[SchemaName]', 'src.[ObjectName]', 'COALESCE(src.[IndexName], ''N.A.'')', 'src.[IndexTypeDesc]', 'src.[AllocUnitTypeDesc]'
+				,'Database', 'Schema', 'Object', 'Index', 'IndexType', 'IndexAllocType'
 		)
 		MERGE dbo.fhsmDimensions AS tgt
 		USING dimensions AS src ON (src.DimensionName = tgt.DimensionName) AND (src.SrcTable = tgt.SrcTable)
@@ -587,13 +808,27 @@ ELSE BEGIN
 				,tgt.SrcColumn2 = src.SrcColumn2
 				,tgt.SrcColumn3 = src.SrcColumn3
 				,tgt.SrcColumn4 = src.SrcColumn4
+				,tgt.SrcColumn5 = src.SrcColumn5
+				,tgt.SrcColumn6 = src.SrcColumn6
 				,tgt.OutputColumn1 = src.OutputColumn1
 				,tgt.OutputColumn2 = src.OutputColumn2
 				,tgt.OutputColumn3 = src.OutputColumn3
 				,tgt.OutputColumn4 = src.OutputColumn4
+				,tgt.OutputColumn5 = src.OutputColumn5
+				,tgt.OutputColumn6 = src.OutputColumn6
 		WHEN NOT MATCHED BY TARGET
-			THEN INSERT(DimensionName, DimensionKey, SrcTable, SrcAlias, SrcWhere, SrcDateColumn, SrcColumn1, SrcColumn2, SrcColumn3, SrcColumn4, OutputColumn1, OutputColumn2, OutputColumn3, OutputColumn4)
-			VALUES(src.DimensionName, src.DimensionKey, src.SrcTable, src.SrcAlias, src.SrcWhere, src.SrcDateColumn, src.SrcColumn1, src.SrcColumn2, src.SrcColumn3, src.SrcColumn4, src.OutputColumn1, src.OutputColumn2, src.OutputColumn3, src.OutputColumn4);
+			THEN INSERT(
+				DimensionName, DimensionKey
+				,SrcTable, SrcAlias, SrcWhere, SrcDateColumn
+				,SrcColumn1, SrcColumn2, SrcColumn3, SrcColumn4, SrcColumn5, SrcColumn6
+				,OutputColumn1, OutputColumn2, OutputColumn3, OutputColumn4, OutputColumn5, OutputColumn6
+			)
+			VALUES(
+				src.DimensionName, src.DimensionKey
+				,src.SrcTable, src.SrcAlias, src.SrcWhere, src.SrcDateColumn
+				,src.SrcColumn1, src.SrcColumn2, src.SrcColumn3, src.SrcColumn4, src.SrcColumn5, src.SrcColumn6
+				,src.OutputColumn1, src.OutputColumn2, src.OutputColumn3, src.OutputColumn4, src.OutputColumn5, src.OutputColumn6
+			);
 	END;
 
 	--

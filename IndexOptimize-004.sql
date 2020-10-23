@@ -1,40 +1,47 @@
 SET NOCOUNT ON;
 
 --
+-- Declare variables
+--
+BEGIN
+	DECLARE @myUserName nvarchar(128);
+	DECLARE @nowUTC datetime;
+	DECLARE @nowUTCStr nvarchar(128);
+	DECLARE @objectName nvarchar(128);
+	DECLARE @objName nvarchar(128);
+	DECLARE @pbiSchema nvarchar(128);
+	DECLARE @returnValue int;
+	DECLARE @schName nvarchar(128);
+	DECLARE @stmt nvarchar(max);
+	DECLARE @version nvarchar(128);
+END;
+
+--
 -- Test if we are in a database with FHSM registered
 --
-IF (dbo.fhsmFNIsValidInstallation() = 0)
+BEGIN
+	SET @returnValue = 0;
+
+	IF OBJECT_ID('dbo.fhsmFNIsValidInstallation') IS NOT NULL
+	BEGIN
+		SET @returnValue = dbo.fhsmFNIsValidInstallation();
+	END;
+END;
+
+IF (@returnValue = 0)
 BEGIN
 	RAISERROR('Can not install as it appears the database is not correct installed', 0, 1) WITH NOWAIT;
 END
-ELSE IF (
-	(OBJECT_ID('dbo.CommandLog', 'U') IS NULL)
-	OR (OBJECT_ID('dbo.CommandExecute', 'P') IS NULL)
-	OR (OBJECT_ID('dbo.IndexOptimize', 'P') IS NULL)
-)
-BEGIN
-	RAISERROR('Can not be installed before Ola Hallengren objects are installed', 0, 1) WITH NOWAIT;
-END
 ELSE BEGIN
 	--
-	-- Declare variables
+	-- Initialize variables
 	--
 	BEGIN
-		DECLARE @myUserName nvarchar(128);
-		DECLARE @nowUTC datetime;
-		DECLARE @nowUTCStr nvarchar(128);
-		DECLARE @objectName nvarchar(128);
-		DECLARE @objName nvarchar(128);
-		DECLARE @pbiSchema nvarchar(128);
-		DECLARE @schName nvarchar(128);
-		DECLARE @stmt nvarchar(max);
-		DECLARE @version nvarchar(128);
-
 		SET @myUserName = SUSER_NAME();
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '1.0';
+		SET @version = '1.1';
 	END;
 
 	--
@@ -105,10 +112,10 @@ ELSE BEGIN
 					,COALESCE(NULLIF(DATEDIFF(SECOND, cl.StartTime, cl.EndTime), 0), 1) AS Duration		-- Duration of 0 sec. will always be 1 sec.
 					,CAST(cl.StartTime AS date) AS Date
 					,(DATEPART(HOUR, cl.StartTime) * 60 * 60) + (DATEPART(MINUTE, cl.StartTime) * 60) + (DATEPART(SECOND, cl.StartTime)) AS TimeKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(cl.DatabaseName, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(cl.DatabaseName, cl.SchemaName, DEFAULT, DEFAULT) AS k) AS SchemaKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(cl.DatabaseName, cl.SchemaName, cl.ObjectName, DEFAULT) AS k) AS ObjectKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(cl.DatabaseName, cl.SchemaName, cl.ObjectName, COALESCE(cl.IndexName, ''N.A.'')) AS k) AS IndexKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(cl.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(cl.DatabaseName, cl.SchemaName, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS SchemaKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(cl.DatabaseName, cl.SchemaName, cl.ObjectName, DEFAULT, DEFAULT, DEFAULT) AS k) AS ObjectKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(cl.DatabaseName, cl.SchemaName, cl.ObjectName, COALESCE(cl.IndexName, ''N.A.''), DEFAULT, DEFAULT) AS k) AS IndexKey
 				FROM dbo.CommandLog AS cl;
 			';
 			EXEC(@stmt);
@@ -231,7 +238,7 @@ ELSE BEGIN
 				,TIMEFROMPARTS(2, 0, 0, 0, 0)
 				,TIMEFROMPARTS(4, 0, 0, 0, 0)
 				,1, 1, 1, 1, 1, 1, 1
-				,'@Databases = ''USER_DATABASES'', @TimeLimit = 1800, @FragmentationLow = NULL, @FragmentationMedium = NULL, @FragmentationHigh = ''INDEX_REBUILD_ONLINE,INDEX_REBUILD_OFFLINE'', @FragmentationLevel2 = 30, @LogToTable = ''Y'''
+				,'@Databases = ''USER_DATABASES, msdb'', @TimeLimit = 1800, @FragmentationLow = NULL, @FragmentationMedium = NULL, @FragmentationHigh = ''INDEX_REBUILD_ONLINE,INDEX_REBUILD_OFFLINE'', @FragmentationLevel2 = 30, @LogToTable = ''Y'''
 
 			UNION ALL
 
@@ -243,7 +250,7 @@ ELSE BEGIN
 				,TIMEFROMPARTS(0, 0, 0, 0, 0)
 				,TIMEFROMPARTS(2, 0, 0, 0, 0)
 				,1, 1, 1, 1, 1, 1, 1
-				,'@Databases = ''USER_DATABASES'', @TimeLimit = 1800, @FragmentationLow = NULL, @FragmentationMedium = ''INDEX_REORGANIZE,INDEX_REBUILD_ONLINE,INDEX_REBUILD_OFFLINE'', @FragmentationHigh = NULL, @FragmentationLevel1 = 5, @LogToTable = ''Y'''
+				,'@Databases = ''USER_DATABASES, msdb'', @TimeLimit = 1800, @FragmentationLow = NULL, @FragmentationMedium = ''INDEX_REORGANIZE,INDEX_REBUILD_ONLINE,INDEX_REBUILD_OFFLINE'', @FragmentationHigh = NULL, @FragmentationLevel1 = 5, @LogToTable = ''Y'''
 
 			UNION ALL
 
@@ -255,7 +262,7 @@ ELSE BEGIN
 				,TIMEFROMPARTS(4, 0, 0, 0, 0)
 				,TIMEFROMPARTS(6, 0, 0, 0, 0)
 				,1, 1, 1, 1, 1, 1, 0
-				,'@Databases = ''USER_DATABASES'', @TimeLimit = 1800, @FragmentationLow = NULL, @FragmentationMedium = NULL, @FragmentationHigh = NULL, @UpdateStatistics = ''ALL'', @OnlyModifiedStatistics = ''Y'', @LogToTable = ''Y'''
+				,'@Databases = ''USER_DATABASES, msdb'', @TimeLimit = 1800, @FragmentationLow = NULL, @FragmentationMedium = NULL, @FragmentationHigh = NULL, @UpdateStatistics = ''ALL'', @OnlyModifiedStatistics = ''Y'', @LogToTable = ''Y'''
 
 			UNION ALL
 
@@ -267,7 +274,7 @@ ELSE BEGIN
 				,TIMEFROMPARTS(4, 0, 0, 0, 0)
 				,TIMEFROMPARTS(6, 0, 0, 0, 0)
 				,0, 0, 0, 0, 0, 0, 1
-				,'@Databases = ''USER_DATABASES'', @TimeLimit = 1800, @FragmentationLow = NULL, @FragmentationMedium = NULL, @FragmentationHigh = NULL, @UpdateStatistics = ''ALL'', @LogToTable = ''Y'''
+				,'@Databases = ''USER_DATABASES, msdb'', @TimeLimit = 1800, @FragmentationLow = NULL, @FragmentationMedium = NULL, @FragmentationHigh = NULL, @UpdateStatistics = ''ALL'', @LogToTable = ''Y'''
 		)
 		MERGE dbo.fhsmSchedules AS tgt
 		USING schedules AS src ON (src.Name = tgt.Name)
@@ -281,7 +288,12 @@ ELSE BEGIN
 	--
 	BEGIN
 		WITH
-		dimensions(DimensionName, DimensionKey, SrcTable, SrcAlias, SrcWhere, SrcDateColumn, SrcColumn1, SrcColumn2, SrcColumn3, SrcColumn4, OutputColumn1, OutputColumn2, OutputColumn3, OutputColumn4) AS(
+		dimensions(
+			DimensionName, DimensionKey
+			,SrcTable, SrcAlias, SrcWhere, SrcDateColumn
+			,SrcColumn1, SrcColumn2, SrcColumn3, SrcColumn4
+			,OutputColumn1, OutputColumn2, OutputColumn3, OutputColumn4
+		) AS (
 			SELECT
 				'Database' AS DimensionName
 				,'DatabaseKey' AS DimensionKey
@@ -346,8 +358,18 @@ ELSE BEGIN
 				,tgt.OutputColumn3 = src.OutputColumn3
 				,tgt.OutputColumn4 = src.OutputColumn4
 		WHEN NOT MATCHED BY TARGET
-			THEN INSERT(DimensionName, DimensionKey, SrcTable, SrcAlias, SrcWhere, SrcDateColumn, SrcColumn1, SrcColumn2, SrcColumn3, SrcColumn4, OutputColumn1, OutputColumn2, OutputColumn3, OutputColumn4)
-			VALUES(src.DimensionName, src.DimensionKey, src.SrcTable, src.SrcAlias, src.SrcWhere, src.SrcDateColumn, src.SrcColumn1, src.SrcColumn2, src.SrcColumn3, src.SrcColumn4, src.OutputColumn1, src.OutputColumn2, src.OutputColumn3, src.OutputColumn4);
+			THEN INSERT(
+				DimensionName, DimensionKey
+				,SrcTable, SrcAlias, SrcWhere, SrcDateColumn
+				,SrcColumn1, SrcColumn2, SrcColumn3, SrcColumn4
+				,OutputColumn1, OutputColumn2, OutputColumn3, OutputColumn4
+			)
+			VALUES(
+				src.DimensionName, src.DimensionKey
+				,src.SrcTable, src.SrcAlias, src.SrcWhere, src.SrcDateColumn
+				,src.SrcColumn1, src.SrcColumn2, src.SrcColumn3, src.SrcColumn4
+				,src.OutputColumn1, src.OutputColumn2, src.OutputColumn3, src.OutputColumn4
+			);
 	END;
 
 	--

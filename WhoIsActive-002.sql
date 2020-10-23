@@ -1,36 +1,47 @@
 SET NOCOUNT ON;
 
 --
+-- Declare variables
+--
+BEGIN
+	DECLARE @myUserName nvarchar(128);
+	DECLARE @nowUTC datetime;
+	DECLARE @nowUTCStr nvarchar(128);
+	DECLARE @objectName nvarchar(128);
+	DECLARE @objName nvarchar(128);
+	DECLARE @pbiSchema nvarchar(128);
+	DECLARE @returnValue int;
+	DECLARE @schName nvarchar(128);
+	DECLARE @stmt nvarchar(max);
+	DECLARE @version nvarchar(128);
+END;
+
+--
 -- Test if we are in a database with FHSM registered
 --
-IF (dbo.fhsmFNIsValidInstallation() = 0)
+BEGIN
+	SET @returnValue = 0;
+
+	IF OBJECT_ID('dbo.fhsmFNIsValidInstallation') IS NOT NULL
+	BEGIN
+		SET @returnValue = dbo.fhsmFNIsValidInstallation();
+	END;
+END;
+
+IF (@returnValue = 0)
 BEGIN
 	RAISERROR('Can not install as it appears the database is not correct installed', 0, 1) WITH NOWAIT;
 END
-ELSE IF (OBJECT_ID('dbo.sp_WhoIsActive', 'P') IS NULL)
-BEGIN
-	RAISERROR('Can not be installed before Adam Machanic script is installed', 0, 1) WITH NOWAIT;
-END
 ELSE BEGIN
 	--
-	-- Declare variables
+	-- Initialize variables
 	--
 	BEGIN
-		DECLARE @myUserName nvarchar(128);
-		DECLARE @nowUTC datetime;
-		DECLARE @nowUTCStr nvarchar(128);
-		DECLARE @objectName nvarchar(128);
-		DECLARE @objName nvarchar(128);
-		DECLARE @pbiSchema nvarchar(128);
-		DECLARE @schName nvarchar(128);
-		DECLARE @stmt nvarchar(max);
-		DECLARE @version nvarchar(128);
-
 		SET @myUserName = SUSER_NAME();
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '1.0';
+		SET @version = '1.1';
 	END;
 
 	--
@@ -128,7 +139,7 @@ ELSE BEGIN
 					,a.percent_complete AS PercentComplete
 					,a.host_name AS HostName
 					,a.program_name AS ProgramName
-					,(SELECT k.[Key] FROM dbo.fhsmfnGenerateKey(a.database_name, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
+					,(SELECT k.[Key] FROM dbo.fhsmfnGenerateKey(a.database_name, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
 				FROM (
 					SELECT
 						ROW_NUMBER() OVER(PARTITION BY wia.session_id, wia.login_time ORDER BY wia.collection_time DESC) AS _Rnk_
@@ -267,7 +278,12 @@ ELSE BEGIN
 	--
 	BEGIN
 		WITH
-		dimensions(DimensionName, DimensionKey, SrcTable, SrcAlias, SrcWhere, SrcDateColumn, SrcColumn1, SrcColumn2, SrcColumn3, SrcColumn4, OutputColumn1, OutputColumn2, OutputColumn3, OutputColumn4) AS(
+		dimensions(
+			DimensionName, DimensionKey
+			,SrcTable, SrcAlias, SrcWhere, SrcDateColumn
+			,SrcColumn1
+			,OutputColumn1
+		) AS (
 			SELECT
 				'Database' AS DimensionName
 				,'DatabaseKey' AS DimensionKey
@@ -275,8 +291,8 @@ ELSE BEGIN
 				,'src' AS SrcAlias
 				,NULL AS SrcWhere
 				,'src.[collection_time]' AS SrcDateColumn
-				,'src.[database_name]', NULL, NULL, NULL
-				,'Database', NULL, NULL, NULL
+				,'src.[database_name]'
+				,'Database'
 		)
 		MERGE dbo.fhsmDimensions AS tgt
 		USING dimensions AS src ON (src.DimensionName = tgt.DimensionName) AND (src.SrcTable = tgt.SrcTable)
@@ -288,16 +304,20 @@ ELSE BEGIN
 				,tgt.SrcWhere = src.SrcWhere
 				,tgt.SrcDateColumn = src.SrcDateColumn
 				,tgt.SrcColumn1 = src.SrcColumn1
-				,tgt.SrcColumn2 = src.SrcColumn2
-				,tgt.SrcColumn3 = src.SrcColumn3
-				,tgt.SrcColumn4 = src.SrcColumn4
 				,tgt.OutputColumn1 = src.OutputColumn1
-				,tgt.OutputColumn2 = src.OutputColumn2
-				,tgt.OutputColumn3 = src.OutputColumn3
-				,tgt.OutputColumn4 = src.OutputColumn4
 		WHEN NOT MATCHED BY TARGET
-			THEN INSERT(DimensionName, DimensionKey, SrcTable, SrcAlias, SrcWhere, SrcDateColumn, SrcColumn1, SrcColumn2, SrcColumn3, SrcColumn4, OutputColumn1, OutputColumn2, OutputColumn3, OutputColumn4)
-			VALUES(src.DimensionName, src.DimensionKey, src.SrcTable, src.SrcAlias, src.SrcWhere, src.SrcDateColumn, src.SrcColumn1, src.SrcColumn2, src.SrcColumn3, src.SrcColumn4, src.OutputColumn1, src.OutputColumn2, src.OutputColumn3, src.OutputColumn4);
+			THEN INSERT(
+				DimensionName, DimensionKey
+				,SrcTable, SrcAlias, SrcWhere, SrcDateColumn
+				,SrcColumn1
+				,OutputColumn1
+			)
+			VALUES(
+				src.DimensionName, src.DimensionKey
+				,src.SrcTable, src.SrcAlias, src.SrcWhere, src.SrcDateColumn
+				,src.SrcColumn1
+				,src.OutputColumn1
+			);
 	END;
 
 	--

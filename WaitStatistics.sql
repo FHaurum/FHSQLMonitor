@@ -1,32 +1,47 @@
 SET NOCOUNT ON;
 
 --
+-- Declare variables
+--
+BEGIN
+	DECLARE @myUserName nvarchar(128);
+	DECLARE @nowUTC datetime;
+	DECLARE @nowUTCStr nvarchar(128);
+	DECLARE @objectName nvarchar(128);
+	DECLARE @objName nvarchar(128);
+	DECLARE @pbiSchema nvarchar(128);
+	DECLARE @returnValue int;
+	DECLARE @schName nvarchar(128);
+	DECLARE @stmt nvarchar(max);
+	DECLARE @version nvarchar(128);
+END;
+
+--
 -- Test if we are in a database with FHSM registered
 --
-IF (dbo.fhsmFNIsValidInstallation() = 0)
+BEGIN
+	SET @returnValue = 0;
+
+	IF OBJECT_ID('dbo.fhsmFNIsValidInstallation') IS NOT NULL
+	BEGIN
+		SET @returnValue = dbo.fhsmFNIsValidInstallation();
+	END;
+END;
+
+IF (@returnValue = 0)
 BEGIN
 	RAISERROR('Can not install as it appears the database is not correct installed', 0, 1) WITH NOWAIT;
 END
 ELSE BEGIN
 	--
-	-- Declare variables
+	-- Initialize variables
 	--
 	BEGIN
-		DECLARE @myUserName nvarchar(128);
-		DECLARE @nowUTC datetime;
-		DECLARE @nowUTCStr nvarchar(128);
-		DECLARE @objectName nvarchar(128);
-		DECLARE @objName nvarchar(128);
-		DECLARE @pbiSchema nvarchar(128);
-		DECLARE @schName nvarchar(128);
-		DECLARE @stmt nvarchar(max);
-		DECLARE @version nvarchar(128);
-
 		SET @myUserName = SUSER_NAME();
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '1.0';
+		SET @version = '1.1';
 	END;
 
 	--
@@ -666,23 +681,28 @@ ELSE BEGIN
 					b.DeltaSumWaitTimeMS AS WaitTimeMS
 					,b.DeltaSumSignalWaitTimeMS AS SignalWaitTimeMS
 					,b.DeltaSumWaitingTasks AS WaitingTasks
+					,b.Timestamp
 					,b.Date
 					,b.TimeKey
 					,b.WaitKey
 				FROM (
 					SELECT
 						CASE
-							WHEN (a.PreviousSumWaitTimeMS IS NULL) OR (a.PreviousSumWaitTimeMS > a.SumWaitTimeMS) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN NULL
-							ELSE a.SumWaitTimeMS - a.PreviousSumWaitTimeMS
+							WHEN (a.PreviousSumWaitTimeMS IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL											-- Ignore 1. data set - Yes we loose one data set but better than having visuals showing very high data
+							WHEN (a.PreviousSumWaitTimeMS > a.SumWaitTimeMS) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.SumWaitTimeMS	-- Either has the counters had an overflow or the server har been restarted
+							ELSE a.SumWaitTimeMS - a.PreviousSumWaitTimeMS																							-- Difference
 						END AS DeltaSumWaitTimeMS
 						,CASE
-							WHEN (a.PreviousSumSignalWaitTimeMS IS NULL) OR (a.PreviousSumSignalWaitTimeMS > a.SumSignalWaitTimeMS) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN NULL
+							WHEN (a.PreviousSumSignalWaitTimeMS IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+							WHEN (a.PreviousSumSignalWaitTimeMS > a.SumSignalWaitTimeMS) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.SumSignalWaitTimeMS
 							ELSE a.SumSignalWaitTimeMS - a.PreviousSumSignalWaitTimeMS
 						END AS DeltaSumSignalWaitTimeMS
 						,CASE
-							WHEN (a.PreviousSumWaitingTasks IS NULL) OR (a.PreviousSumWaitingTasks > a.SumWaitingTasks) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN NULL
+							WHEN (a.PreviousSumWaitingTasks IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+							WHEN (a.PreviousSumWaitingTasks > a.SumWaitingTasks) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.SumWaitingTasks
 							ELSE a.SumWaitingTasks - a.PreviousSumWaitingTasks
 						END AS DeltaSumWaitingTasks
+						,a.Timestamp
 						,a.Date
 						,a.TimeKey
 						,a.WaitKey
@@ -695,10 +715,11 @@ ELSE BEGIN
 							,ws.SumWaitingTasks
 							,LAG(ws.SumWaitingTasks) OVER(PARTITION BY ws.WaitType ORDER BY ws.TimestampUTC) AS PreviousSumWaitingTasks
 							,ws.LastSQLServiceRestart
-							,LAG(ws.LastSQLServiceRestart) OVER(ORDER BY ws.TimestampUTC) AS PreviousLastSQLServiceRestart
+							,LAG(ws.LastSQLServiceRestart) OVER(PARTITION BY ws.WaitType ORDER BY ws.TimestampUTC) AS PreviousLastSQLServiceRestart
+							,ws.Timestamp
 							,CAST(ws.Timestamp AS date) AS Date
 							,(DATEPART(HOUR, ws.Timestamp) * 60 * 60) + (DATEPART(MINUTE, ws.Timestamp) * 60) + (DATEPART(SECOND, ws.Timestamp)) AS TimeKey
-							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ws.WaitType, DEFAULT, DEFAULT, DEFAULT) AS k) AS WaitKey
+							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ws.WaitType, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS WaitKey
 						FROM dbo.fhsmWaitStatistics AS ws
 					) AS a
 				) AS b
@@ -890,7 +911,12 @@ ELSE BEGIN
 	--
 	BEGIN
 		WITH
-		dimensions(DimensionName, DimensionKey, SrcTable, SrcAlias, SrcWhere, SrcDateColumn, SrcColumn1, SrcColumn2, SrcColumn3, SrcColumn4, OutputColumn1, OutputColumn2, OutputColumn3, OutputColumn4) AS(
+		dimensions(
+			DimensionName, DimensionKey
+			,SrcTable, SrcAlias, SrcWhere, SrcDateColumn
+			,SrcColumn1
+			,OutputColumn1
+		) AS (
 			SELECT
 				'Wait type' AS DimensionName
 				,'WaitKey' AS DimensionKey
@@ -898,8 +924,8 @@ ELSE BEGIN
 				,'src' AS SrcAlias
 				,NULL AS SrcWhere
 				,'src.[Timestamp]' AS SrcDateColumn
-				,'src.[WaitType]', NULL, NULL, NULL
-				,'Wait type', NULL, NULL, NULL
+				,'src.[WaitType]'
+				,'Wait type'
 		)
 		MERGE dbo.fhsmDimensions AS tgt
 		USING dimensions AS src ON (src.DimensionName = tgt.DimensionName) AND (src.SrcTable = tgt.SrcTable)
@@ -911,16 +937,20 @@ ELSE BEGIN
 				,tgt.SrcWhere = src.SrcWhere
 				,tgt.SrcDateColumn = src.SrcDateColumn
 				,tgt.SrcColumn1 = src.SrcColumn1
-				,tgt.SrcColumn2 = src.SrcColumn2
-				,tgt.SrcColumn3 = src.SrcColumn3
-				,tgt.SrcColumn4 = src.SrcColumn4
 				,tgt.OutputColumn1 = src.OutputColumn1
-				,tgt.OutputColumn2 = src.OutputColumn2
-				,tgt.OutputColumn3 = src.OutputColumn3
-				,tgt.OutputColumn4 = src.OutputColumn4
 		WHEN NOT MATCHED BY TARGET
-			THEN INSERT(DimensionName, DimensionKey, SrcTable, SrcAlias, SrcWhere, SrcDateColumn, SrcColumn1, SrcColumn2, SrcColumn3, SrcColumn4, OutputColumn1, OutputColumn2, OutputColumn3, OutputColumn4)
-			VALUES(src.DimensionName, src.DimensionKey, src.SrcTable, src.SrcAlias, src.SrcWhere, src.SrcDateColumn, src.SrcColumn1, src.SrcColumn2, src.SrcColumn3, src.SrcColumn4, src.OutputColumn1, src.OutputColumn2, src.OutputColumn3, src.OutputColumn4);
+			THEN INSERT(
+				DimensionName, DimensionKey
+				,SrcTable, SrcAlias, SrcWhere, SrcDateColumn
+				,SrcColumn1
+				,OutputColumn1
+			)
+			VALUES(
+				src.DimensionName, src.DimensionKey
+				,src.SrcTable, src.SrcAlias, src.SrcWhere, src.SrcDateColumn
+				,src.SrcColumn1
+				,src.OutputColumn1
+			);
 	END;
 
 	--

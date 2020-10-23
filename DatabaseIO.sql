@@ -1,32 +1,47 @@
 SET NOCOUNT ON;
 
 --
+-- Declare variables
+--
+BEGIN
+	DECLARE @myUserName nvarchar(128);
+	DECLARE @nowUTC datetime;
+	DECLARE @nowUTCStr nvarchar(128);
+	DECLARE @objectName nvarchar(128);
+	DECLARE @objName nvarchar(128);
+	DECLARE @pbiSchema nvarchar(128);
+	DECLARE @returnValue int;
+	DECLARE @schName nvarchar(128);
+	DECLARE @stmt nvarchar(max);
+	DECLARE @version nvarchar(128);
+END;
+
+--
 -- Test if we are in a database with FHSM registered
 --
-IF (dbo.fhsmFNIsValidInstallation() = 0)
+BEGIN
+	SET @returnValue = 0;
+
+	IF OBJECT_ID('dbo.fhsmFNIsValidInstallation') IS NOT NULL
+	BEGIN
+		SET @returnValue = dbo.fhsmFNIsValidInstallation();
+	END;
+END;
+
+IF (@returnValue = 0)
 BEGIN
 	RAISERROR('Can not install as it appears the database is not correct installed', 0, 1) WITH NOWAIT;
 END
 ELSE BEGIN
 	--
-	-- Declare variables
+	-- Initialize variables
 	--
 	BEGIN
-		DECLARE @myUserName nvarchar(128);
-		DECLARE @nowUTC datetime;
-		DECLARE @nowUTCStr nvarchar(128);
-		DECLARE @objectName nvarchar(128);
-		DECLARE @objName nvarchar(128);
-		DECLARE @pbiSchema nvarchar(128);
-		DECLARE @schName nvarchar(128);
-		DECLARE @stmt nvarchar(max);
-		DECLARE @version nvarchar(128);
-
 		SET @myUserName = SUSER_NAME();
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '1.0';
+		SET @version = '1.1';
 	END;
 
 	--
@@ -115,6 +130,7 @@ ELSE BEGIN
 					,b.DeltaNumOfBytesWritten AS NumOfBytesWritten
 					,b.DeltaIOStallWriteMS AS IOStallWriteMS
 					,b.DeltaIOStallQueuedWriteMS AS IOStallQueuedWriteMS
+					,b.Timestamp
 					,b.Date
 					,b.TimeKey
 					,b.DatabaseKey
@@ -124,41 +140,51 @@ ELSE BEGIN
 				FROM (
 					SELECT
 						CASE
-							WHEN (a.PreviousIOStall IS NULL) OR (a.PreviousIOStall > a.IOStall) OR (a.PreviousSampleMS > a.SampleMS) THEN NULL
-							ELSE a.IOStall - a.PreviousIOStall
+							WHEN (a.PreviousIOStall IS NULL) OR (a.PreviousSampleMS IS NULL) THEN NULL					-- Ignore 1. data set - Yes we loose one data set but better than having visuals showing very high data
+							WHEN (a.PreviousIOStall > a.IOStall) OR (a.PreviousSampleMS > a.SampleMS) THEN a.IOStall	-- Either has the counters had an overflow or the server har been restarted
+							ELSE a.IOStall - a.PreviousIOStall															-- Difference
 						END AS DeltaIOStall
 						,CASE
-							WHEN (a.PreviousNumOfReads IS NULL) OR (a.PreviousNumOfReads > a.NumOfReads) OR (a.PreviousSampleMS > a.SampleMS) THEN NULL
+							WHEN (a.PreviousNumOfReads IS NULL) OR (a.PreviousSampleMS IS NULL) THEN NULL
+							WHEN (a.PreviousNumOfReads > a.NumOfReads) OR (a.PreviousSampleMS > a.SampleMS) THEN a.NumOfReads
 							ELSE a.NumOfReads - a.PreviousNumOfReads
 						END AS DeltaNumOfReads
 						,CASE
-							WHEN (a.PreviousNumOfBytesRead IS NULL) OR (a.PreviousNumOfBytesRead > a.NumOfBytesRead) OR (a.PreviousSampleMS > a.SampleMS) THEN NULL
+							WHEN (a.PreviousNumOfBytesRead IS NULL) OR (a.PreviousSampleMS IS NULL) THEN NULL
+							WHEN (a.PreviousNumOfBytesRead > a.NumOfBytesRead) OR (a.PreviousSampleMS > a.SampleMS) THEN a.NumOfBytesRead
 							ELSE a.NumOfBytesRead - a.PreviousNumOfBytesRead
 						END AS DeltaNumOfBytesRead
 						,CASE
-							WHEN (a.PreviousIOStallReadMS IS NULL) OR (a.PreviousIOStallReadMS > a.IOStallReadMS) OR (a.PreviousSampleMS > a.SampleMS) THEN NULL
+							WHEN (a.PreviousIOStallReadMS IS NULL) OR (a.PreviousSampleMS IS NULL) THEN NULL
+							WHEN (a.PreviousIOStallReadMS > a.IOStallReadMS) OR (a.PreviousSampleMS > a.SampleMS) THEN a.IOStallReadMS
 							ELSE a.IOStallReadMS - a.PreviousIOStallReadMS
 						END AS DeltaIOStallReadMS
 						,CASE
-							WHEN (a.PreviousIOStallQueuedReadMS IS NULL) OR (a.PreviousIOStallQueuedReadMS > a.IOStallQueuedReadMS) OR (a.PreviousSampleMS > a.SampleMS) THEN NULL
+							WHEN (a.PreviousIOStallQueuedReadMS IS NULL) OR (a.PreviousSampleMS IS NULL) THEN NULL
+							WHEN (a.PreviousIOStallQueuedReadMS > a.IOStallQueuedReadMS) OR (a.PreviousSampleMS > a.SampleMS) THEN a.IOStallQueuedReadMS
 							ELSE a.IOStallQueuedReadMS - a.PreviousIOStallQueuedReadMS
 						END AS DeltaIOStallQueuedReadMS
 						,CASE
-							WHEN (a.PreviousNumOfWrites IS NULL) OR (a.PreviousNumOfWrites > a.NumOfWrites) OR (a.PreviousSampleMS > a.SampleMS) THEN NULL
+							WHEN (a.PreviousNumOfWrites IS NULL) OR (a.PreviousSampleMS IS NULL) THEN NULL
+							WHEN (a.PreviousNumOfWrites > a.NumOfWrites) OR (a.PreviousSampleMS > a.SampleMS) THEN a.NumOfWrites
 							ELSE a.NumOfWrites - a.PreviousNumOfWrites
 						END AS DeltaNumOfWrites
 						,CASE
-							WHEN (a.PreviousNumOfBytesWritten IS NULL) OR (a.PreviousNumOfBytesWritten > a.NumOfBytesWritten) OR (a.PreviousSampleMS > a.SampleMS) THEN NULL
+							WHEN (a.PreviousNumOfBytesWritten IS NULL) OR (a.PreviousSampleMS IS NULL) THEN NULL
+							WHEN (a.PreviousNumOfBytesWritten > a.NumOfBytesWritten) OR (a.PreviousSampleMS > a.SampleMS) THEN a.NumOfBytesWritten
 							ELSE a.NumOfBytesWritten - a.PreviousNumOfBytesWritten
 						END AS DeltaNumOfBytesWritten
 						,CASE
-							WHEN (a.PreviousIOStallWriteMS IS NULL) OR (a.PreviousIOStallWriteMS > a.IOStallWriteMS) OR (a.PreviousSampleMS > a.SampleMS) THEN NULL
+							WHEN (a.PreviousIOStallWriteMS IS NULL) OR (a.PreviousSampleMS IS NULL) THEN NULL
+							WHEN (a.PreviousIOStallWriteMS > a.IOStallWriteMS) OR (a.PreviousSampleMS > a.SampleMS) THEN a.IOStallWriteMS
 							ELSE a.IOStallWriteMS - a.PreviousIOStallWriteMS
 						END AS DeltaIOStallWriteMS
 						,CASE
-							WHEN (a.PreviousIOStallQueuedWriteMS IS NULL) OR (a.PreviousIOStallQueuedWriteMS > a.IOStallQueuedWriteMS) OR (a.PreviousSampleMS > a.SampleMS) THEN NULL
+							WHEN (a.PreviousIOStallQueuedWriteMS IS NULL) OR (a.PreviousSampleMS IS NULL) THEN NULL
+							WHEN (a.PreviousIOStallQueuedWriteMS > a.IOStallQueuedWriteMS) OR (a.PreviousSampleMS > a.SampleMS) THEN a.IOStallQueuedWriteMS
 							ELSE a.IOStallQueuedWriteMS - a.PreviousIOStallQueuedWriteMS
 						END AS DeltaIOStallQueuedWriteMS
+						,a.Timestamp
 						,a.Date
 						,a.TimeKey
 						,a.DatabaseKey
@@ -187,10 +213,11 @@ ELSE BEGIN
 							,LAG(dio.IOStallWriteMS) OVER(PARTITION BY dio.DatabaseName, dio.LogicalName, dio.Type ORDER BY dio.TimestampUTC) AS PreviousIOStallWriteMS
 							,dio.IOStallQueuedWriteMS
 							,LAG(dio.IOStallQueuedWriteMS) OVER(PARTITION BY dio.DatabaseName, dio.LogicalName, dio.Type ORDER BY dio.TimestampUTC) AS PreviousIOStallQueuedWriteMS
+							,dio.Timestamp
 							,CAST(dio.Timestamp AS date) AS Date
 							,(DATEPART(HOUR, dio.Timestamp) * 60 * 60) + (DATEPART(MINUTE, dio.Timestamp) * 60) + (DATEPART(SECOND, dio.Timestamp)) AS TimeKey
-							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(dio.DatabaseName, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
-							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(dio.DatabaseName, dio.LogicalName, CASE dio.Type WHEN 0 THEN ''Data'' WHEN 1 THEN ''Log'' WHEN 2 THEN ''Filestream'' END, DEFAULT) AS k) AS DatabaseFileKey
+							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(dio.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
+							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(dio.DatabaseName, dio.LogicalName, CASE dio.Type WHEN 0 THEN ''Data'' WHEN 1 THEN ''Log'' WHEN 2 THEN ''Filestream'' END, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseFileKey
 						FROM dbo.fhsmDatabaseIO AS dio
 					) AS a
 				) AS b
@@ -447,7 +474,12 @@ ELSE BEGIN
 	--
 	BEGIN
 		WITH
-		dimensions(DimensionName, DimensionKey, SrcTable, SrcAlias, SrcWhere, SrcDateColumn, SrcColumn1, SrcColumn2, SrcColumn3, SrcColumn4, OutputColumn1, OutputColumn2, OutputColumn3, OutputColumn4) AS(
+		dimensions(
+			DimensionName, DimensionKey
+			,SrcTable, SrcAlias, SrcWhere, SrcDateColumn
+			,SrcColumn1, SrcColumn2, SrcColumn3
+			,OutputColumn1, OutputColumn2, OutputColumn3
+		) AS (
 			SELECT
 				'Database' AS DimensionName
 				,'DatabaseKey' AS DimensionKey
@@ -455,8 +487,8 @@ ELSE BEGIN
 				,'src' AS SrcAlias
 				,NULL AS SrcWhere
 				,'src.[Timestamp]' AS SrcDateColumn
-				,'src.[DatabaseName]', NULL, NULL, NULL
-				,'Database', NULL, NULL, NULL
+				,'src.[DatabaseName]', NULL, NULL
+				,'Database', NULL, NULL
 
 			UNION ALL
 
@@ -467,8 +499,8 @@ ELSE BEGIN
 				,'src' AS SrcAlias
 				,NULL AS SrcWhere
 				,'src.[Timestamp]' AS SrcDateColumn
-				,'src.[DatabaseName]', 'src.[LogicalName]', 'CASE src.[Type] WHEN 0 THEN ''Data'' WHEN 1 THEN ''Log'' WHEN 2 THEN ''Filestream'' END', NULL
-				,'Database name', 'Logical name', 'Type', NULL
+				,'src.[DatabaseName]', 'src.[LogicalName]', 'CASE src.[Type] WHEN 0 THEN ''Data'' WHEN 1 THEN ''Log'' WHEN 2 THEN ''Filestream'' END'
+				,'Database name', 'Logical name', 'Type'
 		)
 		MERGE dbo.fhsmDimensions AS tgt
 		USING dimensions AS src ON (src.DimensionName = tgt.DimensionName) AND (src.SrcTable = tgt.SrcTable)
@@ -482,14 +514,22 @@ ELSE BEGIN
 				,tgt.SrcColumn1 = src.SrcColumn1
 				,tgt.SrcColumn2 = src.SrcColumn2
 				,tgt.SrcColumn3 = src.SrcColumn3
-				,tgt.SrcColumn4 = src.SrcColumn4
 				,tgt.OutputColumn1 = src.OutputColumn1
 				,tgt.OutputColumn2 = src.OutputColumn2
 				,tgt.OutputColumn3 = src.OutputColumn3
-				,tgt.OutputColumn4 = src.OutputColumn4
 		WHEN NOT MATCHED BY TARGET
-			THEN INSERT(DimensionName, DimensionKey, SrcTable, SrcAlias, SrcWhere, SrcDateColumn, SrcColumn1, SrcColumn2, SrcColumn3, SrcColumn4, OutputColumn1, OutputColumn2, OutputColumn3, OutputColumn4)
-			VALUES(src.DimensionName, src.DimensionKey, src.SrcTable, src.SrcAlias, src.SrcWhere, src.SrcDateColumn, src.SrcColumn1, src.SrcColumn2, src.SrcColumn3, src.SrcColumn4, src.OutputColumn1, src.OutputColumn2, src.OutputColumn3, src.OutputColumn4);
+			THEN INSERT(
+				DimensionName, DimensionKey
+				,SrcTable, SrcAlias, SrcWhere, SrcDateColumn
+				,SrcColumn1, SrcColumn2, SrcColumn3
+				,OutputColumn1, OutputColumn2, OutputColumn3
+			)
+			VALUES(
+				src.DimensionName, src.DimensionKey
+				,src.SrcTable, src.SrcAlias, src.SrcWhere, src.SrcDateColumn
+				,src.SrcColumn1, src.SrcColumn2, src.SrcColumn3
+				,src.OutputColumn1, src.OutputColumn2, src.OutputColumn3
+			);
 	END;
 
 	--

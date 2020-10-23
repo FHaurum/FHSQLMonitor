@@ -1,32 +1,47 @@
 SET NOCOUNT ON;
 
 --
+-- Declare variables
+--
+BEGIN
+	DECLARE @myUserName nvarchar(128);
+	DECLARE @nowUTC datetime;
+	DECLARE @nowUTCStr nvarchar(128);
+	DECLARE @objectName nvarchar(128);
+	DECLARE @objName nvarchar(128);
+	DECLARE @pbiSchema nvarchar(128);
+	DECLARE @returnValue int;
+	DECLARE @schName nvarchar(128);
+	DECLARE @stmt nvarchar(max);
+	DECLARE @version nvarchar(128);
+END;
+
+--
 -- Test if we are in a database with FHSM registered
 --
-IF (dbo.fhsmFNIsValidInstallation() = 0)
+BEGIN
+	SET @returnValue = 0;
+
+	IF OBJECT_ID('dbo.fhsmFNIsValidInstallation') IS NOT NULL
+	BEGIN
+		SET @returnValue = dbo.fhsmFNIsValidInstallation();
+	END;
+END;
+
+IF (@returnValue = 0)
 BEGIN
 	RAISERROR('Can not install as it appears the database is not correct installed', 0, 1) WITH NOWAIT;
 END
 ELSE BEGIN
 	--
-	-- Declare variables
+	-- Initialize variables
 	--
 	BEGIN
-		DECLARE @myUserName nvarchar(128);
-		DECLARE @nowUTC datetime;
-		DECLARE @nowUTCStr nvarchar(128);
-		DECLARE @objectName nvarchar(128);
-		DECLARE @objName nvarchar(128);
-		DECLARE @pbiSchema nvarchar(128);
-		DECLARE @schName nvarchar(128);
-		DECLARE @stmt nvarchar(max);
-		DECLARE @version nvarchar(128);
-
 		SET @myUserName = SUSER_NAME();
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '1.0';
+		SET @version = '1.1';
 	END;
 
 	--
@@ -127,6 +142,7 @@ ELSE BEGIN
 					,b.LastUserLookup
 					,b.DeltaUserUpdates AS UserUpdates
 					,b.LastUserUpdate
+					,b.Timestamp
 					,b.Date
 					,b.TimeKey
 					,b.DatabaseKey
@@ -134,27 +150,34 @@ ELSE BEGIN
 					,b.ObjectKey
 					,b.IndexKey
 				FROM (
+			';
+			SET @stmt += '
 					SELECT
 						CASE
-							WHEN (a.PreviousUserSeeks IS NULL) OR (a.PreviousUserSeeks > a.UserSeeks) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN NULL
-							ELSE a.UserSeeks - a.PreviousUserSeeks
+							WHEN (a.PreviousUserSeeks IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL									-- Ignore 1. data set - Yes we loose one data set but better than having visuals showing very high data
+							WHEN (a.PreviousUserSeeks > a.UserSeeks) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.UserSeeks	-- Either has the counters had an overflow or the server har been restarted
+							ELSE a.UserSeeks - a.PreviousUserSeeks																						-- Difference
 						END AS DeltaUserSeeks
 						,a.LastUserSeek
 						,CASE
-							WHEN (a.PreviousUserScans IS NULL) OR (a.PreviousUserScans > a.UserScans) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN NULL
+							WHEN (a.PreviousUserScans IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+							WHEN (a.PreviousUserScans > a.UserScans) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.UserScans
 							ELSE a.UserScans - a.PreviousUserScans
 						END AS DeltaUserScans
 						,a.LastUserScan
 						,CASE
-							WHEN (a.PreviousUserLookups IS NULL) OR (a.PreviousUserLookups > a.UserLookups) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN NULL
+							WHEN (a.PreviousUserLookups IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+							WHEN (a.PreviousUserLookups > a.UserLookups) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.UserLookups
 							ELSE a.UserLookups - a.PreviousUserLookups
 						END AS DeltaUserLookups
 						,a.LastUserLookup
 						,CASE
-							WHEN (a.PreviousUserUpdates IS NULL) OR (a.PreviousUserUpdates > a.UserUpdates) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN NULL
+							WHEN (a.PreviousUserUpdates IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+							WHEN (a.PreviousUserUpdates > a.UserUpdates) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.UserUpdates
 							ELSE a.UserUpdates - a.PreviousUserUpdates
 						END AS DeltaUserUpdates
 						,a.LastUserUpdate
+						,a.Timestamp
 						,a.Date
 						,a.TimeKey
 						,a.DatabaseKey
@@ -162,6 +185,8 @@ ELSE BEGIN
 						,a.ObjectKey
 						,a.IndexKey
 					FROM (
+			';
+			SET @stmt += '
 						SELECT
 							iu.UserSeeks
 							,LAG(iu.UserSeeks) OVER(PARTITION BY iu.DatabaseName, iu.SchemaName, iu.ObjectName, iu.IndexName ORDER BY iu.TimestampUTC) AS PreviousUserSeeks
@@ -176,13 +201,14 @@ ELSE BEGIN
 							,LAG(iu.UserUpdates) OVER(PARTITION BY iu.DatabaseName, iu.SchemaName, iu.ObjectName, iu.IndexName ORDER BY iu.TimestampUTC) AS PreviousUserUpdates
 							,iu.LastUserUpdate
 							,iu.LastSQLServiceRestart
-							,LAG(iu.LastSQLServiceRestart) OVER(ORDER BY iu.TimestampUTC) AS PreviousLastSQLServiceRestart
+							,LAG(iu.LastSQLServiceRestart) OVER(PARTITION BY iu.DatabaseName, iu.SchemaName, iu.ObjectName, iu.IndexName ORDER BY iu.TimestampUTC) AS PreviousLastSQLServiceRestart
+							,iu.Timestamp
 							,CAST(iu.Timestamp AS date) AS Date
 							,(DATEPART(HOUR, iu.Timestamp) * 60 * 60) + (DATEPART(MINUTE, iu.Timestamp) * 60) + (DATEPART(SECOND, iu.Timestamp)) AS TimeKey
-							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iu.DatabaseName, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
-							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iu.DatabaseName, iu.SchemaName, DEFAULT, DEFAULT) AS k) AS SchemaKey
-							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iu.DatabaseName, iu.SchemaName, iu.ObjectName, DEFAULT) AS k) AS ObjectKey
-							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iu.DatabaseName, iu.SchemaName, iu.ObjectName, COALESCE(iu.IndexName, ''N.A.'')) AS k) AS IndexKey
+							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iu.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
+							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iu.DatabaseName, iu.SchemaName, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS SchemaKey
+							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iu.DatabaseName, iu.SchemaName, iu.ObjectName, DEFAULT, DEFAULT, DEFAULT) AS k) AS ObjectKey
+							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iu.DatabaseName, iu.SchemaName, iu.ObjectName, COALESCE(iu.IndexName, ''N.A.''), DEFAULT, DEFAULT) AS k) AS IndexKey
 						FROM dbo.fhsmIndexUsage AS iu
 					) AS a
 				) AS b
@@ -482,7 +508,12 @@ ELSE BEGIN
 	--
 	BEGIN
 		WITH
-		dimensions(DimensionName, DimensionKey, SrcTable, SrcAlias, SrcWhere, SrcDateColumn, SrcColumn1, SrcColumn2, SrcColumn3, SrcColumn4, OutputColumn1, OutputColumn2, OutputColumn3, OutputColumn4) AS(
+		dimensions(
+			DimensionName, DimensionKey
+			,SrcTable, SrcAlias, SrcWhere, SrcDateColumn
+			,SrcColumn1, SrcColumn2, SrcColumn3, SrcColumn4
+			,OutputColumn1, OutputColumn2, OutputColumn3, OutputColumn4
+		) AS (
 			SELECT
 				'Database' AS DimensionName
 				,'DatabaseKey' AS DimensionKey
@@ -547,8 +578,18 @@ ELSE BEGIN
 				,tgt.OutputColumn3 = src.OutputColumn3
 				,tgt.OutputColumn4 = src.OutputColumn4
 		WHEN NOT MATCHED BY TARGET
-			THEN INSERT(DimensionName, DimensionKey, SrcTable, SrcAlias, SrcWhere, SrcDateColumn, SrcColumn1, SrcColumn2, SrcColumn3, SrcColumn4, OutputColumn1, OutputColumn2, OutputColumn3, OutputColumn4)
-			VALUES(src.DimensionName, src.DimensionKey, src.SrcTable, src.SrcAlias, src.SrcWhere, src.SrcDateColumn, src.SrcColumn1, src.SrcColumn2, src.SrcColumn3, src.SrcColumn4, src.OutputColumn1, src.OutputColumn2, src.OutputColumn3, src.OutputColumn4);
+			THEN INSERT(
+				DimensionName, DimensionKey
+				,SrcTable, SrcAlias, SrcWhere, SrcDateColumn
+				,SrcColumn1, SrcColumn2, SrcColumn3, SrcColumn4
+				,OutputColumn1, OutputColumn2, OutputColumn3, OutputColumn4
+			)
+			VALUES(
+				src.DimensionName, src.DimensionKey
+				,src.SrcTable, src.SrcAlias, src.SrcWhere, src.SrcDateColumn
+				,src.SrcColumn1, src.SrcColumn2, src.SrcColumn3, src.SrcColumn4
+				,src.OutputColumn1, src.OutputColumn2, src.OutputColumn3, src.OutputColumn4
+			);
 	END;
 
 	--

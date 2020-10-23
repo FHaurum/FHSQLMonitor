@@ -1,32 +1,47 @@
 SET NOCOUNT ON;
 
 --
+-- Declare variables
+--
+BEGIN
+	DECLARE @myUserName nvarchar(128);
+	DECLARE @nowUTC datetime;
+	DECLARE @nowUTCStr nvarchar(128);
+	DECLARE @objectName nvarchar(128);
+	DECLARE @objName nvarchar(128);
+	DECLARE @pbiSchema nvarchar(128);
+	DECLARE @returnValue int;
+	DECLARE @schName nvarchar(128);
+	DECLARE @stmt nvarchar(max);
+	DECLARE @version nvarchar(128);
+END;
+
+--
 -- Test if we are in a database with FHSM registered
 --
-IF (dbo.fhsmFNIsValidInstallation() = 0)
+BEGIN
+	SET @returnValue = 0;
+
+	IF OBJECT_ID('dbo.fhsmFNIsValidInstallation') IS NOT NULL
+	BEGIN
+		SET @returnValue = dbo.fhsmFNIsValidInstallation();
+	END;
+END;
+
+IF (@returnValue = 0)
 BEGIN
 	RAISERROR('Can not install as it appears the database is not correct installed', 0, 1) WITH NOWAIT;
 END
 ELSE BEGIN
 	--
-	-- Declare variables
+	-- Initialize variables
 	--
 	BEGIN
-		DECLARE @myUserName nvarchar(128);
-		DECLARE @nowUTC datetime;
-		DECLARE @nowUTCStr nvarchar(128);
-		DECLARE @objectName nvarchar(128);
-		DECLARE @objName nvarchar(128);
-		DECLARE @pbiSchema nvarchar(128);
-		DECLARE @schName nvarchar(128);
-		DECLARE @stmt nvarchar(max);
-		DECLARE @version nvarchar(128);
-
 		SET @myUserName = SUSER_NAME();
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '1.0';
+		SET @version = '1.1';
 	END;
 
 	--
@@ -112,72 +127,125 @@ ELSE BEGIN
 				ALTER VIEW  ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Missing indexes') + '
 				AS
 				SELECT
-					a.EqualityColumns
-					,a.InequalityColumns
-					,a.IncludedColumns
-					,a.UniqueCompiles
-					,a.UserSeeks
-					,a.UserScans
-					,a.LastUserSeek
-					,a.LastUserScan
-					,a.AvgTotalUserCost
-					,a.AvgUserImpact
-					,a.SystemSeeks
-					,a.SystemScans
-					,a.LastSystemSeek
-					,a.LastSystemScan
-					,a.AvgTotalSystemCost
-					,a.AvgSystemImpact
-					,a.Date
-					,a.TimeKey
-					,a.DatabaseKey
-					,a.SchemaKey
-					,a.ObjectKey
+					b.EqualityColumns
+					,b.InequalityColumns
+					,b.IncludedColumns
+					,b.DeltaUniqueCompiles AS UniqueCompiles
+					,b.DeltaUserSeeks AS UserSeeks
+					,b.LastUserSeek
+					,b.DeltaUserScans AS UserScans
+					,b.LastUserScan
+					,CASE WHEN (b.DeltaUserSeeks <> 0) OR (b.DeltaUserScans <> 0) THEN b.AvgTotalUserCost ELSE 0 END AS AvgTotalUserCost
+					,CASE WHEN (b.DeltaUserSeeks <> 0) OR (b.DeltaUserScans <> 0) THEN b.AvgUserImpact ELSE 0 END AS AvgUserImpact
+					,b.DeltaSystemSeeks AS SystemSeeks
+					,b.LastSystemSeek
+					,b.DeltaSystemScans AS SystemScans
+					,b.LastSystemScan
+					,CASE WHEN (b.DeltaSystemSeeks <> 0) OR (b.DeltaSystemScans <> 0) THEN b.AvgTotalSystemCost ELSE 0 END AS AvgTotalSystemCost
+					,CASE WHEN (b.DeltaSystemSeeks <> 0) OR (b.DeltaSystemScans <> 0) THEN b.AvgSystemImpact ELSE 0 END AS AvgSystemImpact
+					,b.LastUserSeekDate
+					,b.LastUserSeekTimeKey
+					,b.Date
+					,b.TimeKey
+					,b.DatabaseKey
+					,b.SchemaKey
+					,b.ObjectKey
 				FROM (
+			';
+			SET @stmt += '
 					SELECT
-						mi.EqualityColumns
-						,mi.InequalityColumns
-						,mi.IncludedColumns
-						,mi.UniqueCompiles
-						,mi.UserSeeks
-						,mi.UserScans
-						,mi.LastUserSeek
-						,mi.LastUserScan
-						,mi.AvgTotalUserCost
-						,mi.AvgUserImpact
-						,mi.SystemSeeks
-						,mi.SystemScans
-						,mi.LastSystemSeek
-						,mi.LastSystemScan
-						,mi.AvgTotalSystemCost
-						,mi.AvgSystemImpact
-						,CAST(mi.Timestamp AS date) AS Date
-						,(DATEPART(HOUR, mi.Timestamp) * 60 * 60) + (DATEPART(MINUTE, mi.Timestamp) * 60) + (DATEPART(SECOND, mi.Timestamp)) AS TimeKey
-						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(mi.DatabaseName, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
-						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(mi.DatabaseName, mi.SchemaName, DEFAULT, DEFAULT) AS k) AS SchemaKey
-						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(mi.DatabaseName, mi.SchemaName, mi.ObjectName, DEFAULT) AS k) AS ObjectKey
-						,rankedUTC.Rnk
-						,LEAD(rankedUTC.Rnk) OVER(PARTITION BY mi.DatabaseName, mi.SchemaName, mi.ObjectName, mi.EqualityColumns, mi.InequalityColumns, mi.IncludedColumns ORDER BY mi.TimestampUTC) AS NextRnk
-					FROM dbo.fhsmMissingIndexes AS mi
-					CROSS APPLY (
+						a.EqualityColumns
+						,a.InequalityColumns
+						,a.IncludedColumns
+						,CASE
+							WHEN (a.PreviousUniqueCompiles IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL												-- Ignore 1. data set - Yes we loose one data set but better than having visuals showing very high data
+							WHEN (a.PreviousUniqueCompiles > a.UniqueCompiles) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.UniqueCompiles	-- Either has the counters had an overflow or the server har been restarted
+							ELSE a.UniqueCompiles - a.PreviousUniqueCompiles																							-- Difference
+						END AS DeltaUniqueCompiles
+						,CASE
+							WHEN (a.PreviousUserSeeks IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+							WHEN (a.PreviousUserSeeks > a.UserSeeks) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.UserSeeks
+							ELSE a.UserSeeks - a.PreviousUserSeeks
+						END AS DeltaUserSeeks
+						,a.LastUserSeek
+						,CASE
+							WHEN (a.PreviousUserScans IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+							WHEN (a.PreviousUserScans > a.UserScans) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.UserScans
+							ELSE a.UserScans - a.PreviousUserScans
+						END AS DeltaUserScans
+						,a.LastUserScan
+						,a.AvgTotalUserCost
+						,a.AvgUserImpact
+						,CASE
+							WHEN (a.PreviousSystemSeeks IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+							WHEN (a.PreviousSystemSeeks > a.SystemSeeks) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.SystemSeeks
+							ELSE a.SystemSeeks - a.PreviousSystemSeeks
+						END AS DeltaSystemSeeks
+						,a.LastSystemSeek
+						,CASE
+							WHEN (a.PreviousSystemScans IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+							WHEN (a.PreviousSystemScans > a.SystemScans) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.SystemScans
+							ELSE a.SystemScans - a.PreviousSystemScans
+						END AS DeltaSystemScans
+						,a.LastSystemScan
+						,a.AvgTotalSystemCost
+						,a.AvgSystemImpact
+						,a.LastUserSeekDate
+						,a.LastUserSeekTimeKey
+						,a.Date
+						,a.TimeKey
+						,a.DatabaseKey
+						,a.SchemaKey
+						,a.ObjectKey
+					FROM (
+			';
+			SET @stmt += '
 						SELECT
-							distUTC.TimestampUTC
-							,ROW_NUMBER() OVER(ORDER BY distUTC.TimestampUTC) AS Rnk
-						FROM (
-							SELECT DISTINCT mi2.TimestampUTC
-							FROM dbo.fhsmMissingIndexes AS mi2
-						) distUTC
-					) AS rankedUTC
-					WHERE (
-							(mi.DatabaseName <> ''<HeartBeat>'')
-							OR (mi.SchemaName <> ''<HeartBeat>'')
-							OR (mi.ObjectName <> ''<HeartBeat>'')
-						)
-						AND (mi.TimestampUTC = rankedUTC.TimestampUTC)
-				) AS a
+							mi.EqualityColumns
+							,mi.InequalityColumns
+							,mi.IncludedColumns
+							,mi.UniqueCompiles
+							,LAG(mi.UniqueCompiles) OVER(PARTITION BY mi.DatabaseName, mi.SchemaName, mi.ObjectName, mi.EqualityColumns, mi.InequalityColumns, mi.IncludedColumns ORDER BY mi.TimestampUTC) AS PreviousUniqueCompiles
+							,mi.UserSeeks
+							,LAG(mi.UserSeeks) OVER(PARTITION BY mi.DatabaseName, mi.SchemaName, mi.ObjectName, mi.EqualityColumns, mi.InequalityColumns, mi.IncludedColumns ORDER BY mi.TimestampUTC) AS PreviousUserSeeks
+							,mi.LastUserSeek
+							,mi.UserScans
+							,LAG(mi.UserScans) OVER(PARTITION BY mi.DatabaseName, mi.SchemaName, mi.ObjectName, mi.EqualityColumns, mi.InequalityColumns, mi.IncludedColumns ORDER BY mi.TimestampUTC) AS PreviousUserScans
+							,mi.LastUserScan
+							,mi.AvgTotalUserCost
+							,mi.AvgUserImpact
+							,mi.SystemSeeks
+							,LAG(mi.SystemSeeks) OVER(PARTITION BY mi.DatabaseName, mi.SchemaName, mi.ObjectName, mi.EqualityColumns, mi.InequalityColumns, mi.IncludedColumns ORDER BY mi.TimestampUTC) AS PreviousSystemSeeks
+							,mi.LastSystemSeek
+							,mi.SystemScans
+							,LAG(mi.SystemScans) OVER(PARTITION BY mi.DatabaseName, mi.SchemaName, mi.ObjectName, mi.EqualityColumns, mi.InequalityColumns, mi.IncludedColumns ORDER BY mi.TimestampUTC) AS PreviousSystemScans
+							,mi.LastSystemScan
+							,mi.AvgTotalSystemCost
+							,mi.AvgSystemImpact
+							,mi.LastSQLServiceRestart
+							,LAG(mi.LastSQLServiceRestart) OVER(PARTITION BY mi.DatabaseName, mi.SchemaName, mi.ObjectName, mi.EqualityColumns, mi.InequalityColumns, mi.IncludedColumns ORDER BY mi.TimestampUTC) AS PreviousLastSQLServiceRestart
+							,CAST(mi.LastUserSeek AS date) AS LastUserSeekDate
+							,(DATEPART(HOUR, mi.LastUserSeek) * 60 * 60) + (DATEPART(MINUTE, mi.LastUserSeek) * 60) + (DATEPART(SECOND, mi.LastUserSeek)) AS LastUserSeekTimeKey
+							,CAST(mi.Timestamp AS date) AS Date
+							,(DATEPART(HOUR, mi.Timestamp) * 60 * 60) + (DATEPART(MINUTE, mi.Timestamp) * 60) + (DATEPART(SECOND, mi.Timestamp)) AS TimeKey
+							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(mi.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
+							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(mi.DatabaseName, mi.SchemaName, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS SchemaKey
+							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(mi.DatabaseName, mi.SchemaName, mi.ObjectName, DEFAULT, DEFAULT, DEFAULT) AS k) AS ObjectKey
+						FROM dbo.fhsmMissingIndexes AS mi
+						WHERE (
+								(mi.DatabaseName <> ''<HeartBeat>'')
+								OR (mi.SchemaName <> ''<HeartBeat>'')
+								OR (mi.ObjectName <> ''<HeartBeat>'')
+							)
+					) AS a
+				) AS b
 				WHERE
-					((a.Rnk + 1) <> a.NextRnk)
-					OR (a.NextRnk IS NULL);
+					(b.DeltaUniqueCompiles <> 0)
+					OR (b.DeltaUserSeeks <> 0)
+					OR (b.DeltaUserScans <> 0)
+					OR (b.DeltaSystemSeeks <> 0)
+					OR (b.DeltaSystemScans <> 0)
+			
 			';
 			EXEC(@stmt);
 		END;
@@ -385,7 +453,12 @@ ELSE BEGIN
 	--
 	BEGIN
 		WITH
-		dimensions(DimensionName, DimensionKey, SrcTable, SrcAlias, SrcWhere, SrcDateColumn, SrcColumn1, SrcColumn2, SrcColumn3, SrcColumn4, OutputColumn1, OutputColumn2, OutputColumn3, OutputColumn4) AS(
+		dimensions(
+			DimensionName, DimensionKey
+			,SrcTable, SrcAlias, SrcWhere, SrcDateColumn
+			,SrcColumn1, SrcColumn2, SrcColumn3
+			,OutputColumn1, OutputColumn2, OutputColumn3
+		) AS (
 			SELECT
 				'Database' AS DimensionName
 				,'DatabaseKey' AS DimensionKey
@@ -393,8 +466,8 @@ ELSE BEGIN
 				,'src' AS SrcAlias
 				,'WHERE ((src.DatabaseName <> ''<HeartBeat>'') OR (src.SchemaName <> ''<HeartBeat>'') OR (src.ObjectName <> ''<HeartBeat>''))' AS SrcWhere
 				,'src.[Timestamp]' AS SrcDateColumn
-				,'src.[DatabaseName]', NULL, NULL, NULL
-				,'Database', NULL, NULL, NULL
+				,'src.[DatabaseName]', NULL, NULL
+				,'Database', NULL, NULL
 
 			UNION ALL
 
@@ -405,8 +478,8 @@ ELSE BEGIN
 				,'src' AS SrcAlias
 				,'WHERE ((src.DatabaseName <> ''<HeartBeat>'') OR (src.SchemaName <> ''<HeartBeat>'') OR (src.ObjectName <> ''<HeartBeat>''))' AS SrcWhere
 				,'src.[Timestamp]' AS SrcDateColumn
-				,'src.[DatabaseName]', 'src.[SchemaName]', NULL, NULL
-				,'Database', 'Schema', NULL, NULL
+				,'src.[DatabaseName]', 'src.[SchemaName]', NULL
+				,'Database', 'Schema', NULL
 
 			UNION ALL
 
@@ -417,8 +490,8 @@ ELSE BEGIN
 				,'src' AS SrcAlias
 				,'WHERE ((src.DatabaseName <> ''<HeartBeat>'') OR (src.SchemaName <> ''<HeartBeat>'') OR (src.ObjectName <> ''<HeartBeat>''))' AS SrcWhere
 				,'src.[Timestamp]' AS SrcDateColumn
-				,'src.[DatabaseName]', 'src.[SchemaName]', 'src.[ObjectName]', NULL
-				,'Database', 'Schema', 'Object', NULL
+				,'src.[DatabaseName]', 'src.[SchemaName]', 'src.[ObjectName]'
+				,'Database', 'Schema', 'Object'
 		)
 		MERGE dbo.fhsmDimensions AS tgt
 		USING dimensions AS src ON (src.DimensionName = tgt.DimensionName) AND (src.SrcTable = tgt.SrcTable)
@@ -432,14 +505,22 @@ ELSE BEGIN
 				,tgt.SrcColumn1 = src.SrcColumn1
 				,tgt.SrcColumn2 = src.SrcColumn2
 				,tgt.SrcColumn3 = src.SrcColumn3
-				,tgt.SrcColumn4 = src.SrcColumn4
 				,tgt.OutputColumn1 = src.OutputColumn1
 				,tgt.OutputColumn2 = src.OutputColumn2
 				,tgt.OutputColumn3 = src.OutputColumn3
-				,tgt.OutputColumn4 = src.OutputColumn4
 		WHEN NOT MATCHED BY TARGET
-			THEN INSERT(DimensionName, DimensionKey, SrcTable, SrcAlias, SrcWhere, SrcDateColumn, SrcColumn1, SrcColumn2, SrcColumn3, SrcColumn4, OutputColumn1, OutputColumn2, OutputColumn3, OutputColumn4)
-			VALUES(src.DimensionName, src.DimensionKey, src.SrcTable, src.SrcAlias, src.SrcWhere, src.SrcDateColumn, src.SrcColumn1, src.SrcColumn2, src.SrcColumn3, src.SrcColumn4, src.OutputColumn1, src.OutputColumn2, src.OutputColumn3, src.OutputColumn4);
+			THEN INSERT(
+				DimensionName, DimensionKey
+				,SrcTable, SrcAlias, SrcWhere, SrcDateColumn
+				,SrcColumn1, SrcColumn2, SrcColumn3
+				,OutputColumn1, OutputColumn2, OutputColumn3
+			)
+			VALUES(
+				src.DimensionName, src.DimensionKey
+				,src.SrcTable, src.SrcAlias, src.SrcWhere, src.SrcDateColumn
+				,src.SrcColumn1, src.SrcColumn2, src.SrcColumn3
+				,src.OutputColumn1, src.OutputColumn2, src.OutputColumn3
+			);
 	END;
 
 	--

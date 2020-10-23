@@ -24,7 +24,7 @@ DECLARE @version nvarchar(128);
 SET @myUserName = SUSER_NAME();
 SET @nowUTC = SYSUTCDATETIME();
 SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
-SET @version = '1.0';
+SET @version = '1.1';
 
 --
 -- Create database if it not already exists
@@ -45,7 +45,6 @@ BEGIN
 	';
 	EXEC(@stmt);
 END;
-
 
 --
 -- Create or alter stored procedure dbo.fhsmSPExtendedProperties
@@ -159,196 +158,49 @@ END;
 BEGIN
 	SET @objectName = 'dbo.fhsmSPExtendedProperties';
 
-	--
-	-- Add or update version
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
+	SET @stmt = '
+		USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
 			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
+		DECLARE @objName nvarchar(128);
+		DECLARE @schName nvarchar(128);
 
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
+		SET @objName = PARSENAME(@objectName, 1);
+		SET @schName = PARSENAME(@objectName, 2);
 
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@objectName nvarchar(128), @version sql_variant'
-			,@objectName = @objectName
-			,@version = @version;
-	END;
-
-	--
-	-- Add created timestamp
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@nowUTCStr sql_variant, @objectName nvarchar(128)'
-			,@nowUTCStr = @nowUTCStr
-			,@objectName = @objectName;
-	END;
-
-	--
-	-- Add created by
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@myUserName sql_variant, @objectName nvarchar(128)'
-			,@myUserName = @myUserName
-			,@objectName = @objectName;
-	END;
-
-	--
-	-- Add or update modified timestamp
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@nowUTCStr sql_variant, @objectName nvarchar(128)'
-			,@nowUTCStr = @nowUTCStr
-			,@objectName = @objectName;
-	END;
-
-	--
-	-- Add or update modified by
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@myUserName sql_variant, @objectName nvarchar(128)'
-			,@myUserName = @myUserName
-			,@objectName = @objectName;
-	END;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+	';
+	EXEC sp_executesql
+		@stmt
+		,N'@objectName nvarchar(128), @version sql_variant, @nowUTCStr sql_variant, @myUserName sql_variant'
+		,@objectName = @objectName
+		,@version = @version
+		,@nowUTCStr = @nowUTCStr
+		,@myUserName = @myUserName;
 END;
 
 --
 -- Register extended properties on the database
 --
 BEGIN
-	--
-	-- Add or update version
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
+	SET @stmt = '
+		USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
 
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Database'', @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@version sql_variant'
-			,@version = @version;
-	END;
-
-	--
-	-- Add created timestamp
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Database'', @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@nowUTCStr sql_variant'
-			,@nowUTCStr = @nowUTCStr;
-	END;
-
-	--
-	-- Add created by
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Database'', @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@myUserName sql_variant'
-			,@myUserName = @myUserName;
-	END;
-
-	--
-	-- Add or update modified timestamp
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Database'', @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@nowUTCStr sql_variant'
-			,@nowUTCStr = @nowUTCStr;
-	END;
-
-	--
-	-- Add or update modified by
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Database'', @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@myUserName sql_variant'
-			,@myUserName = @myUserName;
-	END;
-
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Database'', @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Database'', @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Database'', @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Database'', @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Database'', @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+	';
+	EXEC sp_executesql
+		@stmt
+		,N'@version sql_variant, @nowUTCStr sql_variant, @myUserName sql_variant'
+		,@version = @version
+		,@nowUTCStr = @nowUTCStr
+		,@myUserName = @myUserName;
 END;
 
 --
@@ -372,85 +224,22 @@ END;
 -- Register extended properties on the 'PBI' schema
 --
 BEGIN
-	--
-	-- Add or update version
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
+	SET @stmt = '
+		USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
 
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Schema'', @level0name = ''' + @pbiSchema + ''', @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@pbiSchema nvarchar(128), @version sql_variant'
-			,@pbiSchema = @pbiSchema
-			,@version = @version;
-	END;
-
-	--
-	-- Add created timestamp
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Schema'', @level0name = ''' + @pbiSchema + ''', @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@nowUTCStr sql_variant, @pbiSchema nvarchar(128)'
-			,@nowUTCStr = @nowUTCStr
-			,@pbiSchema = @pbiSchema;
-	END;
-
-	--
-	-- Add created by
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Schema'', @level0name = ''' + @pbiSchema + ''', @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@myUserName sql_variant, @pbiSchema nvarchar(128)'
-			,@myUserName = @myUserName
-			,@pbiSchema = @pbiSchema;
-	END;
-
-	--
-	-- Add or update modified timestamp
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Schema'', @level0name = ''' + @pbiSchema + ''', @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@nowUTCStr sql_variant, @pbiSchema nvarchar(128)'
-			,@nowUTCStr = @nowUTCStr
-			,@pbiSchema = @pbiSchema;
-	END;
-
-	--
-	-- Add or update modified by
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Schema'', @level0name = ''' + @pbiSchema + ''', @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@myUserName sql_variant, @pbiSchema nvarchar(128)'
-			,@myUserName = @myUserName
-			,@pbiSchema = @pbiSchema;
-	END;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Schema'', @level0name = @pbiSchema, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Schema'', @level0name = @pbiSchema, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Schema'', @level0name = @pbiSchema, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Schema'', @level0name = @pbiSchema, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Schema'', @level0name = @pbiSchema, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+	';
+	EXEC sp_executesql
+		@stmt
+		,N'@pbiSchema nvarchar(128), @version sql_variant, @nowUTCStr sql_variant, @myUserName sql_variant'
+		,@pbiSchema = @pbiSchema
+		,@version = @version
+		,@nowUTCStr = @nowUTCStr
+		,@myUserName = @myUserName;
 END;
 
 --
@@ -483,115 +272,28 @@ END;
 BEGIN
 	SET @objectName = 'dbo.fhsmConfigurations';
 
-	--
-	-- Add or update version
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
+	SET @stmt = '
+		USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
 			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
+		DECLARE @objName nvarchar(128);
+		DECLARE @schName nvarchar(128);
 
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
+		SET @objName = PARSENAME(@objectName, 1);
+		SET @schName = PARSENAME(@objectName, 2);
 
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@objectName nvarchar(128), @version sql_variant'
-			,@objectName = @objectName
-			,@version = @version;
-	END;
-
-	--
-	-- Add created timestamp
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@nowUTCStr sql_variant, @objectName nvarchar(128)'
-			,@nowUTCStr = @nowUTCStr
-			,@objectName = @objectName;
-	END;
-
-	--
-	-- Add created by
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@myUserName sql_variant, @objectName nvarchar(128)'
-			,@myUserName = @myUserName
-			,@objectName = @objectName;
-	END;
-
-	--
-	-- Add or update modified timestamp
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@nowUTCStr sql_variant, @objectName nvarchar(128)'
-			,@nowUTCStr = @nowUTCStr
-			,@objectName = @objectName;
-	END;
-
-	--
-	-- Add or update modified by
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@myUserName sql_variant, @objectName nvarchar(128)'
-			,@myUserName = @myUserName
-			,@objectName = @objectName;
-	END;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+	';
+	EXEC sp_executesql
+		@stmt
+		,N'@objectName nvarchar(128), @version sql_variant, @nowUTCStr sql_variant, @myUserName sql_variant'
+		,@objectName = @objectName
+		,@version = @version
+		,@nowUTCStr = @nowUTCStr
+		,@myUserName = @myUserName;
 END;
 
 --
@@ -642,14 +344,17 @@ BEGIN
 				,SrcColumn2 nvarchar(128) NULL
 				,SrcColumn3 nvarchar(128) NULL
 				,SrcColumn4 nvarchar(128) NULL
+				,SrcColumn5 nvarchar(128) NULL
+				,SrcColumn6 nvarchar(128) NULL
 				,OutputColumn1 nvarchar(128) NOT NULL
 				,OutputColumn2 nvarchar(128) NULL
 				,OutputColumn3 nvarchar(128) NULL
 				,OutputColumn4 nvarchar(128) NULL
+				,OutputColumn5 nvarchar(128) NULL
+				,OutputColumn6 nvarchar(128) NULL
 				,CONSTRAINT PK_fhsmDimensions PRIMARY KEY(Id)
 				,CONSTRAINT UQ_fhsmDimensions_SrcTable_DimensionName UNIQUE(SrcTable, DimensionName)
 			);
-			CREATE NONCLUSTERED INDEX NC_fhsmDimensions_SrcTable_DimensionName ON dbo.fhsmDimensions(SrcTable, DimensionName);
 		END;
 	';
 	EXEC(@stmt);
@@ -661,115 +366,28 @@ END;
 BEGIN
 	SET @objectName = 'dbo.fhsmDimensions';
 
-	--
-	-- Add or update version
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
+	SET @stmt = '
+		USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
 			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
+		DECLARE @objName nvarchar(128);
+		DECLARE @schName nvarchar(128);
 
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
+		SET @objName = PARSENAME(@objectName, 1);
+		SET @schName = PARSENAME(@objectName, 2);
 
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@objectName nvarchar(128), @version sql_variant'
-			,@objectName = @objectName
-			,@version = @version;
-	END;
-
-	--
-	-- Add created timestamp
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@nowUTCStr sql_variant, @objectName nvarchar(128)'
-			,@nowUTCStr = @nowUTCStr
-			,@objectName = @objectName;
-	END;
-
-	--
-	-- Add created by
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@myUserName sql_variant, @objectName nvarchar(128)'
-			,@myUserName = @myUserName
-			,@objectName = @objectName;
-	END;
-
-	--
-	-- Add or update modified timestamp
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@nowUTCStr sql_variant, @objectName nvarchar(128)'
-			,@nowUTCStr = @nowUTCStr
-			,@objectName = @objectName;
-	END;
-
-	--
-	-- Add or update modified by
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@myUserName sql_variant, @objectName nvarchar(128)'
-			,@myUserName = @myUserName
-			,@objectName = @objectName;
-	END;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+	';
+	EXEC sp_executesql
+		@stmt
+		,N'@objectName nvarchar(128), @version sql_variant, @nowUTCStr sql_variant, @myUserName sql_variant'
+		,@objectName = @objectName
+		,@version = @version
+		,@nowUTCStr = @nowUTCStr
+		,@myUserName = @myUserName;
 END;
 
 --
@@ -807,115 +425,28 @@ END;
 BEGIN
 	SET @objectName = 'dbo.fhsmRetentions';
 
-	--
-	-- Add or update version
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
+	SET @stmt = '
+		USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
 			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
+		DECLARE @objName nvarchar(128);
+		DECLARE @schName nvarchar(128);
 
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
+		SET @objName = PARSENAME(@objectName, 1);
+		SET @schName = PARSENAME(@objectName, 2);
 
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@objectName nvarchar(128), @version sql_variant'
-			,@objectName = @objectName
-			,@version = @version;
-	END;
-
-	--
-	-- Add created timestamp
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@nowUTCStr sql_variant, @objectName nvarchar(128)'
-			,@nowUTCStr = @nowUTCStr
-			,@objectName = @objectName;
-	END;
-
-	--
-	-- Add created by
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@myUserName sql_variant, @objectName nvarchar(128)'
-			,@myUserName = @myUserName
-			,@objectName = @objectName;
-	END;
-
-	--
-	-- Add or update modified timestamp
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@nowUTCStr sql_variant, @objectName nvarchar(128)'
-			,@nowUTCStr = @nowUTCStr
-			,@objectName = @objectName;
-	END;
-
-	--
-	-- Add or update modified by
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@myUserName sql_variant, @objectName nvarchar(128)'
-			,@myUserName = @myUserName
-			,@objectName = @objectName;
-	END;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+	';
+	EXEC sp_executesql
+		@stmt
+		,N'@objectName nvarchar(128), @version sql_variant, @nowUTCStr sql_variant, @myUserName sql_variant'
+		,@objectName = @objectName
+		,@version = @version
+		,@nowUTCStr = @nowUTCStr
+		,@myUserName = @myUserName;
 END;
 
 --
@@ -954,115 +485,28 @@ END;
 BEGIN
 	SET @objectName = 'dbo.fhsmLog';
 
-	--
-	-- Add or update version
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
+	SET @stmt = '
+		USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
 			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
+		DECLARE @objName nvarchar(128);
+		DECLARE @schName nvarchar(128);
 
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
+		SET @objName = PARSENAME(@objectName, 1);
+		SET @schName = PARSENAME(@objectName, 2);
 
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@objectName nvarchar(128), @version sql_variant'
-			,@objectName = @objectName
-			,@version = @version;
-	END;
-
-	--
-	-- Add created timestamp
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@nowUTCStr sql_variant, @objectName nvarchar(128)'
-			,@nowUTCStr = @nowUTCStr
-			,@objectName = @objectName;
-	END;
-
-	--
-	-- Add created by
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@myUserName sql_variant, @objectName nvarchar(128)'
-			,@myUserName = @myUserName
-			,@objectName = @objectName;
-	END;
-
-	--
-	-- Add or update modified timestamp
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@nowUTCStr sql_variant, @objectName nvarchar(128)'
-			,@nowUTCStr = @nowUTCStr
-			,@objectName = @objectName;
-	END;
-
-	--
-	-- Add or update modified by
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@myUserName sql_variant, @objectName nvarchar(128)'
-			,@myUserName = @myUserName
-			,@objectName = @objectName;
-	END;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+	';
+	EXEC sp_executesql
+		@stmt
+		,N'@objectName nvarchar(128), @version sql_variant, @nowUTCStr sql_variant, @myUserName sql_variant'
+		,@objectName = @objectName
+		,@version = @version
+		,@nowUTCStr = @nowUTCStr
+		,@myUserName = @myUserName;
 END;
 
 --
@@ -1135,115 +579,28 @@ END;
 BEGIN
 	SET @objectName = 'dbo.fhsmSchedules';
 
-	--
-	-- Add or update version
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
+	SET @stmt = '
+		USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
 			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
+		DECLARE @objName nvarchar(128);
+		DECLARE @schName nvarchar(128);
 
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
+		SET @objName = PARSENAME(@objectName, 1);
+		SET @schName = PARSENAME(@objectName, 2);
 
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@objectName nvarchar(128), @version sql_variant'
-			,@objectName = @objectName
-			,@version = @version;
-	END;
-
-	--
-	-- Add created timestamp
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@nowUTCStr sql_variant, @objectName nvarchar(128)'
-			,@nowUTCStr = @nowUTCStr
-			,@objectName = @objectName;
-	END;
-
-	--
-	-- Add created by
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@myUserName sql_variant, @objectName nvarchar(128)'
-			,@myUserName = @myUserName
-			,@objectName = @objectName;
-	END;
-
-	--
-	-- Add or update modified timestamp
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@nowUTCStr sql_variant, @objectName nvarchar(128)'
-			,@nowUTCStr = @nowUTCStr
-			,@objectName = @objectName;
-	END;
-
-	--
-	-- Add or update modified by
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@myUserName sql_variant, @objectName nvarchar(128)'
-			,@myUserName = @myUserName
-			,@objectName = @objectName;
-	END;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+	';
+	EXEC sp_executesql
+		@stmt
+		,N'@objectName nvarchar(128), @version sql_variant, @nowUTCStr sql_variant, @myUserName sql_variant'
+		,@objectName = @objectName
+		,@version = @version
+		,@nowUTCStr = @nowUTCStr
+		,@myUserName = @myUserName;
 END;
 
 --
@@ -1274,10 +631,12 @@ BEGIN
 					,@p2 nchar(128) = NULL
 					,@p3 nchar(128) = NULL
 					,@p4 nchar(128) = NULL
+					,@p5 nchar(128) = NULL
+					,@p6 nchar(128) = NULL
 				)
 				RETURNS TABLE AS RETURN
 				(
-					SELECT CONVERT(bigint, HASHBYTES(''''SHA2_256'''', CONCAT(UPPER(@p1), UPPER(@p2), UPPER(@p3), UPPER(@p4))), 2) AS [Key]
+					SELECT CONVERT(bigint, HASHBYTES(''''SHA2_256'''', CONCAT(UPPER(@p1), UPPER(@p2), UPPER(@p3), UPPER(@p4), UPPER(@p5), UPPER(@p6))), 2) AS [Key]
 				);
 			'';
 			EXEC(@stmt);
@@ -1292,115 +651,28 @@ END;
 BEGIN
 	SET @objectName = 'dbo.fhsmFNGenerateKey';
 
-	--
-	-- Add or update version
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
+	SET @stmt = '
+		USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
 			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
+		DECLARE @objName nvarchar(128);
+		DECLARE @schName nvarchar(128);
 
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
+		SET @objName = PARSENAME(@objectName, 1);
+		SET @schName = PARSENAME(@objectName, 2);
 
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@objectName nvarchar(128), @version sql_variant'
-			,@objectName = @objectName
-			,@version = @version;
-	END;
-
-	--
-	-- Add created timestamp
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@nowUTCStr sql_variant, @objectName nvarchar(128)'
-			,@nowUTCStr = @nowUTCStr
-			,@objectName = @objectName;
-	END;
-
-	--
-	-- Add created by
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@myUserName sql_variant, @objectName nvarchar(128)'
-			,@myUserName = @myUserName
-			,@objectName = @objectName;
-	END;
-
-	--
-	-- Add or update modified timestamp
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@nowUTCStr sql_variant, @objectName nvarchar(128)'
-			,@nowUTCStr = @nowUTCStr
-			,@objectName = @objectName;
-	END;
-
-	--
-	-- Add or update modified by
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@myUserName sql_variant, @objectName nvarchar(128)'
-			,@myUserName = @myUserName
-			,@objectName = @objectName;
-	END;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+	';
+	EXEC sp_executesql
+		@stmt
+		,N'@objectName nvarchar(128), @version sql_variant, @nowUTCStr sql_variant, @myUserName sql_variant'
+		,@objectName = @objectName
+		,@version = @version
+		,@nowUTCStr = @nowUTCStr
+		,@myUserName = @myUserName;
 END;
 
 --
@@ -1455,115 +727,28 @@ END;
 BEGIN
 	SET @objectName = 'dbo.fhsmFNGetConfiguration';
 
-	--
-	-- Add or update version
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
+	SET @stmt = '
+		USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
 			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
+		DECLARE @objName nvarchar(128);
+		DECLARE @schName nvarchar(128);
 
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
+		SET @objName = PARSENAME(@objectName, 1);
+		SET @schName = PARSENAME(@objectName, 2);
 
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@objectName nvarchar(128), @version sql_variant'
-			,@objectName = @objectName
-			,@version = @version;
-	END;
-
-	--
-	-- Add created timestamp
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@nowUTCStr sql_variant, @objectName nvarchar(128)'
-			,@nowUTCStr = @nowUTCStr
-			,@objectName = @objectName;
-	END;
-
-	--
-	-- Add created by
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@myUserName sql_variant, @objectName nvarchar(128)'
-			,@myUserName = @myUserName
-			,@objectName = @objectName;
-	END;
-
-	--
-	-- Add or update modified timestamp
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@nowUTCStr sql_variant, @objectName nvarchar(128)'
-			,@nowUTCStr = @nowUTCStr
-			,@objectName = @objectName;
-	END;
-
-	--
-	-- Add or update modified by
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@myUserName sql_variant, @objectName nvarchar(128)'
-			,@myUserName = @myUserName
-			,@objectName = @objectName;
-	END;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+	';
+	EXEC sp_executesql
+		@stmt
+		,N'@objectName nvarchar(128), @version sql_variant, @nowUTCStr sql_variant, @myUserName sql_variant'
+		,@objectName = @objectName
+		,@version = @version
+		,@nowUTCStr = @nowUTCStr
+		,@myUserName = @myUserName;
 END;
 
 --
@@ -1619,115 +804,28 @@ END;
 BEGIN
 	SET @objectName = 'dbo.fhsmFNGetTaskParameter';
 
-	--
-	-- Add or update version
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
+	SET @stmt = '
+		USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
 			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
+		DECLARE @objName nvarchar(128);
+		DECLARE @schName nvarchar(128);
 
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
+		SET @objName = PARSENAME(@objectName, 1);
+		SET @schName = PARSENAME(@objectName, 2);
 
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@objectName nvarchar(128), @version sql_variant'
-			,@objectName = @objectName
-			,@version = @version;
-	END;
-
-	--
-	-- Add created timestamp
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@nowUTCStr sql_variant, @objectName nvarchar(128)'
-			,@nowUTCStr = @nowUTCStr
-			,@objectName = @objectName;
-	END;
-
-	--
-	-- Add created by
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@myUserName sql_variant, @objectName nvarchar(128)'
-			,@myUserName = @myUserName
-			,@objectName = @objectName;
-	END;
-
-	--
-	-- Add or update modified timestamp
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@nowUTCStr sql_variant, @objectName nvarchar(128)'
-			,@nowUTCStr = @nowUTCStr
-			,@objectName = @objectName;
-	END;
-
-	--
-	-- Add or update modified by
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@myUserName sql_variant, @objectName nvarchar(128)'
-			,@myUserName = @myUserName
-			,@objectName = @objectName;
-	END;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+	';
+	EXEC sp_executesql
+		@stmt
+		,N'@objectName nvarchar(128), @version sql_variant, @nowUTCStr sql_variant, @myUserName sql_variant'
+		,@objectName = @objectName
+		,@version = @version
+		,@nowUTCStr = @nowUTCStr
+		,@myUserName = @myUserName;
 END;
 
 --
@@ -1790,115 +888,28 @@ END;
 BEGIN
 	SET @objectName = 'dbo.fhsmFNIsValidInstallation';
 
-	--
-	-- Add or update version
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
+	SET @stmt = '
+		USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
 			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
+		DECLARE @objName nvarchar(128);
+		DECLARE @schName nvarchar(128);
 
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
+		SET @objName = PARSENAME(@objectName, 1);
+		SET @schName = PARSENAME(@objectName, 2);
 
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@objectName nvarchar(128), @version sql_variant'
-			,@objectName = @objectName
-			,@version = @version;
-	END;
-
-	--
-	-- Add created timestamp
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@nowUTCStr sql_variant, @objectName nvarchar(128)'
-			,@nowUTCStr = @nowUTCStr
-			,@objectName = @objectName;
-	END;
-
-	--
-	-- Add created by
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@myUserName sql_variant, @objectName nvarchar(128)'
-			,@myUserName = @myUserName
-			,@objectName = @objectName;
-	END;
-
-	--
-	-- Add or update modified timestamp
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@nowUTCStr sql_variant, @objectName nvarchar(128)'
-			,@nowUTCStr = @nowUTCStr
-			,@objectName = @objectName;
-	END;
-
-	--
-	-- Add or update modified by
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@myUserName sql_variant, @objectName nvarchar(128)'
-			,@myUserName = @myUserName
-			,@objectName = @objectName;
-	END;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+	';
+	EXEC sp_executesql
+		@stmt
+		,N'@objectName nvarchar(128), @version sql_variant, @nowUTCStr sql_variant, @myUserName sql_variant'
+		,@objectName = @objectName
+		,@version = @version
+		,@nowUTCStr = @nowUTCStr
+		,@myUserName = @myUserName;
 END;
 
 --
@@ -2091,115 +1102,28 @@ END;
 BEGIN
 	SET @objectName = 'dbo.fhsmFNParseDatabasesStr';
 
-	--
-	-- Add or update version
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
+	SET @stmt = '
+		USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
 			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
+		DECLARE @objName nvarchar(128);
+		DECLARE @schName nvarchar(128);
 
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
+		SET @objName = PARSENAME(@objectName, 1);
+		SET @schName = PARSENAME(@objectName, 2);
 
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@objectName nvarchar(128), @version sql_variant'
-			,@objectName = @objectName
-			,@version = @version;
-	END;
-
-	--
-	-- Add created timestamp
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@nowUTCStr sql_variant, @objectName nvarchar(128)'
-			,@nowUTCStr = @nowUTCStr
-			,@objectName = @objectName;
-	END;
-
-	--
-	-- Add created by
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@myUserName sql_variant, @objectName nvarchar(128)'
-			,@myUserName = @myUserName
-			,@objectName = @objectName;
-	END;
-
-	--
-	-- Add or update modified timestamp
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@nowUTCStr sql_variant, @objectName nvarchar(128)'
-			,@nowUTCStr = @nowUTCStr
-			,@objectName = @objectName;
-	END;
-
-	--
-	-- Add or update modified by
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@myUserName sql_variant, @objectName nvarchar(128)'
-			,@myUserName = @myUserName
-			,@objectName = @objectName;
-	END;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+	';
+	EXEC sp_executesql
+		@stmt
+		,N'@objectName nvarchar(128), @version sql_variant, @nowUTCStr sql_variant, @myUserName sql_variant'
+		,@objectName = @objectName
+		,@version = @version
+		,@nowUTCStr = @nowUTCStr
+		,@myUserName = @myUserName;
 END;
 
 --
@@ -2252,115 +1176,28 @@ END;
 BEGIN
 	SET @objectName = 'dbo.fhsmFNSplitString';
 
-	--
-	-- Add or update version
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
+	SET @stmt = '
+		USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
 			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
+		DECLARE @objName nvarchar(128);
+		DECLARE @schName nvarchar(128);
 
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
+		SET @objName = PARSENAME(@objectName, 1);
+		SET @schName = PARSENAME(@objectName, 2);
 
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@objectName nvarchar(128), @version sql_variant'
-			,@objectName = @objectName
-			,@version = @version;
-	END;
-
-	--
-	-- Add created timestamp
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@nowUTCStr sql_variant, @objectName nvarchar(128)'
-			,@nowUTCStr = @nowUTCStr
-			,@objectName = @objectName;
-	END;
-
-	--
-	-- Add created by
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@myUserName sql_variant, @objectName nvarchar(128)'
-			,@myUserName = @myUserName
-			,@objectName = @objectName;
-	END;
-
-	--
-	-- Add or update modified timestamp
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@nowUTCStr sql_variant, @objectName nvarchar(128)'
-			,@nowUTCStr = @nowUTCStr
-			,@objectName = @objectName;
-	END;
-
-	--
-	-- Add or update modified by
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@myUserName sql_variant, @objectName nvarchar(128)'
-			,@myUserName = @myUserName
-			,@objectName = @objectName;
-	END;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+	';
+	EXEC sp_executesql
+		@stmt
+		,N'@objectName nvarchar(128), @version sql_variant, @nowUTCStr sql_variant, @myUserName sql_variant'
+		,@objectName = @objectName
+		,@version = @version
+		,@nowUTCStr = @nowUTCStr
+		,@myUserName = @myUserName;
 END;
 
 --
@@ -2419,115 +1256,28 @@ END;
 BEGIN
 	SET @objectName = 'dbo.fhsmSPLog';
 
-	--
-	-- Add or update version
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
+	SET @stmt = '
+		USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
 			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
+		DECLARE @objName nvarchar(128);
+		DECLARE @schName nvarchar(128);
 
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
+		SET @objName = PARSENAME(@objectName, 1);
+		SET @schName = PARSENAME(@objectName, 2);
 
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@objectName nvarchar(128), @version sql_variant'
-			,@objectName = @objectName
-			,@version = @version;
-	END;
-
-	--
-	-- Add created timestamp
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@nowUTCStr sql_variant, @objectName nvarchar(128)'
-			,@nowUTCStr = @nowUTCStr
-			,@objectName = @objectName;
-	END;
-
-	--
-	-- Add created by
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@myUserName sql_variant, @objectName nvarchar(128)'
-			,@myUserName = @myUserName
-			,@objectName = @objectName;
-	END;
-
-	--
-	-- Add or update modified timestamp
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@nowUTCStr sql_variant, @objectName nvarchar(128)'
-			,@nowUTCStr = @nowUTCStr
-			,@objectName = @objectName;
-	END;
-
-	--
-	-- Add or update modified by
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@myUserName sql_variant, @objectName nvarchar(128)'
-			,@myUserName = @myUserName
-			,@objectName = @objectName;
-	END;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+	';
+	EXEC sp_executesql
+		@stmt
+		,N'@objectName nvarchar(128), @version sql_variant, @nowUTCStr sql_variant, @myUserName sql_variant'
+		,@objectName = @objectName
+		,@version = @version
+		,@nowUTCStr = @nowUTCStr
+		,@myUserName = @myUserName;
 END;
 
 --
@@ -2658,115 +1408,28 @@ END;
 BEGIN
 	SET @objectName = 'dbo.fhsmSPCleanup';
 
-	--
-	-- Add or update version
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
+	SET @stmt = '
+		USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
 			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
+		DECLARE @objName nvarchar(128);
+		DECLARE @schName nvarchar(128);
 
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
+		SET @objName = PARSENAME(@objectName, 1);
+		SET @schName = PARSENAME(@objectName, 2);
 
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@objectName nvarchar(128), @version sql_variant'
-			,@objectName = @objectName
-			,@version = @version;
-	END;
-
-	--
-	-- Add created timestamp
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@nowUTCStr sql_variant, @objectName nvarchar(128)'
-			,@nowUTCStr = @nowUTCStr
-			,@objectName = @objectName;
-	END;
-
-	--
-	-- Add created by
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@myUserName sql_variant, @objectName nvarchar(128)'
-			,@myUserName = @myUserName
-			,@objectName = @objectName;
-	END;
-
-	--
-	-- Add or update modified timestamp
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@nowUTCStr sql_variant, @objectName nvarchar(128)'
-			,@nowUTCStr = @nowUTCStr
-			,@objectName = @objectName;
-	END;
-
-	--
-	-- Add or update modified by
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@myUserName sql_variant, @objectName nvarchar(128)'
-			,@myUserName = @myUserName
-			,@objectName = @objectName;
-	END;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+	';
+	EXEC sp_executesql
+		@stmt
+		,N'@objectName nvarchar(128), @version sql_variant, @nowUTCStr sql_variant, @myUserName sql_variant'
+		,@objectName = @objectName
+		,@version = @version
+		,@nowUTCStr = @nowUTCStr
+		,@myUserName = @myUserName;
 END;
 
 --
@@ -2929,115 +1592,28 @@ END;
 BEGIN
 	SET @objectName = 'dbo.fhsmSPSchedules';
 
-	--
-	-- Add or update version
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
+	SET @stmt = '
+		USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
 			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
+		DECLARE @objName nvarchar(128);
+		DECLARE @schName nvarchar(128);
 
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
+		SET @objName = PARSENAME(@objectName, 1);
+		SET @schName = PARSENAME(@objectName, 2);
 
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@objectName nvarchar(128), @version sql_variant'
-			,@objectName = @objectName
-			,@version = @version;
-	END;
-
-	--
-	-- Add created timestamp
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@nowUTCStr sql_variant, @objectName nvarchar(128)'
-			,@nowUTCStr = @nowUTCStr
-			,@objectName = @objectName;
-	END;
-
-	--
-	-- Add created by
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@myUserName sql_variant, @objectName nvarchar(128)'
-			,@myUserName = @myUserName
-			,@objectName = @objectName;
-	END;
-
-	--
-	-- Add or update modified timestamp
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@nowUTCStr sql_variant, @objectName nvarchar(128)'
-			,@nowUTCStr = @nowUTCStr
-			,@objectName = @objectName;
-	END;
-
-	--
-	-- Add or update modified by
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@myUserName sql_variant, @objectName nvarchar(128)'
-			,@myUserName = @myUserName
-			,@objectName = @objectName;
-	END;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+	';
+	EXEC sp_executesql
+		@stmt
+		,N'@objectName nvarchar(128), @version sql_variant, @nowUTCStr sql_variant, @myUserName sql_variant'
+		,@objectName = @objectName
+		,@version = @version
+		,@nowUTCStr = @nowUTCStr
+		,@myUserName = @myUserName;
 END;
 
 --
@@ -3084,12 +1660,16 @@ BEGIN
 					DECLARE @outputColumn2 nvarchar(128);
 					DECLARE @outputColumn3 nvarchar(128);
 					DECLARE @outputColumn4 nvarchar(128);
+					DECLARE @outputColumn5 nvarchar(128);
+					DECLARE @outputColumn6 nvarchar(128);
 					DECLARE @pbiSchema nvarchar(128);
 					DECLARE @srcAlias nvarchar(128);
 					DECLARE @srcColumn1 nvarchar(128);
 					DECLARE @srcColumn2 nvarchar(128);
 					DECLARE @srcColumn3 nvarchar(128);
 					DECLARE @srcColumn4 nvarchar(128);
+					DECLARE @srcColumn5 nvarchar(128);
+					DECLARE @srcColumn6 nvarchar(128);
 					DECLARE @srcDateColumn nvarchar(128);
 					DECLARE @srcTable nvarchar(128);
 					DECLARE @srcWhere nvarchar(max);
@@ -3124,6 +1704,9 @@ BEGIN
 								SET @stmt = ''''''''
 									ALTER VIEW '''' + QUOTENAME(@pbiSchema) + ''''.Time
 									AS
+									--
+									-- This view is auto generated by dbo.fhsmSPUpdateDimensions
+									--
 									WITH
 									L0 AS (SELECT 1 AS c UNION ALL SELECT 1)
 									,L1 AS (SELECT 1 AS c FROM L0 AS A CROSS JOIN L0 AS B)
@@ -3225,6 +1808,7 @@ BEGIN
 											,CONCAT(''''''''Q'''''''', DATEPART(QUARTER, a.DateKey)) AS QuarterLabel
 											,YEAR(a.DateKey) AS Year
 											,months.MonthAbbreviation + ''''''''-'''''''' + CAST(YEAR(a.DateKey) AS nvarchar) AS MonthYearLabel
+											,-1 * DATEDIFF(DAY, SYSDATETIME(), a.DateKey) AS DayIndex
 		';
 		SET @stmt += '
 										FROM (
@@ -3299,6 +1883,9 @@ BEGIN
 								SET @dimensionStmt = ''''
 									ALTER VIEW '''' + QUOTENAME(@pbiSchema) + ''''.Date
 									AS
+									--
+									-- This view is auto generated by dbo.fhsmSPUpdateDimensions
+									--
 									WITH YearRange AS
 									(
 										SELECT
@@ -3336,7 +1923,7 @@ BEGIN
 					--
 					BEGIN
 						DECLARE dCur CURSOR LOCAL READ_ONLY FAST_FORWARD FOR
-						SELECT d.DimensionName, d.DimensionKey, d.SrcTable, d.SrcAlias, d.SrcWhere, d.SrcColumn1, d.SrcColumn2, d.SrcColumn3, d.SrcColumn4, d.OutputColumn1, d.OutputColumn2, d.OutputColumn3, d.OutputColumn4
+						SELECT d.DimensionName, d.DimensionKey, d.SrcTable, d.SrcAlias, d.SrcWhere, d.SrcColumn1, d.SrcColumn2, d.SrcColumn3, d.SrcColumn4, d.SrcColumn5, d.SrcColumn6, d.OutputColumn1, d.OutputColumn2, d.OutputColumn3, d.OutputColumn4, d.OutputColumn5, d.OutputColumn6
 						FROM dbo.fhsmDimensions AS d
 						INNER JOIN (
 							SELECT DISTINCT d.DimensionName
@@ -3356,7 +1943,7 @@ BEGIN
 						WHILE (1 = 1)
 						BEGIN
 							FETCH NEXT FROM dCur
-							INTO @dimensionName, @dimensionKey, @srcTable, @srcAlias, @srcWhere, @srcColumn1, @srcColumn2, @srcColumn3, @srcColumn4, @outputColumn1, @outputColumn2, @outputColumn3, @outputColumn4;
+							INTO @dimensionName, @dimensionKey, @srcTable, @srcAlias, @srcWhere, @srcColumn1, @srcColumn2, @srcColumn3, @srcColumn4, @srcColumn5, @srcColumn6, @outputColumn1, @outputColumn2, @outputColumn3, @outputColumn4, @outputColumn5, @outputColumn6;
 
 							IF (@@FETCH_STATUS <> 0)
 							BEGIN
@@ -3439,15 +2026,22 @@ BEGIN
 									SET @dimensionStmt = ''''
 										ALTER VIEW '''' + QUOTENAME(@pbiSchema) + ''''.'''' + QUOTENAME(@dimensionName) + ''''
 										AS
+										--
+										-- This view is auto generated by dbo.fhsmSPUpdateDimensions
+										--
 										SELECT
 											a.'''' + QUOTENAME(@outputColumn1)
 												+ COALESCE('''', a.'''' + QUOTENAME(@outputColumn2), '''''''')
 												+ COALESCE('''', a.'''' + QUOTENAME(@outputColumn3), '''''''')
-												+ COALESCE('''', a.'''' + QUOTENAME(@outputColumn4), '''''''') + ''''
+												+ COALESCE('''', a.'''' + QUOTENAME(@outputColumn4), '''''''')
+												+ COALESCE('''', a.'''' + QUOTENAME(@outputColumn5), '''''''')
+												+ COALESCE('''', a.'''' + QUOTENAME(@outputColumn6), '''''''') + ''''
 											,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(a.'''' + QUOTENAME(@outputColumn1)
 												+ COALESCE('''', a.'''' + QUOTENAME(@outputColumn2), '''', DEFAULT'''')
 												+ COALESCE('''', a.'''' + QUOTENAME(@outputColumn3), '''', DEFAULT'''')
 												+ COALESCE('''', a.'''' + QUOTENAME(@outputColumn4), '''', DEFAULT'''')
+												+ COALESCE('''', a.'''' + QUOTENAME(@outputColumn5), '''', DEFAULT'''')
+												+ COALESCE('''', a.'''' + QUOTENAME(@outputColumn6), '''', DEFAULT'''')
 											+ '''') AS k) AS '''' + QUOTENAME(@dimensionKey) + ''''
 										FROM (
 									'''';
@@ -3469,7 +2063,9 @@ BEGIN
 									'''' + @srcColumn1 + '''' AS '''' + QUOTENAME(@outputColumn1)
 										+ COALESCE('''', '''' + @srcColumn2 + '''' AS '''' + QUOTENAME(@outputColumn2), '''''''')
 										+ COALESCE('''', '''' + @srcColumn3 + '''' AS '''' + QUOTENAME(@outputColumn3), '''''''')
-										+ COALESCE('''', '''' + @srcColumn4 + '''' AS '''' + QUOTENAME(@outputColumn4), '''''''') + ''''
+										+ COALESCE('''', '''' + @srcColumn4 + '''' AS '''' + QUOTENAME(@outputColumn4), '''''''')
+										+ COALESCE('''', '''' + @srcColumn5 + '''' AS '''' + QUOTENAME(@outputColumn5), '''''''')
+										+ COALESCE('''', '''' + @srcColumn6 + '''' AS '''' + QUOTENAME(@outputColumn6), '''''''') + ''''
 								FROM '''' + @srcTable + '''' AS '''' + @srcAlias + ''''
 								'''' + COALESCE(@srcWhere, '''''''') + ''''
 							'''';
@@ -3497,114 +2093,243 @@ END;
 BEGIN
 	SET @objectName = 'dbo.fhsmSPUpdateDimensions';
 
+	SET @stmt = '
+		USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
+			
+		DECLARE @objName nvarchar(128);
+		DECLARE @schName nvarchar(128);
+
+		SET @objName = PARSENAME(@objectName, 1);
+		SET @schName = PARSENAME(@objectName, 2);
+
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+	';
+	EXEC sp_executesql
+		@stmt
+		,N'@objectName nvarchar(128), @version sql_variant, @nowUTCStr sql_variant, @myUserName sql_variant'
+		,@objectName = @objectName
+		,@version = @version
+		,@nowUTCStr = @nowUTCStr
+		,@myUserName = @myUserName;
+END;
+
+--
+-- Create views
+--
+BEGIN
 	--
-	-- Add or update version
+	-- Create view @pbiSchema.[Log]
 	--
 	BEGIN
 		SET @stmt = '
 			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
 			
+			IF OBJECT_ID(''' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Log') + ''', ''V'') IS NULL
+			BEGIN
+				RAISERROR(''Creating stub view ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Log') + ''', 0, 1) WITH NOWAIT;
+
+				EXEC(''CREATE VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Log') + ' AS SELECT ''''dummy'''' AS Txt'');
+			END;
+		';
+		EXEC(@stmt);
+
+		SET @stmt = '
+			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
+
+			DECLARE @stmt nvarchar(max);
+
+			RAISERROR(''Alter view ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Log') + ''', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
+				ALTER VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Log') + '
+				AS
+				SELECT
+					l.Id
+					,l.Name, l.Task, l.Type, l.Message
+					,l.TimestampUTC, l.Timestamp
+				FROM dbo.fhsmLog AS l
+				WHERE (l.TimestampUTC > DATEADD(DAY, -1, SYSUTCDATETIME()));
+			'';
+			EXEC(@stmt);
+		';
+		EXEC(@stmt);
+	END;
+
+	--
+	-- Register extended properties on fact view @pbiSchema.[Log]
+	--
+	BEGIN
+		SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Log');
+
+		SET @stmt = '
+			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
+
 			DECLARE @objName nvarchar(128);
 			DECLARE @schName nvarchar(128);
 
 			SET @objName = PARSENAME(@objectName, 1);
 			SET @schName = PARSENAME(@objectName, 2);
 
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
 		';
 		EXEC sp_executesql
 			@stmt
-			,N'@objectName nvarchar(128), @version sql_variant'
+			,N'@objectName nvarchar(128), @version sql_variant, @nowUTCStr sql_variant, @myUserName sql_variant'
 			,@objectName = @objectName
-			,@version = @version;
-	END;
-
-	--
-	-- Add created timestamp
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@nowUTCStr sql_variant, @objectName nvarchar(128)'
+			,@version = @version
 			,@nowUTCStr = @nowUTCStr
-			,@objectName = @objectName;
+			,@myUserName = @myUserName;
 	END;
 
 	--
-	-- Add created by
+	-- Create view @pbiSchema.[Retentions]
 	--
 	BEGIN
 		SET @stmt = '
 			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
 			
+			IF OBJECT_ID(''' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Retentions') + ''', ''V'') IS NULL
+			BEGIN
+				RAISERROR(''Creating stub view ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Retentions') + ''', 0, 1) WITH NOWAIT;
+
+				EXEC(''CREATE VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Retentions') + ' AS SELECT ''''dummy'''' AS Txt'');
+			END;
+		';
+		EXEC(@stmt);
+
+		SET @stmt = '
+			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
+
+			DECLARE @stmt nvarchar(max);
+
+			RAISERROR(''Alter view ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Retentions') + ''', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
+				ALTER VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Retentions') + '
+				AS
+				SELECT
+					r.Enabled
+					,r.TableName AS [Table]
+					,r.TimeColumn AS [Time column]
+					,r.IsUtc AS [Is UTC]
+					,r.Days
+					,r.LastExecutedUTC AS [Last executed UTC]
+				FROM dbo.fhsmRetentions AS r;
+			'';
+			EXEC(@stmt);
+		';
+		EXEC(@stmt);
+	END;
+
+	--
+	-- Register extended properties on fact view @pbiSchema.[Retentions]
+	--
+	BEGIN
+		SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Retentions');
+
+		SET @stmt = '
+			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
+
 			DECLARE @objName nvarchar(128);
 			DECLARE @schName nvarchar(128);
 
 			SET @objName = PARSENAME(@objectName, 1);
 			SET @schName = PARSENAME(@objectName, 2);
 
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
 		';
 		EXEC sp_executesql
 			@stmt
-			,N'@myUserName sql_variant, @objectName nvarchar(128)'
-			,@myUserName = @myUserName
-			,@objectName = @objectName;
-	END;
-
-	--
-	-- Add or update modified timestamp
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@nowUTCStr sql_variant, @objectName nvarchar(128)'
+			,N'@objectName nvarchar(128), @version sql_variant, @nowUTCStr sql_variant, @myUserName sql_variant'
+			,@objectName = @objectName
+			,@version = @version
 			,@nowUTCStr = @nowUTCStr
-			,@objectName = @objectName;
+			,@myUserName = @myUserName;
 	END;
 
 	--
-	-- Add or update modified by
+	-- Create view @pbiSchema.[Schedules]
 	--
 	BEGIN
 		SET @stmt = '
 			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
 			
+			IF OBJECT_ID(''' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Schedules') + ''', ''V'') IS NULL
+			BEGIN
+				RAISERROR(''Creating stub view ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Schedules') + ''', 0, 1) WITH NOWAIT;
+
+				EXEC(''CREATE VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Schedules') + ' AS SELECT ''''dummy'''' AS Txt'');
+			END;
+		';
+		EXEC(@stmt);
+
+		SET @stmt = '
+			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
+
+			DECLARE @stmt nvarchar(max);
+
+			RAISERROR(''Alter view ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Schedules') + ''', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
+				ALTER VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Schedules') + '
+				AS
+				SELECT
+					s.Enabled
+					,s.Name
+					,s.Task
+					,s.Parameters
+					,s.ExecutionDelaySec AS [Execution delay in sec.]
+					,s.FromTime AS [From time]
+					,s.ToTime AS [To time]
+					,s.Monday, s.Tuesday, s.Wednesday, s.Thursday, s.Friday, s.Saturday, s.Sunday
+					,s.LastExecutedUTC AS [Last executed UTC]
+				FROM dbo.fhsmSchedules AS s;
+			'';
+			EXEC(@stmt);
+		';
+		EXEC(@stmt);
+	END;
+
+	--
+	-- Register extended properties on fact view @pbiSchema.[Schedules]
+	--
+	BEGIN
+		SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Schedules');
+
+		SET @stmt = '
+			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
+
 			DECLARE @objName nvarchar(128);
 			DECLARE @schName nvarchar(128);
 
 			SET @objName = PARSENAME(@objectName, 1);
 			SET @schName = PARSENAME(@objectName, 2);
 
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
 		';
 		EXEC sp_executesql
 			@stmt
-			,N'@myUserName sql_variant, @objectName nvarchar(128)'
-			,@myUserName = @myUserName
-			,@objectName = @objectName;
+			,N'@objectName nvarchar(128), @version sql_variant, @nowUTCStr sql_variant, @myUserName sql_variant'
+			,@objectName = @objectName
+			,@version = @version
+			,@nowUTCStr = @nowUTCStr
+			,@myUserName = @myUserName;
 	END;
 END;
 
@@ -3615,7 +2340,7 @@ IF (@createSQLAgentJob = 1)
 	AND NOT EXISTS (
 		SELECT *
 		FROM msdb.dbo.sysjobs AS sj
-		WHERE (sj.name = @fhSQLMonitorDatabase)
+		WHERE (sj.name = 'FHSQLMonitor in ' + @fhSQLMonitorDatabase)
 	)
 BEGIN
 	SET @stmt = '
