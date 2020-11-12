@@ -1,5 +1,7 @@
 # FHSQLMonitor
-October 23, 2000: Version 1.1 has been released and it contains more features and reports, error changes as well as improved reports.
+November 12, 2020: Version 1.1.1 of Power BI desktop report has been updated with visual header help, trend lines, ...
+
+October 23, 2020: Version 1.1 has been released and it contains more features and reports, error changes as well as improved reports.
 
 This project is a SQL Server Monitoring tool that can easily be installed on a single SQL server instance, helping to monitor the state of it.
 
