@@ -1,4 +1,6 @@
 # FHSQLMonitor
+November 13, 2020: Version 1.1.2 of Power BI desktop report has been updated with visual zoom sliders.
+
 November 12, 2020: Version 1.1.1 of Power BI desktop report has been updated with visual header help, trend lines, ...
 
 October 23, 2020: Version 1.1 has been released and it contains more features and reports, error changes as well as improved reports.
