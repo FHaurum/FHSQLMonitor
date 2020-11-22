@@ -41,7 +41,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '1.0';
+		SET @version = '1.1';
 	END;
 
 	--
@@ -169,6 +169,127 @@ ELSE BEGIN
 		--
 		BEGIN
 			SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Database state');
+			SET @objName = PARSENAME(@objectName, 1);
+			SET @schName = PARSENAME(@objectName, 2);
+
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+		END;
+
+		--
+		-- Create fact view @pbiSchema.[Database state history]
+		--
+		BEGIN
+			SET @stmt = '
+				IF OBJECT_ID(''' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Database state history') + ''', ''V'') IS NULL
+				BEGIN
+					EXEC(''CREATE VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Database state history') + ' AS SELECT ''''dummy'''' AS Txt'');
+				END;
+			';
+			EXEC(@stmt);
+
+			SET @stmt = '
+				ALTER VIEW  ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Database state history') + '
+				AS
+					SELECT
+						a.DatabaseName
+						,CASE a.[Key]
+							WHEN ''collation_name'' THEN ''Collation''
+							WHEN ''compatibility_level'' THEN ''Comp. level''
+							WHEN ''delayed_durability'' THEN ''Delayed durability''
+							WHEN ''is_auto_close_on'' THEN ''Auto close''
+							WHEN ''is_auto_shrink_on'' THEN ''Auto shrink''
+							WHEN ''is_auto_update_stats_async_on'' THEN ''Auto update stats. async.''
+							WHEN ''is_mixed_page_allocation_on'' THEN ''Mixed page allocation''
+							WHEN ''page_verify_option'' THEN ''Page verify''
+							WHEN ''recovery_model'' THEN ''Recovery model''
+							WHEN ''target_recovery_time_in_seconds'' THEN ''Target recovery time in sec.''
+							ELSE a.[Key]
+						END AS [Key]
+						,a.ValidFrom
+						,a.ValidTo
+						,CASE a.[Key]
+							WHEN ''delayed_durability''
+								THEN CASE a.Value
+									WHEN 0 THEN ''DISABLED''
+									WHEN 1 THEN ''ALLOWED''
+									WHEN 2 THEN ''FORCED''
+									ELSE ''?:'' + a.Value
+								END
+							WHEN ''is_auto_close_on''
+								THEN CASE a.Value
+									WHEN 0 THEN ''False''
+									WHEN 1 THEN ''True''
+									ELSE ''?:'' + a.Value
+								END
+							WHEN ''is_auto_shrink_on''
+								THEN CASE a.Value
+									WHEN 0 THEN ''False''
+									WHEN 1 THEN ''True''
+									ELSE ''?:'' + a.Value
+								END
+							WHEN ''is_auto_update_stats_async_on''
+								THEN CASE a.Value
+									WHEN 0 THEN ''False''
+									WHEN 1 THEN ''True''
+									ELSE ''?:'' + a.Value
+								END
+							WHEN ''is_mixed_page_allocation_on''
+								THEN CASE a.Value
+									WHEN 0 THEN ''False''
+									WHEN 1 THEN ''True''
+									ELSE ''?:'' + a.Value
+								END
+							WHEN ''page_verify_option''
+								THEN CASE a.Value
+									WHEN 0 THEN ''NONE''
+									WHEN 1 THEN ''TORN_PAGE_DETECTION''
+									WHEN 2 THEN ''CHECKSUM''
+									ELSE ''?:'' + a.Value
+								END
+							WHEN ''recovery_model''
+								THEN CASE a.Value
+									WHEN 1 THEN ''FULL''
+									WHEN 2 THEN ''BULK_LOGGED''
+									WHEN 3 THEN ''SIMPLE''
+									ELSE ''?:'' + a.Value
+								END
+							ELSE a.Value
+						END AS Value
+						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(a.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
+					FROM (
+						SELECT
+							dbState.DatabaseName, dbState.[Key], dbState.Value, dbState.TimestampUTC, dbState.ValidFrom, dbState.ValidTo
+							,ROW_NUMBER() OVER(PARTITION BY dbState.DatabaseName, dbState.[Key] ORDER BY dbState.ValidTo DESC) AS _Rnk
+							,LAG(dbState.Value) OVER(PARTITION BY dbState.DatabaseName, dbState.[Key] ORDER BY dbState.ValidTo DESC) AS PreviousValue
+						FROM (
+							SELECT DISTINCT dbState.DatabaseName
+							FROM dbo.fhsmDatabaseState AS dbState
+							WHERE
+								(dbState.Query = 31)
+								AND (dbState.ValidTo = ''9999-12-31 23:59:59.000'')
+						) AS toCheck
+						INNER JOIN dbo.fhsmDatabaseState AS dbState ON (dbState.DatabaseName = toCheck.DatabaseName)
+						WHERE (dbState.Query = 31)
+							AND (dbState.[Key] IN (
+								''collation_name'', ''compatibility_level'', ''delayed_durability''
+								,''is_auto_close_on'', ''is_auto_shrink_on'', ''is_auto_update_stats_async_on'', ''is_mixed_page_allocation_on''
+								,''page_verify_option'', ''recovery_model'', ''target_recovery_time_in_seconds''
+							))
+					) AS a
+					WHERE (a.Value <> a.PreviousValue);
+			';
+			EXEC(@stmt);
+		END;
+
+		--
+		-- Register extended properties on fact view @pbiSchema.[Database state history]
+		--
+		BEGIN
+			SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Database state history');
 			SET @objName = PARSENAME(@objectName, 1);
 			SET @schName = PARSENAME(@objectName, 2);
 
