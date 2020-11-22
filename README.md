@@ -1,4 +1,6 @@
 # FHSQLMonitor
+November 22, 2020: Version 1.2.0 of Power BI desktop report has been updated with buttons on report pages allowing the select the dimension level used by the tooltip popups.
+
 November 13, 2020: Version 1.1.2 of Power BI desktop report has been updated with visual zoom sliders.
 
 November 12, 2020: Version 1.1.1 of Power BI desktop report has been updated with visual header help, trend lines, ...
