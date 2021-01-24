@@ -42,7 +42,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '1.1';
+		SET @version = '1.2';
 	END;
 
 	--
@@ -266,6 +266,8 @@ ELSE BEGIN
 			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2017 XTP Transactions','Transactions aborted by user/sec',NULL);
 			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2017 XTP Transactions','Transactions aborted/sec',NULL);
 			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2017 XTP Transactions','Transactions created/sec',NULL);
+			/* Added by Flemming Haurum */
+			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Buffer Node','Page life expectancy',NULL);
 		END;
 	END;
 
@@ -324,7 +326,7 @@ ELSE BEGIN
 							,pMon.TimestampUTC
 							,pMon.Timestamp
 						FROM dbo.fhsmPerfmonStatistics AS pMon
-						INNER JOIN checkDates AS dates ON (dates.TimestampUTC = pMon.TimestampUTC)
+						INNER HASH JOIN checkDates AS dates ON (dates.TimestampUTC = pMon.TimestampUTC)
 						INNER JOIN dbo.fhsmPerfmonStatistics AS pMonPrior
 							ON (pMonPrior.TimestampUTC = dates.PreviousTimestampUTC)
 							AND (pMonPrior.ObjectName = pMon.ObjectName)
@@ -500,7 +502,15 @@ ELSE BEGIN
 					,(DATEPART(HOUR, psa.Timestamp) * 60 * 60) + (DATEPART(MINUTE, psa.Timestamp) * 60) + (DATEPART(SECOND, psa.Timestamp)) AS TimeKey
 					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(psa.ObjectName, psa.CounterName, psa.InstanceName, DEFAULT, DEFAULT, DEFAULT) AS k) AS PerfmonKey
 				FROM dbo.fhsmPerformStatisticsActual AS psa
-				WHERE (psa.CounterValue <> 0);
+				WHERE (psa.CounterValue <> 0)
+					AND (
+						   ((psa.ObjectName = ''SQLServer:Availability Replica'') AND (psa.CounterName = ''Bytes Received from Replica/sec''))
+						OR ((psa.ObjectName = ''SQLServer:Availability Replica'') AND (psa.CounterName = ''Bytes Sent to Replica/sec''))
+						OR ((psa.ObjectName = ''SQLServer:Availability Replica'') AND (psa.CounterName = ''Bytes Sent to Transport/sec''))
+						OR ((psa.ObjectName = ''SQLServer:Buffer Manager'')       AND (psa.CounterName = ''Page life expectancy''))
+						OR ((psa.ObjectName = ''SQLServer:Buffer Node'')          AND (psa.CounterName = ''Page life expectancy''))
+						OR ((psa.ObjectName = ''SQLServer:SQL Statistics'')       AND (psa.CounterName = ''Batch Requests/sec''))
+					)
 			';
 			EXEC(@stmt);
 		END;
@@ -630,7 +640,7 @@ ELSE BEGIN
 				,'dbo.fhsmPerfmonStatistics'
 				,'TimestampUTC'
 				,1
-				,30
+				,90
 		)
 		MERGE dbo.fhsmRetentions AS tgt
 		USING retention AS src ON (src.TableName = tgt.TableName)

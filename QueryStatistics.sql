@@ -41,7 +41,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '1.1';
+		SET @version = '1.2';
 	END;
 
 	--
@@ -140,6 +140,53 @@ ELSE BEGIN
 		END;
 
 		--
+		-- Create table dbo.fhsmQueryStatisticsReport if it not already exists
+		--
+		IF OBJECT_ID('dbo.fhsmQueryStatisticsReport', 'U') IS NULL
+		BEGIN
+			RAISERROR('Creating table dbo.fhsmQueryStatisticsReport', 0, 1) WITH NOWAIT;
+
+			CREATE TABLE dbo.fhsmQueryStatisticsReport(
+				Id int identity(1,1) NOT NULL
+				,ExecutionCount bigint NULL
+				,WorkerTimeMS bigint NULL
+				,PhysicalReads bigint NULL
+				,LogicalWrites bigint NULL
+				,LogicalReads bigint NULL
+				,ClrTimeMS bigint NULL
+				,ElapsedTimeMS bigint NULL
+				,Rows bigint NULL
+				,Spills bigint NULL
+				,TimestampUTC datetime NOT NULL
+				,Timestamp datetime NOT NULL
+				,DatabaseName nvarchar(128) NULL
+				,QueryHash binary(8) NOT NULL
+				,Date date NOT NULL
+				,TimeKey int NOT NULL
+				,DatabaseKey bigint NOT NULL
+				,QueryStatisticKey bigint NOT NULL
+				,CONSTRAINT NCPK_fhsmQueryStatisticsReport PRIMARY KEY NONCLUSTERED(Id)
+			);
+
+			CREATE CLUSTERED INDEX CL_fhsmQueryStatisticsReport ON dbo.fhsmQueryStatisticsReport(TimestampUTC); 
+		END;
+
+		--
+		-- Register extended properties on the table dbo.fhsmQueryStatisticsReport
+		--
+		BEGIN
+			SET @objectName = 'dbo.fhsmQueryStatisticsReport';
+			SET @objName = PARSENAME(@objectName, 1);
+			SET @schName = PARSENAME(@objectName, 2);
+
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+		END;
+
+		--
 		-- Create table dbo.fhsmQueryStatisticsTemp if it not already exists
 		--
 		IF OBJECT_ID('dbo.fhsmQueryStatisticsTemp', 'U') IS NULL
@@ -162,10 +209,10 @@ ELSE BEGIN
 				,TotalRows bigint NULL
 				,TotalSpills bigint NULL
 				,Statement nvarchar(max) NULL
-				,Encrypted bit NULL
-				,QueryPlan xml NULL
 				,_Rnk_ int NOT NULL
 			);
+
+			CREATE CLUSTERED INDEX CL_fhsmQueryStatisticsTemp ON dbo.fhsmQueryStatisticsTemp(_Rnk_, QueryHash);
 		END;
 
 		--
@@ -253,119 +300,20 @@ ELSE BEGIN
 				ALTER VIEW  ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Query statistics') + '
 				AS
 				SELECT
-					SUM(b.ExecutionCount) AS ExecutionCount
-					,SUM(b.WorkerTimeMS) AS WorkerTimeMS
-					,SUM(b.PhysicalReads) AS PhysicalReads
-					,SUM(b.LogicalWrites) AS LogicalWrites
-					,SUM(b.LogicalReads) AS LogicalReads
-					,SUM(b.ClrTimeMS) AS ClrTimeMS
-					,SUM(b.ElapsedTimeMS) AS ElapsedTimeMS
-					,SUM(b.Rows) AS Rows
-					,SUM(b.Spills) AS Spills
-					,b.Date
-					,b.TimeKey
-					,b.DatabaseKey
-					,b.QueryStatisticKey
-				FROM (
-			';
-			SET @stmt += '
-					SELECT
-						CASE
-							WHEN (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL																					-- Ignore very first data set - Yes we loose one data set but better than having visuals showing very high data
-																																										-- Either it is the first data set for this CreationTime, or the counters had an overflow, or the server har been restarted
-							WHEN (a.PreviousExecutionCount IS NULL) OR (a.PreviousExecutionCount > a.ExecutionCount) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.ExecutionCount
-							ELSE a.ExecutionCount - a.PreviousExecutionCount																							-- Difference
-						END AS ExecutionCount
-						,CASE
-							WHEN (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
-							WHEN (a.PreviousTotalWorkerTimeMS IS NULL) OR (a.PreviousTotalWorkerTimeMS > a.TotalWorkerTimeMS) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.TotalWorkerTimeMS
-							ELSE a.TotalWorkerTimeMS - a.PreviousTotalWorkerTimeMS
-						END AS WorkerTimeMS
-						,CASE
-							WHEN (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
-							WHEN (a.PreviousTotalPhysicalReads IS NULL) OR (a.PreviousTotalPhysicalReads > a.TotalPhysicalReads) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.TotalPhysicalReads
-							ELSE a.TotalPhysicalReads - a.PreviousTotalPhysicalReads
-						END AS PhysicalReads
-						,CASE
-							WHEN (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
-							WHEN (a.PreviousTotalLogicalWrites IS NULL) OR (a.PreviousTotalLogicalWrites > a.TotalLogicalWrites) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.TotalLogicalWrites
-							ELSE a.TotalLogicalWrites - a.PreviousTotalLogicalWrites
-						END AS LogicalWrites
-						,CASE
-							WHEN (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
-							WHEN (a.PreviousTotalLogicalReads IS NULL) OR (a.PreviousTotalLogicalReads > a.TotalLogicalReads) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.TotalLogicalReads
-							ELSE a.TotalLogicalReads - a.PreviousTotalLogicalReads
-						END AS LogicalReads
-						,CASE
-							WHEN (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
-							WHEN (a.PreviousTotalClrTimeMS IS NULL) OR (a.PreviousTotalClrTimeMS > a.TotalClrTimeMS) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.TotalClrTimeMS
-							ELSE a.TotalClrTimeMS - a.PreviousTotalClrTimeMS
-						END AS ClrTimeMS
-						,CASE
-							WHEN (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
-							WHEN (a.PreviousTotalElapsedTimeMS IS NULL) OR (a.PreviousTotalElapsedTimeMS > a.TotalElapsedTimeMS) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.TotalElapsedTimeMS
-							ELSE a.TotalElapsedTimeMS - a.PreviousTotalElapsedTimeMS
-						END AS ElapsedTimeMS
-						,CASE
-							WHEN (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
-							WHEN (a.PreviousTotalRows IS NULL) OR (a.PreviousTotalRows > a.TotalRows) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.TotalRows
-							ELSE a.TotalRows - a.PreviousTotalRows
-						END AS Rows
-						,CASE
-							WHEN (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
-							WHEN (a.PreviousTotalSpills IS NULL) OR (a.PreviousTotalSpills > a.TotalSpills) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.TotalSpills
-							ELSE a.TotalSpills - a.PreviousTotalSpills
-						END AS Spills
-						,a.Date
-						,a.TimeKey
-						,a.DatabaseKey
-						,a.QueryStatisticKey
-			';
-			SET @stmt += '
-					FROM (
-						SELECT
-							qs.ExecutionCount
-							,LAG(qs.ExecutionCount) OVER(PARTITION BY qs.DatabaseName, qs.QueryHash, qs.PlanHandle, qs.CreationTime ORDER BY qs.TimestampUTC) AS PreviousExecutionCount
-							,qs.TotalWorkerTimeMS
-							,LAG(qs.TotalWorkerTimeMS) OVER(PARTITION BY qs.DatabaseName, qs.QueryHash, qs.PlanHandle, qs.CreationTime ORDER BY qs.TimestampUTC) AS PreviousTotalWorkerTimeMS
-							,qs.TotalPhysicalReads
-							,LAG(qs.TotalPhysicalReads) OVER(PARTITION BY qs.DatabaseName, qs.QueryHash, qs.PlanHandle, qs.CreationTime ORDER BY qs.TimestampUTC) AS PreviousTotalPhysicalReads
-							,qs.TotalLogicalWrites
-							,LAG(qs.TotalLogicalWrites) OVER(PARTITION BY qs.DatabaseName, qs.QueryHash, qs.PlanHandle, qs.CreationTime ORDER BY qs.TimestampUTC) AS PreviousTotalLogicalWrites
-							,qs.TotalLogicalReads
-							,LAG(qs.TotalLogicalReads) OVER(PARTITION BY qs.DatabaseName, qs.QueryHash, qs.PlanHandle, qs.CreationTime ORDER BY qs.TimestampUTC) AS PreviousTotalLogicalReads
-							,qs.TotalClrTimeMS
-							,LAG(qs.TotalClrTimeMS) OVER(PARTITION BY qs.DatabaseName, qs.QueryHash, qs.PlanHandle, qs.CreationTime ORDER BY qs.TimestampUTC) AS PreviousTotalClrTimeMS
-							,qs.TotalElapsedTimeMS
-							,LAG(qs.TotalElapsedTimeMS) OVER(PARTITION BY qs.DatabaseName, qs.QueryHash, qs.PlanHandle, qs.CreationTime ORDER BY qs.TimestampUTC) AS PreviousTotalElapsedTimeMS
-							,qs.TotalRows
-							,LAG(qs.TotalRows) OVER(PARTITION BY qs.DatabaseName, qs.QueryHash, qs.PlanHandle, qs.CreationTime ORDER BY qs.TimestampUTC) AS PreviousTotalRows
-							,qs.TotalSpills
-							,LAG(qs.TotalSpills) OVER(PARTITION BY qs.DatabaseName, qs.QueryHash, qs.PlanHandle, qs.CreationTime ORDER BY qs.TimestampUTC) AS PreviousTotalSpills
-							,qs.LastSQLServiceRestart
-							,LAG(qs.LastSQLServiceRestart) OVER(PARTITION BY qs.DatabaseName, qs.QueryHash, qs.PlanHandle ORDER BY qs.TimestampUTC) AS PreviousLastSQLServiceRestart	-- qs.CreationTime IS NOT a part of the PARTITION
-							,CAST(qs.Timestamp AS date) AS Date
-							,(DATEPART(HOUR, qs.Timestamp) * 60 * 60) + (DATEPART(MINUTE, qs.Timestamp) * 60) + (DATEPART(SECOND, qs.Timestamp)) AS TimeKey
-							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(qs.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
-							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(qs.DatabaseName, CONVERT(nvarchar(18), qs.QueryHash, 1), DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS QueryStatisticKey
-						FROM dbo.fhsmQueryStatistics AS qs
-					) AS a
-				) AS b
-				WHERE
-					(b.ExecutionCount <> 0)
-					OR (b.WorkerTimeMS <> 0)
-					OR (b.PhysicalReads <> 0)
-					OR (b.LogicalWrites <> 0)
-					OR (b.LogicalReads <> 0)
-					OR (b.ClrTimeMS <> 0)
-					OR (b.ElapsedTimeMS <> 0)
-					OR (b.Rows <> 0)
-					OR (b.Spills <> 0)
-				GROUP BY
-					b.Date
-					,b.TimeKey
-					,b.DatabaseKey
-					,b.QueryStatisticKey;
+					qsr.ExecutionCount
+					,qsr.WorkerTimeMS
+					,qsr.PhysicalReads
+					,qsr.LogicalWrites
+					,qsr.LogicalReads
+					,qsr.ClrTimeMS
+					,qsr.ElapsedTimeMS
+					,qsr.Rows
+					,qsr.Spills
+					,qsr.Date
+					,qsr.TimeKey
+					,qsr.DatabaseKey
+					,qsr.QueryStatisticKey
+				FROM dbo.fhsmQueryStatisticsReport AS qsr;
 			';
 			EXEC(@stmt);
 		END;
@@ -414,8 +362,8 @@ ELSE BEGIN
 					DECLARE @nowUTC datetime;
 					DECLARE @parameters nvarchar(max);
 					DECLARE @stmt nvarchar(max);
-					DECLARE @totalSpillsStmt nvarchar(max);
 					DECLARE @thisTask nvarchar(128);
+					DECLARE @totalSpillsStmt nvarchar(max);
 
 					SET @thisTask = OBJECT_NAME(@@PROCID);
 
@@ -452,6 +400,9 @@ ELSE BEGIN
 						END;
 
 						SET @stmt = ''
+							DECLARE @curUTC datetime;
+							DECLARE @prevUTC datetime;
+
 							--
 							-- Collect DMV data
 							--
@@ -496,14 +447,12 @@ ELSE BEGIN
 													LEFT(dest.text, (deqs.statement_end_offset / 2) + 1)
 											END
 									END AS Statement
-									,deqp.encrypted AS Encrypted
-									,deqp.query_plan AS QueryPlan
 									,ROW_NUMBER() OVER(PARTITION BY dest.dbid, deqs.query_hash ORDER BY deqs.last_execution_time DESC, deqs.creation_time DESC) AS _Rnk_
 								FROM sys.dm_exec_query_stats AS deqs WITH (NOLOCK)
-								OUTER APPLY sys.dm_exec_sql_text(deqs.sql_handle) AS dest
-								OUTER APPLY sys.dm_exec_query_plan(deqs.plan_handle) AS deqp
+								OUTER APPLY sys.dm_exec_sql_text(deqs.sql_handle) AS dest;
 							END;
-
+						'';
+						SET @stmt += ''
 							--
 							-- Insert records into QueryStatistics
 							--
@@ -520,13 +469,182 @@ ELSE BEGIN
 									,@nowUTC, @now
 								FROM dbo.fhsmQueryStatisticsTemp AS src;
 							END;
+						'';
+						SET @stmt += ''
+							--
+							-- Insert records into fhsmQueryStatisticsReport
+							--
+							BEGIN
+								SET @curUTC = (SELECT TOP (1) qs.TimestampUTC FROM dbo.fhsmQueryStatistics AS qs ORDER BY qs.TimestampUTC DESC);
+								SET @prevUTC = (SELECT TOP (1) qs.TimestampUTC FROM dbo.fhsmQueryStatistics AS qs WHERE (qs.TimestampUTC < @curUTC) ORDER BY qs.TimestampUTC DESC);
+
+								--
+								-- Delete if already processed
+								--
+								BEGIN
+									DELETE qsr
+									FROM dbo.fhsmQueryStatisticsReport AS qsr WHERE (qsr.TimestampUTC = @curUTC);
+								END;
+
+								--
+								-- Process delta
+								--
+								BEGIN
+									WITH
+									pairedDates AS (
+										SELECT
+											@curUTC AS curTimestampUTC
+											,@prevUTC AS prevTimestampUTC
+									)
+									,summarizedQS AS (
+										SELECT
+											qs.DatabaseName
+											,qs.QueryHash
+											,qs.PlanHandle
+											,qs.CreationTime
+											,qs.TimestampUTC
+											,qs.Timestamp
+											,qs.LastSQLServiceRestart
+											,SUM(qs.ExecutionCount) AS ExecutionCount
+											,SUM(qs.TotalWorkerTimeMS) AS TotalWorkerTimeMS
+											,SUM(qs.TotalPhysicalReads) AS TotalPhysicalReads
+											,SUM(qs.TotalLogicalWrites) AS TotalLogicalWrites
+											,SUM(qs.TotalLogicalReads) AS TotalLogicalReads
+											,SUM(qs.TotalClrTimeMS) AS TotalClrTimeMS
+											,SUM(qs.TotalElapsedTimeMS) AS TotalElapsedTimeMS
+											,SUM(qs.TotalRows) AS TotalRows
+											,SUM(qs.TotalSpills) AS TotalSpills
+										FROM dbo.fhsmQueryStatistics AS qs
+										WHERE (qs.TimestampUTC IN (@curUTC, @prevUTC))
+										GROUP BY
+											qs.DatabaseName
+											,qs.QueryHash
+											,qs.PlanHandle
+											,qs.CreationTime
+											,qs.TimestampUTC
+											,qs.Timestamp
+											,qs.LastSQLServiceRestart
+									)
+									INSERT INTO dbo.fhsmQueryStatisticsReport(
+										ExecutionCount, WorkerTimeMS, PhysicalReads, LogicalWrites, LogicalReads, ClrTimeMS, ElapsedTimeMS, Rows, Spills
+										,TimestampUTC, Timestamp, DatabaseName, QueryHash
+										,Date, TimeKey, DatabaseKey, QueryStatisticKey
+									)
+									SELECT
+										 SUM(a.ExecutionCount) AS ExecutionCount
+										,SUM(a.WorkerTimeMS) AS WorkerTimeMS
+										,SUM(a.PhysicalReads) AS PhysicalReads
+										,SUM(a.LogicalWrites) AS LogicalWrites
+										,SUM(a.LogicalReads) AS LogicalReads
+										,SUM(a.ClrTimeMS) AS ClrTimeMS
+										,SUM(a.ElapsedTimeMS) AS ElapsedTimeMS
+										,SUM(a.Rows) AS Rows
+										,SUM(a.Spills) AS Spills
+										,a.TimestampUTC
+										,a.Timestamp
+										,a.DatabaseName
+										,a.QueryHash
+										,CAST(a.Timestamp AS date) AS Date
+										,(DATEPART(HOUR, a.Timestamp) * 60 * 60) + (DATEPART(MINUTE, a.Timestamp) * 60) + (DATEPART(SECOND, a.Timestamp)) AS TimeKey
+										,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(a.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
+										,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(a.DatabaseName, CONVERT(nvarchar(18), a.QueryHash, 1), DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS QueryStatisticKey
+									FROM (
+										SELECT
+											CASE
+												WHEN (DATEDIFF(HOUR, prevQS.TimestampUTC, curQS.TimestampUTC) >= 12) THEN NULL															-- Ignore data if distance between current and previous is more than 12 hours
+																																														-- Either it is the first data set for this CreationTime, or the counters had an overflow, or the server har been restarted
+												WHEN (prevQS.ExecutionCount IS NULL) OR (prevQS.ExecutionCount > curQS.ExecutionCount) OR (prevQS.LastSQLServiceRestart <> curQS.LastSQLServiceRestart) THEN curQS.ExecutionCount
+												ELSE curQS.ExecutionCount - prevQS.ExecutionCount																						-- Difference
+											END AS ExecutionCount
+											,CASE
+												WHEN (DATEDIFF(HOUR, prevQS.TimestampUTC, curQS.TimestampUTC) >= 12) THEN NULL
+												WHEN (prevQS.TotalWorkerTimeMS IS NULL) OR (prevQS.TotalWorkerTimeMS > curQS.TotalWorkerTimeMS) OR (prevQS.LastSQLServiceRestart <> curQS.LastSQLServiceRestart) THEN curQS.TotalWorkerTimeMS
+												ELSE curQS.TotalWorkerTimeMS - prevQS.TotalWorkerTimeMS
+											END AS WorkerTimeMS
+											,CASE
+												WHEN (DATEDIFF(HOUR, prevQS.TimestampUTC, curQS.TimestampUTC) >= 12) THEN NULL
+												WHEN (prevQS.TotalPhysicalReads IS NULL) OR (prevQS.TotalPhysicalReads > curQS.TotalPhysicalReads) OR (prevQS.LastSQLServiceRestart <> curQS.LastSQLServiceRestart) THEN curQS.TotalPhysicalReads
+												ELSE curQS.TotalPhysicalReads - prevQS.TotalPhysicalReads
+											END AS PhysicalReads
+											,CASE
+												WHEN (DATEDIFF(HOUR, prevQS.TimestampUTC, curQS.TimestampUTC) >= 12) THEN NULL
+												WHEN (prevQS.TotalLogicalWrites IS NULL) OR (prevQS.TotalLogicalWrites > curQS.TotalLogicalWrites) OR (prevQS.LastSQLServiceRestart <> curQS.LastSQLServiceRestart) THEN curQS.TotalLogicalWrites
+												ELSE curQS.TotalLogicalWrites - prevQS.TotalLogicalWrites
+											END AS LogicalWrites
+											,CASE
+												WHEN (DATEDIFF(HOUR, prevQS.TimestampUTC, curQS.TimestampUTC) >= 12) THEN NULL
+												WHEN (prevQS.TotalLogicalReads IS NULL) OR (prevQS.TotalLogicalReads > curQS.TotalLogicalReads) OR (prevQS.LastSQLServiceRestart <> curQS.LastSQLServiceRestart) THEN curQS.TotalLogicalReads
+												ELSE curQS.TotalLogicalReads - prevQS.TotalLogicalReads
+											END AS LogicalReads
+											,CASE
+												WHEN (DATEDIFF(HOUR, prevQS.TimestampUTC, curQS.TimestampUTC) >= 12) THEN NULL
+												WHEN (prevQS.TotalClrTimeMS IS NULL) OR (prevQS.TotalClrTimeMS > curQS.TotalClrTimeMS) OR (prevQS.LastSQLServiceRestart <> curQS.LastSQLServiceRestart) THEN curQS.TotalClrTimeMS
+												ELSE curQS.TotalClrTimeMS - prevQS.TotalClrTimeMS
+											END AS ClrTimeMS
+											,CASE
+												WHEN (DATEDIFF(HOUR, prevQS.TimestampUTC, curQS.TimestampUTC) >= 12) THEN NULL
+												WHEN (prevQS.TotalElapsedTimeMS IS NULL) OR (prevQS.TotalElapsedTimeMS > curQS.TotalElapsedTimeMS) OR (prevQS.LastSQLServiceRestart <> curQS.LastSQLServiceRestart) THEN curQS.TotalElapsedTimeMS
+												ELSE curQS.TotalElapsedTimeMS - prevQS.TotalElapsedTimeMS
+											END AS ElapsedTimeMS
+											,CASE
+												WHEN (DATEDIFF(HOUR, prevQS.TimestampUTC, curQS.TimestampUTC) >= 12) THEN NULL
+												WHEN (prevQS.TotalRows IS NULL) OR (prevQS.TotalRows > curQS.TotalRows) OR (prevQS.LastSQLServiceRestart <> curQS.LastSQLServiceRestart) THEN curQS.TotalRows
+												ELSE curQS.TotalRows - prevQS.TotalRows
+											END AS Rows
+											,CASE
+												WHEN (DATEDIFF(HOUR, prevQS.TimestampUTC, curQS.TimestampUTC) >= 12) THEN NULL
+												WHEN (prevQS.TotalSpills IS NULL) OR (prevQS.TotalSpills > curQS.TotalSpills) OR (prevQS.LastSQLServiceRestart <> curQS.LastSQLServiceRestart) THEN curQS.TotalSpills
+												ELSE curQS.TotalSpills - prevQS.TotalSpills
+											END AS Spills
+											,curQS.TimestampUTC
+											,curQS.Timestamp
+											,curQS.DatabaseName
+											,curQS.QueryHash
+										FROM pairedDates AS pd
+										INNER JOIN summarizedQS AS curQS ON (curQS.TimestampUTC = pd.curTimestampUTC)
+										LEFT OUTER JOIN summarizedQS AS prevQS ON (prevQS.TimestampUTC = pd.prevTimestampUTC)
+											AND (prevQS.DatabaseName = curQS.DatabaseName)
+											AND (prevQS.QueryHash = curQS.QueryHash)
+											AND (prevQS.PlanHandle = curQS.PlanHandle)
+											AND (prevQS.CreationTime = curQS.CreationTime)
+									) AS a
+									WHERE
+										(a.ExecutionCount <> 0)
+										OR (a.WorkerTimeMS <> 0)
+										OR (a.PhysicalReads <> 0)
+										OR (a.LogicalWrites <> 0)
+										OR (a.LogicalReads <> 0)
+										OR (a.ClrTimeMS <> 0)
+										OR (a.ElapsedTimeMS <> 0)
+										OR (a.Rows <> 0)
+										OR (a.Spills <> 0)
+									GROUP BY
+										a.TimestampUTC
+										,a.Timestamp
+										,a.DatabaseName
+										,a.QueryHash;
+								END;
+							END;
 
 							--
 							-- Insert records into QueryStatement
 							--
 							BEGIN
 								MERGE dbo.fhsmQueryStatement AS tgt
-								USING (SELECT * FROM dbo.fhsmQueryStatisticsTemp AS t WHERE (t.QueryHash <> 0x0000000000000000) AND (t.Encrypted = 0) AND (t._Rnk_ = 1)) AS src
+								USING (
+									SELECT
+										 t.DatabaseName
+										,t.QueryHash
+										,t.PlanHandle
+										,t.CreationTime
+										,t.LastExecutionTime
+										,t.Statement
+										,deqp.encrypted AS Encrypted
+										,deqp.query_plan AS QueryPlan
+									FROM dbo.fhsmQueryStatisticsTemp AS t
+									CROSS APPLY sys.dm_exec_query_plan(t.PlanHandle) AS deqp
+									WHERE (t._Rnk_ = 1) AND (t.QueryHash <> 0x0000000000000000) AND (deqp.encrypted = 0)
+								) AS src
 								ON (src.DatabaseName = tgt.DatabaseName) AND (src.QueryHash = tgt.QueryHash)
 								WHEN MATCHED
 									THEN UPDATE SET
@@ -539,7 +657,8 @@ ELSE BEGIN
 									VALUES(src.DatabaseName, src.QueryHash, src.CreationTime, src.LastExecutionTime, src.Statement, src.Encrypted, src.QueryPlan, @nowUTC, @now)
 								;
 							END;
-
+						'';
+						SET @stmt += ''
 							--
 							-- Delete records from QueryStatements where no owner in QueryStatistics exists
 							--
@@ -599,6 +718,15 @@ ELSE BEGIN
 			SELECT
 				1
 				,'dbo.fhsmQueryStatistics'
+				,'TimestampUTC'
+				,1
+				,30
+
+			UNION ALL
+
+			SELECT
+				1
+				,'dbo.fhsmQueryStatisticsReport'
 				,'TimestampUTC'
 				,1
 				,30

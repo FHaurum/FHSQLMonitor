@@ -41,7 +41,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '1.1';
+		SET @version = '1.2';
 	END;
 
 	--
@@ -121,15 +121,18 @@ ELSE BEGIN
 				ALTER VIEW  ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Database IO') + '
 				AS
 				SELECT
-					b.DeltaIOStall AS IOStallMS
-					,b.DeltaNumOfReads AS NumOfReads
+					b.DeltaNumOfReads AS NumOfReads
 					,b.DeltaNumOfBytesRead AS NumOfBytesRead
-					,b.DeltaIOStallReadMS AS IOStallReadMS
-					,b.DeltaIOStallQueuedReadMS AS IOStallQueuedReadMS
+					,CASE
+						WHEN b.DeltaNumOfReads = 0 THEN NULL
+						ELSE b.DeltaIOStallReadMS / CAST(b.DeltaNumOfReads AS decimal(8,1))
+					END AS ReadLatencyMS
 					,b.DeltaNumOfWrites AS NumOfWrites
 					,b.DeltaNumOfBytesWritten AS NumOfBytesWritten
-					,b.DeltaIOStallWriteMS AS IOStallWriteMS
-					,b.DeltaIOStallQueuedWriteMS AS IOStallQueuedWriteMS
+					,CASE
+						WHEN b.DeltaNumOfWrites = 0 THEN NULL
+						ELSE b.DeltaIOStallWriteMS / CAST(b.DeltaNumOfWrites AS decimal(8,1))
+					END AS WriteLatencyMS
 					,b.Timestamp
 					,b.Date
 					,b.TimeKey

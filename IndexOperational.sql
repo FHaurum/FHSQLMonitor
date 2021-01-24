@@ -41,7 +41,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '1.1';
+		SET @version = '1.2';
 	END;
 
 	--
@@ -115,7 +115,7 @@ ELSE BEGIN
 
 			CREATE NONCLUSTERED INDEX NC_fhsmIndexOperational_TimestampUTC ON dbo.fhsmIndexOperational(TimestampUTC);
 			CREATE NONCLUSTERED INDEX NC_fhsmIndexOperational_Timestamp ON dbo.fhsmIndexOperational(Timestamp);
-			CREATE NONCLUSTERED INDEX NC_fhsmIndexOperational_DatabaseName_SchemaName_ObjectName_IndexName ON dbo.fhsmIndexOperational(DatabaseName, SchemaName, ObjectName, IndexName);
+			CREATE NONCLUSTERED INDEX NC_fhsmIndexOperational_DatabaseName_SchemaName_ObjectName_IndexName_TimestampUTC ON dbo.fhsmIndexOperational(DatabaseName, SchemaName, ObjectName, IndexName, TimestampUTC);
 		END;
 
 		--
@@ -123,6 +123,94 @@ ELSE BEGIN
 		--
 		BEGIN
 			SET @objectName = 'dbo.fhsmIndexOperational';
+			SET @objName = PARSENAME(@objectName, 1);
+			SET @schName = PARSENAME(@objectName, 2);
+
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+		END;
+
+		--
+		-- Create table dbo.fhsmIndexOperationalReport if it not already exists
+		--
+		IF OBJECT_ID('dbo.fhsmIndexOperationalReport', 'U') IS NULL
+		BEGIN
+			RAISERROR('Creating table dbo.fhsmIndexOperationalReport', 0, 1) WITH NOWAIT;
+
+			CREATE TABLE dbo.fhsmIndexOperationalReport(
+				Id int identity(1,1) NOT NULL
+				,LeafInsertCount bigint NULL
+				,LeafDeleteCount bigint NULL
+				,LeafUpdateCount bigint NULL
+				,LeafGhostCount bigint NULL
+				,NonleafInsertCount bigint NULL
+				,NonleafDeleteCount bigint NULL
+				,NonleafUpdateCount bigint NULL
+				,LeafAllocationCount bigint NULL
+				,NonleafAllocationCount bigint NULL
+				,LeafPageMergeCount bigint NULL
+				,NonleafPageMergeCount bigint NULL
+				,RangeScanCount bigint NULL
+				,SingletonLookupCount bigint NULL
+				,ForwardedFetchCount bigint NULL
+				,LOBFetchInPages bigint NULL
+				,LOBFetchInBytes bigint NULL
+				,LOBOrphanCreateCount bigint NULL
+				,LOBOrphanInsertCount bigint NULL
+				,RowOverflowFetchInPages bigint NULL
+				,RowOverflowFetchInBytes bigint NULL
+				,ColumnValuePushOffRowCount bigint NULL
+				,ColumnValuePullInRowCount bigint NULL
+				,RowLockCount bigint NULL
+				,RowLockWaitCount bigint NULL
+				,RowLockWaitInMS bigint NULL
+				,PageLockCount bigint NULL
+				,PageLockWaitCount bigint NULL
+				,PageLockWaitInMS bigint NULL
+				,IndexLockPromotionAttemptCount bigint NULL
+				,IndexLockPromotionCount bigint NULL
+				,PageLatchWaitCount bigint NULL
+				,PageLatchWaitInMS bigint NULL
+				,PageIOLatchWaitCount bigint NULL
+				,PageIOLatchWaitInMS bigint NULL
+				,TreePageLatchWaitCount bigint NULL
+				,TreePageLatchWaitInMS bigint NULL
+				,TreePageIOLatchWaitCount bigint NULL
+				,TreePageIOLatchWaitInMS bigint NULL
+				,PageCompressionAttemptCount bigint NULL
+				,PageCompressionSuccessCount bigint NULL
+				,VersionGeneratedInrow bigint NULL
+				,VersionGeneratedOffrow bigint NULL
+				,GhostVersionInrow bigint NULL
+				,GhostVersionOffrow bigint NULL
+				,InsertOverGhostVersionInrow bigint NULL
+				,InsertOverGhostVersionOffrow bigint NULL
+				,TimestampUTC datetime NOT NULL
+				,Timestamp datetime NOT NULL
+				,DatabaseName nvarchar(128) NOT NULL
+				,SchemaName nvarchar(128) NOT NULL
+				,ObjectName nvarchar(128) NOT NULL
+				,IndexName nvarchar(128) NULL
+				,Date date NOT NULL
+				,TimeKey int NOT NULL
+				,DatabaseKey bigint NOT NULL
+				,SchemaKey bigint NOT NULL
+				,ObjectKey bigint NOT NULL
+				,IndexKey bigint NOT NULL
+				,CONSTRAINT NCPK_fhsmIndexOperationalReport PRIMARY KEY NONCLUSTERED(Id)
+			);
+
+			CREATE CLUSTERED INDEX CL_fhsmIndexOperationalReport_TimestampUTC ON dbo.fhsmIndexOperationalReport(TimestampUTC);
+		END;
+
+		--
+		-- Register extended properties on the table dbo.fhsmIndexOperationalReport
+		--
+		BEGIN
+			SET @objectName = 'dbo.fhsmIndexOperationalReport';
 			SET @objName = PARSENAME(@objectName, 1);
 			SET @schName = PARSENAME(@objectName, 2);
 
@@ -158,401 +246,59 @@ ELSE BEGIN
 				ALTER VIEW  ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Index operational') + '
 				AS
 				SELECT
-					b.DeltaLeafInsertCount AS LeafInsertCount
-					,b.DeltaLeafDeleteCount AS LeafDeleteCount
-					,b.DeltaLeafUpdateCount AS LeafUpdateCount
-					,b.DeltaLeafGhostCount AS LeafGhostCount
-					,b.DeltaNonleafInsertCount AS NonleafInsertCount
-					,b.DeltaNonleafDeleteCount AS NonleafDeleteCount
-					,b.DeltaNonleafUpdateCount AS NonleafUpdateCount
-					,b.DeltaLeafAllocationCount AS LeafAllocationCount
-					,b.DeltaNonleafAllocationCount AS NonleafAllocationCount
-					,b.DeltaLeafPageMergeCount AS LeafPageMergeCount
-					,b.DeltaNonleafPageMergeCount AS NonleafPageMergeCount
-					,b.DeltaRangeScanCount AS RangeScanCount
-					,b.DeltaSingletonLookupCount AS SingletonLookupCount
-					,b.DeltaForwardedFetchCount AS ForwardedFetchCount
-					,b.DeltaLOBFetchInPages AS LOBFetchInPages
-					,b.DeltaLOBFetchInBytes AS LOBFetchInBytes
-					,b.DeltaLOBOrphanCreateCount AS LOBOrphanCreateCount
-					,b.DeltaLOBOrphanInsertCount AS LOBOrphanInsertCount
-					,b.DeltaRowOverflowFetchInPages AS RowOverflowFetchInPages
-					,b.DeltaRowOverflowFetchInBytes AS RowOverflowFetchInBytes
-					,b.DeltaColumnValuePushOffRowCount AS ColumnValuePushOffRowCount
-					,b.DeltaColumnValuePullInRowCount AS ColumnValuePullInRowCount
-					,b.DeltaRowLockCount AS RowLockCount
-					,b.DeltaRowLockWaitCount AS RowLockWaitCount
-					,b.DeltaRowLockWaitInMS AS RowLockWaitInMS
-					,b.DeltaPageLockCount AS PageLockCount
-					,b.DeltaPageLockWaitCount AS PageLockWaitCount
-					,b.DeltaPageLockWaitInMS AS PageLockWaitInMS
-					,b.DeltaIndexLockPromotionAttemptCount AS IndexLockPromotionAttemptCount
-					,b.DeltaIndexLockPromotionCount AS IndexLockPromotionCount
-					,b.DeltaPageLatchWaitCount AS PageLatchWaitCount
-					,b.DeltaPageLatchWaitInMS AS PageLatchWaitInMS
-					,b.DeltaPageIOLatchWaitCount AS PageIOLatchWaitCount
-					,b.DeltaPageIOLatchWaitInMS AS PageIOLatchWaitInMS
-					,b.DeltaTreePageLatchWaitCount AS TreePageLatchWaitCount
-					,b.DeltaTreePageLatchWaitInMS AS TreePageLatchWaitInMS
-					,b.DeltaTreePageIOLatchWaitCount AS TreePageIOLatchWaitCount
-					,b.DeltaTreePageIOLatchWaitInMS AS TreePageIOLatchWaitInMS
-					,b.DeltaPageCompressionAttemptCount AS PageCompressionAttemptCount
-					,b.DeltaPageCompressionSuccessCount AS PageCompressionSuccessCount
-					,b.DeltaVersionGeneratedInrow AS VersionGeneratedInrow
-					,b.DeltaVersionGeneratedOffrow AS VersionGeneratedOffrow
-					,b.DeltaGhostVersionInrow AS GhostVersionInrow
-					,b.DeltaGhostVersionOffrow AS GhostVersionOffrow
-					,b.DeltaInsertOverGhostVersionInrow AS InsertOverGhostVersionInrow
-					,b.DeltaInsertOverGhostVersionOffrow AS InsertOverGhostVersionOffrow
-					,b.Date
-					,b.TimeKey
-					,b.DatabaseKey
-					,b.SchemaKey
-					,b.ObjectKey
-					,b.IndexKey
-				FROM (
-					SELECT
-						CASE
-							WHEN (a.PreviousLeafInsertCount IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL													-- Ignore 1. data set - Yes we loose one data set but better than having visuals showing very high data
-							WHEN (a.PreviousLeafInsertCount > a.LeafInsertCount) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.LeafInsertCount		-- Either has the counters had an overflow or the server har been restarted
-							ELSE a.LeafInsertCount - a.PreviousLeafInsertCount																								-- Difference
-						END AS DeltaLeafInsertCount
-						,CASE
-							WHEN (a.PreviousLeafDeleteCount IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
-							WHEN (a.PreviousLeafDeleteCount > a.LeafDeleteCount) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.LeafDeleteCount
-							ELSE a.LeafDeleteCount - a.PreviousLeafDeleteCount
-						END AS DeltaLeafDeleteCount
-						,CASE
-							WHEN (a.PreviousLeafUpdateCount IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
-							WHEN (a.PreviousLeafUpdateCount > a.LeafUpdateCount) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.LeafUpdateCount
-							ELSE a.LeafUpdateCount - a.PreviousLeafUpdateCount
-						END AS DeltaLeafUpdateCount
-						,CASE
-							WHEN (a.PreviousLeafGhostCount IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
-							WHEN (a.PreviousLeafGhostCount > a.LeafGhostCount) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.LeafGhostCount
-							ELSE a.LeafGhostCount - a.PreviousLeafGhostCount
-						END AS DeltaLeafGhostCount
-						,CASE
-							WHEN (a.PreviousNonleafInsertCount IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
-							WHEN (a.PreviousNonleafInsertCount > a.NonleafInsertCount) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.NonleafInsertCount
-							ELSE a.NonleafInsertCount - a.PreviousNonleafInsertCount
-						END AS DeltaNonleafInsertCount
-						,CASE
-							WHEN (a.PreviousNonleafDeleteCount IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
-							WHEN (a.PreviousNonleafDeleteCount > a.NonleafDeleteCount) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.NonleafDeleteCount
-							ELSE a.NonleafDeleteCount - a.PreviousNonleafDeleteCount
-						END AS DeltaNonleafDeleteCount
-						,CASE
-							WHEN (a.PreviousNonleafUpdateCount IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
-							WHEN (a.PreviousNonleafUpdateCount > a.NonleafUpdateCount) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.NonleafUpdateCount
-							ELSE a.NonleafUpdateCount - a.PreviousNonleafUpdateCount
-						END AS DeltaNonleafUpdateCount
-						,CASE
-							WHEN (a.PreviousLeafAllocationCount IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
-							WHEN (a.PreviousLeafAllocationCount > a.LeafAllocationCount) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.LeafAllocationCount
-							ELSE a.LeafAllocationCount - a.PreviousLeafAllocationCount
-						END AS DeltaLeafAllocationCount
-						,CASE
-							WHEN (a.PreviousNonleafAllocationCount IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
-							WHEN (a.PreviousNonleafAllocationCount > a.NonleafAllocationCount) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.NonleafAllocationCount
-							ELSE a.NonleafAllocationCount - a.PreviousNonleafAllocationCount
-						END AS DeltaNonleafAllocationCount
-						,CASE
-							WHEN (a.PreviousLeafPageMergeCount IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
-							WHEN (a.PreviousLeafPageMergeCount > a.LeafPageMergeCount) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.LeafPageMergeCount
-							ELSE a.LeafPageMergeCount - a.PreviousLeafPageMergeCount
-						END AS DeltaLeafPageMergeCount
-						,CASE
-							WHEN (a.PreviousNonleafPageMergeCount IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
-							WHEN (a.PreviousNonleafPageMergeCount > a.NonleafPageMergeCount) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.NonleafPageMergeCount
-							ELSE a.NonleafPageMergeCount - a.PreviousNonleafPageMergeCount
-						END AS DeltaNonleafPageMergeCount
-						,CASE
-							WHEN (a.PreviousRangeScanCount IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
-							WHEN (a.PreviousRangeScanCount > a.RangeScanCount) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.RangeScanCount
-							ELSE a.RangeScanCount - a.PreviousRangeScanCount
-						END AS DeltaRangeScanCount
-						,CASE
-							WHEN (a.PreviousSingletonLookupCount IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
-							WHEN (a.PreviousSingletonLookupCount > a.SingletonLookupCount) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.SingletonLookupCount
-							ELSE a.SingletonLookupCount - a.PreviousSingletonLookupCount
-						END AS DeltaSingletonLookupCount
-						,CASE
-							WHEN (a.PreviousForwardedFetchCount IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
-							WHEN (a.PreviousForwardedFetchCount > a.ForwardedFetchCount) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.ForwardedFetchCount
-							ELSE a.ForwardedFetchCount - a.PreviousForwardedFetchCount
-						END AS DeltaForwardedFetchCount
-						,CASE
-							WHEN (a.PreviousLOBFetchInPages IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
-							WHEN (a.PreviousLOBFetchInPages > a.LOBFetchInPages) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.LOBFetchInPages
-							ELSE a.LOBFetchInPages - a.PreviousLOBFetchInPages
-						END AS DeltaLOBFetchInPages
-						,CASE
-							WHEN (a.PreviousLOBFetchInBytes IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
-							WHEN (a.PreviousLOBFetchInBytes > a.LOBFetchInBytes) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.LOBFetchInBytes
-							ELSE a.LOBFetchInBytes - a.PreviousLOBFetchInBytes
-						END AS DeltaLOBFetchInBytes
-						,CASE
-							WHEN (a.PreviousLOBOrphanCreateCount IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
-							WHEN (a.PreviousLOBOrphanCreateCount > a.LOBOrphanCreateCount) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.LOBOrphanCreateCount
-							ELSE a.LOBOrphanCreateCount - a.PreviousLOBOrphanCreateCount
-						END AS DeltaLOBOrphanCreateCount
-						,CASE
-							WHEN (a.PreviousLOBOrphanInsertCount IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
-							WHEN (a.PreviousLOBOrphanInsertCount > a.LOBOrphanInsertCount) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.LOBOrphanInsertCount
-							ELSE a.LOBOrphanInsertCount - a.PreviousLOBOrphanInsertCount
-						END AS DeltaLOBOrphanInsertCount
-						,CASE
-							WHEN (a.PreviousRowOverflowFetchInPages IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
-							WHEN (a.PreviousRowOverflowFetchInPages > a.RowOverflowFetchInPages) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.RowOverflowFetchInPages
-							ELSE a.RowOverflowFetchInPages - a.PreviousRowOverflowFetchInPages
-						END AS DeltaRowOverflowFetchInPages
-						,CASE
-							WHEN (a.PreviousRowOverflowFetchInBytes IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
-							WHEN (a.PreviousRowOverflowFetchInBytes > a.RowOverflowFetchInBytes) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.RowOverflowFetchInBytes
-							ELSE a.RowOverflowFetchInBytes - a.PreviousRowOverflowFetchInBytes
-						END AS DeltaRowOverflowFetchInBytes
-						,CASE
-							WHEN (a.PreviousColumnValuePushOffRowCount IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
-							WHEN (a.PreviousColumnValuePushOffRowCount > a.ColumnValuePushOffRowCount) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.ColumnValuePushOffRowCount
-							ELSE a.ColumnValuePushOffRowCount - a.PreviousColumnValuePushOffRowCount
-						END AS DeltaColumnValuePushOffRowCount
-						,CASE
-							WHEN (a.PreviousColumnValuePullInRowCount IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
-							WHEN (a.PreviousColumnValuePullInRowCount > a.ColumnValuePullInRowCount) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.ColumnValuePullInRowCount
-							ELSE a.ColumnValuePullInRowCount - a.PreviousColumnValuePullInRowCount
-						END AS DeltaColumnValuePullInRowCount
-						,CASE
-							WHEN (a.PreviousRowLockCount IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
-							WHEN (a.PreviousRowLockCount > a.RowLockCount) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.RowLockCount
-							ELSE a.RowLockCount - a.PreviousRowLockCount
-						END AS DeltaRowLockCount
-						,CASE
-							WHEN (a.PreviousRowLockWaitCount IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
-							WHEN (a.PreviousRowLockWaitCount > a.RowLockWaitCount) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.RowLockWaitCount
-							ELSE a.RowLockWaitCount - a.PreviousRowLockWaitCount
-						END AS DeltaRowLockWaitCount
-						,CASE
-							WHEN (a.PreviousRowLockWaitInMS IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
-							WHEN (a.PreviousRowLockWaitInMS > a.RowLockWaitInMS) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.RowLockWaitInMS
-							ELSE a.RowLockWaitInMS - a.PreviousRowLockWaitInMS
-						END AS DeltaRowLockWaitInMS
-						,CASE
-							WHEN (a.PreviousPageLockCount IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
-							WHEN (a.PreviousPageLockCount > a.PageLockCount) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.PageLockCount
-							ELSE a.PageLockCount - a.PreviousPageLockCount
-						END AS DeltaPageLockCount
-						,CASE
-							WHEN (a.PreviousPageLockWaitCount IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
-							WHEN (a.PreviousPageLockWaitCount > a.PageLockWaitCount) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.PageLockWaitCount
-							ELSE a.PageLockWaitCount - a.PreviousPageLockWaitCount
-						END AS DeltaPageLockWaitCount
-						,CASE
-							WHEN (a.PreviousPageLockWaitInMS IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
-							WHEN (a.PreviousPageLockWaitInMS > a.PageLockWaitInMS) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.PageLockWaitInMS
-							ELSE a.PageLockWaitInMS - a.PreviousPageLockWaitInMS
-						END AS DeltaPageLockWaitInMS
-						,CASE
-							WHEN (a.PreviousIndexLockPromotionAttemptCount IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
-							WHEN (a.PreviousIndexLockPromotionAttemptCount > a.IndexLockPromotionAttemptCount) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.IndexLockPromotionAttemptCount
-							ELSE a.IndexLockPromotionAttemptCount - a.PreviousIndexLockPromotionAttemptCount
-						END AS DeltaIndexLockPromotionAttemptCount
-						,CASE
-							WHEN (a.PreviousIndexLockPromotionCount IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
-							WHEN (a.PreviousIndexLockPromotionCount > a.IndexLockPromotionCount) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.IndexLockPromotionCount
-							ELSE a.IndexLockPromotionCount - a.PreviousIndexLockPromotionCount
-						END AS DeltaIndexLockPromotionCount
-						,CASE
-							WHEN (a.PreviousPageLatchWaitCount IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
-							WHEN (a.PreviousPageLatchWaitCount > a.PageLatchWaitCount) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.PageLatchWaitCount
-							ELSE a.PageLatchWaitCount - a.PreviousPageLatchWaitCount
-						END AS DeltaPageLatchWaitCount
-						,CASE
-							WHEN (a.PreviousPageLatchWaitInMS IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
-							WHEN (a.PreviousPageLatchWaitInMS > a.PageLatchWaitInMS) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.PageLatchWaitInMS
-							ELSE a.PageLatchWaitInMS - a.PreviousPageLatchWaitInMS
-						END AS DeltaPageLatchWaitInMS
-						,CASE
-							WHEN (a.PreviousPageIOLatchWaitCount IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
-							WHEN (a.PreviousPageIOLatchWaitCount > a.PageIOLatchWaitCount) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.PageIOLatchWaitCount
-							ELSE a.PageIOLatchWaitCount - a.PreviousPageIOLatchWaitCount
-						END AS DeltaPageIOLatchWaitCount
-						,CASE
-							WHEN (a.PreviousPageIOLatchWaitInMS IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
-							WHEN (a.PreviousPageIOLatchWaitInMS > a.PageIOLatchWaitInMS) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.PageIOLatchWaitInMS
-							ELSE a.PageIOLatchWaitInMS - a.PreviousPageIOLatchWaitInMS
-						END AS DeltaPageIOLatchWaitInMS
-						,CASE
-							WHEN (a.PreviousTreePageLatchWaitCount IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
-							WHEN (a.PreviousTreePageLatchWaitCount > a.TreePageLatchWaitCount) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.TreePageLatchWaitCount
-							ELSE a.TreePageLatchWaitCount - a.PreviousTreePageLatchWaitCount
-						END AS DeltaTreePageLatchWaitCount
-						,CASE
-							WHEN (a.PreviousTreePageLatchWaitInMS IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
-							WHEN (a.PreviousTreePageLatchWaitInMS > a.TreePageLatchWaitInMS) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.TreePageLatchWaitInMS
-							ELSE a.TreePageLatchWaitInMS - a.PreviousTreePageLatchWaitInMS
-						END AS DeltaTreePageLatchWaitInMS
-						,CASE
-							WHEN (a.PreviousTreePageIOLatchWaitCount IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
-							WHEN (a.PreviousTreePageIOLatchWaitCount > a.TreePageIOLatchWaitCount) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.TreePageIOLatchWaitCount
-							ELSE a.TreePageIOLatchWaitCount - a.PreviousTreePageIOLatchWaitCount
-						END AS DeltaTreePageIOLatchWaitCount
-						,CASE
-							WHEN (a.PreviousTreePageIOLatchWaitInMS IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
-							WHEN (a.PreviousTreePageIOLatchWaitInMS > a.TreePageIOLatchWaitInMS) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.TreePageIOLatchWaitInMS
-							ELSE a.TreePageIOLatchWaitInMS - a.PreviousTreePageIOLatchWaitInMS
-						END AS DeltaTreePageIOLatchWaitInMS
-						,CASE
-							WHEN (a.PreviousPageCompressionAttemptCount IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
-							WHEN (a.PreviousPageCompressionAttemptCount > a.PageCompressionAttemptCount) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.PageCompressionAttemptCount
-							ELSE a.PageCompressionAttemptCount - a.PreviousPageCompressionAttemptCount
-						END AS DeltaPageCompressionAttemptCount
-						,CASE
-							WHEN (a.PreviousPageCompressionSuccessCount IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
-							WHEN (a.PreviousPageCompressionSuccessCount > a.PageCompressionSuccessCount) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.PageCompressionSuccessCount
-							ELSE a.PageCompressionSuccessCount - a.PreviousPageCompressionSuccessCount
-						END AS DeltaPageCompressionSuccessCount
-						,CASE
-							WHEN (a.PreviousVersionGeneratedInrow IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
-							WHEN (a.PreviousVersionGeneratedInrow > a.VersionGeneratedInrow) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.VersionGeneratedInrow
-							ELSE a.VersionGeneratedInrow - a.PreviousVersionGeneratedInrow
-						END AS DeltaVersionGeneratedInrow
-						,CASE
-							WHEN (a.PreviousVersionGeneratedOffrow IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
-							WHEN (a.PreviousVersionGeneratedOffrow > a.VersionGeneratedOffrow) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.VersionGeneratedOffrow
-							ELSE a.VersionGeneratedOffrow - a.PreviousVersionGeneratedOffrow
-						END AS DeltaVersionGeneratedOffrow
-						,CASE
-							WHEN (a.PreviousGhostVersionInrow IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
-							WHEN (a.PreviousGhostVersionInrow > a.GhostVersionInrow) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.GhostVersionInrow
-							ELSE a.GhostVersionInrow - a.PreviousGhostVersionInrow
-						END AS DeltaGhostVersionInrow
-						,CASE
-							WHEN (a.PreviousGhostVersionOffrow IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
-							WHEN (a.PreviousGhostVersionOffrow > a.GhostVersionOffrow) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.GhostVersionOffrow
-							ELSE a.GhostVersionOffrow - a.PreviousGhostVersionOffrow
-						END AS DeltaGhostVersionOffrow
-						,CASE
-							WHEN (a.PreviousInsertOverGhostVersionInrow IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
-							WHEN (a.PreviousInsertOverGhostVersionInrow > a.InsertOverGhostVersionInrow) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.InsertOverGhostVersionInrow
-							ELSE a.InsertOverGhostVersionInrow - a.PreviousInsertOverGhostVersionInrow
-						END AS DeltaInsertOverGhostVersionInrow
-						,CASE
-							WHEN (a.PreviousInsertOverGhostVersionOffrow IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
-							WHEN (a.PreviousInsertOverGhostVersionOffrow > a.InsertOverGhostVersionOffrow) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.InsertOverGhostVersionOffrow
-							ELSE a.InsertOverGhostVersionOffrow - a.PreviousInsertOverGhostVersionOffrow
-						END AS DeltaInsertOverGhostVersionOffrow
-						,a.Date
-						,a.TimeKey
-						,a.DatabaseKey
-						,a.SchemaKey
-						,a.ObjectKey
-						,a.IndexKey
-					FROM (
-						SELECT
-							io.LeafInsertCount
-							,LAG(io.LeafInsertCount) OVER(PARTITION BY io.DatabaseName, io.SchemaName, io.ObjectName, io.IndexName ORDER BY io.TimestampUTC) AS PreviousLeafInsertCount
-							,io.LeafDeleteCount
-							,LAG(io.LeafDeleteCount) OVER(PARTITION BY io.DatabaseName, io.SchemaName, io.ObjectName, io.IndexName ORDER BY io.TimestampUTC) AS PreviousLeafDeleteCount
-							,io.LeafUpdateCount
-							,LAG(io.LeafUpdateCount) OVER(PARTITION BY io.DatabaseName, io.SchemaName, io.ObjectName, io.IndexName ORDER BY io.TimestampUTC) AS PreviousLeafUpdateCount
-							,io.LeafGhostCount
-							,LAG(io.LeafGhostCount) OVER(PARTITION BY io.DatabaseName, io.SchemaName, io.ObjectName, io.IndexName ORDER BY io.TimestampUTC) AS PreviousLeafGhostCount
-							,io.NonleafInsertCount
-							,LAG(io.NonleafInsertCount) OVER(PARTITION BY io.DatabaseName, io.SchemaName, io.ObjectName, io.IndexName ORDER BY io.TimestampUTC) AS PreviousNonleafInsertCount
-							,io.NonleafDeleteCount
-							,LAG(io.NonleafDeleteCount) OVER(PARTITION BY io.DatabaseName, io.SchemaName, io.ObjectName, io.IndexName ORDER BY io.TimestampUTC) AS PreviousNonleafDeleteCount
-							,io.NonleafUpdateCount
-							,LAG(io.NonleafUpdateCount) OVER(PARTITION BY io.DatabaseName, io.SchemaName, io.ObjectName, io.IndexName ORDER BY io.TimestampUTC) AS PreviousNonleafUpdateCount
-							,io.LeafAllocationCount
-							,LAG(io.LeafAllocationCount) OVER(PARTITION BY io.DatabaseName, io.SchemaName, io.ObjectName, io.IndexName ORDER BY io.TimestampUTC) AS PreviousLeafAllocationCount
-							,io.NonleafAllocationCount
-							,LAG(io.NonleafAllocationCount) OVER(PARTITION BY io.DatabaseName, io.SchemaName, io.ObjectName, io.IndexName ORDER BY io.TimestampUTC) AS PreviousNonleafAllocationCount
-							,io.LeafPageMergeCount
-							,LAG(io.LeafPageMergeCount) OVER(PARTITION BY io.DatabaseName, io.SchemaName, io.ObjectName, io.IndexName ORDER BY io.TimestampUTC) AS PreviousLeafPageMergeCount
-							,io.NonleafPageMergeCount
-							,LAG(io.NonleafPageMergeCount) OVER(PARTITION BY io.DatabaseName, io.SchemaName, io.ObjectName, io.IndexName ORDER BY io.TimestampUTC) AS PreviousNonleafPageMergeCount
-							,io.RangeScanCount
-							,LAG(io.RangeScanCount) OVER(PARTITION BY io.DatabaseName, io.SchemaName, io.ObjectName, io.IndexName ORDER BY io.TimestampUTC) AS PreviousRangeScanCount
-							,io.SingletonLookupCount
-							,LAG(io.SingletonLookupCount) OVER(PARTITION BY io.DatabaseName, io.SchemaName, io.ObjectName, io.IndexName ORDER BY io.TimestampUTC) AS PreviousSingletonLookupCount
-							,io.ForwardedFetchCount
-							,LAG(io.ForwardedFetchCount) OVER(PARTITION BY io.DatabaseName, io.SchemaName, io.ObjectName, io.IndexName ORDER BY io.TimestampUTC) AS PreviousForwardedFetchCount
-							,io.LOBFetchInPages
-							,LAG(io.LOBFetchInPages) OVER(PARTITION BY io.DatabaseName, io.SchemaName, io.ObjectName, io.IndexName ORDER BY io.TimestampUTC) AS PreviousLOBFetchInPages
-							,io.LOBFetchInBytes
-							,LAG(io.LOBFetchInBytes) OVER(PARTITION BY io.DatabaseName, io.SchemaName, io.ObjectName, io.IndexName ORDER BY io.TimestampUTC) AS PreviousLOBFetchInBytes
-							,io.LOBOrphanCreateCount
-							,LAG(io.LOBOrphanCreateCount) OVER(PARTITION BY io.DatabaseName, io.SchemaName, io.ObjectName, io.IndexName ORDER BY io.TimestampUTC) AS PreviousLOBOrphanCreateCount
-							,io.LOBOrphanInsertCount
-							,LAG(io.LOBOrphanInsertCount) OVER(PARTITION BY io.DatabaseName, io.SchemaName, io.ObjectName, io.IndexName ORDER BY io.TimestampUTC) AS PreviousLOBOrphanInsertCount
-							,io.RowOverflowFetchInPages
-							,LAG(io.RowOverflowFetchInPages) OVER(PARTITION BY io.DatabaseName, io.SchemaName, io.ObjectName, io.IndexName ORDER BY io.TimestampUTC) AS PreviousRowOverflowFetchInPages
-							,io.RowOverflowFetchInBytes
-							,LAG(io.RowOverflowFetchInBytes) OVER(PARTITION BY io.DatabaseName, io.SchemaName, io.ObjectName, io.IndexName ORDER BY io.TimestampUTC) AS PreviousRowOverflowFetchInBytes
-							,io.ColumnValuePushOffRowCount
-							,LAG(io.ColumnValuePushOffRowCount) OVER(PARTITION BY io.DatabaseName, io.SchemaName, io.ObjectName, io.IndexName ORDER BY io.TimestampUTC) AS PreviousColumnValuePushOffRowCount
-							,io.ColumnValuePullInRowCount
-							,LAG(io.ColumnValuePullInRowCount) OVER(PARTITION BY io.DatabaseName, io.SchemaName, io.ObjectName, io.IndexName ORDER BY io.TimestampUTC) AS PreviousColumnValuePullInRowCount
-							,io.RowLockCount
-							,LAG(io.RowLockCount) OVER(PARTITION BY io.DatabaseName, io.SchemaName, io.ObjectName, io.IndexName ORDER BY io.TimestampUTC) AS PreviousRowLockCount
-							,io.RowLockWaitCount
-							,LAG(io.RowLockWaitCount) OVER(PARTITION BY io.DatabaseName, io.SchemaName, io.ObjectName, io.IndexName ORDER BY io.TimestampUTC) AS PreviousRowLockWaitCount
-							,io.RowLockWaitInMS
-							,LAG(io.RowLockWaitInMS) OVER(PARTITION BY io.DatabaseName, io.SchemaName, io.ObjectName, io.IndexName ORDER BY io.TimestampUTC) AS PreviousRowLockWaitInMS
-							,io.PageLockCount
-							,LAG(io.PageLockCount) OVER(PARTITION BY io.DatabaseName, io.SchemaName, io.ObjectName, io.IndexName ORDER BY io.TimestampUTC) AS PreviousPageLockCount
-							,io.PageLockWaitCount
-							,LAG(io.PageLockWaitCount) OVER(PARTITION BY io.DatabaseName, io.SchemaName, io.ObjectName, io.IndexName ORDER BY io.TimestampUTC) AS PreviousPageLockWaitCount
-							,io.PageLockWaitInMS
-							,LAG(io.PageLockWaitInMS) OVER(PARTITION BY io.DatabaseName, io.SchemaName, io.ObjectName, io.IndexName ORDER BY io.TimestampUTC) AS PreviousPageLockWaitInMS
-							,io.IndexLockPromotionAttemptCount
-							,LAG(io.IndexLockPromotionAttemptCount) OVER(PARTITION BY io.DatabaseName, io.SchemaName, io.ObjectName, io.IndexName ORDER BY io.TimestampUTC) AS PreviousIndexLockPromotionAttemptCount
-							,io.IndexLockPromotionCount
-							,LAG(io.IndexLockPromotionCount) OVER(PARTITION BY io.DatabaseName, io.SchemaName, io.ObjectName, io.IndexName ORDER BY io.TimestampUTC) AS PreviousIndexLockPromotionCount
-							,io.PageLatchWaitCount
-							,LAG(io.PageLatchWaitCount) OVER(PARTITION BY io.DatabaseName, io.SchemaName, io.ObjectName, io.IndexName ORDER BY io.TimestampUTC) AS PreviousPageLatchWaitCount
-							,io.PageLatchWaitInMS
-							,LAG(io.PageLatchWaitInMS) OVER(PARTITION BY io.DatabaseName, io.SchemaName, io.ObjectName, io.IndexName ORDER BY io.TimestampUTC) AS PreviousPageLatchWaitInMS
-							,io.PageIOLatchWaitCount
-							,LAG(io.PageIOLatchWaitCount) OVER(PARTITION BY io.DatabaseName, io.SchemaName, io.ObjectName, io.IndexName ORDER BY io.TimestampUTC) AS PreviousPageIOLatchWaitCount
-							,io.PageIOLatchWaitInMS
-							,LAG(io.PageIOLatchWaitInMS) OVER(PARTITION BY io.DatabaseName, io.SchemaName, io.ObjectName, io.IndexName ORDER BY io.TimestampUTC) AS PreviousPageIOLatchWaitInMS
-							,io.TreePageLatchWaitCount
-							,LAG(io.TreePageLatchWaitCount) OVER(PARTITION BY io.DatabaseName, io.SchemaName, io.ObjectName, io.IndexName ORDER BY io.TimestampUTC) AS PreviousTreePageLatchWaitCount
-							,io.TreePageLatchWaitInMS
-							,LAG(io.TreePageLatchWaitInMS) OVER(PARTITION BY io.DatabaseName, io.SchemaName, io.ObjectName, io.IndexName ORDER BY io.TimestampUTC) AS PreviousTreePageLatchWaitInMS
-							,io.TreePageIOLatchWaitCount
-							,LAG(io.TreePageIOLatchWaitCount) OVER(PARTITION BY io.DatabaseName, io.SchemaName, io.ObjectName, io.IndexName ORDER BY io.TimestampUTC) AS PreviousTreePageIOLatchWaitCount
-							,io.TreePageIOLatchWaitInMS
-							,LAG(io.TreePageIOLatchWaitInMS) OVER(PARTITION BY io.DatabaseName, io.SchemaName, io.ObjectName, io.IndexName ORDER BY io.TimestampUTC) AS PreviousTreePageIOLatchWaitInMS
-							,io.PageCompressionAttemptCount
-							,LAG(io.PageCompressionAttemptCount) OVER(PARTITION BY io.DatabaseName, io.SchemaName, io.ObjectName, io.IndexName ORDER BY io.TimestampUTC) AS PreviousPageCompressionAttemptCount
-							,io.PageCompressionSuccessCount
-							,LAG(io.PageCompressionSuccessCount) OVER(PARTITION BY io.DatabaseName, io.SchemaName, io.ObjectName, io.IndexName ORDER BY io.TimestampUTC) AS PreviousPageCompressionSuccessCount
-							,io.VersionGeneratedInrow
-							,LAG(io.VersionGeneratedInrow) OVER(PARTITION BY io.DatabaseName, io.SchemaName, io.ObjectName, io.IndexName ORDER BY io.TimestampUTC) AS PreviousVersionGeneratedInrow
-							,io.VersionGeneratedOffrow
-							,LAG(io.VersionGeneratedOffrow) OVER(PARTITION BY io.DatabaseName, io.SchemaName, io.ObjectName, io.IndexName ORDER BY io.TimestampUTC) AS PreviousVersionGeneratedOffrow
-							,io.GhostVersionInrow
-							,LAG(io.GhostVersionInrow) OVER(PARTITION BY io.DatabaseName, io.SchemaName, io.ObjectName, io.IndexName ORDER BY io.TimestampUTC) AS PreviousGhostVersionInrow
-							,io.GhostVersionOffrow
-							,LAG(io.GhostVersionOffrow) OVER(PARTITION BY io.DatabaseName, io.SchemaName, io.ObjectName, io.IndexName ORDER BY io.TimestampUTC) AS PreviousGhostVersionOffrow
-							,io.InsertOverGhostVersionInrow
-							,LAG(io.InsertOverGhostVersionInrow) OVER(PARTITION BY io.DatabaseName, io.SchemaName, io.ObjectName, io.IndexName ORDER BY io.TimestampUTC) AS PreviousInsertOverGhostVersionInrow
-							,io.InsertOverGhostVersionOffrow
-							,LAG(io.InsertOverGhostVersionOffrow) OVER(PARTITION BY io.DatabaseName, io.SchemaName, io.ObjectName, io.IndexName ORDER BY io.TimestampUTC) AS PreviousInsertOverGhostVersionOffrow
-							,io.LastSQLServiceRestart
-							,LAG(io.LastSQLServiceRestart) OVER(PARTITION BY io.DatabaseName, io.SchemaName, io.ObjectName, io.IndexName ORDER BY io.TimestampUTC) AS PreviousLastSQLServiceRestart
-							,CAST(io.Timestamp AS date) AS Date
-							,(DATEPART(HOUR, io.Timestamp) * 60 * 60) + (DATEPART(MINUTE, io.Timestamp) * 60) + (DATEPART(SECOND, io.Timestamp)) AS TimeKey
-							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(io.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
-							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(io.DatabaseName, io.SchemaName, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS SchemaKey
-							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(io.DatabaseName, io.SchemaName, io.ObjectName, DEFAULT, DEFAULT, DEFAULT) AS k) AS ObjectKey
-							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(io.DatabaseName, io.SchemaName, io.ObjectName, COALESCE(io.IndexName, ''N.A.''), DEFAULT, DEFAULT) AS k) AS IndexKey
-						FROM dbo.fhsmIndexOperational AS io
-					) AS a
-				) AS b;
+					ior.LeafInsertCount
+					,ior.LeafDeleteCount
+					,ior.LeafUpdateCount
+					,ior.LeafGhostCount
+					,ior.NonleafInsertCount
+					,ior.NonleafDeleteCount
+					,ior.NonleafUpdateCount
+					,ior.LeafAllocationCount
+					,ior.NonleafAllocationCount
+					,ior.LeafPageMergeCount
+					,ior.NonleafPageMergeCount
+					,ior.RangeScanCount
+					,ior.SingletonLookupCount
+					,ior.ForwardedFetchCount
+					,ior.LOBFetchInPages
+					,ior.LOBFetchInBytes
+					,ior.LOBOrphanCreateCount
+					,ior.LOBOrphanInsertCount
+					,ior.RowOverflowFetchInPages
+					,ior.RowOverflowFetchInBytes
+					,ior.ColumnValuePushOffRowCount
+					,ior.ColumnValuePullInRowCount
+					,ior.RowLockCount
+					,ior.RowLockWaitCount
+					,ior.RowLockWaitInMS
+					,ior.PageLockCount
+					,ior.PageLockWaitCount
+					,ior.PageLockWaitInMS
+					,ior.IndexLockPromotionAttemptCount
+					,ior.IndexLockPromotionCount
+					,ior.PageLatchWaitCount
+					,ior.PageLatchWaitInMS
+					,ior.PageIOLatchWaitCount
+					,ior.PageIOLatchWaitInMS
+					,ior.TreePageLatchWaitCount
+					,ior.TreePageLatchWaitInMS
+					,ior.TreePageIOLatchWaitCount
+					,ior.TreePageIOLatchWaitInMS
+					,ior.PageCompressionAttemptCount
+					,ior.PageCompressionSuccessCount
+					,ior.VersionGeneratedInrow
+					,ior.VersionGeneratedOffrow
+					,ior.GhostVersionInrow
+					,ior.GhostVersionOffrow
+					,ior.InsertOverGhostVersionInrow
+					,ior.InsertOverGhostVersionOffrow
+					,ior.Date
+					,ior.TimeKey
+					,ior.DatabaseKey
+					,ior.SchemaKey
+					,ior.ObjectKey
+					,ior.IndexKey
+				FROM dbo.fhsmIndexOperationalReport AS ior;
 			';
 			EXEC(@stmt);
 		END;
@@ -797,6 +543,463 @@ ELSE BEGIN
 
 						CLOSE dCur;
 						DEALLOCATE dCur;
+
+						--
+						-- Insert records into fhsmIndexOperationalReport
+						--
+						BEGIN
+							--
+							-- Delete if already processed
+							--
+							BEGIN
+								DELETE ior
+								FROM dbo.fhsmIndexOperationalReport AS ior WHERE (ior.TimestampUTC = @nowUTC);
+							END;
+
+							--
+							-- Process delta
+							--
+							INSERT INTO dbo.fhsmIndexOperationalReport(
+								LeafInsertCount, LeafDeleteCount, LeafUpdateCount, LeafGhostCount
+								,NonleafInsertCount, NonleafDeleteCount, NonleafUpdateCount
+								,LeafAllocationCount, NonleafAllocationCount
+								,LeafPageMergeCount, NonleafPageMergeCount
+								,RangeScanCount, SingletonLookupCount, ForwardedFetchCount
+								,LOBFetchInPages, LOBFetchInBytes
+								,LOBOrphanCreateCount, LOBOrphanInsertCount
+								,RowOverflowFetchInPages, RowOverflowFetchInBytes
+								,ColumnValuePushOffRowCount, ColumnValuePullInRowCount
+								,RowLockCount, RowLockWaitCount, RowLockWaitInMS
+								,PageLockCount, PageLockWaitCount, PageLockWaitInMS
+								,IndexLockPromotionAttemptCount, IndexLockPromotionCount
+								,PageLatchWaitCount, PageLatchWaitInMS
+								,PageIOLatchWaitCount, PageIOLatchWaitInMS
+								,TreePageLatchWaitCount, TreePageLatchWaitInMS
+								,TreePageIOLatchWaitCount, TreePageIOLatchWaitInMS
+								,PageCompressionAttemptCount, PageCompressionSuccessCount
+								,VersionGeneratedInrow, VersionGeneratedOffrow
+								,GhostVersionInrow, GhostVersionOffrow
+								,InsertOverGhostVersionInrow, InsertOverGhostVersionOffrow
+								,TimestampUTC, Timestamp
+								,DatabaseName, SchemaName, ObjectName, IndexName
+								,Date, TimeKey
+								,DatabaseKey, SchemaKey, ObjectKey, IndexKey
+							)
+							SELECT
+								b.DeltaLeafInsertCount AS LeafInsertCount
+								,b.DeltaLeafDeleteCount AS LeafDeleteCount
+								,b.DeltaLeafUpdateCount AS LeafUpdateCount
+								,b.DeltaLeafGhostCount AS LeafGhostCount
+								,b.DeltaNonleafInsertCount AS NonleafInsertCount
+								,b.DeltaNonleafDeleteCount AS NonleafDeleteCount
+								,b.DeltaNonleafUpdateCount AS NonleafUpdateCount
+								,b.DeltaLeafAllocationCount AS LeafAllocationCount
+								,b.DeltaNonleafAllocationCount AS NonleafAllocationCount
+								,b.DeltaLeafPageMergeCount AS LeafPageMergeCount
+								,b.DeltaNonleafPageMergeCount AS NonleafPageMergeCount
+								,b.DeltaRangeScanCount AS RangeScanCount
+								,b.DeltaSingletonLookupCount AS SingletonLookupCount
+								,b.DeltaForwardedFetchCount AS ForwardedFetchCount
+								,b.DeltaLOBFetchInPages AS LOBFetchInPages
+								,b.DeltaLOBFetchInBytes AS LOBFetchInBytes
+								,b.DeltaLOBOrphanCreateCount AS LOBOrphanCreateCount
+								,b.DeltaLOBOrphanInsertCount AS LOBOrphanInsertCount
+								,b.DeltaRowOverflowFetchInPages AS RowOverflowFetchInPages
+								,b.DeltaRowOverflowFetchInBytes AS RowOverflowFetchInBytes
+								,b.DeltaColumnValuePushOffRowCount AS ColumnValuePushOffRowCount
+								,b.DeltaColumnValuePullInRowCount AS ColumnValuePullInRowCount
+								,b.DeltaRowLockCount AS RowLockCount
+								,b.DeltaRowLockWaitCount AS RowLockWaitCount
+								,b.DeltaRowLockWaitInMS AS RowLockWaitInMS
+								,b.DeltaPageLockCount AS PageLockCount
+								,b.DeltaPageLockWaitCount AS PageLockWaitCount
+								,b.DeltaPageLockWaitInMS AS PageLockWaitInMS
+								,b.DeltaIndexLockPromotionAttemptCount AS IndexLockPromotionAttemptCount
+								,b.DeltaIndexLockPromotionCount AS IndexLockPromotionCount
+								,b.DeltaPageLatchWaitCount AS PageLatchWaitCount
+								,b.DeltaPageLatchWaitInMS AS PageLatchWaitInMS
+								,b.DeltaPageIOLatchWaitCount AS PageIOLatchWaitCount
+								,b.DeltaPageIOLatchWaitInMS AS PageIOLatchWaitInMS
+								,b.DeltaTreePageLatchWaitCount AS TreePageLatchWaitCount
+								,b.DeltaTreePageLatchWaitInMS AS TreePageLatchWaitInMS
+								,b.DeltaTreePageIOLatchWaitCount AS TreePageIOLatchWaitCount
+								,b.DeltaTreePageIOLatchWaitInMS AS TreePageIOLatchWaitInMS
+								,b.DeltaPageCompressionAttemptCount AS PageCompressionAttemptCount
+								,b.DeltaPageCompressionSuccessCount AS PageCompressionSuccessCount
+								,b.DeltaVersionGeneratedInrow AS VersionGeneratedInrow
+								,b.DeltaVersionGeneratedOffrow AS VersionGeneratedOffrow
+								,b.DeltaGhostVersionInrow AS GhostVersionInrow
+								,b.DeltaGhostVersionOffrow AS GhostVersionOffrow
+								,b.DeltaInsertOverGhostVersionInrow AS InsertOverGhostVersionInrow
+								,b.DeltaInsertOverGhostVersionOffrow AS InsertOverGhostVersionOffrow
+								,b.TimestampUTC
+								,b.Timestamp
+								,b.DatabaseName
+								,b.SchemaName
+								,b.ObjectName
+								,b.IndexName
+								,CAST(b.Timestamp AS date) AS Date
+								,(DATEPART(HOUR, b.Timestamp) * 60 * 60) + (DATEPART(MINUTE, b.Timestamp) * 60) + (DATEPART(SECOND, b.Timestamp)) AS TimeKey
+								,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(b.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
+								,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(b.DatabaseName, b.SchemaName, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS SchemaKey
+								,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(b.DatabaseName, b.SchemaName, b.ObjectName, DEFAULT, DEFAULT, DEFAULT) AS k) AS ObjectKey
+								,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(b.DatabaseName, b.SchemaName, b.ObjectName, COALESCE(b.IndexName, ''N.A.''), DEFAULT, DEFAULT) AS k) AS IndexKey
+							FROM (
+								SELECT
+									CASE
+										WHEN (a.PreviousLeafInsertCount IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL													-- Ignore 1. data set - Yes we loose one data set but better than having visuals showing very high data
+										WHEN (a.PreviousLeafInsertCount > a.LeafInsertCount) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.LeafInsertCount		-- Either has the counters had an overflow or the server har been restarted
+										ELSE a.LeafInsertCount - a.PreviousLeafInsertCount																								-- Difference
+									END AS DeltaLeafInsertCount
+									,CASE
+										WHEN (a.PreviousLeafDeleteCount IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+										WHEN (a.PreviousLeafDeleteCount > a.LeafDeleteCount) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.LeafDeleteCount
+										ELSE a.LeafDeleteCount - a.PreviousLeafDeleteCount
+									END AS DeltaLeafDeleteCount
+									,CASE
+										WHEN (a.PreviousLeafUpdateCount IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+										WHEN (a.PreviousLeafUpdateCount > a.LeafUpdateCount) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.LeafUpdateCount
+										ELSE a.LeafUpdateCount - a.PreviousLeafUpdateCount
+									END AS DeltaLeafUpdateCount
+									,CASE
+										WHEN (a.PreviousLeafGhostCount IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+										WHEN (a.PreviousLeafGhostCount > a.LeafGhostCount) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.LeafGhostCount
+										ELSE a.LeafGhostCount - a.PreviousLeafGhostCount
+									END AS DeltaLeafGhostCount
+									,CASE
+										WHEN (a.PreviousNonleafInsertCount IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+										WHEN (a.PreviousNonleafInsertCount > a.NonleafInsertCount) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.NonleafInsertCount
+										ELSE a.NonleafInsertCount - a.PreviousNonleafInsertCount
+									END AS DeltaNonleafInsertCount
+									,CASE
+										WHEN (a.PreviousNonleafDeleteCount IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+										WHEN (a.PreviousNonleafDeleteCount > a.NonleafDeleteCount) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.NonleafDeleteCount
+										ELSE a.NonleafDeleteCount - a.PreviousNonleafDeleteCount
+									END AS DeltaNonleafDeleteCount
+									,CASE
+										WHEN (a.PreviousNonleafUpdateCount IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+										WHEN (a.PreviousNonleafUpdateCount > a.NonleafUpdateCount) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.NonleafUpdateCount
+										ELSE a.NonleafUpdateCount - a.PreviousNonleafUpdateCount
+									END AS DeltaNonleafUpdateCount
+									,CASE
+										WHEN (a.PreviousLeafAllocationCount IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+										WHEN (a.PreviousLeafAllocationCount > a.LeafAllocationCount) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.LeafAllocationCount
+										ELSE a.LeafAllocationCount - a.PreviousLeafAllocationCount
+									END AS DeltaLeafAllocationCount
+									,CASE
+										WHEN (a.PreviousNonleafAllocationCount IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+										WHEN (a.PreviousNonleafAllocationCount > a.NonleafAllocationCount) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.NonleafAllocationCount
+										ELSE a.NonleafAllocationCount - a.PreviousNonleafAllocationCount
+									END AS DeltaNonleafAllocationCount
+									,CASE
+										WHEN (a.PreviousLeafPageMergeCount IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+										WHEN (a.PreviousLeafPageMergeCount > a.LeafPageMergeCount) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.LeafPageMergeCount
+										ELSE a.LeafPageMergeCount - a.PreviousLeafPageMergeCount
+									END AS DeltaLeafPageMergeCount
+									,CASE
+										WHEN (a.PreviousNonleafPageMergeCount IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+										WHEN (a.PreviousNonleafPageMergeCount > a.NonleafPageMergeCount) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.NonleafPageMergeCount
+										ELSE a.NonleafPageMergeCount - a.PreviousNonleafPageMergeCount
+									END AS DeltaNonleafPageMergeCount
+									,CASE
+										WHEN (a.PreviousRangeScanCount IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+										WHEN (a.PreviousRangeScanCount > a.RangeScanCount) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.RangeScanCount
+										ELSE a.RangeScanCount - a.PreviousRangeScanCount
+									END AS DeltaRangeScanCount
+									,CASE
+										WHEN (a.PreviousSingletonLookupCount IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+										WHEN (a.PreviousSingletonLookupCount > a.SingletonLookupCount) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.SingletonLookupCount
+										ELSE a.SingletonLookupCount - a.PreviousSingletonLookupCount
+									END AS DeltaSingletonLookupCount
+									,CASE
+										WHEN (a.PreviousForwardedFetchCount IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+										WHEN (a.PreviousForwardedFetchCount > a.ForwardedFetchCount) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.ForwardedFetchCount
+										ELSE a.ForwardedFetchCount - a.PreviousForwardedFetchCount
+									END AS DeltaForwardedFetchCount
+									,CASE
+										WHEN (a.PreviousLOBFetchInPages IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+										WHEN (a.PreviousLOBFetchInPages > a.LOBFetchInPages) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.LOBFetchInPages
+										ELSE a.LOBFetchInPages - a.PreviousLOBFetchInPages
+									END AS DeltaLOBFetchInPages
+									,CASE
+										WHEN (a.PreviousLOBFetchInBytes IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+										WHEN (a.PreviousLOBFetchInBytes > a.LOBFetchInBytes) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.LOBFetchInBytes
+										ELSE a.LOBFetchInBytes - a.PreviousLOBFetchInBytes
+									END AS DeltaLOBFetchInBytes
+									,CASE
+										WHEN (a.PreviousLOBOrphanCreateCount IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+										WHEN (a.PreviousLOBOrphanCreateCount > a.LOBOrphanCreateCount) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.LOBOrphanCreateCount
+										ELSE a.LOBOrphanCreateCount - a.PreviousLOBOrphanCreateCount
+									END AS DeltaLOBOrphanCreateCount
+									,CASE
+										WHEN (a.PreviousLOBOrphanInsertCount IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+										WHEN (a.PreviousLOBOrphanInsertCount > a.LOBOrphanInsertCount) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.LOBOrphanInsertCount
+										ELSE a.LOBOrphanInsertCount - a.PreviousLOBOrphanInsertCount
+									END AS DeltaLOBOrphanInsertCount
+									,CASE
+										WHEN (a.PreviousRowOverflowFetchInPages IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+										WHEN (a.PreviousRowOverflowFetchInPages > a.RowOverflowFetchInPages) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.RowOverflowFetchInPages
+										ELSE a.RowOverflowFetchInPages - a.PreviousRowOverflowFetchInPages
+									END AS DeltaRowOverflowFetchInPages
+									,CASE
+										WHEN (a.PreviousRowOverflowFetchInBytes IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+										WHEN (a.PreviousRowOverflowFetchInBytes > a.RowOverflowFetchInBytes) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.RowOverflowFetchInBytes
+										ELSE a.RowOverflowFetchInBytes - a.PreviousRowOverflowFetchInBytes
+									END AS DeltaRowOverflowFetchInBytes
+									,CASE
+										WHEN (a.PreviousColumnValuePushOffRowCount IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+										WHEN (a.PreviousColumnValuePushOffRowCount > a.ColumnValuePushOffRowCount) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.ColumnValuePushOffRowCount
+										ELSE a.ColumnValuePushOffRowCount - a.PreviousColumnValuePushOffRowCount
+									END AS DeltaColumnValuePushOffRowCount
+									,CASE
+										WHEN (a.PreviousColumnValuePullInRowCount IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+										WHEN (a.PreviousColumnValuePullInRowCount > a.ColumnValuePullInRowCount) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.ColumnValuePullInRowCount
+										ELSE a.ColumnValuePullInRowCount - a.PreviousColumnValuePullInRowCount
+									END AS DeltaColumnValuePullInRowCount
+									,CASE
+										WHEN (a.PreviousRowLockCount IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+										WHEN (a.PreviousRowLockCount > a.RowLockCount) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.RowLockCount
+										ELSE a.RowLockCount - a.PreviousRowLockCount
+									END AS DeltaRowLockCount
+									,CASE
+										WHEN (a.PreviousRowLockWaitCount IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+										WHEN (a.PreviousRowLockWaitCount > a.RowLockWaitCount) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.RowLockWaitCount
+										ELSE a.RowLockWaitCount - a.PreviousRowLockWaitCount
+									END AS DeltaRowLockWaitCount
+									,CASE
+										WHEN (a.PreviousRowLockWaitInMS IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+										WHEN (a.PreviousRowLockWaitInMS > a.RowLockWaitInMS) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.RowLockWaitInMS
+										ELSE a.RowLockWaitInMS - a.PreviousRowLockWaitInMS
+									END AS DeltaRowLockWaitInMS
+									,CASE
+										WHEN (a.PreviousPageLockCount IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+										WHEN (a.PreviousPageLockCount > a.PageLockCount) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.PageLockCount
+										ELSE a.PageLockCount - a.PreviousPageLockCount
+									END AS DeltaPageLockCount
+									,CASE
+										WHEN (a.PreviousPageLockWaitCount IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+										WHEN (a.PreviousPageLockWaitCount > a.PageLockWaitCount) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.PageLockWaitCount
+										ELSE a.PageLockWaitCount - a.PreviousPageLockWaitCount
+									END AS DeltaPageLockWaitCount
+									,CASE
+										WHEN (a.PreviousPageLockWaitInMS IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+										WHEN (a.PreviousPageLockWaitInMS > a.PageLockWaitInMS) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.PageLockWaitInMS
+										ELSE a.PageLockWaitInMS - a.PreviousPageLockWaitInMS
+									END AS DeltaPageLockWaitInMS
+									,CASE
+										WHEN (a.PreviousIndexLockPromotionAttemptCount IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+										WHEN (a.PreviousIndexLockPromotionAttemptCount > a.IndexLockPromotionAttemptCount) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.IndexLockPromotionAttemptCount
+										ELSE a.IndexLockPromotionAttemptCount - a.PreviousIndexLockPromotionAttemptCount
+									END AS DeltaIndexLockPromotionAttemptCount
+									,CASE
+										WHEN (a.PreviousIndexLockPromotionCount IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+										WHEN (a.PreviousIndexLockPromotionCount > a.IndexLockPromotionCount) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.IndexLockPromotionCount
+										ELSE a.IndexLockPromotionCount - a.PreviousIndexLockPromotionCount
+									END AS DeltaIndexLockPromotionCount
+									,CASE
+										WHEN (a.PreviousPageLatchWaitCount IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+										WHEN (a.PreviousPageLatchWaitCount > a.PageLatchWaitCount) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.PageLatchWaitCount
+										ELSE a.PageLatchWaitCount - a.PreviousPageLatchWaitCount
+									END AS DeltaPageLatchWaitCount
+									,CASE
+										WHEN (a.PreviousPageLatchWaitInMS IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+										WHEN (a.PreviousPageLatchWaitInMS > a.PageLatchWaitInMS) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.PageLatchWaitInMS
+										ELSE a.PageLatchWaitInMS - a.PreviousPageLatchWaitInMS
+									END AS DeltaPageLatchWaitInMS
+									,CASE
+										WHEN (a.PreviousPageIOLatchWaitCount IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+										WHEN (a.PreviousPageIOLatchWaitCount > a.PageIOLatchWaitCount) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.PageIOLatchWaitCount
+										ELSE a.PageIOLatchWaitCount - a.PreviousPageIOLatchWaitCount
+									END AS DeltaPageIOLatchWaitCount
+									,CASE
+										WHEN (a.PreviousPageIOLatchWaitInMS IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+										WHEN (a.PreviousPageIOLatchWaitInMS > a.PageIOLatchWaitInMS) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.PageIOLatchWaitInMS
+										ELSE a.PageIOLatchWaitInMS - a.PreviousPageIOLatchWaitInMS
+									END AS DeltaPageIOLatchWaitInMS
+									,CASE
+										WHEN (a.PreviousTreePageLatchWaitCount IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+										WHEN (a.PreviousTreePageLatchWaitCount > a.TreePageLatchWaitCount) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.TreePageLatchWaitCount
+										ELSE a.TreePageLatchWaitCount - a.PreviousTreePageLatchWaitCount
+									END AS DeltaTreePageLatchWaitCount
+									,CASE
+										WHEN (a.PreviousTreePageLatchWaitInMS IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+										WHEN (a.PreviousTreePageLatchWaitInMS > a.TreePageLatchWaitInMS) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.TreePageLatchWaitInMS
+										ELSE a.TreePageLatchWaitInMS - a.PreviousTreePageLatchWaitInMS
+									END AS DeltaTreePageLatchWaitInMS
+									,CASE
+										WHEN (a.PreviousTreePageIOLatchWaitCount IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+										WHEN (a.PreviousTreePageIOLatchWaitCount > a.TreePageIOLatchWaitCount) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.TreePageIOLatchWaitCount
+										ELSE a.TreePageIOLatchWaitCount - a.PreviousTreePageIOLatchWaitCount
+									END AS DeltaTreePageIOLatchWaitCount
+									,CASE
+										WHEN (a.PreviousTreePageIOLatchWaitInMS IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+										WHEN (a.PreviousTreePageIOLatchWaitInMS > a.TreePageIOLatchWaitInMS) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.TreePageIOLatchWaitInMS
+										ELSE a.TreePageIOLatchWaitInMS - a.PreviousTreePageIOLatchWaitInMS
+									END AS DeltaTreePageIOLatchWaitInMS
+									,CASE
+										WHEN (a.PreviousPageCompressionAttemptCount IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+										WHEN (a.PreviousPageCompressionAttemptCount > a.PageCompressionAttemptCount) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.PageCompressionAttemptCount
+										ELSE a.PageCompressionAttemptCount - a.PreviousPageCompressionAttemptCount
+									END AS DeltaPageCompressionAttemptCount
+									,CASE
+										WHEN (a.PreviousPageCompressionSuccessCount IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+										WHEN (a.PreviousPageCompressionSuccessCount > a.PageCompressionSuccessCount) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.PageCompressionSuccessCount
+										ELSE a.PageCompressionSuccessCount - a.PreviousPageCompressionSuccessCount
+									END AS DeltaPageCompressionSuccessCount
+									,CASE
+										WHEN (a.PreviousVersionGeneratedInrow IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+										WHEN (a.PreviousVersionGeneratedInrow > a.VersionGeneratedInrow) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.VersionGeneratedInrow
+										ELSE a.VersionGeneratedInrow - a.PreviousVersionGeneratedInrow
+									END AS DeltaVersionGeneratedInrow
+									,CASE
+										WHEN (a.PreviousVersionGeneratedOffrow IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+										WHEN (a.PreviousVersionGeneratedOffrow > a.VersionGeneratedOffrow) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.VersionGeneratedOffrow
+										ELSE a.VersionGeneratedOffrow - a.PreviousVersionGeneratedOffrow
+									END AS DeltaVersionGeneratedOffrow
+									,CASE
+										WHEN (a.PreviousGhostVersionInrow IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+										WHEN (a.PreviousGhostVersionInrow > a.GhostVersionInrow) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.GhostVersionInrow
+										ELSE a.GhostVersionInrow - a.PreviousGhostVersionInrow
+									END AS DeltaGhostVersionInrow
+									,CASE
+										WHEN (a.PreviousGhostVersionOffrow IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+										WHEN (a.PreviousGhostVersionOffrow > a.GhostVersionOffrow) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.GhostVersionOffrow
+										ELSE a.GhostVersionOffrow - a.PreviousGhostVersionOffrow
+									END AS DeltaGhostVersionOffrow
+									,CASE
+										WHEN (a.PreviousInsertOverGhostVersionInrow IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+										WHEN (a.PreviousInsertOverGhostVersionInrow > a.InsertOverGhostVersionInrow) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.InsertOverGhostVersionInrow
+										ELSE a.InsertOverGhostVersionInrow - a.PreviousInsertOverGhostVersionInrow
+									END AS DeltaInsertOverGhostVersionInrow
+									,CASE
+										WHEN (a.PreviousInsertOverGhostVersionOffrow IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+										WHEN (a.PreviousInsertOverGhostVersionOffrow > a.InsertOverGhostVersionOffrow) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.InsertOverGhostVersionOffrow
+										ELSE a.InsertOverGhostVersionOffrow - a.PreviousInsertOverGhostVersionOffrow
+									END AS DeltaInsertOverGhostVersionOffrow
+									,a.TimestampUTC
+									,a.Timestamp
+									,a.DatabaseName
+									,a.SchemaName
+									,a.ObjectName
+									,a.IndexName
+								FROM (
+									SELECT
+										curIO.LeafInsertCount
+										,prevIO.LeafInsertCount AS PreviousLeafInsertCount
+										,curIO.LeafDeleteCount
+										,prevIO.LeafDeleteCount AS PreviousLeafDeleteCount
+										,curIO.LeafUpdateCount
+										,prevIO.LeafUpdateCount AS PreviousLeafUpdateCount
+										,curIO.LeafGhostCount
+										,prevIO.LeafGhostCount AS PreviousLeafGhostCount
+										,curIO.NonleafInsertCount
+										,prevIO.NonleafInsertCount AS PreviousNonleafInsertCount
+										,curIO.NonleafDeleteCount
+										,prevIO.NonleafDeleteCount AS PreviousNonleafDeleteCount
+										,curIO.NonleafUpdateCount
+										,prevIO.NonleafUpdateCount AS PreviousNonleafUpdateCount
+										,curIO.LeafAllocationCount
+										,prevIO.LeafAllocationCount AS PreviousLeafAllocationCount
+										,curIO.NonleafAllocationCount
+										,prevIO.NonleafAllocationCount AS PreviousNonleafAllocationCount
+										,curIO.LeafPageMergeCount
+										,prevIO.LeafPageMergeCount AS PreviousLeafPageMergeCount
+										,curIO.NonleafPageMergeCount
+										,prevIO.NonleafPageMergeCount AS PreviousNonleafPageMergeCount
+										,curIO.RangeScanCount
+										,prevIO.RangeScanCount AS PreviousRangeScanCount
+										,curIO.SingletonLookupCount
+										,prevIO.SingletonLookupCount AS PreviousSingletonLookupCount
+										,curIO.ForwardedFetchCount
+										,prevIO.ForwardedFetchCount AS PreviousForwardedFetchCount
+										,curIO.LOBFetchInPages
+										,prevIO.LOBFetchInPages AS PreviousLOBFetchInPages
+										,curIO.LOBFetchInBytes
+										,prevIO.LOBFetchInBytes AS PreviousLOBFetchInBytes
+										,curIO.LOBOrphanCreateCount
+										,prevIO.LOBOrphanCreateCount AS PreviousLOBOrphanCreateCount
+										,curIO.LOBOrphanInsertCount
+										,prevIO.LOBOrphanInsertCount AS PreviousLOBOrphanInsertCount
+										,curIO.RowOverflowFetchInPages
+										,prevIO.RowOverflowFetchInPages AS PreviousRowOverflowFetchInPages
+										,curIO.RowOverflowFetchInBytes
+										,prevIO.RowOverflowFetchInBytes AS PreviousRowOverflowFetchInBytes
+										,curIO.ColumnValuePushOffRowCount
+										,prevIO.ColumnValuePushOffRowCount AS PreviousColumnValuePushOffRowCount
+										,curIO.ColumnValuePullInRowCount
+										,prevIO.ColumnValuePullInRowCount AS PreviousColumnValuePullInRowCount
+										,curIO.RowLockCount
+										,prevIO.RowLockCount AS PreviousRowLockCount
+										,curIO.RowLockWaitCount
+										,prevIO.RowLockWaitCount AS PreviousRowLockWaitCount
+										,curIO.RowLockWaitInMS
+										,prevIO.RowLockWaitInMS AS PreviousRowLockWaitInMS
+										,curIO.PageLockCount
+										,prevIO.PageLockCount AS PreviousPageLockCount
+										,curIO.PageLockWaitCount
+										,prevIO.PageLockWaitCount AS PreviousPageLockWaitCount
+										,curIO.PageLockWaitInMS
+										,prevIO.PageLockWaitInMS AS PreviousPageLockWaitInMS
+										,curIO.IndexLockPromotionAttemptCount
+										,prevIO.IndexLockPromotionAttemptCount AS PreviousIndexLockPromotionAttemptCount
+										,curIO.IndexLockPromotionCount
+										,prevIO.IndexLockPromotionCount AS PreviousIndexLockPromotionCount
+										,curIO.PageLatchWaitCount
+										,prevIO.PageLatchWaitCount AS PreviousPageLatchWaitCount
+										,curIO.PageLatchWaitInMS
+										,prevIO.PageLatchWaitInMS AS PreviousPageLatchWaitInMS
+										,curIO.PageIOLatchWaitCount
+										,prevIO.PageIOLatchWaitCount AS PreviousPageIOLatchWaitCount
+										,curIO.PageIOLatchWaitInMS
+										,prevIO.PageIOLatchWaitInMS AS PreviousPageIOLatchWaitInMS
+										,curIO.TreePageLatchWaitCount
+										,prevIO.TreePageLatchWaitCount AS PreviousTreePageLatchWaitCount
+										,curIO.TreePageLatchWaitInMS
+										,prevIO.TreePageLatchWaitInMS AS PreviousTreePageLatchWaitInMS
+										,curIO.TreePageIOLatchWaitCount
+										,prevIO.TreePageIOLatchWaitCount AS PreviousTreePageIOLatchWaitCount
+										,curIO.TreePageIOLatchWaitInMS
+										,prevIO.TreePageIOLatchWaitInMS AS PreviousTreePageIOLatchWaitInMS
+										,curIO.PageCompressionAttemptCount
+										,prevIO.PageCompressionAttemptCount AS PreviousPageCompressionAttemptCount
+										,curIO.PageCompressionSuccessCount
+										,prevIO.PageCompressionSuccessCount AS PreviousPageCompressionSuccessCount
+										,curIO.VersionGeneratedInrow
+										,prevIO.VersionGeneratedInrow AS PreviousVersionGeneratedInrow
+										,curIO.VersionGeneratedOffrow
+										,prevIO.VersionGeneratedOffrow AS PreviousVersionGeneratedOffrow
+										,curIO.GhostVersionInrow
+										,prevIO.GhostVersionInrow AS PreviousGhostVersionInrow
+										,curIO.GhostVersionOffrow
+										,prevIO.GhostVersionOffrow AS PreviousGhostVersionOffrow
+										,curIO.InsertOverGhostVersionInrow
+										,prevIO.InsertOverGhostVersionInrow AS PreviousInsertOverGhostVersionInrow
+										,curIO.InsertOverGhostVersionOffrow
+										,prevIO.InsertOverGhostVersionOffrow AS PreviousInsertOverGhostVersionOffrow
+										,curIO.LastSQLServiceRestart
+										,prevIO.LastSQLServiceRestart AS PreviousLastSQLServiceRestart
+										,curIO.TimestampUTC
+										,curIO.Timestamp
+										,curIO.DatabaseName
+										,curIO.SchemaName
+										,curIO.ObjectName
+										,curIO.IndexName
+									FROM dbo.fhsmIndexOperational AS curIO
+									OUTER APPLY (
+										SELECT TOP (1) io.*
+										FROM dbo.fhsmIndexOperational AS io
+										WHERE
+											(io.DatabaseName = curIO.DatabaseName)
+											AND (io.SchemaName = curIO.SchemaName)
+											AND (io.ObjectName = curIO.ObjectName)
+											AND ((io.IndexName = curIO.IndexName) OR ((io.IndexName IS NULL) AND (curIO.IndexName IS NULL)))
+											AND (io.TimestampUTC < curIO.TimestampUTC)
+										ORDER BY io.TimestampUTC DESC
+									) AS prevIO
+									WHERE (curIO.TimestampUTC = @nowUTC)
+								) AS a
+							) AS b;
+						END;
 					END;
 
 					RETURN 0;
@@ -830,6 +1033,15 @@ ELSE BEGIN
 			SELECT
 				1
 				,'dbo.fhsmIndexOperational'
+				,'TimestampUTC'
+				,1
+				,90
+
+			UNION ALL
+
+			SELECT
+				1
+				,'dbo.fhsmIndexOperationalReport'
 				,'TimestampUTC'
 				,1
 				,90

@@ -1,6 +1,21 @@
 SET NOCOUNT ON;
 
 --
+-- Specify where the Ola Hallengren objects are installed
+--
+BEGIN
+	DECLARE @olaDatabase nvarchar(128);
+	DECLARE @olaSchema nvarchar(128);
+
+	SET @olaDatabase = NULL;
+	SET @olaSchema = NULL;
+END;
+
+--
+-- Do not change anything below here
+--
+
+--
 -- Declare variables
 --
 BEGIN
@@ -17,22 +32,58 @@ BEGIN
 END;
 
 --
+-- Initialize @returnValue to true value
+--
+SET @returnValue = 1;
+
+--
 -- Test if we are in a database with FHSM registered
 --
+IF (@returnValue <> 0)
 BEGIN
-	SET @returnValue = 0;
-
 	IF OBJECT_ID('dbo.fhsmFNIsValidInstallation') IS NOT NULL
 	BEGIN
 		SET @returnValue = dbo.fhsmFNIsValidInstallation();
 	END;
+
+	IF (@returnValue = 0)
+	BEGIN
+		RAISERROR('Can not install as it appears the database is not correct installed', 0, 1) WITH NOWAIT;
+	END
 END;
 
-IF (@returnValue = 0)
+--
+-- Test if the Ola Hallengren table CommandLog exists, and if in an external database that both @olaDatabase and @olaSchema are defined
+--
+IF (@returnValue <> 0)
 BEGIN
-	RAISERROR('Can not install as it appears the database is not correct installed', 0, 1) WITH NOWAIT;
-END
-ELSE BEGIN
+	IF
+		((@olaDatabase IS NOT NULL) AND (@olaSchema IS NULL))
+		OR ((@olaDatabase IS NULL) AND (@olaSchema IS NOT NULL))
+	BEGIN
+		SET @returnValue = 0;
+		RAISERROR('When specifying external database for Ola Hallengren, both @olaDatabase and @olaSchema must be defined', 0, 1) WITH NOWAIT;
+	END
+	ELSE BEGIN
+		SET @stmt = '
+			USE ' + QUOTENAME(COALESCE(@olaDatabase, DB_NAME())) + '
+			SET @returnValue = OBJECT_ID(''' + COALESCE(@olaSchema, 'dbo') + '.CommandLog'');
+			SET @returnValue = COALESCE(@returnValue, 0);
+		';
+		EXEC sp_executesql
+			@stmt
+			,N'@returnValue int OUTPUT'
+			,@returnValue = @returnValue OUTPUT;
+
+		IF (@returnValue = 0)
+		BEGIN
+			RAISERROR('Can not install as the Ola Hallengren table dbo.CommandLog does not exist', 0, 1) WITH NOWAIT;
+		END;
+	END;
+END;
+
+IF (@returnValue <> 0)
+BEGIN
 	--
 	-- Initialize variables
 	--
@@ -41,12 +92,13 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '1.1';
+		SET @version = '1.2';
 	END;
 
 	--
-	-- Create tables
+	-- Create indexes and register properties, but only if on FHSQLMonitor database
 	--
+	IF (DB_NAME() = COALESCE(@olaDatabase, DB_NAME()))
 	BEGIN
 		--
 		-- Create index on dbo.CommandLog
@@ -108,6 +160,12 @@ ELSE BEGIN
 						WHEN (cl.CommandType = ''ALTER_INDEX'') AND (cl.Command LIKE ''% REBUILD %'') THEN 1
 						WHEN (cl.CommandType = ''ALTER_INDEX'') AND (cl.Command LIKE ''% REORGANIZE %'') THEN 2
 						WHEN (cl.CommandType = ''UPDATE_STATISTICS'') THEN 3
+						WHEN (cl.CommandType = ''BACKUP_DATABASE'') THEN 4
+						WHEN (cl.CommandType = ''BACKUP_LOG'') THEN 5
+						WHEN (cl.CommandType = ''RESTORE_VERIFYONLY'') THEN 6
+						WHEN (cl.CommandType = ''DBCC_CHECKDB'') THEN 7
+						WHEN (cl.CommandType = ''xp_create_subdir'') THEN 8
+						WHEN (cl.CommandType = ''xp_delete_file'') THEN 9
 					END Type
 					,COALESCE(NULLIF(DATEDIFF(SECOND, cl.StartTime, cl.EndTime), 0), 1) AS Duration		-- Duration of 0 sec. will always be 1 sec.
 					,CAST(cl.StartTime AS date) AS Date
@@ -116,7 +174,7 @@ ELSE BEGIN
 					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(cl.DatabaseName, cl.SchemaName, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS SchemaKey
 					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(cl.DatabaseName, cl.SchemaName, cl.ObjectName, DEFAULT, DEFAULT, DEFAULT) AS k) AS ObjectKey
 					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(cl.DatabaseName, cl.SchemaName, cl.ObjectName, COALESCE(cl.IndexName, ''N.A.''), DEFAULT, DEFAULT) AS k) AS IndexKey
-				FROM dbo.CommandLog AS cl;
+				FROM ' + COALESCE(QUOTENAME(@olaDatabase) + '.', '') + COALESCE(@olaSchema, 'dbo') + '.CommandLog AS cl;
 			';
 			EXEC(@stmt);
 		END;
@@ -138,8 +196,9 @@ ELSE BEGIN
 	END;
 
 	--
-	-- Create stored procedures
+	-- Create stored procedures, but only if on FHSQLMonitor database
 	--
+	IF (DB_NAME() = COALESCE(@olaDatabase, DB_NAME()))
 	BEGIN
 		--
 		-- Create stored procedure dbo.fhsmSPIndexOptimize
@@ -205,8 +264,9 @@ ELSE BEGIN
 	END;
 
 	--
-	-- Register retention
+	-- Register retention, but only if on FHSQLMonitor database
 	--
+	IF (DB_NAME() = COALESCE(@olaDatabase, DB_NAME()))
 	BEGIN
 		WITH
 		retention(Enabled, TableName, TimeColumn, IsUtc, Days) AS(
@@ -225,8 +285,9 @@ ELSE BEGIN
 	END;
 
 	--
-	-- Register schedules
+	-- Register schedules, but only if on FHSQLMonitor database
 	--
+	IF (DB_NAME() = COALESCE(@olaDatabase, DB_NAME()))
 	BEGIN
 		WITH
 		schedules(Enabled, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters) AS(
@@ -297,7 +358,7 @@ ELSE BEGIN
 			SELECT
 				'Database' AS DimensionName
 				,'DatabaseKey' AS DimensionKey
-				,'dbo.CommandLog' AS SrcTable
+				,COALESCE(QUOTENAME(@olaDatabase) + '.', '') + COALESCE(@olaSchema, 'dbo') + '.CommandLog' AS SrcTable
 				,'src' AS SrcAlias
 				,NULL AS SrcWhere
 				,'src.[StartTime]' AS SrcDateColumn
@@ -309,7 +370,7 @@ ELSE BEGIN
 			SELECT
 				'Schema' AS DimensionName
 				,'SchemaKey' AS DimensionKey
-				,'dbo.CommandLog' AS SrcTable
+				,COALESCE(QUOTENAME(@olaDatabase) + '.', '') + COALESCE(@olaSchema, 'dbo') + '.CommandLog' AS SrcTable
 				,'src' AS SrcAlias
 				,NULL AS SrcWhere
 				,'src.[StartTime]' AS SrcDateColumn
@@ -321,7 +382,7 @@ ELSE BEGIN
 			SELECT
 				'Object' AS DimensionName
 				,'ObjectKey' AS DimensionKey
-				,'dbo.CommandLog' AS SrcTable
+				,COALESCE(QUOTENAME(@olaDatabase) + '.', '') + COALESCE(@olaSchema, 'dbo') + '.CommandLog' AS SrcTable
 				,'src' AS SrcAlias
 				,NULL AS SrcWhere
 				,'src.[StartTime]' AS SrcDateColumn
@@ -333,7 +394,7 @@ ELSE BEGIN
 			SELECT
 				'Index' AS DimensionName
 				,'IndexKey' AS DimensionKey
-				,'dbo.CommandLog' AS SrcTable
+				,COALESCE(QUOTENAME(@olaDatabase) + '.', '') + COALESCE(@olaSchema, 'dbo') + '.CommandLog' AS SrcTable
 				,'src' AS SrcAlias
 				,NULL AS SrcWhere
 				,'src.[StartTime]' AS SrcDateColumn
@@ -376,6 +437,7 @@ ELSE BEGIN
 	-- Update dimensions based upon the fact tables
 	--
 	BEGIN
-		EXEC dbo.fhsmSPUpdateDimensions @table = 'dbo.CommandLog';
+		SET @stmt = COALESCE(QUOTENAME(@olaDatabase) + '.', '') + COALESCE(@olaSchema, 'dbo') + '.CommandLog';
+		EXEC dbo.fhsmSPUpdateDimensions @table = @stmt;
 	END;
 END;

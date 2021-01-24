@@ -24,7 +24,7 @@ DECLARE @version nvarchar(128);
 SET @myUserName = SUSER_NAME();
 SET @nowUTC = SYSUTCDATETIME();
 SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
-SET @version = '1.1';
+SET @version = '1.2';
 
 --
 -- Create database if it not already exists
@@ -2060,12 +2060,12 @@ BEGIN
 							SET @dimensionStmt += ''''
 								SELECT
 									DISTINCT
-									'''' + @srcColumn1 + '''' AS '''' + QUOTENAME(@outputColumn1)
-										+ COALESCE('''', '''' + @srcColumn2 + '''' AS '''' + QUOTENAME(@outputColumn2), '''''''')
-										+ COALESCE('''', '''' + @srcColumn3 + '''' AS '''' + QUOTENAME(@outputColumn3), '''''''')
-										+ COALESCE('''', '''' + @srcColumn4 + '''' AS '''' + QUOTENAME(@outputColumn4), '''''''')
-										+ COALESCE('''', '''' + @srcColumn5 + '''' AS '''' + QUOTENAME(@outputColumn5), '''''''')
-										+ COALESCE('''', '''' + @srcColumn6 + '''' AS '''' + QUOTENAME(@outputColumn6), '''''''') + ''''
+									'''' + @srcColumn1 + '''' COLLATE DATABASE_DEFAULT AS '''' + QUOTENAME(@outputColumn1)
+										+ COALESCE('''', '''' + @srcColumn2 + '''' COLLATE DATABASE_DEFAULT AS '''' + QUOTENAME(@outputColumn2), '''''''')
+										+ COALESCE('''', '''' + @srcColumn3 + '''' COLLATE DATABASE_DEFAULT AS '''' + QUOTENAME(@outputColumn3), '''''''')
+										+ COALESCE('''', '''' + @srcColumn4 + '''' COLLATE DATABASE_DEFAULT AS '''' + QUOTENAME(@outputColumn4), '''''''')
+										+ COALESCE('''', '''' + @srcColumn5 + '''' COLLATE DATABASE_DEFAULT AS '''' + QUOTENAME(@outputColumn5), '''''''')
+										+ COALESCE('''', '''' + @srcColumn6 + '''' COLLATE DATABASE_DEFAULT AS '''' + QUOTENAME(@outputColumn6), '''''''') + ''''
 								FROM '''' + @srcTable + '''' AS '''' + @srcAlias + ''''
 								'''' + COALESCE(@srcWhere, '''''''') + ''''
 							'''';
@@ -2348,7 +2348,7 @@ BEGIN
 
 		EXEC msdb.dbo.sp_add_job
 			@job_name = N''FHSQLMonitor in ' + @fhSQLMonitorDatabase + '''
-			,@enabled = 1
+			,@enabled = 0
 			,@notify_level_eventlog = 0
 			,@notify_level_email = 2
 			,@notify_level_page = 2
@@ -2375,7 +2375,7 @@ BEGIN
 
 		EXEC msdb.dbo.sp_update_job
 			@job_name = N''FHSQLMonitor in ' + @fhSQLMonitorDatabase + '''
-			,@enabled = 1
+			,@enabled = 0
 			,@start_step_id = 1
 			,@notify_level_eventlog = 0
 			,@notify_level_email = 2

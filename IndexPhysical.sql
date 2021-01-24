@@ -41,7 +41,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '1.1';
+		SET @version = '1.2';
 	END;
 
 	--
@@ -90,12 +90,22 @@ ELSE BEGIN
 				,LastSQLServiceRestart datetime NOT NULL
 				,TimestampUTC datetime NOT NULL
 				,Timestamp datetime NOT NULL
-				,CONSTRAINT PK_fhsmIndexPhysical PRIMARY KEY(Id)
+				,TimestampUTCDate date NOT NULL
+				,TimestampDate date NOT NULL
+				,TimeKey int NOT NULL
+				,DatabaseKey bigint NOT NULL
+				,SchemaKey bigint NOT NULL
+				,ObjectKey bigint NOT NULL
+				,IndexKey bigint NOT NULL
+				,IndexTypeKey bigint NOT NULL
+				,IndexAllocTypeKey bigint NOT NULL
+				,CONSTRAINT NCPK_fhsmIndexPhysical PRIMARY KEY NONCLUSTERED(Id)
 			);
 
-			CREATE NONCLUSTERED INDEX NC_fhsmIndexPhysical_TimestampUTC ON dbo.fhsmIndexPhysical(TimestampUTC);
+			CREATE CLUSTERED INDEX CL_fhsmIndexPhysical_TimestampUTC ON dbo.fhsmIndexPhysical(TimestampUTC);
 			CREATE NONCLUSTERED INDEX NC_fhsmIndexPhysical_Timestamp ON dbo.fhsmIndexPhysical(Timestamp);
-			CREATE NONCLUSTERED INDEX NC_fhsmIndexPhysical_DatabaseName_SchemaName_ObjectName_IndexName ON dbo.fhsmIndexPhysical(DatabaseName, SchemaName, ObjectName, IndexName);
+			CREATE NONCLUSTERED INDEX NC_fhsmIndexPhysical_DatabaseKey_SchemaKey_ObjectKey_TimestampUTCDate_Mode ON dbo.fhsmIndexPhysical(DatabaseKey, SchemaKey, ObjectKey, TimestampUTCDate, Mode);
+			CREATE NONCLUSTERED INDEX NC_fhsmIndexPhysical_Mode ON dbo.fhsmIndexPhysical(Mode);
 		END;
 
 		--
@@ -164,18 +174,18 @@ ELSE BEGIN
 					,rankedData.TotalInrowVersionPayloadSizeInBytes
 					,rankedData.OffrowRegularVersionRecordCount
 					,rankedData.OffrowLongTermVersionRecordCount
-					,CAST(rankedData.Timestamp AS date) AS Date
-					,(DATEPART(HOUR, rankedData.Timestamp) * 60 * 60) + (DATEPART(MINUTE, rankedData.Timestamp) * 60) + (DATEPART(SECOND, rankedData.Timestamp)) AS TimeKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(rankedData.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(rankedData.DatabaseName, rankedData.SchemaName, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS SchemaKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(rankedData.DatabaseName, rankedData.SchemaName, rankedData.ObjectName, DEFAULT, DEFAULT, DEFAULT) AS k) AS ObjectKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(rankedData.DatabaseName, rankedData.SchemaName, rankedData.ObjectName, COALESCE(rankedData.IndexName, ''N.A.''), DEFAULT, DEFAULT) AS k) AS IndexKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(rankedData.DatabaseName, rankedData.SchemaName, rankedData.ObjectName, COALESCE(rankedData.IndexName, ''N.A.''), rankedData.IndexTypeDesc, DEFAULT) AS k) AS IndexTypeKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(rankedData.DatabaseName, rankedData.SchemaName, rankedData.ObjectName, COALESCE(rankedData.IndexName, ''N.A.''), rankedData.IndexTypeDesc, rankedData.AllocUnitTypeDesc) AS k) AS IndexAllocTypeKey
+					,rankedData.TimestampDate Date
+					,rankedData.TimeKey
+					,rankedData.DatabaseKey
+					,rankedData.SchemaKey
+					,rankedData.ObjectKey
+					,rankedData.IndexKey
+					,rankedData.IndexTypeKey
+					,rankedData.IndexAllocTypeKey
 				FROM (
 					SELECT
 						ip.*
-						,DENSE_RANK() OVER(PARTITION BY ip.DatabaseName, ip.SchemaName, ip.ObjectName ORDER BY CASE ip.Mode WHEN ''DETAILED'' THEN 1 WHEN ''SAMPLED'' THEN 2 ELSE 3 END, ip.TimestampUTC DESC) AS _Rnk_
+						,DENSE_RANK() OVER(PARTITION BY ip.DatabaseKey, ip.SchemaKey, ip.ObjectKey ORDER BY CASE ip.Mode WHEN ''DETAILED'' THEN 1 WHEN ''SAMPLED'' THEN 2 ELSE 3 END, ip.TimestampUTC DESC) AS _Rnk_
 					FROM dbo.fhsmIndexPhysical AS ip
 					WHERE (ip.TimestampUTC >= (
 						SELECT DATEADD(HOUR, -24, MAX(ip2.TimestampUTC))
@@ -245,19 +255,18 @@ ELSE BEGIN
 					,ip.OffrowRegularVersionRecordCount
 					,ip.OffrowLongTermVersionRecordCount
 					,ip.Timestamp
-					,CAST(ip.Timestamp AS date) AS Date
-					,(DATEPART(HOUR, ip.Timestamp) * 60 * 60) + (DATEPART(MINUTE, ip.Timestamp) * 60) + (DATEPART(SECOND, ip.Timestamp)) AS TimeKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ip.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ip.DatabaseName, ip.SchemaName, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS SchemaKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ip.DatabaseName, ip.SchemaName, ip.ObjectName, DEFAULT, DEFAULT, DEFAULT) AS k) AS ObjectKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ip.DatabaseName, ip.SchemaName, ip.ObjectName, COALESCE(ip.IndexName, ''N.A.''), DEFAULT, DEFAULT) AS k) AS IndexKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ip.DatabaseName, ip.SchemaName, ip.ObjectName, COALESCE(ip.IndexName, ''N.A.''), ip.IndexTypeDesc, DEFAULT) AS k) AS IndexTypeKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ip.DatabaseName, ip.SchemaName, ip.ObjectName, COALESCE(ip.IndexName, ''N.A.''), ip.IndexTypeDesc, ip.AllocUnitTypeDesc) AS k) AS IndexAllocTypeKey
+					,ip.TimestampDate AS Date
+					,ip.TimeKey
+					,ip.DatabaseKey
+					,ip.SchemaKey
+					,ip.ObjectKey
+					,ip.IndexKey
+					,ip.IndexTypeKey
+					,ip.IndexAllocTypeKey
 				FROM dbo.fhsmIndexPhysical AS ip
 				WHERE (ip.Mode = ''DETAILED'')
 			';
 			SET @stmt += '
-
 				UNION ALL
 
 				SELECT
@@ -288,28 +297,27 @@ ELSE BEGIN
 					,ip.OffrowRegularVersionRecordCount
 					,ip.OffrowLongTermVersionRecordCount
 					,ip.Timestamp
-					,CAST(ip.Timestamp AS date) AS Date
-					,(DATEPART(HOUR, ip.Timestamp) * 60 * 60) + (DATEPART(MINUTE, ip.Timestamp) * 60) + (DATEPART(SECOND, ip.Timestamp)) AS TimeKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ip.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ip.DatabaseName, ip.SchemaName, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS SchemaKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ip.DatabaseName, ip.SchemaName, ip.ObjectName, DEFAULT, DEFAULT, DEFAULT) AS k) AS ObjectKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ip.DatabaseName, ip.SchemaName, ip.ObjectName, COALESCE(ip.IndexName, ''N.A.''), DEFAULT, DEFAULT) AS k) AS IndexKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ip.DatabaseName, ip.SchemaName, ip.ObjectName, COALESCE(ip.IndexName, ''N.A.''), ip.IndexTypeDesc, DEFAULT) AS k) AS IndexTypeKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ip.DatabaseName, ip.SchemaName, ip.ObjectName, COALESCE(ip.IndexName, ''N.A.''), ip.IndexTypeDesc, ip.AllocUnitTypeDesc) AS k) AS IndexAllocTypeKey
+					,ip.TimestampDate AS Date
+					,ip.TimeKey
+					,ip.DatabaseKey
+					,ip.SchemaKey
+					,ip.ObjectKey
+					,ip.IndexKey
+					,ip.IndexTypeKey
+					,ip.IndexAllocTypeKey
 				FROM dbo.fhsmIndexPhysical AS ip
 				WHERE (ip.Mode = ''SAMPLED'')
 					AND NOT EXISTS (
 						SELECT *
 						FROM dbo.fhsmIndexPhysical AS ip2
-						WHERE (ip2.DatabaseName = ip.DatabaseName)
-							AND (ip2.SchemaName = ip.SchemaName)
-							AND (ip2.ObjectName = ip.ObjectName)
-							AND (CAST(ip2.TimestampUTC AS date) = CAST(ip.TimestampUTC AS date))
+						WHERE (ip2.DatabaseKey = ip.DatabaseKey)
+							AND (ip2.SchemaKey = ip.SchemaKey)
+							AND (ip2.ObjectKey = ip.ObjectKey)
+							AND (ip2.TimestampUTCDate = ip.TimestampUTCDate)
 							AND (ip2.Mode = ''DETAILED'')
 					)
 			';
 			SET @stmt += '
-
 				UNION ALL
 
 				SELECT
@@ -340,24 +348,24 @@ ELSE BEGIN
 					,ip.OffrowRegularVersionRecordCount
 					,ip.OffrowLongTermVersionRecordCount
 					,ip.Timestamp
-					,CAST(ip.Timestamp AS date) AS Date
-					,(DATEPART(HOUR, ip.Timestamp) * 60 * 60) + (DATEPART(MINUTE, ip.Timestamp) * 60) + (DATEPART(SECOND, ip.Timestamp)) AS TimeKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ip.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ip.DatabaseName, ip.SchemaName, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS SchemaKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ip.DatabaseName, ip.SchemaName, ip.ObjectName, DEFAULT, DEFAULT, DEFAULT) AS k) AS ObjectKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ip.DatabaseName, ip.SchemaName, ip.ObjectName, COALESCE(ip.IndexName, ''N.A.''), DEFAULT, DEFAULT) AS k) AS IndexKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ip.DatabaseName, ip.SchemaName, ip.ObjectName, COALESCE(ip.IndexName, ''N.A.''), ip.IndexTypeDesc, DEFAULT) AS k) AS IndexTypeKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ip.DatabaseName, ip.SchemaName, ip.ObjectName, COALESCE(ip.IndexName, ''N.A.''), ip.IndexTypeDesc, ip.AllocUnitTypeDesc) AS k) AS IndexAllocTypeKey
+					,ip.TimestampDate AS Date
+					,ip.TimeKey
+					,ip.DatabaseKey
+					,ip.SchemaKey
+					,ip.ObjectKey
+					,ip.IndexKey
+					,ip.IndexTypeKey
+					,ip.IndexAllocTypeKey
 				FROM dbo.fhsmIndexPhysical AS ip
 				WHERE NOT EXISTS (
 						SELECT *
 						FROM dbo.fhsmIndexPhysical AS ip2
-						WHERE (ip2.DatabaseName = ip.DatabaseName)
-							AND (ip2.SchemaName = ip.SchemaName)
-							AND (ip2.ObjectName = ip.ObjectName)
-							AND (CAST(ip2.TimestampUTC AS date) = CAST(ip.TimestampUTC AS date))
+						WHERE (ip2.DatabaseKey = ip.DatabaseKey)
+							AND (ip2.SchemaKey = ip.SchemaKey)
+							AND (ip2.ObjectKey = ip.ObjectKey)
+							AND (ip2.TimestampUTCDate = ip.TimestampUTCDate)
 							AND (ip2.Mode IN (''DETAILED'', ''SAMPLED''))
-					)
+					);
 			';
 			EXEC(@stmt);
 		END;
@@ -406,6 +414,7 @@ ELSE BEGIN
 					DECLARE @columnstoreDeleteBufferStateDescStmt nvarchar(max);
 					DECLARE @database nvarchar(128);
 					DECLARE @databases nvarchar(max);
+					DECLARE @fhsmDatabaseName nvarchar(128);
 					DECLARE @inrowDiffVersionRecordCountStmt nvarchar(max);
 					DECLARE @inrowVersionRecordCountStmt nvarchar(max);
 					DECLARE @message nvarchar(max);
@@ -422,6 +431,7 @@ ELSE BEGIN
 					DECLARE @totalInrowVersionPayloadSizeInBytesStmt nvarchar(max);
 					DECLARE @versionRecordCountStmt nvarchar(max);
 
+					SET @fhsmDatabaseName = DB_NAME();
 					SET @thisTask = OBJECT_NAME(@@PROCID);
 
 					--
@@ -608,6 +618,14 @@ ELSE BEGIN
 										,'' + @offrowLongTermVersionRecordCountStmt + '' AS OffrowLongTermVersionRecordCount
 										,(SELECT d.create_date FROM sys.databases AS d WITH (NOLOCK) WHERE (d.name = ''''tempdb'''')) AS LastSQLServiceRestart
 										,@nowUTC, @now
+										,CAST(@nowUTC AS date) AS TimestampUTCDate, CAST(@now AS date) AS TimestampDate
+										,(DATEPART(HOUR, @now) * 60 * 60) + (DATEPART(MINUTE, @now) * 60) + (DATEPART(SECOND, @now)) AS TimeKey
+										,(SELECT k.[Key] FROM '' + QUOTENAME(@fhsmDatabaseName) + ''.dbo.fhsmFNGenerateKey(DB_NAME(), DEFAULT,  DEFAULT, DEFAULT,                    DEFAULT,               DEFAULT)                    AS k) AS DatabaseKey
+										,(SELECT k.[Key] FROM '' + QUOTENAME(@fhsmDatabaseName) + ''.dbo.fhsmFNGenerateKey(DB_NAME(), sch.name, DEFAULT, DEFAULT,                    DEFAULT,               DEFAULT)                    AS k) AS SchemaKey
+										,(SELECT k.[Key] FROM '' + QUOTENAME(@fhsmDatabaseName) + ''.dbo.fhsmFNGenerateKey(DB_NAME(), sch.name, o.name,  DEFAULT,                    DEFAULT,               DEFAULT)                    AS k) AS ObjectKey
+										,(SELECT k.[Key] FROM '' + QUOTENAME(@fhsmDatabaseName) + ''.dbo.fhsmFNGenerateKey(DB_NAME(), sch.name, o.name,  COALESCE(i.name, ''''N.A.''''), DEFAULT,               DEFAULT)                    AS k) AS IndexKey
+										,(SELECT k.[Key] FROM '' + QUOTENAME(@fhsmDatabaseName) + ''.dbo.fhsmFNGenerateKey(DB_NAME(), sch.name, o.name,  COALESCE(i.name, ''''N.A.''''), ddips.index_type_desc, DEFAULT)                    AS k) AS IndexTypeKey
+										,(SELECT k.[Key] FROM '' + QUOTENAME(@fhsmDatabaseName) + ''.dbo.fhsmFNGenerateKey(DB_NAME(), sch.name, o.name,  COALESCE(i.name, ''''N.A.''''), ddips.index_type_desc, ddips.alloc_unit_type_desc) AS k) AS IndexAllocTypeKey
 									FROM sys.dm_db_index_physical_stats(DB_ID(), OBJECT_ID(@object), NULL, NULL, @mode) AS ddips
 									INNER JOIN sys.objects AS o ON (o.object_id = ddips.object_id)
 									INNER JOIN sys.schemas AS sch ON (sch.schema_id = o.schema_id)
@@ -638,6 +656,10 @@ ELSE BEGIN
 								,OffrowRegularVersionRecordCount, OffrowLongTermVersionRecordCount
 								,LastSQLServiceRestart
 								,TimestampUTC, Timestamp
+								,TimestampUTCDate, TimestampDate
+								,TimeKey
+								,DatabaseKey, SchemaKey, ObjectKey
+								,IndexKey, IndexTypeKey, IndexAllocTypeKey
 							)
 							EXEC sp_executesql
 								@stmt

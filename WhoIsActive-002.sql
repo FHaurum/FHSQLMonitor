@@ -41,7 +41,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '1.1';
+		SET @version = '1.2';
 	END;
 
 	--
@@ -146,6 +146,8 @@ ELSE BEGIN
 						,wia.*
 					FROM dbo.fhsmWhoIsActive AS wia
 					WHERE (DATEDIFF(HOUR, wia.collection_time, (SELECT MAX(wia2.collection_time) FROM dbo.fhsmWhoIsActive AS wia2)) < 24)
+						AND (wia.sql_text <> ''sp_server_diagnostics'')
+						AND (wia.sql_text NOT LIKE ''WAITFOR DELAY %'')
 				) AS a
 				WHERE (a._Rnk_ = 1);
 			';

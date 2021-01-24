@@ -41,7 +41,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '1.1';
+		SET @version = '1.2';
 	END;
 
 	--
@@ -1122,14 +1122,14 @@ ELSE BEGIN
 							FROM (
 								SELECT
 									configuration_id
-									,CAST(c.name         AS nvarchar(max)) AS name
-									,CAST(c.value        AS nvarchar(max)) AS value
-									,CAST(c.value_in_use AS nvarchar(max)) AS value_in_use
-									,CAST(c.minimum      AS nvarchar(max)) AS minimum
-									,CAST(c.maximum      AS nvarchar(max)) AS maximum
-									,CAST(c.description  AS nvarchar(max)) AS description
-									,CAST(c.is_dynamic   AS nvarchar(max)) AS is_dynamic
-									,CAST(c.is_advanced  AS nvarchar(max)) AS is_advanced
+									,CAST(c.name COLLATE DATABASE_DEFAULT                               AS nvarchar(max)) AS name
+									,CAST(c.value                                                       AS nvarchar(max)) AS value
+									,CAST(c.value_in_use                                                AS nvarchar(max)) AS value_in_use
+									,CAST(c.minimum                                                     AS nvarchar(max)) AS minimum
+									,CAST(c.maximum                                                     AS nvarchar(max)) AS maximum
+									,CAST(CAST(c.description AS nvarchar(max)) COLLATE DATABASE_DEFAULT AS nvarchar(max)) AS description
+									,CAST(c.is_dynamic                                                  AS nvarchar(max)) AS is_dynamic
+									,CAST(c.is_advanced                                                 AS nvarchar(max)) AS is_advanced
 								FROM sys.configurations AS c WITH (NOLOCK)
 							) AS p
 							UNPIVOT(
@@ -1181,15 +1181,15 @@ ELSE BEGIN
 							FROM (
 								SELECT
 									dss.servicename
-									,CAST(dss.startup_type                        AS nvarchar(max)) AS startup_type
-									,CAST(dss.status                              AS nvarchar(max)) AS status
-									,CAST(dss.process_id                          AS nvarchar(max)) AS process_id
-									,CONVERT(nvarchar(max), dss.last_startup_time, 126)             AS last_startup_time
-									,CAST(dss.service_account                     AS nvarchar(max)) AS service_account
-									,CAST(dss.filename                            AS nvarchar(max)) AS filename
-									,CAST(dss.is_clustered                        AS nvarchar(max)) AS is_clustered
-									,CAST(dss.cluster_nodename                    AS nvarchar(max)) AS cluster_nodename
-									,CAST(dss.instant_file_initialization_enabled AS nvarchar(max)) AS instant_file_initialization_enabled
+									,CAST(dss.startup_type                                                 AS nvarchar(max)) AS startup_type
+									,CAST(dss.status                                                       AS nvarchar(max)) AS status
+									,CAST(dss.process_id                                                   AS nvarchar(max)) AS process_id
+									,CONVERT(nvarchar(max), dss.last_startup_time, 126)                                      AS last_startup_time
+									,CAST(dss.service_account                     COLLATE DATABASE_DEFAULT AS nvarchar(max)) AS service_account
+									,CAST(dss.filename                            COLLATE DATABASE_DEFAULT AS nvarchar(max)) AS filename
+									,CAST(dss.is_clustered                        COLLATE DATABASE_DEFAULT AS nvarchar(max)) AS is_clustered
+									,CAST(dss.cluster_nodename                    COLLATE DATABASE_DEFAULT AS nvarchar(max)) AS cluster_nodename
+									,CAST(dss.instant_file_initialization_enabled COLLATE DATABASE_DEFAULT AS nvarchar(max)) AS instant_file_initialization_enabled
 								FROM sys.dm_server_services AS dss WITH (NOLOCK)
 							) AS p
 							UNPIVOT(
@@ -1216,13 +1216,13 @@ ELSE BEGIN
 							FROM (
 								SELECT
 									sj.name AS job_name
-									,CAST(sj.enabled                  AS nvarchar(max)) AS job_enabled
-									,CAST(sj.description              AS nvarchar(max)) AS description
-									,CAST(SUSER_SNAME(sj.owner_sid)   AS nvarchar(max)) AS job_owner
-									,CAST(sj.notify_level_email       AS nvarchar(max)) AS notify_level_email
-									,CAST(sj.notify_email_operator_id AS nvarchar(max)) AS notify_email_operator_id
-									,CONVERT(nvarchar(max), sj.date_created, 126)       AS date_created
-									,CAST(sc.name                     AS nvarchar(max)) AS category_name
+									,CAST(sj.enabled                              AS nvarchar(max)) AS job_enabled
+									,CAST(sj.description COLLATE DATABASE_DEFAULT AS nvarchar(max)) AS description
+									,CAST(SUSER_SNAME(sj.owner_sid)               AS nvarchar(max)) AS job_owner
+									,CAST(sj.notify_level_email                   AS nvarchar(max)) AS notify_level_email
+									,CAST(sj.notify_email_operator_id             AS nvarchar(max)) AS notify_email_operator_id
+									,CONVERT(nvarchar(max), sj.date_created, 126)                   AS date_created
+									,CAST(sc.name COLLATE DATABASE_DEFAULT        AS nvarchar(max)) AS category_name
 									,(
 										SELECT CAST(SUM(enabledSchedules.Cnt) AS nvarchar(max)) FROM (
 											SELECT 1 AS Cnt
@@ -1256,16 +1256,16 @@ ELSE BEGIN
 							SELECT 10 AS Query, unpvt.name AS Category, unpvt.K, unpvt.V
 							FROM (
 								SELECT
-									CAST(sa.name                    AS nvarchar(max)) AS name
-									,CAST(sa.message_id              AS nvarchar(max)) AS message_id
-									,CAST(sa.event_source            AS nvarchar(max)) AS event_source
-									,CAST(sa.severity                AS nvarchar(max)) AS severity
-									,CAST(sa.enabled                 AS nvarchar(max)) AS enabled
-									,CAST(sa.delay_between_responses AS nvarchar(max)) AS delay_between_responses
-									,CAST(sa.last_occurrence_date    AS nvarchar(max)) AS last_occurrence_date
-									,CAST(sa.last_occurrence_time    AS nvarchar(max)) AS last_occurrence_time
-									,CAST(sa.occurrence_count        AS nvarchar(max)) AS occurrence_count
-									,CAST(sa.has_notification        AS nvarchar(max)) AS has_notification
+									 CAST(sa.name                                  AS nvarchar(max)) AS name
+									,CAST(sa.message_id                            AS nvarchar(max)) AS message_id
+									,CAST(sa.event_source COLLATE DATABASE_DEFAULT AS nvarchar(max)) AS event_source
+									,CAST(sa.severity                              AS nvarchar(max)) AS severity
+									,CAST(sa.enabled                               AS nvarchar(max)) AS enabled
+									,CAST(sa.delay_between_responses               AS nvarchar(max)) AS delay_between_responses
+									,CAST(sa.last_occurrence_date                  AS nvarchar(max)) AS last_occurrence_date
+									,CAST(sa.last_occurrence_time                  AS nvarchar(max)) AS last_occurrence_time
+									,CAST(sa.occurrence_count                      AS nvarchar(max)) AS occurrence_count
+									,CAST(sa.has_notification                      AS nvarchar(max)) AS has_notification
 								FROM msdb.dbo.sysalerts AS sa WITH (NOLOCK)
 							) AS p
 							UNPIVOT(
@@ -1350,7 +1350,7 @@ ELSE BEGIN
 
 							SET @stmt = ''
 								INSERT INTO #inventory(Query, Category, [Key], Value)
-								SELECT 12 AS Query, '''''''' AS Category, unpvt.K, unpvt.V
+								SELECT 12 AS Query, unpvt.node_id AS Category, unpvt.K, unpvt.V
 								FROM (
 									SELECT
 										CAST(don.node_id                       AS nvarchar(max)) AS node_id
@@ -1368,8 +1368,7 @@ ELSE BEGIN
 								) AS p
 								UNPIVOT(
 									V FOR K IN (
-										p.node_id
-										,p.memory_node_id
+										p.memory_node_id
 										,p.cpu_affinity_mask
 										,p.online_scheduler_count
 										,p.timer_task_affinity_mask
@@ -1574,9 +1573,9 @@ ELSE BEGIN
 							SELECT 21 AS Query, '''' AS Category, unpvt.K, unpvt.V
 							FROM (
 								SELECT
-									CAST(dsmd.filename AS nvarchar(max)) AS filename
-									,CONVERT(nvarchar(max), dsmd.creation_time, 126) AS creation_time
-									,CAST(dsmd.size_in_bytes AS nvarchar(max)) AS size_in_bytes
+									 CAST(dsmd.filename COLLATE DATABASE_DEFAULT AS nvarchar(max)) AS filename
+									,CONVERT(nvarchar(max), dsmd.creation_time, 126)               AS creation_time
+									,CAST(dsmd.size_in_bytes                     AS nvarchar(max)) AS size_in_bytes
 								FROM sys.dm_server_memory_dumps AS dsmd WITH (NOLOCK) 
 							) AS p
 							UNPIVOT(
