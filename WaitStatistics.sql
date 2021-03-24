@@ -41,7 +41,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '1.1';
+		SET @version = '1.2';
 	END;
 
 	--
@@ -688,17 +688,17 @@ ELSE BEGIN
 				FROM (
 					SELECT
 						CASE
-							WHEN (a.PreviousSumWaitTimeMS IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL											-- Ignore 1. data set - Yes we loose one data set but better than having visuals showing very high data
-							WHEN (a.PreviousSumWaitTimeMS > a.SumWaitTimeMS) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.SumWaitTimeMS	-- Either has the counters had an overflow or the server har been restarted
-							ELSE a.SumWaitTimeMS - a.PreviousSumWaitTimeMS																							-- Difference
+							WHEN (DATEDIFF(HOUR, a.PreviousTimestampUTC, a.TimestampUTC) > 12) OR (a.PreviousSumWaitTimeMS IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL	-- Ignore 1. data set - Yes we loose one data set but better than having visuals showing very high data
+							WHEN (a.PreviousSumWaitTimeMS > a.SumWaitTimeMS) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.SumWaitTimeMS							-- Either has the counters had an overflow or the server har been restarted
+							ELSE a.SumWaitTimeMS - a.PreviousSumWaitTimeMS																													-- Difference
 						END AS DeltaSumWaitTimeMS
 						,CASE
-							WHEN (a.PreviousSumSignalWaitTimeMS IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+							WHEN (DATEDIFF(HOUR, a.PreviousTimestampUTC, a.TimestampUTC) > 12) OR (a.PreviousSumSignalWaitTimeMS IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
 							WHEN (a.PreviousSumSignalWaitTimeMS > a.SumSignalWaitTimeMS) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.SumSignalWaitTimeMS
 							ELSE a.SumSignalWaitTimeMS - a.PreviousSumSignalWaitTimeMS
 						END AS DeltaSumSignalWaitTimeMS
 						,CASE
-							WHEN (a.PreviousSumWaitingTasks IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+							WHEN (DATEDIFF(HOUR, a.PreviousTimestampUTC, a.TimestampUTC) > 12) OR (a.PreviousSumWaitingTasks IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
 							WHEN (a.PreviousSumWaitingTasks > a.SumWaitingTasks) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.SumWaitingTasks
 							ELSE a.SumWaitingTasks - a.PreviousSumWaitingTasks
 						END AS DeltaSumWaitingTasks
@@ -716,6 +716,8 @@ ELSE BEGIN
 							,LAG(ws.SumWaitingTasks) OVER(PARTITION BY ws.WaitType ORDER BY ws.TimestampUTC) AS PreviousSumWaitingTasks
 							,ws.LastSQLServiceRestart
 							,LAG(ws.LastSQLServiceRestart) OVER(PARTITION BY ws.WaitType ORDER BY ws.TimestampUTC) AS PreviousLastSQLServiceRestart
+							,ws.TimestampUTC
+							,LAG(ws.TimestampUTC) OVER(PARTITION BY ws.WaitType ORDER BY ws.TimestampUTC) AS PreviousTimestampUTC
 							,ws.Timestamp
 							,CAST(ws.Timestamp AS date) AS Date
 							,(DATEPART(HOUR, ws.Timestamp) * 60 * 60) + (DATEPART(MINUTE, ws.Timestamp) * 60) + (DATEPART(SECOND, ws.Timestamp)) AS TimeKey
@@ -824,7 +826,7 @@ ELSE BEGIN
 							WHERE EXISTS (
 								SELECT *
 								FROM dbo.fhsmWaitCategories AS wc
-								WHERE (wc.WaitType = a.wait_type)
+								WHERE (wc.WaitType COLLATE DATABASE_DEFAULT = a.wait_type)
 									AND (wc.Ignorable = 0)
 							)
 							GROUP BY a.wait_type;

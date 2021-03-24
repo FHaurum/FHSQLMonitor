@@ -41,7 +41,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '1.1';
+		SET @version = '1.2';
 	END;
 
 	--
@@ -60,6 +60,8 @@ ELSE BEGIN
 				,DatabaseName nvarchar(128) NOT NULL
 				,SchemaName nvarchar(128) NOT NULL
 				,ObjectName nvarchar(128) NOT NULL
+				,IndexName nvarchar(128) NOT NULL
+				,PartitionNumber int NOT NULL
 				,IsMemoryOptimized bit NOT NULL
 				,Rows bigint NOT NULL
 				,Reserved int NULL
@@ -73,7 +75,7 @@ ELSE BEGIN
 
 			CREATE NONCLUSTERED INDEX NC_fhsmTableSize_TimestampUTC ON dbo.fhsmTableSize(TimestampUTC);
 			CREATE NONCLUSTERED INDEX NC_fhsmTableSize_Timestamp ON dbo.fhsmTableSize(Timestamp);
-			CREATE NONCLUSTERED INDEX NC_fhsmTableSize_DatabaseName_SchemaName_ObjectName ON dbo.fhsmTableSize(DatabaseName, SchemaName, ObjectName);
+			CREATE NONCLUSTERED INDEX NC_fhsmTableSize_DatabaseName_SchemaName_ObjectName_IndexName ON dbo.fhsmTableSize(DatabaseName, SchemaName, ObjectName, IndexName);
 		END;
 
 		--
@@ -122,9 +124,12 @@ ELSE BEGIN
 					,ts.IndexSize
 					,ts.Unused
 					,CAST(ts.Timestamp AS date) AS Date
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ts.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ts.DatabaseName, ts.SchemaName, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS SchemaKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ts.DatabaseName, ts.SchemaName, ts.ObjectName, DEFAULT, DEFAULT, DEFAULT) AS k) AS ObjectKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ts.DatabaseName, DEFAULT,       DEFAULT,       DEFAULT,            DEFAULT,            DEFAULT) AS k) AS DatabaseKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ts.DatabaseName, ts.SchemaName, DEFAULT,       DEFAULT,            DEFAULT,            DEFAULT) AS k) AS SchemaKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ts.DatabaseName, ts.SchemaName, ts.ObjectName, DEFAULT,            DEFAULT,            DEFAULT) AS k) AS ObjectKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ts.DatabaseName, ts.SchemaName, ts.ObjectName, ts.IndexName,       DEFAULT,            DEFAULT) AS k) AS IndexKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ts.DatabaseName, ts.SchemaName, ts.ObjectName, ts.PartitionNumber, DEFAULT,            DEFAULT) AS k) AS ObjectPartitionKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ts.DatabaseName, ts.SchemaName, ts.ObjectName, ts.IndexName,       ts.PartitionNumber, DEFAULT) AS k) AS IndexPartitionKey
 				FROM dbo.fhsmTableSize AS ts
 				WHERE (ts.Timestamp IN (
 					SELECT a.Timestamp
@@ -200,11 +205,13 @@ ELSE BEGIN
 								*/
 								IF (SELECT t.is_memory_optimized FROM '' + QUOTENAME(@database) + ''.sys.tables AS t WITH (NOLOCK) WHERE t.object_id = @objectId) = 1
 								BEGIN
-									INSERT INTO @spaceUsed(DatabaseName, SchemaName, ObjectName, IsMemoryOptimized, Rows, Reserved, Data, IndexSize, Unused)
+									INSERT INTO @spaceUsed(DatabaseName, SchemaName, ObjectName, IndexName, PartitionNumber, IsMemoryOptimized, Rows, Reserved, Data, IndexSize, Unused)
 									SELECT
 										@database AS DatabaseName
 										,@schema AS SchemaName
 										,@object AS ObjectName
+										,i.name AS IndexName 
+										,1 AS PartitionNumber
 										,1 AS IsMemoryOptimized
 										,SUM(p.rows) AS Rows
 										,NULL AS Reserved
@@ -212,7 +219,9 @@ ELSE BEGIN
 										,NULL AS IndexSize
 										,NULL AS Unused
 									FROM '' + QUOTENAME(@database) + ''.sys.partitions AS p WITH (NOLOCK)
-									WHERE (p.index_id IN (0, 1, 5)) AND (p.object_id = @objectId);
+									LEFT OUTER JOIN '' + QUOTENAME(@database) + ''.sys.indexes AS i WITH (NOLOCK) ON (i.object_id = p.object_id) AND (i.index_id = p.index_id)
+									WHERE (p.index_id IN (0, 1, 5)) AND (p.object_id = @objectId)
+									GROUP BY i.name;
 								END
 							'';
 						END
@@ -236,7 +245,10 @@ ELSE BEGIN
 						DECLARE @reservedpages bigint;
 						DECLARE @rowCount bigint;
 						DECLARE @schema nvarchar(128);
-						DECLARE @spaceUsed TABLE(DatabaseName nvarchar(128), SchemaName nvarchar(128), ObjectName nvarchar(128), IsMemoryOptimized bit, Rows bigint, Reserved int, Data int, IndexSize int, Unused int);
+						DECLARE @spaceUsed TABLE(
+							DatabaseName nvarchar(128), SchemaName nvarchar(128), ObjectName nvarchar(128), IndexName nvarchar(128), PartitionNumber int
+							,IsMemoryOptimized bit, Rows bigint, Reserved int, Data int, IndexSize int, Unused int
+						);
 						DECLARE @usedpages bigint;
 
 						DECLARE oCur CURSOR LOCAL READ_ONLY FAST_FORWARD FOR
@@ -260,63 +272,50 @@ ELSE BEGIN
 
 							'' + @isMemoryOptimizedStmt + ''
 							ELSE BEGIN
-								/*
-								** Now calculate the summary data.
-								*  Note that LOB Data and Row-overflow Data are counted as Data Pages for the base table
-								*  For non-clustered indices they are counted towards the index pages
-								*/
-								SELECT
-									@reservedpages = SUM(ddps.reserved_page_count)
-									,@usedpages = SUM(ddps.used_page_count)
-									,@pages = SUM(
-										CASE
-											WHEN (ddps.index_id < 2) THEN (ddps.in_row_data_page_count + ddps.lob_used_page_count + ddps.row_overflow_used_page_count)
-											ELSE 0
-										END
-									)
-									,@rowCount = SUM(
-										CASE
-											WHEN (ddps.index_id < 2) THEN row_count
-											ELSE 0
-										END
-									)
-								FROM '' + QUOTENAME(@database) + ''.sys.dm_db_partition_stats AS ddps WITH (NOLOCK)
-								WHERE (ddps.object_id = @objectId);
-					'';
-					SET @stmt += ''
-								/*
-								** Check if table has XML Indexes or Fulltext Indexes which use internal tables tied to this table
-								*/
-								IF (
-									SELECT COUNT(*)
-									FROM '' + QUOTENAME(@database) + ''.sys.internal_tables AS it WITH (NOLOCK)
-									WHERE (it.parent_id = @objectId)
-										AND (it.internal_type IN (202, 204, 207, 211, 212, 213, 214, 215, 216, 221, 222, 236))
-								) > 0
-								BEGIN
-									/*
-									**  Now calculate the summary data. Row counts in these internal tables don''''t
-									**  contribute towards row count of original table.
-									*/
-									SELECT
-										@reservedpages = @reservedpages + SUM(reserved_page_count)
-										,@usedpages = @usedpages + SUM(used_page_count)
-									FROM '' + QUOTENAME(@database) + ''.sys.dm_db_partition_stats AS p WITH (NOLOCK)
-									INNER JOIN '' + QUOTENAME(@database) + ''.sys.internal_tables AS it WITH (NOLOCK) ON (it.object_id = p.object_id)
-									WHERE it.parent_id = @objectId AND it.internal_type IN (202, 204, 207, 211, 212, 213, 214, 215, 216, 221, 222, 236);
-								END;
-
-								INSERT INTO @spaceUsed(DatabaseName, SchemaName, ObjectName, IsMemoryOptimized, Rows, Reserved, Data, IndexSize, Unused)
+								INSERT INTO @spaceUsed(DatabaseName, SchemaName, ObjectName, IndexName, PartitionNumber, IsMemoryOptimized, Rows, Reserved, Data, IndexSize, Unused)
 								SELECT
 									@database AS DatabaseName
 									,@schema AS SchemaName
 									,@object AS ObjectName
+									,a.IndexName
+									,a.PartitionNumber
 									,0 AS IsMemoryOptimized
-									,@rowCount AS Rows
-									,(@reservedpages * 8) AS Reserved
-									,(@pages * 8) AS Data
-									,((CASE WHEN @usedpages > @pages THEN (@usedpages - @pages) ELSE 0 END) * 8) AS IndexSize
-									,((CASE WHEN @reservedpages > @usedpages THEN (@reservedpages - @usedpages) ELSE 0 END) * 8) AS Unused
+									,a.[RowCount] AS Rows
+									,((a.ReservedPageCount + a.XMLFullReservedPageCount) * 8) AS Reserved
+									,(a.Pages * 8) AS Data
+									,((CASE WHEN (a.UsedPageCount + a.XMLFullUsedPageCount) > a.Pages THEN ((a.UsedPageCount + a.XMLFullUsedPageCount) - a.Pages) ELSE 0 END) * 8) AS IndexSize
+									,((CASE WHEN (a.ReservedPageCount + a.XMLFullReservedPageCount) > (a.UsedPageCount + a.XMLFullUsedPageCount) THEN ((a.ReservedPageCount + a.XMLFullReservedPageCount) - (a.UsedPageCount + a.XMLFullUsedPageCount)) ELSE 0 END) * 8) AS Unused
+								FROM (
+									/*
+									** Now calculate the summary data.
+									*  Note that LOB Data and Row-overflow Data are counted as Data Pages for the base table
+									*  For non-clustered indices they are counted towards the index pages
+									*/
+									SELECT
+										ddps.object_id
+										,i.name AS IndexName
+										,ddps.partition_number AS PartitionNumber
+										,ddps.reserved_page_count AS ReservedPageCount
+										,ddps.used_page_count AS UsedPageCount
+										,CASE WHEN (ddps.index_id < 2) THEN (ddps.in_row_data_page_count + ddps.lob_used_page_count + ddps.row_overflow_used_page_count) ELSE 0 END AS Pages
+										,CASE WHEN (ddps.index_id < 2) THEN ddps.row_count ELSE 0 END AS [RowCount]
+										,COALESCE(XMLFull.ReservedPageCount, 0) AS XMLFullReservedPageCount
+										,COALESCE(XMLFull.UsedPageCount, 0) AS XMLFullUsedPageCount
+									FROM '' + QUOTENAME(@database) + ''.sys.dm_db_partition_stats AS ddps WITH (NOLOCK)
+									LEFT OUTER JOIN '' + QUOTENAME(@database) + ''.sys.indexes AS i WITH (NOLOCK) ON (i.object_id = ddps.object_id) AND (i.index_id = ddps.index_id)
+									OUTER APPLY (
+										/*
+										** Check if table has XML Indexes or Fulltext Indexes which use internal tables tied to this table
+										*/
+										SELECT
+											p.reserved_page_count AS ReservedPageCount
+											,p.used_page_count AS UsedPageCount
+										FROM '' + QUOTENAME(@database) + ''.sys.dm_db_partition_stats AS p WITH (NOLOCK)
+										INNER JOIN '' + QUOTENAME(@database) + ''.sys.internal_tables AS it WITH (NOLOCK) ON (it.object_id = p.object_id)
+										WHERE (it.parent_id = ddps.object_id) AND (p.partition_id = ddps.partition_id) AND (it.internal_type IN (202, 204, 207, 211, 212, 213, 214, 215, 216, 221, 222, 236))
+									) AS XMLFull
+									WHERE (ddps.object_id = @objectId)
+								) AS a;
 							END;
 						END;
 
@@ -325,7 +324,7 @@ ELSE BEGIN
 
 						SELECT *
 						FROM @spaceUsed AS su
-						ORDER BY su.DatabaseName, su.SchemaName, su.ObjectName;
+						ORDER BY su.DatabaseName, su.SchemaName, su.ObjectName, su.IndexName;
 					'';
 					EXEC sp_executesql
 						@stmt
@@ -379,7 +378,7 @@ ELSE BEGIN
 					DECLARE @nowUTC datetime;
 					DECLARE @parameters nvarchar(max);
 					DECLARE @parametersTable TABLE([Key] nvarchar(128) NOT NULL, Value nvarchar(128) NULL);
-					DECLARE @spaceUsed TABLE(DatabaseName nvarchar(128), SchemaName nvarchar(128), ObjectName nvarchar(128), IsMemoryOptimized bit, Rows bigint, Reserved int, Data int, IndexSize int, Unused int);
+					DECLARE @spaceUsed TABLE(DatabaseName nvarchar(128), SchemaName nvarchar(128), ObjectName nvarchar(128), IndexName nvarchar(128), PartitionNumber int, IsMemoryOptimized bit, Rows bigint, Reserved int, Data int, IndexSize int, Unused int);
 					DECLARE @stmt nvarchar(max);
 					DECLARE @thisTask nvarchar(128);
 
@@ -453,8 +452,8 @@ ELSE BEGIN
 								,N''@database nvarchar(128)''
 								,@database = @database;
 
-							INSERT INTO dbo.fhsmTableSize(DatabaseName, SchemaName, ObjectName, IsMemoryOptimized, Rows, Reserved, Data, IndexSize, Unused, TimestampUTC, Timestamp)
-							SELECT su.DatabaseName, su.SchemaName, su.ObjectName, su.IsMemoryOptimized, su.Rows, su.Reserved, su.Data, su.IndexSize, su.Unused, @nowUTC, @now
+							INSERT INTO dbo.fhsmTableSize(DatabaseName, SchemaName, ObjectName, IndexName, PartitionNumber, IsMemoryOptimized, Rows, Reserved, Data, IndexSize, Unused, TimestampUTC, Timestamp)
+							SELECT su.DatabaseName, su.SchemaName, su.ObjectName, su.IndexName, su.PartitionNumber, su.IsMemoryOptimized, su.Rows, su.Reserved, su.Data, su.IndexSize, su.Unused, @nowUTC, @now
 							FROM @spaceUsed AS su;
 						END;
 
@@ -535,8 +534,8 @@ ELSE BEGIN
 		dimensions(
 			DimensionName, DimensionKey
 			,SrcTable, SrcAlias, SrcWhere, SrcDateColumn
-			,SrcColumn1, SrcColumn2, SrcColumn3
-			,OutputColumn1, OutputColumn2, OutputColumn3
+			,SrcColumn1, SrcColumn2, SrcColumn3, SrcColumn4, SrcColumn5
+			,OutputColumn1, OutputColumn2, OutputColumn3, OutputColumn4, OutputColumn5
 		) AS (
 			SELECT
 				'Database' AS DimensionName
@@ -545,8 +544,8 @@ ELSE BEGIN
 				,'src' AS SrcAlias
 				,NULL AS SrcWhere
 				,'src.[Timestamp]' AS SrcDateColumn
-				,'src.[DatabaseName]', NULL, NULL
-				,'Database', NULL, NULL
+				,'src.[DatabaseName]', NULL, NULL, NULL, NULL
+				,'Database', NULL, NULL, NULL, NULL
 
 			UNION ALL
 
@@ -557,8 +556,8 @@ ELSE BEGIN
 				,'src' AS SrcAlias
 				,NULL AS SrcWhere
 				,'src.[Timestamp]' AS SrcDateColumn
-				,'src.[DatabaseName]', 'src.[SchemaName]', NULL
-				,'Database', 'Schema', NULL
+				,'src.[DatabaseName]', 'src.[SchemaName]', NULL, NULL, NULL
+				,'Database', 'Schema', NULL, NULL, NULL
 
 			UNION ALL
 
@@ -569,8 +568,44 @@ ELSE BEGIN
 				,'src' AS SrcAlias
 				,NULL AS SrcWhere
 				,'src.[Timestamp]' AS SrcDateColumn
-				,'src.[DatabaseName]', 'src.[SchemaName]', 'src.[ObjectName]'
-				,'Database', 'Schema', 'Object'
+				,'src.[DatabaseName]', 'src.[SchemaName]', 'src.[ObjectName]', NULL, NULL
+				,'Database', 'Schema', 'Object', NULL, NULL
+
+			UNION ALL
+
+			SELECT
+				'Index' AS DimensionName
+				,'IndexKey' AS DimensionKey
+				,'dbo.fhsmTableSize' AS SrcTable
+				,'src' AS SrcAlias
+				,NULL AS SrcWhere
+				,'src.[Timestamp]' AS SrcDateColumn
+				,'src.[DatabaseName]', 'src.[SchemaName]', 'src.[ObjectName]', 'src.[IndexName]', NULL
+				,'Database', 'Schema', 'Object', 'Index', NULL
+
+			UNION ALL
+
+			SELECT
+				'Object partition' AS DimensionName
+				,'ObjectPartitionKey' AS DimensionKey
+				,'dbo.fhsmTableSize' AS SrcTable
+				,'src' AS SrcAlias
+				,NULL AS SrcWhere
+				,'src.[Timestamp]' AS SrcDateColumn
+				,'src.[DatabaseName]', 'src.[SchemaName]', 'src.[ObjectName]', 'CAST(src.[PartitionNumber] AS nvarchar)', NULL
+				,'Database', 'Schema', 'Object', 'Partition', NULL
+
+			UNION ALL
+
+			SELECT
+				'Index partition' AS DimensionName
+				,'IndexPartitionKey' AS DimensionKey
+				,'dbo.fhsmTableSize' AS SrcTable
+				,'src' AS SrcAlias
+				,NULL AS SrcWhere
+				,'src.[Timestamp]' AS SrcDateColumn
+				,'src.[DatabaseName]', 'src.[SchemaName]', 'src.[ObjectName]', 'src.[IndexName]', 'CAST(src.[PartitionNumber] AS nvarchar)'
+				,'Database', 'Schema', 'Object', 'Index', 'Partition'
 		)
 		MERGE dbo.fhsmDimensions AS tgt
 		USING dimensions AS src ON (src.DimensionName = tgt.DimensionName) AND (src.SrcTable = tgt.SrcTable)
@@ -584,21 +619,25 @@ ELSE BEGIN
 				,tgt.SrcColumn1 = src.SrcColumn1
 				,tgt.SrcColumn2 = src.SrcColumn2
 				,tgt.SrcColumn3 = src.SrcColumn3
+				,tgt.SrcColumn4 = src.SrcColumn4
+				,tgt.SrcColumn5 = src.SrcColumn5
 				,tgt.OutputColumn1 = src.OutputColumn1
 				,tgt.OutputColumn2 = src.OutputColumn2
 				,tgt.OutputColumn3 = src.OutputColumn3
+				,tgt.OutputColumn4 = src.OutputColumn4
+				,tgt.OutputColumn5 = src.OutputColumn5
 		WHEN NOT MATCHED BY TARGET
 			THEN INSERT(
 				DimensionName, DimensionKey
 				,SrcTable, SrcAlias, SrcWhere, SrcDateColumn
-				,SrcColumn1, SrcColumn2, SrcColumn3
-				,OutputColumn1, OutputColumn2, OutputColumn3
+				,SrcColumn1, SrcColumn2, SrcColumn3, SrcColumn4, SrcColumn5
+				,OutputColumn1, OutputColumn2, OutputColumn3, OutputColumn4, OutputColumn5
 			)
 			VALUES(
 				src.DimensionName, src.DimensionKey
 				,src.SrcTable, src.SrcAlias, src.SrcWhere, src.SrcDateColumn
-				,src.SrcColumn1, src.SrcColumn2, src.SrcColumn3
-				,src.OutputColumn1, src.OutputColumn2, src.OutputColumn3
+				,src.SrcColumn1, src.SrcColumn2, src.SrcColumn3, src.SrcColumn4, src.SrcColumn5
+				,src.OutputColumn1, src.OutputColumn2, src.OutputColumn3, src.OutputColumn4, src.OutputColumn5
 			);
 	END;
 

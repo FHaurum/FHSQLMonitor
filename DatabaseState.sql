@@ -41,7 +41,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '1.1';
+		SET @version = '1.2';
 	END;
 
 	--
@@ -133,6 +133,7 @@ ELSE BEGIN
 							WHEN 2 THEN ''CHECKSUM''
 							ELSE ''?:'' + pvt.page_verify_option
 						END AS PageVerifyOption
+						,CAST(pvt.is_read_committed_snapshot_on AS bit) AS IsReadCommittedSnapshotOn
 						,CASE pvt.recovery_model
 							WHEN 1 THEN ''FULL''
 							WHEN 2 THEN ''BULK_LOGGED''
@@ -158,7 +159,7 @@ ELSE BEGIN
 						FOR [Key] IN (
 							[collation_name], [compatibility_level], [delayed_durability]
 							,[is_auto_close_on], [is_auto_shrink_on], [is_auto_update_stats_async_on], [is_mixed_page_allocation_on]
-							,[page_verify_option], [recovery_model], [target_recovery_time_in_seconds])
+							,[is_read_committed_snapshot_on], [page_verify_option], [recovery_model], [target_recovery_time_in_seconds])
 					) AS pvt;
 			';
 			EXEC(@stmt);
@@ -204,6 +205,7 @@ ELSE BEGIN
 							WHEN ''is_auto_shrink_on'' THEN ''Auto shrink''
 							WHEN ''is_auto_update_stats_async_on'' THEN ''Auto update stats. async.''
 							WHEN ''is_mixed_page_allocation_on'' THEN ''Mixed page allocation''
+							WHEN ''is_read_committed_snapshot_on'' THEN ''IsReadCommittedSnapshotOn''
 							WHEN ''page_verify_option'' THEN ''Page verify''
 							WHEN ''recovery_model'' THEN ''Recovery model''
 							WHEN ''target_recovery_time_in_seconds'' THEN ''Target recovery time in sec.''
@@ -250,6 +252,12 @@ ELSE BEGIN
 									WHEN 2 THEN ''CHECKSUM''
 									ELSE ''?:'' + a.Value
 								END
+							WHEN ''is_read_committed_snapshot_on''
+								THEN CASE a.Value
+									WHEN 0 THEN ''False''
+									WHEN 1 THEN ''True''
+									ELSE ''?:'' + a.Value
+								END
 							WHEN ''recovery_model''
 								THEN CASE a.Value
 									WHEN 1 THEN ''FULL''
@@ -277,7 +285,7 @@ ELSE BEGIN
 							AND (dbState.[Key] IN (
 								''collation_name'', ''compatibility_level'', ''delayed_durability''
 								,''is_auto_close_on'', ''is_auto_shrink_on'', ''is_auto_update_stats_async_on'', ''is_mixed_page_allocation_on''
-								,''page_verify_option'', ''recovery_model'', ''target_recovery_time_in_seconds''
+								,''is_read_committed_snapshot_on'', ''page_verify_option'', ''recovery_model'', ''target_recovery_time_in_seconds''
 							))
 					) AS a
 					WHERE (a.Value <> a.PreviousValue);
@@ -573,7 +581,7 @@ ELSE BEGIN
 									WHERE (so.name = ''databases'') AND (sc.name = ''physical_database_name'')
 								)
 								BEGIN
-									SET @physicalDatabaseNameStmt = ''d.physical_database_name'';
+									SET @physicalDatabaseNameStmt = ''d.physical_database_name COLLATE DATABASE_DEFAULT'';
 								END
 								ELSE BEGIN
 									SET @physicalDatabaseNameStmt = ''NULL'';
@@ -729,7 +737,7 @@ ELSE BEGIN
 										,CAST(SUSER_SNAME(d.owner_sid)                     AS nvarchar(max)) AS database_owner
 										,CONVERT(nvarchar(max), d.create_date, 126)                          AS database_create_date
 										,CAST(d.compatibility_level                        AS nvarchar(max)) AS compatibility_level
-										,CAST(d.collation_name                             AS nvarchar(max)) AS collation_name
+										,CAST(d.collation_name COLLATE DATABASE_DEFAULT    AS nvarchar(max)) AS collation_name
 										,CAST(d.user_access                                AS nvarchar(max)) AS user_access
 										,CAST(d.is_read_only                               AS nvarchar(max)) AS is_read_only
 										,CAST(d.is_auto_close_on                           AS nvarchar(max)) AS is_auto_close_on
@@ -799,7 +807,7 @@ ELSE BEGIN
 										,CONVERT(nvarchar(max), ddek.regenerate_date, 126)                   AS key_regenerate_date
 										,CONVERT(nvarchar(max), ddek.set_date, 126)                          AS key_set_date
 										,CONVERT(nvarchar(max), ddek.opened_date, 126)                       AS key_opened_date
-										,CAST(ddek.key_algorithm                           AS nvarchar(max)) AS key_algorithm
+										,CAST(ddek.key_algorithm COLLATE DATABASE_DEFAULT  AS nvarchar(max)) AS key_algorithm
 										,CAST(ddek.key_length                              AS nvarchar(max)) AS key_length
 										,CAST(ddek.percent_complete                        AS nvarchar(max)) AS percent_complete
 										,CAST('' + @encryptionScanStateStmt + ''                   AS nvarchar(max)) AS encryption_scan_state
@@ -911,11 +919,11 @@ ELSE BEGIN
 							UPDATE tgt
 							SET tgt.ValidTo = @nowUTC
 							FROM dbo.fhsmDatabaseState AS tgt
-							LEFT OUTER JOIN #inventory AS src ON (src.Query = tgt.Query) AND (src.DatabaseName = tgt.DatabaseName) AND (src.[Key] = tgt.[Key])
+							LEFT OUTER JOIN #inventory AS src ON (src.Query = tgt.Query) AND (src.DatabaseName COLLATE DATABASE_DEFAULT = tgt.DatabaseName) AND (src.[Key] COLLATE DATABASE_DEFAULT = tgt.[Key])
 							WHERE
 								(
 									(src.Query IS NULL)
-									OR ((src.Value <> tgt.Value) OR (src.Value IS NULL AND tgt.Value IS NOT NULL) OR (src.Value IS NOT NULL AND tgt.Value IS NULL))
+									OR ((src.Value COLLATE DATABASE_DEFAULT <> tgt.Value) OR (src.Value IS NULL AND tgt.Value IS NOT NULL) OR (src.Value IS NOT NULL AND tgt.Value IS NULL))
 								) AND (tgt.ValidTo = ''9999-dec-31 23:59:59'');
 						END;
 
@@ -929,7 +937,11 @@ ELSE BEGIN
 							WHERE NOT EXISTS (
 								SELECT *
 								FROM dbo.fhsmDatabaseState AS tgt
-								WHERE (tgt.Query = src.Query) AND (tgt.DatabaseName = src.DatabaseName) AND (tgt.[Key] = src.[Key]) AND ((tgt.Value = src.Value) OR (tgt.Value IS NULL AND src.Value IS NULL)) AND (tgt.ValidTo = ''9999-dec-31 23:59:59'')
+								WHERE
+									(tgt.Query = src.Query)
+									AND (tgt.DatabaseName COLLATE DATABASE_DEFAULT = src.DatabaseName)
+									AND (tgt.[Key] COLLATE DATABASE_DEFAULT = src.[Key])
+									AND ((tgt.Value COLLATE DATABASE_DEFAULT = src.Value) OR (tgt.Value IS NULL AND src.Value IS NULL)) AND (tgt.ValidTo = ''9999-dec-31 23:59:59'')
 							);
 						END;
 					END;
