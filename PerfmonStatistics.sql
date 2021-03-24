@@ -42,7 +42,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '1.2';
+		SET @version = '1.3';
 	END;
 
 	--
@@ -588,11 +588,11 @@ ELSE BEGIN
 								,@nowUTC, @now
 							FROM dbo.fhsmPerfmonCounters AS pc
 							INNER JOIN sys.dm_os_performance_counters AS dopc WITH (NOLOCK)
-								ON (RTRIM(dopc.counter_name) = pc.CounterName)
-								AND (RTRIM(dopc.[object_name]) = pc.ObjectName)
+								ON (RTRIM(dopc.counter_name) COLLATE DATABASE_DEFAULT = pc.CounterName)
+								AND (RTRIM(dopc.[object_name]) COLLATE DATABASE_DEFAULT = pc.ObjectName)
 								AND (
 									(pc.InstanceName IS NULL)
-									OR (RTRIM(dopc.[instance_name]) = pc.InstanceName)
+									OR (RTRIM(dopc.[instance_name]) COLLATE DATABASE_DEFAULT = pc.InstanceName)
 								);
 						'';
 						INSERT INTO dbo.fhsmPerfmonStatistics(

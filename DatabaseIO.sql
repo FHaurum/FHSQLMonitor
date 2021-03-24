@@ -41,7 +41,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '1.2';
+		SET @version = '1.3';
 	END;
 
 	--
@@ -125,13 +125,13 @@ ELSE BEGIN
 					,b.DeltaNumOfBytesRead AS NumOfBytesRead
 					,CASE
 						WHEN b.DeltaNumOfReads = 0 THEN NULL
-						ELSE b.DeltaIOStallReadMS / CAST(b.DeltaNumOfReads AS decimal(8,1))
+						ELSE b.DeltaIOStallReadMS / CAST(b.DeltaNumOfReads AS decimal(12,1))
 					END AS ReadLatencyMS
 					,b.DeltaNumOfWrites AS NumOfWrites
 					,b.DeltaNumOfBytesWritten AS NumOfBytesWritten
 					,CASE
 						WHEN b.DeltaNumOfWrites = 0 THEN NULL
-						ELSE b.DeltaIOStallWriteMS / CAST(b.DeltaNumOfWrites AS decimal(8,1))
+						ELSE b.DeltaIOStallWriteMS / CAST(b.DeltaNumOfWrites AS decimal(12,1))
 					END AS WriteLatencyMS
 					,b.Timestamp
 					,b.Date

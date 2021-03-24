@@ -41,7 +41,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '1.2';
+		SET @version = '1.3';
 	END;
 
 	--
@@ -125,25 +125,29 @@ ELSE BEGIN
 					,a.login_name AS LoginName
 					,a.wait_info AS WaitInfo
 					,a.tran_log_writes AS TransLogWrite
-					,CAST(REPLACE(a.CPU, '','', '''') AS int) AS CPU
-					,CAST(REPLACE(a.tempdb_allocations, '','', '''') AS int) AS TempdbAllocations
-					,CAST(REPLACE(a.tempdb_current, '','', '''') AS int) AS TempdbCurrent
+					,a.CPU - a.FirstCPU AS CPU
+					,a.tempdb_allocations - a.FirstTempdbAllocations AS TempdbAllocations
 					,a.blocking_session_id AS BlockingSessionId
-					,CAST(REPLACE(a.reads, '','', '''') AS int) AS Reads
-					,CAST(REPLACE(a.writes, '','', '''') AS int) AS Writes
-					,CAST(REPLACE(a.physical_reads, '','', '''') AS int) AS PhysicalReads
-					,CAST(REPLACE(a.used_memory, '','', '''') AS int) AS UsedMemory
+					,a.reads - a.FirstReads AS Reads
+					,a.writes - a.FirstWrites AS Writes
+					,a.physical_reads - a.FirstPhysicalReads AS PhysicalReads
+					,a.used_memory AS UsedMemory
 					,a.status AS Status
 					,a.tran_start_time AS TranStartTime
-					,CAST(REPLACE(a.open_tran_count, '','', '''') AS int) AS OpenTranCount
+					,a.open_tran_count AS OpenTranCount
 					,a.percent_complete AS PercentComplete
 					,a.host_name AS HostName
 					,a.program_name AS ProgramName
 					,(SELECT k.[Key] FROM dbo.fhsmfnGenerateKey(a.database_name, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
 				FROM (
 					SELECT
-						ROW_NUMBER() OVER(PARTITION BY wia.session_id, wia.login_time ORDER BY wia.collection_time DESC) AS _Rnk_
+						ROW_NUMBER() OVER(PARTITION BY wia.session_id, wia.login_time, wia.start_time ORDER BY wia.collection_time DESC) AS _Rnk_
 						,wia.*
+						,FIRST_VALUE(wia.CPU) OVER(PARTITION BY wia.session_id, wia.login_time, wia.start_time ORDER BY wia.collection_time) AS FirstCPU
+						,FIRST_VALUE(wia.tempdb_allocations) OVER(PARTITION BY wia.session_id, wia.login_time, wia.start_time ORDER BY wia.collection_time) AS FirstTempdbAllocations
+						,FIRST_VALUE(wia.reads) OVER(PARTITION BY wia.session_id, wia.login_time, wia.start_time ORDER BY wia.collection_time) AS FirstReads
+						,FIRST_VALUE(wia.writes) OVER(PARTITION BY wia.session_id, wia.login_time, wia.start_time ORDER BY wia.collection_time) AS FirstWrites
+						,FIRST_VALUE(wia.physical_reads) OVER(PARTITION BY wia.session_id, wia.login_time, wia.start_time ORDER BY wia.collection_time) AS FirstPhysicalReads
 					FROM dbo.fhsmWhoIsActive AS wia
 					WHERE (DATEDIFF(HOUR, wia.collection_time, (SELECT MAX(wia2.collection_time) FROM dbo.fhsmWhoIsActive AS wia2)) < 24)
 						AND (wia.sql_text <> ''sp_server_diagnostics'')

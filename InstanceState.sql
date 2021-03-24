@@ -41,7 +41,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '1.2';
+		SET @version = '1.3';
 	END;
 
 	--
@@ -1301,12 +1301,12 @@ ELSE BEGIN
 									SELECT 11 AS Query, '''''''' AS Category, unpvt.K, unpvt.V
 									FROM (
 										SELECT
-											CAST(dohi.host_platform           AS nvarchar(max)) AS host_platform
-											,CAST(dohi.host_distribution       AS nvarchar(max)) AS host_distribution
-											,CAST(dohi.host_release            AS nvarchar(max)) AS host_release
-											,CAST(dohi.host_service_pack_level AS nvarchar(max)) AS host_service_pack_level
-											,CAST(dohi.host_sku                AS nvarchar(max)) AS host_sku
-											,CAST(dohi.os_language_version     AS nvarchar(max)) AS os_language_version
+											 CAST(dohi.host_platform           COLLATE DATABASE_DEFAULT AS nvarchar(max)) AS host_platform
+											,CAST(dohi.host_distribution       COLLATE DATABASE_DEFAULT AS nvarchar(max)) AS host_distribution
+											,CAST(dohi.host_release            COLLATE DATABASE_DEFAULT AS nvarchar(max)) AS host_release
+											,CAST(dohi.host_service_pack_level COLLATE DATABASE_DEFAULT AS nvarchar(max)) AS host_service_pack_level
+											,CAST(dohi.host_sku                                         AS nvarchar(max)) AS host_sku
+											,CAST(dohi.os_language_version                              AS nvarchar(max)) AS os_language_version
 										FROM sys.dm_os_host_info AS dohi WITH (NOLOCK)
 									) AS p
 									UNPIVOT(
@@ -1630,11 +1630,11 @@ ELSE BEGIN
 							UPDATE tgt
 							SET tgt.ValidTo = @nowUTC
 							FROM dbo.fhsmInstanceState AS tgt
-							LEFT OUTER JOIN #inventory AS src ON (src.Query = tgt.Query) AND (src.Category = tgt.Category) AND (src.[Key] = tgt.[Key])
+							LEFT OUTER JOIN #inventory AS src ON (src.Query = tgt.Query) AND (src.Category COLLATE DATABASE_DEFAULT = tgt.Category) AND (src.[Key] COLLATE DATABASE_DEFAULT = tgt.[Key])
 							WHERE
 								(
 									(src.Query IS NULL)
-									OR ((src.Value <> tgt.Value) OR (src.Value IS NULL AND tgt.Value IS NOT NULL) OR (src.Value IS NOT NULL AND tgt.Value IS NULL))
+									OR ((src.Value COLLATE DATABASE_DEFAULT <> tgt.Value) OR (src.Value IS NULL AND tgt.Value IS NOT NULL) OR (src.Value IS NOT NULL AND tgt.Value IS NULL))
 								) AND (tgt.ValidTo = ''9999-dec-31 23:59:59'');
 						END;
 
@@ -1648,7 +1648,11 @@ ELSE BEGIN
 							WHERE NOT EXISTS (
 								SELECT *
 								FROM dbo.fhsmInstanceState AS tgt
-								WHERE (tgt.Query = src.Query) AND (tgt.Category = src.Category) AND (tgt.[Key] = src.[Key]) AND ((tgt.Value = src.Value) OR (tgt.Value IS NULL AND src.Value IS NULL)) AND (tgt.ValidTo = ''9999-dec-31 23:59:59'')
+								WHERE
+									(tgt.Query = src.Query)
+									AND (tgt.Category COLLATE DATABASE_DEFAULT = src.Category)
+									AND (tgt.[Key] COLLATE DATABASE_DEFAULT = src.[Key])
+									AND ((tgt.Value COLLATE DATABASE_DEFAULT = src.Value) OR (tgt.Value IS NULL AND src.Value IS NULL)) AND (tgt.ValidTo = ''9999-dec-31 23:59:59'')
 							);
 						END;
 					END;
