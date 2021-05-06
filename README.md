@@ -1,4 +1,6 @@
 # FHSQLMonitor
+May 3, 2021: Version 1.5.1 of Power BI desktop report has been updated with Backup Status report, added IsHypothetical on Statistics Age report and errors fixed.
+
 March 24, 2021: Version 1.4.0 of Power BI desktop report has been updated with incremental statistics table on Statistics Age report, added RCSI on Instance State report and errors fixed.
 
 January 24, 2021: Version 1.3.0 of Power BI desktop report has been updated with IO latency instead of IO stall, PLE per numa node and Always ON traffic report page.

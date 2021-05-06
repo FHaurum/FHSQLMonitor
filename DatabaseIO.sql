@@ -41,7 +41,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '1.3';
+		SET @version = '1.4';
 	END;
 
 	--
@@ -284,10 +284,12 @@ ELSE BEGIN
 					DECLARE @databases nvarchar(max);
 					DECLARE @ioStallQueuedReadMSStmt nvarchar(max);
 					DECLARE @ioStallQueuedWriteMSStmt nvarchar(max);
+					DECLARE @message nvarchar(max);
 					DECLARE @now datetime;
 					DECLARE @nowUTC datetime;
 					DECLARE @parameters nvarchar(max);
 					DECLARE @parametersTable TABLE([Key] nvarchar(128) NOT NULL, Value nvarchar(128) NULL);
+					DECLARE @replicaId uniqueidentifier;
 					DECLARE @stmt nvarchar(max);
 					DECLARE @thisTask nvarchar(128);
 
@@ -356,49 +358,73 @@ ELSE BEGIN
 						END;
 
 						DECLARE dCur CURSOR LOCAL READ_ONLY FAST_FORWARD FOR
-						SELECT d.DatabaseName
-						FROM #dbList AS d
-						ORDER BY d.[Order];
+						SELECT dl.DatabaseName, d.replica_id
+						FROM #dbList AS dl
+						INNER JOIN sys.databases AS d ON (d.name COLLATE DATABASE_DEFAULT = dl.DatabaseName)
+						ORDER BY dl.[Order];
 
 						OPEN dCur;
 
 						WHILE (1 = 1)
 						BEGIN
 							FETCH NEXT FROM dCur
-							INTO @database;
+							INTO @database, @replicaId;
 
 							IF (@@FETCH_STATUS <> 0)
 							BEGIN
 								BREAK;
 							END;
 
-							SET @stmt = ''
-								USE '' + QUOTENAME(@database) + '';
+							--
+							-- If is a member of a replica, we will only execute when running on the primary
+							--
+							IF (@replicaId IS NULL)
+								OR (
+									(
+										SELECT
+										CASE
+											WHEN (dhags.primary_replica = ar.replica_server_name) THEN 1
+											ELSE 0
+										END AS IsPrimaryServer
+										FROM master.sys.availability_groups AS ag
+										INNER JOIN master.sys.availability_replicas AS ar ON ag.group_id = ar.group_id
+										INNER JOIN master.sys.dm_hadr_availability_group_states AS dhags ON ag.group_id = dhags.group_id
+										WHERE (ar.replica_server_name = @@SERVERNAME) AND (ar.replica_id = @replicaId)
+									) = 1
+								)
+							BEGIN
+								SET @stmt = ''
+									USE '' + QUOTENAME(@database) + '';
 
-								SELECT
-									DB_NAME() AS DatabaseName
-									,df.name, df.Type
-									,divfs.sample_ms
-									,divfs.io_stall
-									,divfs.num_of_reads, divfs.num_of_bytes_read, divfs.io_stall_read_ms, '' + @ioStallQueuedReadMSStmt + ''
-									,divfs.num_of_writes, divfs.num_of_bytes_written, divfs.io_stall_write_ms, '' + @ioStallQueuedWriteMSStmt + ''
-									,divfs.size_on_disk_bytes
-									,@nowUTC, @now
-								FROM sys.dm_io_virtual_file_stats(DB_ID(), NULL) AS divfs
-								INNER JOIN sys.database_files AS df WITH (NOLOCK) ON (divfs.file_id = df.file_id);
-							'';
-							INSERT INTO dbo.fhsmDatabaseIO(
-								DatabaseName, LogicalName, Type
-								,SampleMS, IOStall
-								,NumOfReads, NumOfBytesRead, IOStallReadMS, IOStallQueuedReadMS
-								,NumOfWrites, NumOfBytesWritten, IOStallWriteMS, IOStallQueuedWriteMS
-								,SizeOnDiskBytes
-								,TimestampUTC, Timestamp
-							)
-							EXEC sp_executesql
-								@stmt
-								,N''@now datetime, @nowUTC datetime''
-								,@now = @now, @nowUTC = @nowUTC;
+									SELECT
+										DB_NAME() AS DatabaseName
+										,df.name, df.Type
+										,divfs.sample_ms
+										,divfs.io_stall
+										,divfs.num_of_reads, divfs.num_of_bytes_read, divfs.io_stall_read_ms, '' + @ioStallQueuedReadMSStmt + ''
+										,divfs.num_of_writes, divfs.num_of_bytes_written, divfs.io_stall_write_ms, '' + @ioStallQueuedWriteMSStmt + ''
+										,divfs.size_on_disk_bytes
+										,@nowUTC, @now
+									FROM sys.dm_io_virtual_file_stats(DB_ID(), NULL) AS divfs
+									INNER JOIN sys.database_files AS df WITH (NOLOCK) ON (divfs.file_id = df.file_id);
+								'';
+								INSERT INTO dbo.fhsmDatabaseIO(
+									DatabaseName, LogicalName, Type
+									,SampleMS, IOStall
+									,NumOfReads, NumOfBytesRead, IOStallReadMS, IOStallQueuedReadMS
+									,NumOfWrites, NumOfBytesWritten, IOStallWriteMS, IOStallQueuedWriteMS
+									,SizeOnDiskBytes
+									,TimestampUTC, Timestamp
+								)
+								EXEC sp_executesql
+									@stmt
+									,N''@now datetime, @nowUTC datetime''
+									,@now = @now, @nowUTC = @nowUTC;
+							END
+							ELSE BEGIN
+								SET @message = ''Database '''''' + @database + '''''' is member of a replica but this server is not the primary node'';
+								EXEC dbo.fhsmSPLog @name = @name, @task = @thisTask, @type = ''Warning'', @message = @message;
+							END;
 						END;
 
 						CLOSE dCur;

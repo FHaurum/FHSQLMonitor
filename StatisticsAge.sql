@@ -41,7 +41,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '1.2';
+		SET @version = '1.3';
 	END;
 
 	--
@@ -68,6 +68,7 @@ ELSE BEGIN
 				,UnfilteredRows bigint NULL
 				,ModificationCounter bigint NULL
 				,PersistedSamplePercent float NULL
+				,IsHypothetical bit NULL
 				,TimestampUTC datetime NOT NULL
 				,Timestamp datetime NOT NULL
 				,CONSTRAINT PK_fhsmStatisticsAge PRIMARY KEY(Id)
@@ -113,6 +114,7 @@ ELSE BEGIN
 				,Steps int NULL
 				,UnfilteredRows bigint NULL
 				,ModificationCounter bigint NULL
+				,IsHypothetical bit NULL
 				,TimestampUTC datetime NOT NULL
 				,Timestamp datetime NOT NULL
 				,CONSTRAINT PK_fhsmStatisticsAgeIncremental PRIMARY KEY(Id)
@@ -171,6 +173,7 @@ ELSE BEGIN
 					,sa.UnfilteredRows
 					,sa.ModificationCounter
 					,sa.PersistedSamplePercent
+					,sa.IsHypothetical
 					,CAST(sa.Timestamp AS date) AS Date
 					,(DATEPART(HOUR, sa.Timestamp) * 60 * 60) + (DATEPART(MINUTE, sa.Timestamp) * 60) + (DATEPART(SECOND, sa.Timestamp)) AS TimeKey
 					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(sa.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
@@ -274,6 +277,7 @@ ELSE BEGIN
 					,sai.Steps
 					,sai.UnfilteredRows
 					,sai.ModificationCounter
+					,sai.IsHypothetical
 					,CAST(sai.Timestamp AS date) AS Date
 					,(DATEPART(HOUR, sai.Timestamp) * 60 * 60) + (DATEPART(MINUTE, sai.Timestamp) * 60) + (DATEPART(SECOND, sai.Timestamp)) AS TimeKey
 					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(sai.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
@@ -331,10 +335,12 @@ ELSE BEGIN
 
 					DECLARE @database nvarchar(128);
 					DECLARE @databases nvarchar(max);
+					DECLARE @message nvarchar(max);
 					DECLARE @now datetime;
 					DECLARE @nowUTC datetime;
 					DECLARE @parameters nvarchar(max);
 					DECLARE @parametersTable TABLE([Key] nvarchar(128) NOT NULL, Value nvarchar(128) NULL);
+					DECLARE @replicaId uniqueidentifier;
 					DECLARE @stmt nvarchar(max);
 					DECLARE @thisTask nvarchar(128);
 
@@ -404,67 +410,47 @@ ELSE BEGIN
 						SET @nowUTC = SYSUTCDATETIME();
 
 						DECLARE dCur CURSOR LOCAL READ_ONLY FAST_FORWARD FOR
-						SELECT d.DatabaseName
-						FROM #dbList AS d
-						ORDER BY d.[Order];
+						SELECT dl.DatabaseName, d.replica_id
+						FROM #dbList AS dl
+						INNER JOIN sys.databases AS d ON (d.name COLLATE DATABASE_DEFAULT = dl.DatabaseName)
+						ORDER BY dl.[Order];
 
 						OPEN dCur;
 
 						WHILE (1 = 1)
 						BEGIN
 							FETCH NEXT FROM dCur
-							INTO @database;
+							INTO @database, @replicaId;
 
 							IF (@@FETCH_STATUS <> 0)
 							BEGIN
 								BREAK;
 							END;
 
-							SET @stmt = ''
-								USE '' + QUOTENAME(@database) + ''
-								INSERT INTO '' + QUOTENAME(DB_NAME()) + ''.dbo.fhsmStatisticsAge(
-									DatabaseName, SchemaName, ObjectName, IndexName
-									,LastUpdated, Rows, RowsSampled, Steps
-									,UnfilteredRows, ModificationCounter, PersistedSamplePercent
-									,TimestampUTC, Timestamp
+							--
+							-- If is a member of a replica, we will only execute when running on the primary
+							--
+							IF (@replicaId IS NULL)
+								OR (
+									(
+										SELECT
+										CASE
+											WHEN (dhags.primary_replica = ar.replica_server_name) THEN 1
+											ELSE 0
+										END AS IsPrimaryServer
+										FROM master.sys.availability_groups AS ag
+										INNER JOIN master.sys.availability_replicas AS ar ON ag.group_id = ar.group_id
+										INNER JOIN master.sys.dm_hadr_availability_group_states AS dhags ON ag.group_id = dhags.group_id
+										WHERE (ar.replica_server_name = @@SERVERNAME) AND (ar.replica_id = @replicaId)
+									) = 1
 								)
-								SELECT
-									'''''' + @database + '''''' AS DatabaseName
-									,sch.name AS SchemaName
-									,o.name AS ObjectName
-									,i.name AS IndexName
-									,ddsp.last_updated AS LastUpdated
-									,ddsp.rows AS Rows
-									,ddsp.rows_sampled AS RowsSampled
-									,ddsp.steps AS Steps
-									,ddsp.unfiltered_rows AS UnfilteredRows
-									,ddsp.modification_counter AS ModificationCounter
-									,'' + @persistedSamplePercentStmt + '' AS PersistedSamplePercent
-									,@nowUTC
-									,@now
-								FROM sys.indexes AS i WITH (NOLOCK)
-								INNER JOIN sys.objects AS o WITH (NOLOCK) ON (o.object_id = i.object_id)
-								INNER JOIN sys.schemas AS sch WITH (NOLOCK) ON (sch.schema_id = o.schema_id)
-								CROSS APPLY sys.dm_db_stats_properties(o.object_id, i.index_id) AS ddsp
-								WHERE (o.type IN (''''U'''', ''''V'''')) AND (i.type <> 0);
-							'';
-							EXEC sp_executesql
-								@stmt
-								,N''@nowUTC datetime, @now datetime''
-								,@nowUTC = @nowUTC, @now = @now;
-
-							IF EXISTS(
-								SELECT *
-								FROM master.sys.system_objects AS so
-								WHERE (so.name = ''dm_db_incremental_stats_properties'')
-							)
 							BEGIN
 								SET @stmt = ''
 									USE '' + QUOTENAME(@database) + ''
-									INSERT INTO '' + QUOTENAME(DB_NAME()) + ''.dbo.fhsmStatisticsAgeIncremental(
-										DatabaseName, SchemaName, ObjectName, IndexName, PartitionNumber
+									INSERT INTO '' + QUOTENAME(DB_NAME()) + ''.dbo.fhsmStatisticsAge(
+										DatabaseName, SchemaName, ObjectName, IndexName
 										,LastUpdated, Rows, RowsSampled, Steps
-										,UnfilteredRows, ModificationCounter
+										,UnfilteredRows, ModificationCounter, PersistedSamplePercent, IsHypothetical
 										,TimestampUTC, Timestamp
 									)
 									SELECT
@@ -472,25 +458,71 @@ ELSE BEGIN
 										,sch.name AS SchemaName
 										,o.name AS ObjectName
 										,i.name AS IndexName
-										,ddsp.partition_number AS PartitionNumber
 										,ddsp.last_updated AS LastUpdated
 										,ddsp.rows AS Rows
 										,ddsp.rows_sampled AS RowsSampled
 										,ddsp.steps AS Steps
 										,ddsp.unfiltered_rows AS UnfilteredRows
 										,ddsp.modification_counter AS ModificationCounter
+										,'' + @persistedSamplePercentStmt + '' AS PersistedSamplePercent
+										,i.is_hypothetical AS IsHypothetical
 										,@nowUTC
 										,@now
 									FROM sys.indexes AS i WITH (NOLOCK)
 									INNER JOIN sys.objects AS o WITH (NOLOCK) ON (o.object_id = i.object_id)
 									INNER JOIN sys.schemas AS sch WITH (NOLOCK) ON (sch.schema_id = o.schema_id)
-									CROSS APPLY sys.dm_db_incremental_stats_properties(o.object_id, i.index_id) AS ddsp
-									WHERE (o.type = ''''U'''') AND (i.type <> 0);
+									CROSS APPLY sys.dm_db_stats_properties(o.object_id, i.index_id) AS ddsp
+									WHERE (o.type IN (''''U'''', ''''V'''')) AND (i.type <> 0);
 								'';
 								EXEC sp_executesql
 									@stmt
 									,N''@nowUTC datetime, @now datetime''
 									,@nowUTC = @nowUTC, @now = @now;
+
+								IF EXISTS(
+									SELECT *
+									FROM master.sys.system_objects AS so
+									WHERE (so.name = ''dm_db_incremental_stats_properties'')
+								)
+								BEGIN
+									SET @stmt = ''
+										USE '' + QUOTENAME(@database) + ''
+										INSERT INTO '' + QUOTENAME(DB_NAME()) + ''.dbo.fhsmStatisticsAgeIncremental(
+											DatabaseName, SchemaName, ObjectName, IndexName, PartitionNumber
+											,LastUpdated, Rows, RowsSampled, Steps
+											,UnfilteredRows, ModificationCounter, IsHypothetical
+											,TimestampUTC, Timestamp
+										)
+										SELECT
+											'''''' + @database + '''''' AS DatabaseName
+											,sch.name AS SchemaName
+											,o.name AS ObjectName
+											,i.name AS IndexName
+											,ddsp.partition_number AS PartitionNumber
+											,ddsp.last_updated AS LastUpdated
+											,ddsp.rows AS Rows
+											,ddsp.rows_sampled AS RowsSampled
+											,ddsp.steps AS Steps
+											,ddsp.unfiltered_rows AS UnfilteredRows
+											,ddsp.modification_counter AS ModificationCounter
+											,i.is_hypothetical AS IsHypothetical
+											,@nowUTC
+											,@now
+										FROM sys.indexes AS i WITH (NOLOCK)
+										INNER JOIN sys.objects AS o WITH (NOLOCK) ON (o.object_id = i.object_id)
+										INNER JOIN sys.schemas AS sch WITH (NOLOCK) ON (sch.schema_id = o.schema_id)
+										CROSS APPLY sys.dm_db_incremental_stats_properties(o.object_id, i.index_id) AS ddsp
+										WHERE (o.type = ''''U'''') AND (i.type <> 0);
+									'';
+									EXEC sp_executesql
+										@stmt
+										,N''@nowUTC datetime, @now datetime''
+										,@nowUTC = @nowUTC, @now = @now;
+								END;
+							END
+							ELSE BEGIN
+								SET @message = ''Database '''''' + @database + '''''' is member of a replica but this server is not the primary node'';
+								EXEC dbo.fhsmSPLog @name = @name, @task = @thisTask, @type = ''Warning'', @message = @message;
 							END;
 						END;
 

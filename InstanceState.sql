@@ -41,7 +41,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '1.3';
+		SET @version = '1.4';
 	END;
 
 	--
@@ -168,7 +168,7 @@ ELSE BEGIN
 				,ProductMajorVersion int NOT NULL
 				,TraceFlag int NOT NULL
 				,Description nvarchar(max) NOT NULL
-				,URL nvarchar(max) NOT NULL
+				,URL nvarchar(max) NULL
 				,CONSTRAINT PK_fhsmTraceFlags PRIMARY KEY(Id)
 			);
 
@@ -319,9 +319,9 @@ ELSE BEGIN
 				,'https://bit.ly/2GU69Km' AS URL UNION ALL
 			--SQL2014
 			SELECT '12' AS ProductMajorVersion, 1117 AS TraceFlag, 'When growing a data file, grow all files at the same time so they remain the same size, reducing allocation contention points' AS Description
-				,'https://bit.ly/2GY1kOl' AS URL UNION ALL
+				,NULL AS URL UNION ALL
 			SELECT '12' AS ProductMajorVersion, 1118 AS TraceFlag, 'Helps alleviate allocation contention in tempdb, SQL Server allocates full extents to each database object, thereby eliminating the contention on SGAM pages' AS Description
-				,'https://bit.ly/2GY1kOl' AS URL UNION ALL
+				,NULL AS URL UNION ALL
 			SELECT '12' AS ProductMajorVersion, 2371 AS TraceFlag, 'Lowers auto update statistics threshold for large tables (on tables with more than 25,000 rows)' AS Description
 				,'https://bit.ly/30KO4Hh' AS URL UNION ALL
 			SELECT '12' AS ProductMajorVersion, 3226 AS TraceFlag, 'Supresses logging of successful database backup messages to the SQL Server Error Log' AS Description
@@ -332,9 +332,9 @@ ELSE BEGIN
 				,'https://bit.ly/29B7oR8' AS URL UNION ALL
 			--SQL2012
 			SELECT '11' AS ProductMajorVersion, 1117 AS TraceFlag, 'When growing a data file, grow all files at the same time so they remain the same size, reducing allocation contention points' AS Description
-				,'https://bit.ly/2GY1kOl' AS URL UNION ALL
+				,NULL AS URL UNION ALL
 			SELECT '11' AS ProductMajorVersion, 1118 AS TraceFlag, 'Helps alleviate allocation contention in tempdb, SQL Server allocates full extents to each database object, thereby eliminating the contention on SGAM pages' AS Description
-				,'https://bit.ly/2GY1kOl' AS URL UNION ALL
+				,NULL AS URL UNION ALL
 			SELECT '11' AS ProductMajorVersion, 2371 AS TraceFlag, 'Lowers auto update statistics threshold for large tables (on tables with more than 25,000 rows)' AS Description
 				,'https://bit.ly/30KO4Hh' AS URL UNION ALL
 			SELECT '11' AS ProductMajorVersion, 3023 AS TraceFlag, 'Enables backup checksum default' AS Description
@@ -347,6 +347,8 @@ ELSE BEGIN
 				,'https://bit.ly/2qN8kr3' AS URL
 		) AS src
 		ON (tgt.ProductMajorVersion = src.ProductMajorVersion) AND (tgt.TraceFlag = src.TraceFlag)
+		WHEN MATCHED AND (tgt.Description <> src.Description) OR ((tgt.URL <> src.URL) OR (tgt.URL IS NULL AND src.URL IS NOT NULL) OR (tgt.URL IS NOT NULL AND src.URL IS NULL))
+			THEN UPDATE SET tgt.Description = src.Description, tgt.URL = src.URL
 		WHEN NOT MATCHED BY TARGET
 			THEN INSERT (ProductMajorVersion, TraceFlag, Description, URL)
 				VALUES(src.ProductMajorVersion, src.TraceFlag, src.Description, src.URL);
@@ -642,6 +644,7 @@ ELSE BEGIN
 							WHEN ''scheduler_count'' THEN ''Scheduler count''
 							WHEN ''socket_count'' THEN ''Socket count''
 							WHEN ''sql_memory_model'' THEN ''SQL memory model''
+							WHEN ''SQL Server and OS Version Info'' THEN ''SQL Server and OS Version Info''
 							WHEN ''sqlserver_start_time'' THEN ''SQL server start time''
 							WHEN ''virtual_machine_type'' THEN ''Virtual machine type''
 							ELSE ''?:'' + iState.[Key]
@@ -671,6 +674,10 @@ ELSE BEGIN
 						WHERE
 							(
 								(
+									(iState.Query = 1)
+									AND (iState.[Key] = ''SQL Server and OS Version Info'')
+								)
+								OR (
 									(iState.Query = 17)
 									AND (iState.[Key] IN (
 										''cores_per_socket''

@@ -7,7 +7,7 @@
 --
 
 --
--- Backup before upgrade from 1.2 to 1.3 - SQL2012 default path
+-- Backup before upgrade from 1.3 to 1.4 - SQL2012 default path
 --
 USE [master];
 GO

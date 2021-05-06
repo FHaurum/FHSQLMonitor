@@ -41,7 +41,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '1.2';
+		SET @version = '1.0';
 	END;
 
 	--
@@ -49,34 +49,42 @@ ELSE BEGIN
 	--
 	BEGIN
 		--
-		-- Create table dbo.fhsmDatabaseSize if it not already exists
+		-- Create table dbo.fhsmBackupStatus if it not already exists
 		--
-		IF OBJECT_ID('dbo.fhsmDatabaseSize', 'U') IS NULL
+		IF OBJECT_ID('dbo.fhsmBackupStatus', 'U') IS NULL
 		BEGIN
-			RAISERROR('Creating table dbo.fhsmDatabaseSize', 0, 1) WITH NOWAIT;
+			RAISERROR('Creating table dbo.fhsmBackupStatus', 0, 1) WITH NOWAIT;
 
-			CREATE TABLE dbo.fhsmDatabaseSize(
+			CREATE TABLE dbo.fhsmBackupStatus(
 				Id int identity(1,1) NOT NULL
 				,DatabaseName nvarchar(128) NOT NULL
-				,LogicalName nvarchar(128) NOT NULL
-				,Type tinyint NOT NULL
-				,CurrentSize int NOT NULL
-				,UsedSize int NULL
+				,BackupStartDate datetime NULL
+				,BackupFinishDate datetime NULL
+				,ExpirationDate datetime NULL
+				,Type char(1) NULL
+				,BackupSize numeric(20,0) NULL
+				,CompressedBackupSize numeric(20,0) NULL
+				,IsCopyOnly bit NOT NULL
+				,IsDamaged bit NOT NULL
+				,LogicalDeviceName nvarchar(128) NULL
+				,PhysicalDeviceName nvarchar(260) NULL
+				,BackupsetName nvarchar(128) NULL
+				,BackupsetDescription nvarchar(128) NULL
 				,TimestampUTC datetime NOT NULL
 				,Timestamp datetime NOT NULL
-				,CONSTRAINT PK_fhsmDatabaseSize PRIMARY KEY(Id)
+				,CONSTRAINT PK_BackupStatus PRIMARY KEY(Id)
 			);
 
-			CREATE NONCLUSTERED INDEX NC_fhsmDatabaseSize_TimestampUTC ON dbo.fhsmDatabaseSize(TimestampUTC);
-			CREATE NONCLUSTERED INDEX NC_fhsmDatabaseSize_Timestamp ON dbo.fhsmDatabaseSize(Timestamp);
-			CREATE NONCLUSTERED INDEX NC_fhsmDatabaseSize_DatabaseName_LogicalName_Type ON dbo.fhsmDatabaseSize(DatabaseName, LogicalName, Type);
+			CREATE NONCLUSTERED INDEX NC_fhsmBackupStatus_TimestampUTC ON dbo.fhsmBackupStatus(TimestampUTC);
+			CREATE NONCLUSTERED INDEX NC_fhsmBackupStatus_Timestamp ON dbo.fhsmBackupStatus(Timestamp);
+			CREATE NONCLUSTERED INDEX NC_fhsmBackupStatus_DatabaseName_BackupStartDate ON dbo.fhsmBackupStatus(DatabaseName, BackupStartDate);
 		END;
 
 		--
-		-- Register extended properties on the table dbo.fhsmDatabaseSize
+		-- Register extended properties on the table dbo.fhsmBackupStatus
 		--
 		BEGIN
-			SET @objectName = 'dbo.fhsmDatabaseSize';
+			SET @objectName = 'dbo.fhsmBackupStatus';
 			SET @objName = PARSENAME(@objectName, 1);
 			SET @schName = PARSENAME(@objectName, 2);
 
@@ -97,46 +105,59 @@ ELSE BEGIN
 	--
 	BEGIN
 		--
-		-- Create fact view @pbiSchema.[Database size]
+		-- Create fact view @pbiSchema.[Backup status]
 		--
 		BEGIN
 			SET @stmt = '
-				IF OBJECT_ID(''' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Database size') + ''', ''V'') IS NULL
+				IF OBJECT_ID(''' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Backup status') + ''', ''V'') IS NULL
 				BEGIN
-					EXEC(''CREATE VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Database size') + ' AS SELECT ''''dummy'''' AS Txt'');
+					EXEC(''CREATE VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Backup status') + ' AS SELECT ''''dummy'''' AS Txt'');
 				END;
 			';
 			EXEC(@stmt);
 
 			SET @stmt = '
-				ALTER VIEW  ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Database size') + '
+				ALTER VIEW  ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Backup status') + '
 				AS
 				SELECT
-					ds.CurrentSize
-					,ds.UsedSize
-					,CAST(ds.Timestamp AS date) AS Date
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ds.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ds.DatabaseName, ds.LogicalName, CASE ds.Type WHEN 0 THEN ''Data'' WHEN 1 THEN ''Log'' WHEN 2 THEN ''Filestream'' END, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseFileKey
-				FROM dbo.fhsmDatabaseSize AS ds
-				WHERE (ds.Timestamp IN (
-					SELECT a.Timestamp
-					FROM (
-						SELECT
-							ds2.Timestamp
-							,ROW_NUMBER() OVER(PARTITION BY CAST(ds2.Timestamp AS date) ORDER BY ds2.Timestamp DESC) AS _Rnk_
-						FROM dbo.fhsmDatabaseSize AS ds2
-					) AS a
-					WHERE (a._Rnk_ = 1)
-				));
+					bs.DatabaseName
+					,bs.BackupStartDate
+					,bs.BackupFinishDate
+					,COALESCE(NULLIF(DATEDIFF(SECOND, bs.BackupStartDate, bs.BackupFinishDate), 0), 1) AS Duration		-- Duration of 0 sec. will always be 1 sec.
+					,bs.ExpirationDate
+					,CASE bs.Type
+						WHEN ''D'' THEN ''Database''
+						WHEN ''I'' THEN ''Differential database''
+						WHEN ''L'' THEN ''Log''
+						WHEN ''F'' THEN ''File/filegroup''
+						WHEN ''G'' THEN ''Differential file''
+						WHEN ''P'' THEN ''Partial''
+						WHEN ''Q'' THEN ''Differential partial''
+						ELSE ''?:'' + COALESCE(bs.Type, ''<NULL>'')
+					END AS Type
+					,bs.BackupSize
+					,bs.CompressedBackupSize
+					,bs.IsCopyOnly
+					,bs.IsDamaged
+					,bs.LogicalDeviceName
+					,bs.PhysicalDeviceName
+					,bs.BackupsetName
+					,bs.BackupsetDescription
+					,bs.Timestamp
+					,CAST(bs.Timestamp AS date) AS Date
+					,(DATEPART(HOUR, bs.Timestamp) * 60 * 60) + (DATEPART(MINUTE, bs.Timestamp) * 60) + (DATEPART(SECOND, bs.Timestamp)) AS TimeKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(bs.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(1, bs.Type, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS BackupTypeJunkDimensionKey
+				FROM dbo.fhsmBackupStatus AS bs;
 			';
 			EXEC(@stmt);
 		END;
 
 		--
-		-- Register extended properties on fact view @pbiSchema.[Database size]
+		-- Register extended properties on fact view @pbiSchema.[Backup status]
 		--
 		BEGIN
-			SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Database size');
+			SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Backup status');
 			SET @objName = PARSENAME(@objectName, 1);
 			SET @schName = PARSENAME(@objectName, 2);
 
@@ -153,34 +174,28 @@ ELSE BEGIN
 	--
 	BEGIN
 		--
-		-- Create stored procedure dbo.fhsmSPDatabaseSize
+		-- Create stored procedure dbo.fhsmSPBackupStatus
 		--
 		BEGIN
 			SET @stmt = '
-				IF OBJECT_ID(''dbo.fhsmSPDatabaseSize'', ''P'') IS NULL
+				IF OBJECT_ID(''dbo.fhsmSPBackupStatus'', ''P'') IS NULL
 				BEGIN
-					EXEC(''CREATE PROC dbo.fhsmSPDatabaseSize AS SELECT ''''dummy'''' AS Txt'');
+					EXEC(''CREATE PROC dbo.fhsmSPBackupStatus AS SELECT ''''dummy'''' AS Txt'');
 				END;
 			';
 			EXEC(@stmt);
 
 			SET @stmt = '
-				ALTER PROC dbo.fhsmSPDatabaseSize (
+				ALTER PROC dbo.fhsmSPBackupStatus (
 					@name nvarchar(128)
 				)
 				AS
 				BEGIN
 					SET NOCOUNT ON;
 
-					DECLARE @database nvarchar(128);
-					DECLARE @databases nvarchar(max);
-					DECLARE @message nvarchar(max);
 					DECLARE @now datetime;
 					DECLARE @nowUTC datetime;
 					DECLARE @parameters nvarchar(max);
-					DECLARE @parametersTable TABLE([Key] nvarchar(128) NOT NULL, Value nvarchar(128) NULL);
-					DECLARE @replicaId uniqueidentifier;
-					DECLARE @stmt nvarchar(max);
 					DECLARE @thisTask nvarchar(128);
 
 					SET @thisTask = OBJECT_NAME(@@PROCID);
@@ -190,34 +205,6 @@ ELSE BEGIN
 					--
 					BEGIN
 						SET @parameters = dbo.fhsmFNGetTaskParameter(@thisTask, @name);
-
-						INSERT INTO @parametersTable([Key], Value)
-						SELECT
-							(SELECT s.Txt FROM dbo.fhsmFNSplitString(p.Txt, ''='') AS s WHERE (s.Part = 1)) AS [Key]
-							,(SELECT s.Txt FROM dbo.fhsmFNSplitString(p.Txt, ''='') AS s WHERE (s.Part = 2)) AS Value
-						FROM dbo.fhsmFNSplitString(@parameters, '';'') AS p;
-
-						SET @databases = (SELECT pt.Value FROM @parametersTable AS pt WHERE (pt.[Key] = ''@Databases''));
-
-						--
-						-- Trim @databases if Ola Hallengren style has been chosen
-						--
-						BEGIN
-							SET @databases = LTRIM(RTRIM(@databases));
-							WHILE (LEFT(@databases, 1) = '''''''') AND (LEFT(@databases, 1) = '''''''')
-							BEGIN
-								SET @databases = SUBSTRING(@databases, 2, LEN(@databases) - 2);
-							END;
-						END;
-					END;
-
-					--
-					-- Get the list of databases to process
-					--
-					BEGIN
-						SELECT d.DatabaseName, d.[Order]
-						INTO #dbList
-						FROM dbo.fhsmFNParseDatabasesStr(@databases) AS d;
 					END;
 
 					--
@@ -227,75 +214,35 @@ ELSE BEGIN
 						SET @now = SYSDATETIME();
 						SET @nowUTC = SYSUTCDATETIME();
 
-						DECLARE dCur CURSOR LOCAL READ_ONLY FAST_FORWARD FOR
-						SELECT dl.DatabaseName, d.replica_id
-						FROM #dbList AS dl
-						INNER JOIN sys.databases AS d ON (d.name COLLATE DATABASE_DEFAULT = dl.DatabaseName)
-						ORDER BY dl.[Order];
-
-						OPEN dCur;
-
-						WHILE (1 = 1)
-						BEGIN
-							FETCH NEXT FROM dCur
-							INTO @database, @replicaId;
-
-							IF (@@FETCH_STATUS <> 0)
-							BEGIN
-								BREAK;
-							END;
-
-							--
-							-- If is a member of a replica, we will only execute when running on the primary
-							--
-							IF (@replicaId IS NULL)
-								OR (
-									(
-										SELECT
-										CASE
-											WHEN (dhags.primary_replica = ar.replica_server_name) THEN 1
-											ELSE 0
-										END AS IsPrimaryServer
-										FROM master.sys.availability_groups AS ag
-										INNER JOIN master.sys.availability_replicas AS ar ON ag.group_id = ar.group_id
-										INNER JOIN master.sys.dm_hadr_availability_group_states AS dhags ON ag.group_id = dhags.group_id
-										WHERE (ar.replica_server_name = @@SERVERNAME) AND (ar.replica_id = @replicaId)
-									) = 1
-								)
-							BEGIN
-								SET @stmt = ''
-									USE '' + QUOTENAME(@database) + '';
-
-									SELECT
-										DB_NAME() AS DatabaseName
-										,a.LogicalName
-										,a.Type
-										,a.CurrentSize
-										,a.UsedSize
-										,@nowUTC, @now
-									FROM (
-										SELECT
-											df.name AS LogicalName
-											,df.type AS Type
-											,CAST((df.size / 128.0) AS int) AS CurrentSize
-											,CAST((CAST(FILEPROPERTY(df.name, ''''SpaceUsed'''') AS int) / 128.0) AS int) AS UsedSize
-										FROM sys.database_files AS df WITH (NOLOCK)
-									) AS a;
-								'';
-								INSERT INTO dbo.fhsmDatabaseSize(DatabaseName, LogicalName, Type, CurrentSize, UsedSize, TimestampUTC, Timestamp)
-								EXEC sp_executesql
-									@stmt
-									,N''@now datetime, @nowUTC datetime''
-									,@now = @now, @nowUTC = @nowUTC;
-							END
-							ELSE BEGIN
-								SET @message = ''Database '''''' + @database + '''''' is member of a replica but this server is not the primary node'';
-								EXEC dbo.fhsmSPLog @name = @name, @task = @thisTask, @type = ''Warning'', @message = @message;
-							END;
-						END;
-
-						CLOSE dCur;
-						DEALLOCATE dCur;
+						INSERT INTO dbo.fhsmBackupStatus(
+							DatabaseName
+							,BackupStartDate, BackupFinishDate, ExpirationDate
+							,Type
+							,BackupSize, CompressedBackupSize
+							,IsCopyOnly, IsDamaged
+							,LogicalDeviceName, PhysicalDeviceName
+							,BackupsetName, BackupsetDescription
+							,TimestampUTC, Timestamp
+						)
+						SELECT
+							bs.database_name
+							,bs.backup_start_date, bs.backup_finish_date, bs.expiration_date
+							,bs.type
+							,bs.backup_size, bs.compressed_backup_size
+							,bs.is_copy_only, bs.is_damaged
+							,bmf.logical_device_name, bmf.physical_device_name
+							,bs.name AS backupset_name, bs.description AS backupset_description
+							,@nowUTC, @now
+						FROM msdb.dbo.backupmediafamily AS bmf
+						INNER JOIN msdb.dbo.backupset AS bs ON (bmf.media_set_id = bs.media_set_id)
+						WHERE NOT EXISTS (
+							SELECT *
+							FROM dbo.fhsmBackupStatus AS existingBS
+							WHERE (existingBS.DatabaseName COLLATE DATABASE_DEFAULT = bs.database_name) AND (existingBS.BackupStartDate = bs.backup_start_date)
+						)
+						ORDER BY
+							bs.database_name, 
+							bs.backup_finish_date;
 					END;
 
 					RETURN 0;
@@ -305,10 +252,10 @@ ELSE BEGIN
 		END;
 
 		--
-		-- Register extended properties on the stored procedure dbo.fhsmSPDatabaseSize
+		-- Register extended properties on the stored procedure dbo.fhsmSPBackupStatus
 		--
 		BEGIN
-			SET @objectName = 'dbo.fhsmSPDatabaseSize';
+			SET @objectName = 'dbo.fhsmSPBackupStatus';
 			SET @objName = PARSENAME(@objectName, 1);
 			SET @schName = PARSENAME(@objectName, 2);
 
@@ -324,20 +271,22 @@ ELSE BEGIN
 	-- Register retention
 	--
 	BEGIN
-		WITH
-		retention(Enabled, TableName, TimeColumn, IsUtc, Days) AS(
-			SELECT
-				1
-				,'dbo.fhsmDatabaseSize'
-				,'TimestampUTC'
-				,1
-				,180
-		)
-		MERGE dbo.fhsmRetentions AS tgt
-		USING retention AS src ON (src.TableName = tgt.TableName)
-		WHEN NOT MATCHED BY TARGET
-			THEN INSERT(Enabled, TableName, TimeColumn, IsUtc, Days)
-			VALUES(src.Enabled, src.TableName, src.TimeColumn, src.IsUtc, src.Days);
+		BEGIN
+			WITH
+			retention(Enabled, TableName, TimeColumn, IsUtc, Days) AS(
+				SELECT
+					1
+					,'dbo.fhsmBackupStatus'
+					,'TimestampUTC'
+					,1
+					,90
+			)
+			MERGE dbo.fhsmRetentions AS tgt
+			USING retention AS src ON (src.TableName = tgt.TableName)
+			WHEN NOT MATCHED BY TARGET
+				THEN INSERT(Enabled, TableName, TimeColumn, IsUtc, Days)
+				VALUES(src.Enabled, src.TableName, src.TimeColumn, src.IsUtc, src.Days);
+		END;
 	END;
 
 	--
@@ -348,13 +297,13 @@ ELSE BEGIN
 		schedules(Enabled, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters) AS(
 			SELECT
 				1
-				,'Database size'
-				,PARSENAME('dbo.fhsmSPDatabaseSize', 1)
-				,12 * 60 * 60
+				,'Backup status'
+				,PARSENAME('dbo.fhsmSPBackupStatus', 1)
+				,60 * 60
+				,TIMEFROMPARTS(6, 0, 0, 0, 0)
 				,TIMEFROMPARTS(7, 0, 0, 0, 0)
-				,TIMEFROMPARTS(8, 0, 0, 0, 0)
 				,1, 1, 1, 1, 1, 1, 1
-				,'@Databases = ''USER_DATABASES, msdb'''
+				,NULL
 		)
 		MERGE dbo.fhsmSchedules AS tgt
 		USING schedules AS src ON (src.Name = tgt.Name)
@@ -377,24 +326,12 @@ ELSE BEGIN
 			SELECT
 				'Database' AS DimensionName
 				,'DatabaseKey' AS DimensionKey
-				,'dbo.fhsmDatabaseSize' AS SrcTable
+				,'dbo.fhsmBackupStatus' AS SrcTable
 				,'src' AS SrcAlias
 				,NULL AS SrcWhere
 				,'src.[Timestamp]' AS SrcDateColumn
 				,'src.[DatabaseName]', NULL, NULL
 				,'Database', NULL, NULL
-
-			UNION ALL
-
-			SELECT
-				'Database file' AS DimensionName
-				,'DatabaseFileKey' AS DimensionKey
-				,'dbo.fhsmDatabaseSize' AS SrcTable
-				,'src' AS SrcAlias
-				,NULL AS SrcWhere
-				,'src.[Timestamp]' AS SrcDateColumn
-				,'src.[DatabaseName]', 'src.[LogicalName]', 'CASE src.[Type] WHEN 0 THEN ''Data'' WHEN 1 THEN ''Log'' WHEN 2 THEN ''Filestream'' END'
-				,'Database name', 'Logical name', 'Type'
 		)
 		MERGE dbo.fhsmDimensions AS tgt
 		USING dimensions AS src ON (src.DimensionName = tgt.DimensionName) AND (src.SrcTable = tgt.SrcTable)
@@ -430,6 +367,6 @@ ELSE BEGIN
 	-- Update dimensions based upon the fact tables
 	--
 	BEGIN
-		EXEC dbo.fhsmSPUpdateDimensions @table = 'dbo.fhsmDatabaseSize';
+		EXEC dbo.fhsmSPUpdateDimensions @table = 'dbo.fhsmBackupStatus';
 	END;
 END;

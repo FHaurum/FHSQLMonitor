@@ -41,7 +41,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '1.2';
+		SET @version = '1.3';
 	END;
 
 	--
@@ -60,7 +60,7 @@ ELSE BEGIN
 				,DatabaseName nvarchar(128) NOT NULL
 				,SchemaName nvarchar(128) NOT NULL
 				,ObjectName nvarchar(128) NOT NULL
-				,IndexName nvarchar(128) NOT NULL
+				,IndexName nvarchar(128) NULL
 				,PartitionNumber int NOT NULL
 				,IsMemoryOptimized bit NOT NULL
 				,Rows bigint NOT NULL
@@ -124,12 +124,12 @@ ELSE BEGIN
 					,ts.IndexSize
 					,ts.Unused
 					,CAST(ts.Timestamp AS date) AS Date
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ts.DatabaseName, DEFAULT,       DEFAULT,       DEFAULT,            DEFAULT,            DEFAULT) AS k) AS DatabaseKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ts.DatabaseName, ts.SchemaName, DEFAULT,       DEFAULT,            DEFAULT,            DEFAULT) AS k) AS SchemaKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ts.DatabaseName, ts.SchemaName, ts.ObjectName, DEFAULT,            DEFAULT,            DEFAULT) AS k) AS ObjectKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ts.DatabaseName, ts.SchemaName, ts.ObjectName, ts.IndexName,       DEFAULT,            DEFAULT) AS k) AS IndexKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ts.DatabaseName, ts.SchemaName, ts.ObjectName, ts.PartitionNumber, DEFAULT,            DEFAULT) AS k) AS ObjectPartitionKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ts.DatabaseName, ts.SchemaName, ts.ObjectName, ts.IndexName,       ts.PartitionNumber, DEFAULT) AS k) AS IndexPartitionKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ts.DatabaseName, DEFAULT,       DEFAULT,       DEFAULT,                          DEFAULT,            DEFAULT) AS k) AS DatabaseKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ts.DatabaseName, ts.SchemaName, DEFAULT,       DEFAULT,                          DEFAULT,            DEFAULT) AS k) AS SchemaKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ts.DatabaseName, ts.SchemaName, ts.ObjectName, DEFAULT,                          DEFAULT,            DEFAULT) AS k) AS ObjectKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ts.DatabaseName, ts.SchemaName, ts.ObjectName, COALESCE(ts.IndexName, ''N.A.''), DEFAULT,            DEFAULT) AS k) AS IndexKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ts.DatabaseName, ts.SchemaName, ts.ObjectName, ts.PartitionNumber,               DEFAULT,            DEFAULT) AS k) AS ObjectPartitionKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ts.DatabaseName, ts.SchemaName, ts.ObjectName, COALESCE(ts.IndexName, ''N.A.''), ts.PartitionNumber, DEFAULT) AS k) AS IndexPartitionKey
 				FROM dbo.fhsmTableSize AS ts
 				WHERE (ts.Timestamp IN (
 					SELECT a.Timestamp
@@ -374,10 +374,12 @@ ELSE BEGIN
 
 					DECLARE @database nvarchar(128);
 					DECLARE @databases nvarchar(max);
+					DECLARE @message nvarchar(max);
 					DECLARE @now datetime;
 					DECLARE @nowUTC datetime;
 					DECLARE @parameters nvarchar(max);
 					DECLARE @parametersTable TABLE([Key] nvarchar(128) NOT NULL, Value nvarchar(128) NULL);
+					DECLARE @replicaId uniqueidentifier;
 					DECLARE @spaceUsed TABLE(DatabaseName nvarchar(128), SchemaName nvarchar(128), ObjectName nvarchar(128), IndexName nvarchar(128), PartitionNumber int, IsMemoryOptimized bit, Rows bigint, Reserved int, Data int, IndexSize int, Unused int);
 					DECLARE @stmt nvarchar(max);
 					DECLARE @thisTask nvarchar(128);
@@ -427,34 +429,58 @@ ELSE BEGIN
 						SET @nowUTC = SYSUTCDATETIME();
 
 						DECLARE dCur CURSOR LOCAL READ_ONLY FAST_FORWARD FOR
-						SELECT d.DatabaseName
-						FROM #dbList AS d
-						ORDER BY d.[Order];
+						SELECT dl.DatabaseName, d.replica_id
+						FROM #dbList AS dl
+						INNER JOIN sys.databases AS d ON (d.name COLLATE DATABASE_DEFAULT = dl.DatabaseName)
+						ORDER BY dl.[Order];
 
 						OPEN dCur;
 
 						WHILE (1 = 1)
 						BEGIN
 							FETCH NEXT FROM dCur
-							INTO @database;
+							INTO @database, @replicaId;
 
 							IF (@@FETCH_STATUS <> 0)
 							BEGIN
 								BREAK;
 							END;
 
-							DELETE @spaceUsed;
+							--
+							-- If is a member of a replica, we will only execute when running on the primary
+							--
+							IF (@replicaId IS NULL)
+								OR (
+									(
+										SELECT
+										CASE
+											WHEN (dhags.primary_replica = ar.replica_server_name) THEN 1
+											ELSE 0
+										END AS IsPrimaryServer
+										FROM master.sys.availability_groups AS ag
+										INNER JOIN master.sys.availability_replicas AS ar ON ag.group_id = ar.group_id
+										INNER JOIN master.sys.dm_hadr_availability_group_states AS dhags ON ag.group_id = dhags.group_id
+										WHERE (ar.replica_server_name = @@SERVERNAME) AND (ar.replica_id = @replicaId)
+									) = 1
+								)
+							BEGIN
+								DELETE @spaceUsed;
 
-							SET @stmt = ''EXEC dbo.fhsmSPSpaceUsed @database = @database;'';
-							INSERT INTO @spaceUsed
-							EXEC sp_executesql
-								@stmt
-								,N''@database nvarchar(128)''
-								,@database = @database;
+								SET @stmt = ''EXEC dbo.fhsmSPSpaceUsed @database = @database;'';
+								INSERT INTO @spaceUsed
+								EXEC sp_executesql
+									@stmt
+									,N''@database nvarchar(128)''
+									,@database = @database;
 
-							INSERT INTO dbo.fhsmTableSize(DatabaseName, SchemaName, ObjectName, IndexName, PartitionNumber, IsMemoryOptimized, Rows, Reserved, Data, IndexSize, Unused, TimestampUTC, Timestamp)
-							SELECT su.DatabaseName, su.SchemaName, su.ObjectName, su.IndexName, su.PartitionNumber, su.IsMemoryOptimized, su.Rows, su.Reserved, su.Data, su.IndexSize, su.Unused, @nowUTC, @now
-							FROM @spaceUsed AS su;
+								INSERT INTO dbo.fhsmTableSize(DatabaseName, SchemaName, ObjectName, IndexName, PartitionNumber, IsMemoryOptimized, Rows, Reserved, Data, IndexSize, Unused, TimestampUTC, Timestamp)
+								SELECT su.DatabaseName, su.SchemaName, su.ObjectName, su.IndexName, su.PartitionNumber, su.IsMemoryOptimized, su.Rows, su.Reserved, su.Data, su.IndexSize, su.Unused, @nowUTC, @now
+								FROM @spaceUsed AS su;
+							END
+							ELSE BEGIN
+								SET @message = ''Database '''''' + @database + '''''' is member of a replica but this server is not the primary node'';
+								EXEC dbo.fhsmSPLog @name = @name, @task = @thisTask, @type = ''Warning'', @message = @message;
+							END;
 						END;
 
 						CLOSE dCur;
@@ -580,7 +606,7 @@ ELSE BEGIN
 				,'src' AS SrcAlias
 				,NULL AS SrcWhere
 				,'src.[Timestamp]' AS SrcDateColumn
-				,'src.[DatabaseName]', 'src.[SchemaName]', 'src.[ObjectName]', 'src.[IndexName]', NULL
+				,'src.[DatabaseName]', 'src.[SchemaName]', 'src.[ObjectName]', 'COALESCE(src.[IndexName], ''N.A.'')', NULL
 				,'Database', 'Schema', 'Object', 'Index', NULL
 
 			UNION ALL
@@ -604,7 +630,7 @@ ELSE BEGIN
 				,'src' AS SrcAlias
 				,NULL AS SrcWhere
 				,'src.[Timestamp]' AS SrcDateColumn
-				,'src.[DatabaseName]', 'src.[SchemaName]', 'src.[ObjectName]', 'src.[IndexName]', 'CAST(src.[PartitionNumber] AS nvarchar)'
+				,'src.[DatabaseName]', 'src.[SchemaName]', 'src.[ObjectName]', 'COALESCE(src.[IndexName], ''N.A.'')', 'CAST(src.[PartitionNumber] AS nvarchar)'
 				,'Database', 'Schema', 'Object', 'Index', 'Partition'
 		)
 		MERGE dbo.fhsmDimensions AS tgt

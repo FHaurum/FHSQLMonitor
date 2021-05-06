@@ -41,7 +41,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '1.2';
+		SET @version = '1.3';
 	END;
 
 	--
@@ -349,10 +349,12 @@ ELSE BEGIN
 					DECLARE @ghostVersionOffrowStmt nvarchar(max);
 					DECLARE @insertOverGhostVersionInrowStmt nvarchar(max);
 					DECLARE @insertOverGhostVersionOffrowStmt nvarchar(max);
+					DECLARE @message nvarchar(max);
 					DECLARE @now datetime;
 					DECLARE @nowUTC datetime;
 					DECLARE @parameters nvarchar(max);
 					DECLARE @parametersTable TABLE([Key] nvarchar(128) NOT NULL, Value nvarchar(128) NULL);
+					DECLARE @replicaId uniqueidentifier;
 					DECLARE @stmt nvarchar(max);
 					DECLARE @thisTask nvarchar(128);
 					DECLARE @versionGeneratedInrowStmt nvarchar(max);
@@ -431,114 +433,138 @@ ELSE BEGIN
 						END;
 
 						DECLARE dCur CURSOR LOCAL READ_ONLY FAST_FORWARD FOR
-						SELECT d.DatabaseName
-						FROM #dbList AS d
-						ORDER BY d.[Order];
+						SELECT dl.DatabaseName, d.replica_id
+						FROM #dbList AS dl
+						INNER JOIN sys.databases AS d ON (d.name COLLATE DATABASE_DEFAULT = dl.DatabaseName)
+						ORDER BY dl.[Order];
 
 						OPEN dCur;
 
 						WHILE (1 = 1)
 						BEGIN
 							FETCH NEXT FROM dCur
-							INTO @database;
+							INTO @database, @replicaId;
 
 							IF (@@FETCH_STATUS <> 0)
 							BEGIN
 								BREAK;
 							END;
 
-							SET @stmt = ''
-								USE '' + QUOTENAME(@database) + '';
+							--
+							-- If is a member of a replica, we will only execute when running on the primary
+							--
+							IF (@replicaId IS NULL)
+								OR (
+									(
+										SELECT
+										CASE
+											WHEN (dhags.primary_replica = ar.replica_server_name) THEN 1
+											ELSE 0
+										END AS IsPrimaryServer
+										FROM master.sys.availability_groups AS ag
+										INNER JOIN master.sys.availability_replicas AS ar ON ag.group_id = ar.group_id
+										INNER JOIN master.sys.dm_hadr_availability_group_states AS dhags ON ag.group_id = dhags.group_id
+										WHERE (ar.replica_server_name = @@SERVERNAME) AND (ar.replica_id = @replicaId)
+									) = 1
+								)
+							BEGIN
+								SET @stmt = ''
+									USE '' + QUOTENAME(@database) + '';
 
-								SELECT
-									DB_NAME() AS DatabaseName
-									,sch.name AS SchemaName
-									,o.name AS ObjectName
-									,i.name AS IndexName
-									,SUM(ddios.leaf_insert_count) AS LeafInsertCount
-									,SUM(ddios.leaf_delete_count) AS LeafDeleteCount
-									,SUM(ddios.leaf_update_count) AS LeafUpdateCount
-									,SUM(ddios.leaf_ghost_count) AS LeafGhostCount
-									,SUM(ddios.nonleaf_insert_count) AS NonleafInsertCount
-									,SUM(ddios.nonleaf_delete_count) AS NonleafDeleteCount
-									,SUM(ddios.nonleaf_update_count) AS NonleafUpdateCount
-									,SUM(ddios.leaf_allocation_count) AS LeafAllocationCount
-									,SUM(ddios.nonleaf_allocation_count) AS NonleafAllocationCount
-									,SUM(ddios.leaf_page_merge_count) AS LeafPageMergeCount
-									,SUM(ddios.nonleaf_page_merge_count) AS NonleafPageMergeCount
-									,SUM(ddios.range_scan_count) AS RangeScanCount
-									,SUM(ddios.singleton_lookup_count) AS SingletonLookupCount
-									,SUM(ddios.forwarded_fetch_count) AS ForwardedFetchCount
-									,SUM(ddios.lob_fetch_in_pages) AS LOBFetchInPages
-									,SUM(ddios.lob_fetch_in_bytes) AS LOBFetchInBytes
-									,SUM(ddios.lob_orphan_create_count) AS LOBOrphanCreateCount
-									,SUM(ddios.lob_orphan_insert_count) AS LOBOrphanInsertCount
-									,SUM(ddios.row_overflow_fetch_in_pages) AS RowOverflowFetchInPages
-									,SUM(ddios.row_overflow_fetch_in_bytes) AS RowOverflowFetchInBytes
-									,SUM(ddios.column_value_push_off_row_count) AS ColumnValuePushOffRowCount
-									,SUM(ddios.column_value_pull_in_row_count) AS ColumnValuePullInRowCount
-									,SUM(ddios.row_lock_count) AS RowLockCount
-									,SUM(ddios.row_lock_wait_count) AS RowLockWaitCount
-									,SUM(ddios.row_lock_wait_in_ms) AS RowLockWaitInMS
-									,SUM(ddios.page_lock_count) AS PageLockCount
-									,SUM(ddios.page_lock_wait_count) AS PageLockWaitCount
-									,SUM(ddios.page_lock_wait_in_ms) AS PageLockWaitInMS
-									,SUM(ddios.index_lock_promotion_attempt_count) AS IndexLockPromotionAttemptCount
-									,SUM(ddios.index_lock_promotion_count) AS IndexLockPromotionCount
-									,SUM(ddios.page_latch_wait_count) AS PageLatchWaitCount
-									,SUM(ddios.page_latch_wait_in_ms) AS PageLatchWaitInMS
-									,SUM(ddios.page_io_latch_wait_count) AS PageIOLatchWaitCount
-									,SUM(ddios.page_io_latch_wait_in_ms) AS PageIOLatchWaitInMS
-									,SUM(ddios.tree_page_latch_wait_count) AS TreePageLatchWaitCount
-									,SUM(ddios.tree_page_latch_wait_in_ms) AS TreePageLatchWaitInMS
-									,SUM(ddios.tree_page_io_latch_wait_count) AS TreePageIOLatchWaitCount
-									,SUM(ddios.tree_page_io_latch_wait_in_ms) AS TreePageIOLatchWaitInMS
-									,SUM(ddios.page_compression_attempt_count) AS PageCompressionAttemptCount
-									,SUM(ddios.page_compression_success_count) AS PageCompressionSuccessCount
-									,'' + @versionGeneratedInrowStmt + '' AS VersionGeneratedInrow
-									,'' + @versionGeneratedOffrowStmt + '' AS VersionGeneratedOffrow
-									,'' + @ghostVersionInrowStmt + '' AS GhostVersionInrow
-									,'' + @ghostVersionOffrowStmt + '' AS GhostVersionOffrow
-									,'' + @insertOverGhostVersionInrowStmt + '' AS InsertOverGhostVersionInrow
-									,'' + @insertOverGhostVersionOffrowStmt + '' AS InsertOverGhostVersionOffrow
-									,(SELECT d.create_date FROM sys.databases AS d WITH (NOLOCK) WHERE (d.name = ''''tempdb'''')) AS LastSQLServiceRestart
-									,@nowUTC, @now
-								FROM sys.dm_db_index_operational_stats(DB_ID(), NULL, NULL, NULL) AS ddios
-								INNER JOIN sys.objects AS o WITH (NOLOCK) ON (o.object_id = ddios.object_id)
-								INNER JOIN sys.schemas AS sch WITH (NOLOCK) ON (sch.schema_id = o.schema_id)
-								INNER JOIN sys.indexes AS i ON (i.object_id = ddios.object_id) AND (i.index_id = ddios.index_id)
-								WHERE (o.type IN (''''U'''', ''''V''''))
-								GROUP BY DB_NAME(ddios.database_id), sch.name, o.name, i.name;
-							'';
-							INSERT INTO dbo.fhsmIndexOperational(
-								DatabaseName, SchemaName, ObjectName, IndexName
-								,LeafInsertCount, LeafDeleteCount, LeafUpdateCount, LeafGhostCount
-								,NonleafInsertCount, NonleafDeleteCount, NonleafUpdateCount
-								,LeafAllocationCount, NonleafAllocationCount
-								,LeafPageMergeCount, NonleafPageMergeCount
-								,RangeScanCount, SingletonLookupCount
-								,ForwardedFetchCount, LOBFetchInPages, LOBFetchInBytes
-								,LOBOrphanCreateCount, LOBOrphanInsertCount
-								,RowOverflowFetchInPages, RowOverflowFetchInBytes
-								,ColumnValuePushOffRowCount, ColumnValuePullInRowCount
-								,RowLockCount, RowLockWaitCount, RowLockWaitInMS
-								,PageLockCount, PageLockWaitCount, PageLockWaitInMS
-								,IndexLockPromotionAttemptCount, IndexLockPromotionCount
-								,PageLatchWaitCount, PageLatchWaitInMS
-								,PageIOLatchWaitCount, PageIOLatchWaitInMS
-								,TreePageLatchWaitCount, TreePageLatchWaitInMS
-								,TreePageIOLatchWaitCount, TreePageIOLatchWaitInMS
-								,PageCompressionAttemptCount, PageCompressionSuccessCount
-								,VersionGeneratedInrow, VersionGeneratedOffrow
-								,GhostVersionInrow, GhostVersionOffrow
-								,InsertOverGhostVersionInrow, InsertOverGhostVersionOffrow
-								,LastSQLServiceRestart
-								,TimestampUTC, Timestamp
-							)
-							EXEC sp_executesql
-								@stmt
-								,N''@now datetime, @nowUTC datetime''
-								,@now = @now, @nowUTC = @nowUTC;
+									SELECT
+										DB_NAME() AS DatabaseName
+										,sch.name AS SchemaName
+										,o.name AS ObjectName
+										,i.name AS IndexName
+										,SUM(ddios.leaf_insert_count) AS LeafInsertCount
+										,SUM(ddios.leaf_delete_count) AS LeafDeleteCount
+										,SUM(ddios.leaf_update_count) AS LeafUpdateCount
+										,SUM(ddios.leaf_ghost_count) AS LeafGhostCount
+										,SUM(ddios.nonleaf_insert_count) AS NonleafInsertCount
+										,SUM(ddios.nonleaf_delete_count) AS NonleafDeleteCount
+										,SUM(ddios.nonleaf_update_count) AS NonleafUpdateCount
+										,SUM(ddios.leaf_allocation_count) AS LeafAllocationCount
+										,SUM(ddios.nonleaf_allocation_count) AS NonleafAllocationCount
+										,SUM(ddios.leaf_page_merge_count) AS LeafPageMergeCount
+										,SUM(ddios.nonleaf_page_merge_count) AS NonleafPageMergeCount
+										,SUM(ddios.range_scan_count) AS RangeScanCount
+										,SUM(ddios.singleton_lookup_count) AS SingletonLookupCount
+										,SUM(ddios.forwarded_fetch_count) AS ForwardedFetchCount
+										,SUM(ddios.lob_fetch_in_pages) AS LOBFetchInPages
+										,SUM(ddios.lob_fetch_in_bytes) AS LOBFetchInBytes
+										,SUM(ddios.lob_orphan_create_count) AS LOBOrphanCreateCount
+										,SUM(ddios.lob_orphan_insert_count) AS LOBOrphanInsertCount
+										,SUM(ddios.row_overflow_fetch_in_pages) AS RowOverflowFetchInPages
+										,SUM(ddios.row_overflow_fetch_in_bytes) AS RowOverflowFetchInBytes
+										,SUM(ddios.column_value_push_off_row_count) AS ColumnValuePushOffRowCount
+										,SUM(ddios.column_value_pull_in_row_count) AS ColumnValuePullInRowCount
+										,SUM(ddios.row_lock_count) AS RowLockCount
+										,SUM(ddios.row_lock_wait_count) AS RowLockWaitCount
+										,SUM(ddios.row_lock_wait_in_ms) AS RowLockWaitInMS
+										,SUM(ddios.page_lock_count) AS PageLockCount
+										,SUM(ddios.page_lock_wait_count) AS PageLockWaitCount
+										,SUM(ddios.page_lock_wait_in_ms) AS PageLockWaitInMS
+										,SUM(ddios.index_lock_promotion_attempt_count) AS IndexLockPromotionAttemptCount
+										,SUM(ddios.index_lock_promotion_count) AS IndexLockPromotionCount
+										,SUM(ddios.page_latch_wait_count) AS PageLatchWaitCount
+										,SUM(ddios.page_latch_wait_in_ms) AS PageLatchWaitInMS
+										,SUM(ddios.page_io_latch_wait_count) AS PageIOLatchWaitCount
+										,SUM(ddios.page_io_latch_wait_in_ms) AS PageIOLatchWaitInMS
+										,SUM(ddios.tree_page_latch_wait_count) AS TreePageLatchWaitCount
+										,SUM(ddios.tree_page_latch_wait_in_ms) AS TreePageLatchWaitInMS
+										,SUM(ddios.tree_page_io_latch_wait_count) AS TreePageIOLatchWaitCount
+										,SUM(ddios.tree_page_io_latch_wait_in_ms) AS TreePageIOLatchWaitInMS
+										,SUM(ddios.page_compression_attempt_count) AS PageCompressionAttemptCount
+										,SUM(ddios.page_compression_success_count) AS PageCompressionSuccessCount
+										,'' + @versionGeneratedInrowStmt + '' AS VersionGeneratedInrow
+										,'' + @versionGeneratedOffrowStmt + '' AS VersionGeneratedOffrow
+										,'' + @ghostVersionInrowStmt + '' AS GhostVersionInrow
+										,'' + @ghostVersionOffrowStmt + '' AS GhostVersionOffrow
+										,'' + @insertOverGhostVersionInrowStmt + '' AS InsertOverGhostVersionInrow
+										,'' + @insertOverGhostVersionOffrowStmt + '' AS InsertOverGhostVersionOffrow
+										,(SELECT d.create_date FROM sys.databases AS d WITH (NOLOCK) WHERE (d.name = ''''tempdb'''')) AS LastSQLServiceRestart
+										,@nowUTC, @now
+									FROM sys.dm_db_index_operational_stats(DB_ID(), NULL, NULL, NULL) AS ddios
+									INNER JOIN sys.objects AS o WITH (NOLOCK) ON (o.object_id = ddios.object_id)
+									INNER JOIN sys.schemas AS sch WITH (NOLOCK) ON (sch.schema_id = o.schema_id)
+									INNER JOIN sys.indexes AS i ON (i.object_id = ddios.object_id) AND (i.index_id = ddios.index_id)
+									WHERE (o.type IN (''''U'''', ''''V''''))
+									GROUP BY DB_NAME(ddios.database_id), sch.name, o.name, i.name;
+								'';
+								INSERT INTO dbo.fhsmIndexOperational(
+									DatabaseName, SchemaName, ObjectName, IndexName
+									,LeafInsertCount, LeafDeleteCount, LeafUpdateCount, LeafGhostCount
+									,NonleafInsertCount, NonleafDeleteCount, NonleafUpdateCount
+									,LeafAllocationCount, NonleafAllocationCount
+									,LeafPageMergeCount, NonleafPageMergeCount
+									,RangeScanCount, SingletonLookupCount
+									,ForwardedFetchCount, LOBFetchInPages, LOBFetchInBytes
+									,LOBOrphanCreateCount, LOBOrphanInsertCount
+									,RowOverflowFetchInPages, RowOverflowFetchInBytes
+									,ColumnValuePushOffRowCount, ColumnValuePullInRowCount
+									,RowLockCount, RowLockWaitCount, RowLockWaitInMS
+									,PageLockCount, PageLockWaitCount, PageLockWaitInMS
+									,IndexLockPromotionAttemptCount, IndexLockPromotionCount
+									,PageLatchWaitCount, PageLatchWaitInMS
+									,PageIOLatchWaitCount, PageIOLatchWaitInMS
+									,TreePageLatchWaitCount, TreePageLatchWaitInMS
+									,TreePageIOLatchWaitCount, TreePageIOLatchWaitInMS
+									,PageCompressionAttemptCount, PageCompressionSuccessCount
+									,VersionGeneratedInrow, VersionGeneratedOffrow
+									,GhostVersionInrow, GhostVersionOffrow
+									,InsertOverGhostVersionInrow, InsertOverGhostVersionOffrow
+									,LastSQLServiceRestart
+									,TimestampUTC, Timestamp
+								)
+								EXEC sp_executesql
+									@stmt
+									,N''@now datetime, @nowUTC datetime''
+									,@now = @now, @nowUTC = @nowUTC;
+							END
+							ELSE BEGIN
+								SET @message = ''Database '''''' + @database + '''''' is member of a replica but this server is not the primary node'';
+								EXEC dbo.fhsmSPLog @name = @name, @task = @thisTask, @type = ''Warning'', @message = @message;
+							END;
 						END;
 
 						CLOSE dCur;

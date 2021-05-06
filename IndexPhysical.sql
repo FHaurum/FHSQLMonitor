@@ -41,7 +41,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '1.2';
+		SET @version = '1.3';
 	END;
 
 	--
@@ -426,6 +426,7 @@ ELSE BEGIN
 					DECLARE @offrowRegularVersionRecordCountStmt nvarchar(max);
 					DECLARE @parameters nvarchar(max);
 					DECLARE @parametersTable TABLE([Key] nvarchar(128) NOT NULL, Value nvarchar(128) NULL);
+					DECLARE @replicaId uniqueidentifier;
 					DECLARE @stmt nvarchar(max);
 					DECLARE @thisTask nvarchar(128);
 					DECLARE @totalInrowVersionPayloadSizeInBytesStmt nvarchar(max);
@@ -562,109 +563,133 @@ ELSE BEGIN
 						END;
 
 						DECLARE dCur CURSOR LOCAL READ_ONLY FAST_FORWARD FOR
-						SELECT d.DatabaseName
-						FROM #dbList AS d
-						ORDER BY d.[Order];
+						SELECT dl.DatabaseName, d.replica_id
+						FROM #dbList AS dl
+						INNER JOIN sys.databases AS d ON (d.name COLLATE DATABASE_DEFAULT = dl.DatabaseName)
+						ORDER BY dl.[Order];
 
 						OPEN dCur;
 
 						WHILE (1 = 1)
 						BEGIN
 							FETCH NEXT FROM dCur
-							INTO @database;
+							INTO @database, @replicaId;
 
 							IF (@@FETCH_STATUS <> 0)
 							BEGIN
 								BREAK;
 							END;
 
-							SET @stmt = ''
-								USE '' + QUOTENAME(@database) + '';
+							--
+							-- If is a member of a replica, we will only execute when running on the primary
+							--
+							IF (@replicaId IS NULL)
+								OR (
+									(
+										SELECT
+										CASE
+											WHEN (dhags.primary_replica = ar.replica_server_name) THEN 1
+											ELSE 0
+										END AS IsPrimaryServer
+										FROM master.sys.availability_groups AS ag
+										INNER JOIN master.sys.availability_replicas AS ar ON ag.group_id = ar.group_id
+										INNER JOIN master.sys.dm_hadr_availability_group_states AS dhags ON ag.group_id = dhags.group_id
+										WHERE (ar.replica_server_name = @@SERVERNAME) AND (ar.replica_id = @replicaId)
+									) = 1
+								)
+							BEGIN
+								SET @stmt = ''
+									USE '' + QUOTENAME(@database) + '';
 
-								IF
-									(@object IS NULL)
-									OR ((@object IS NOT NULL) AND (OBJECT_ID(@object) IS NOT NULL))
-								BEGIN
-									SELECT
-										DB_NAME() AS DatabaseName
-										,sch.name AS SchemaName
-										,o.name AS ObjectName
-										,i.name AS IndexName
-										,@mode AS Mode
-										,ddips.partition_number AS PartitionNumber
-										,ddips.index_type_desc AS IndexTypeDesc
-										,ddips.alloc_unit_type_desc AS AllocUnitTypeDesc
-										,ddips.index_depth AS IndexDepth
-										,ddips.index_level AS IndexLevel
-										,'' + @columnstoreDeleteBufferStateDescStmt + '' AS ColumnstoreDeleteBufferStateDesc
-										,AVG(ddips.avg_fragmentation_in_percent) AS AvgFragmentationInPercent
-										,SUM(ddips.fragment_count) AS FragmentCount
-										,AVG(ddips.avg_fragment_size_in_pages) AS AvgFragmentSizeInPages
-										,SUM(ddips.page_count) AS PageCount
-										,AVG(ddips.avg_page_space_used_in_percent) AS AvgPageSpaceUsedInPercent
-										,SUM(ddips.record_count) AS RecordCount
-										,SUM(ddips.ghost_record_count) AS GhostRecordCount
-										,SUM(ddips.version_ghost_record_count) AS VersionGhostRecordCount
-										,AVG(ddips.min_record_size_in_bytes) AS MinRecordSizeInBytes
-										,AVG(ddips.max_record_size_in_bytes) AS MaxRecordSizeInBytes
-										,AVG(ddips.avg_record_size_in_bytes) AS AvgRecordSizeInBytes
-										,SUM(ddips.forwarded_record_count) AS ForwardedRecordCount
-										,SUM(ddips.compressed_page_count) AS CompressedPageCount
-										,'' + @versionRecordCountStmt + '' AS VersionRecordCount
-										,'' + @inrowVersionRecordCountStmt + '' AS InrowVersionRecordCount
-										,'' + @inrowDiffVersionRecordCountStmt + '' AS InrowDiffVersionRecordCount
-										,'' + @totalInrowVersionPayloadSizeInBytesStmt + '' AS TotalInrowVersionPayloadSizeInBytes
-										,'' + @offrowRegularVersionRecordCountStmt + '' AS OffrowRegularVersionRecordCount
-										,'' + @offrowLongTermVersionRecordCountStmt + '' AS OffrowLongTermVersionRecordCount
-										,(SELECT d.create_date FROM sys.databases AS d WITH (NOLOCK) WHERE (d.name = ''''tempdb'''')) AS LastSQLServiceRestart
-										,@nowUTC, @now
-										,CAST(@nowUTC AS date) AS TimestampUTCDate, CAST(@now AS date) AS TimestampDate
-										,(DATEPART(HOUR, @now) * 60 * 60) + (DATEPART(MINUTE, @now) * 60) + (DATEPART(SECOND, @now)) AS TimeKey
-										,(SELECT k.[Key] FROM '' + QUOTENAME(@fhsmDatabaseName) + ''.dbo.fhsmFNGenerateKey(DB_NAME(), DEFAULT,  DEFAULT, DEFAULT,                    DEFAULT,               DEFAULT)                    AS k) AS DatabaseKey
-										,(SELECT k.[Key] FROM '' + QUOTENAME(@fhsmDatabaseName) + ''.dbo.fhsmFNGenerateKey(DB_NAME(), sch.name, DEFAULT, DEFAULT,                    DEFAULT,               DEFAULT)                    AS k) AS SchemaKey
-										,(SELECT k.[Key] FROM '' + QUOTENAME(@fhsmDatabaseName) + ''.dbo.fhsmFNGenerateKey(DB_NAME(), sch.name, o.name,  DEFAULT,                    DEFAULT,               DEFAULT)                    AS k) AS ObjectKey
-										,(SELECT k.[Key] FROM '' + QUOTENAME(@fhsmDatabaseName) + ''.dbo.fhsmFNGenerateKey(DB_NAME(), sch.name, o.name,  COALESCE(i.name, ''''N.A.''''), DEFAULT,               DEFAULT)                    AS k) AS IndexKey
-										,(SELECT k.[Key] FROM '' + QUOTENAME(@fhsmDatabaseName) + ''.dbo.fhsmFNGenerateKey(DB_NAME(), sch.name, o.name,  COALESCE(i.name, ''''N.A.''''), ddips.index_type_desc, DEFAULT)                    AS k) AS IndexTypeKey
-										,(SELECT k.[Key] FROM '' + QUOTENAME(@fhsmDatabaseName) + ''.dbo.fhsmFNGenerateKey(DB_NAME(), sch.name, o.name,  COALESCE(i.name, ''''N.A.''''), ddips.index_type_desc, ddips.alloc_unit_type_desc) AS k) AS IndexAllocTypeKey
-									FROM sys.dm_db_index_physical_stats(DB_ID(), OBJECT_ID(@object), NULL, NULL, @mode) AS ddips
-									INNER JOIN sys.objects AS o ON (o.object_id = ddips.object_id)
-									INNER JOIN sys.schemas AS sch ON (sch.schema_id = o.schema_id)
-									LEFT OUTER JOIN sys.indexes AS i ON (ddips.object_id = i.object_id) AND (ddips.index_id = i.index_id)
-									WHERE (o.type IN (''''U'''', ''''V''''))
-									GROUP BY
-										sch.name
-										,o.name
-										,i.name
-										,ddips.partition_number
-										,ddips.index_type_desc
-										,ddips.alloc_unit_type_desc
-										,ddips.index_depth
-										,ddips.index_level
-										'' + @columnstoreDeleteBufferStateDescGroupByStmt + '';
-								END;
-							'';
-							INSERT INTO dbo.fhsmIndexPhysical(
-								DatabaseName, SchemaName, ObjectName, IndexName, Mode
-								,PartitionNumber, IndexTypeDesc, AllocUnitTypeDesc, IndexDepth, IndexLevel, ColumnstoreDeleteBufferStateDesc
-								,AvgFragmentationInPercent, FragmentCount, AvgFragmentSizeInPages
-								,PageCount, AvgPageSpaceUsedInPercent, RecordCount
-								,GhostRecordCount, VersionGhostRecordCount
-								,MinRecordSizeInBytes, MaxRecordSizeInBytes, AvgRecordSizeInBytes
-								,ForwardedRecordCount
-								,CompressedPageCount
-								,VersionRecordCount, InrowVersionRecordCount, InrowDiffVersionRecordCount, TotalInrowVersionPayloadSizeInBytes
-								,OffrowRegularVersionRecordCount, OffrowLongTermVersionRecordCount
-								,LastSQLServiceRestart
-								,TimestampUTC, Timestamp
-								,TimestampUTCDate, TimestampDate
-								,TimeKey
-								,DatabaseKey, SchemaKey, ObjectKey
-								,IndexKey, IndexTypeKey, IndexAllocTypeKey
-							)
-							EXEC sp_executesql
-								@stmt
-								,N''@mode nvarchar(8), @object nvarchar(128), @now datetime, @nowUTC datetime''
-								,@mode = @mode, @object = @object, @now = @now, @nowUTC = @nowUTC;
+									IF
+										(@object IS NULL)
+										OR ((@object IS NOT NULL) AND (OBJECT_ID(@object) IS NOT NULL))
+									BEGIN
+										SELECT
+											DB_NAME() AS DatabaseName
+											,sch.name AS SchemaName
+											,o.name AS ObjectName
+											,i.name AS IndexName
+											,@mode AS Mode
+											,ddips.partition_number AS PartitionNumber
+											,ddips.index_type_desc AS IndexTypeDesc
+											,ddips.alloc_unit_type_desc AS AllocUnitTypeDesc
+											,ddips.index_depth AS IndexDepth
+											,ddips.index_level AS IndexLevel
+											,'' + @columnstoreDeleteBufferStateDescStmt + '' AS ColumnstoreDeleteBufferStateDesc
+											,AVG(ddips.avg_fragmentation_in_percent) AS AvgFragmentationInPercent
+											,SUM(ddips.fragment_count) AS FragmentCount
+											,AVG(ddips.avg_fragment_size_in_pages) AS AvgFragmentSizeInPages
+											,SUM(ddips.page_count) AS PageCount
+											,AVG(ddips.avg_page_space_used_in_percent) AS AvgPageSpaceUsedInPercent
+											,SUM(ddips.record_count) AS RecordCount
+											,SUM(ddips.ghost_record_count) AS GhostRecordCount
+											,SUM(ddips.version_ghost_record_count) AS VersionGhostRecordCount
+											,AVG(ddips.min_record_size_in_bytes) AS MinRecordSizeInBytes
+											,AVG(ddips.max_record_size_in_bytes) AS MaxRecordSizeInBytes
+											,AVG(ddips.avg_record_size_in_bytes) AS AvgRecordSizeInBytes
+											,SUM(ddips.forwarded_record_count) AS ForwardedRecordCount
+											,SUM(ddips.compressed_page_count) AS CompressedPageCount
+											,'' + @versionRecordCountStmt + '' AS VersionRecordCount
+											,'' + @inrowVersionRecordCountStmt + '' AS InrowVersionRecordCount
+											,'' + @inrowDiffVersionRecordCountStmt + '' AS InrowDiffVersionRecordCount
+											,'' + @totalInrowVersionPayloadSizeInBytesStmt + '' AS TotalInrowVersionPayloadSizeInBytes
+											,'' + @offrowRegularVersionRecordCountStmt + '' AS OffrowRegularVersionRecordCount
+											,'' + @offrowLongTermVersionRecordCountStmt + '' AS OffrowLongTermVersionRecordCount
+											,(SELECT d.create_date FROM sys.databases AS d WITH (NOLOCK) WHERE (d.name = ''''tempdb'''')) AS LastSQLServiceRestart
+											,@nowUTC, @now
+											,CAST(@nowUTC AS date) AS TimestampUTCDate, CAST(@now AS date) AS TimestampDate
+											,(DATEPART(HOUR, @now) * 60 * 60) + (DATEPART(MINUTE, @now) * 60) + (DATEPART(SECOND, @now)) AS TimeKey
+											,(SELECT k.[Key] FROM '' + QUOTENAME(@fhsmDatabaseName) + ''.dbo.fhsmFNGenerateKey(DB_NAME(), DEFAULT,  DEFAULT, DEFAULT,                    DEFAULT,               DEFAULT)                    AS k) AS DatabaseKey
+											,(SELECT k.[Key] FROM '' + QUOTENAME(@fhsmDatabaseName) + ''.dbo.fhsmFNGenerateKey(DB_NAME(), sch.name, DEFAULT, DEFAULT,                    DEFAULT,               DEFAULT)                    AS k) AS SchemaKey
+											,(SELECT k.[Key] FROM '' + QUOTENAME(@fhsmDatabaseName) + ''.dbo.fhsmFNGenerateKey(DB_NAME(), sch.name, o.name,  DEFAULT,                    DEFAULT,               DEFAULT)                    AS k) AS ObjectKey
+											,(SELECT k.[Key] FROM '' + QUOTENAME(@fhsmDatabaseName) + ''.dbo.fhsmFNGenerateKey(DB_NAME(), sch.name, o.name,  COALESCE(i.name, ''''N.A.''''), DEFAULT,               DEFAULT)                    AS k) AS IndexKey
+											,(SELECT k.[Key] FROM '' + QUOTENAME(@fhsmDatabaseName) + ''.dbo.fhsmFNGenerateKey(DB_NAME(), sch.name, o.name,  COALESCE(i.name, ''''N.A.''''), ddips.index_type_desc, DEFAULT)                    AS k) AS IndexTypeKey
+											,(SELECT k.[Key] FROM '' + QUOTENAME(@fhsmDatabaseName) + ''.dbo.fhsmFNGenerateKey(DB_NAME(), sch.name, o.name,  COALESCE(i.name, ''''N.A.''''), ddips.index_type_desc, ddips.alloc_unit_type_desc) AS k) AS IndexAllocTypeKey
+										FROM sys.dm_db_index_physical_stats(DB_ID(), OBJECT_ID(@object), NULL, NULL, @mode) AS ddips
+										INNER JOIN sys.objects AS o ON (o.object_id = ddips.object_id)
+										INNER JOIN sys.schemas AS sch ON (sch.schema_id = o.schema_id)
+										LEFT OUTER JOIN sys.indexes AS i ON (ddips.object_id = i.object_id) AND (ddips.index_id = i.index_id)
+										WHERE (o.type IN (''''U'''', ''''V''''))
+										GROUP BY
+											sch.name
+											,o.name
+											,i.name
+											,ddips.partition_number
+											,ddips.index_type_desc
+											,ddips.alloc_unit_type_desc
+											,ddips.index_depth
+											,ddips.index_level
+											'' + @columnstoreDeleteBufferStateDescGroupByStmt + '';
+									END;
+								'';
+								INSERT INTO dbo.fhsmIndexPhysical(
+									DatabaseName, SchemaName, ObjectName, IndexName, Mode
+									,PartitionNumber, IndexTypeDesc, AllocUnitTypeDesc, IndexDepth, IndexLevel, ColumnstoreDeleteBufferStateDesc
+									,AvgFragmentationInPercent, FragmentCount, AvgFragmentSizeInPages
+									,PageCount, AvgPageSpaceUsedInPercent, RecordCount
+									,GhostRecordCount, VersionGhostRecordCount
+									,MinRecordSizeInBytes, MaxRecordSizeInBytes, AvgRecordSizeInBytes
+									,ForwardedRecordCount
+									,CompressedPageCount
+									,VersionRecordCount, InrowVersionRecordCount, InrowDiffVersionRecordCount, TotalInrowVersionPayloadSizeInBytes
+									,OffrowRegularVersionRecordCount, OffrowLongTermVersionRecordCount
+									,LastSQLServiceRestart
+									,TimestampUTC, Timestamp
+									,TimestampUTCDate, TimestampDate
+									,TimeKey
+									,DatabaseKey, SchemaKey, ObjectKey
+									,IndexKey, IndexTypeKey, IndexAllocTypeKey
+								)
+								EXEC sp_executesql
+									@stmt
+									,N''@mode nvarchar(8), @object nvarchar(128), @now datetime, @nowUTC datetime''
+									,@mode = @mode, @object = @object, @now = @now, @nowUTC = @nowUTC;
+							END
+							ELSE BEGIN
+								SET @message = ''Database '''''' + @database + '''''' is member of a replica but this server is not the primary node'';
+								EXEC dbo.fhsmSPLog @name = @name, @task = @thisTask, @type = ''Warning'', @message = @message;
+							END;
 						END;
 
 						CLOSE dCur;

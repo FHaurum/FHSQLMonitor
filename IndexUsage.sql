@@ -41,7 +41,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '1.1';
+		SET @version = '1.2';
 	END;
 
 	--
@@ -264,10 +264,12 @@ ELSE BEGIN
 					DECLARE @autoCreatedStmt nvarchar(max);
 					DECLARE @database nvarchar(128);
 					DECLARE @databases nvarchar(max);
+					DECLARE @message nvarchar(max);
 					DECLARE @now datetime;
 					DECLARE @nowUTC datetime;
 					DECLARE @parameters nvarchar(max);
 					DECLARE @parametersTable TABLE([Key] nvarchar(128) NOT NULL, Value nvarchar(128) NULL);
+					DECLARE @replicaId uniqueidentifier;
 					DECLARE @stmt nvarchar(max);
 					DECLARE @thisTask nvarchar(128);
 
@@ -336,9 +338,10 @@ ELSE BEGIN
 						END;
 
 						DECLARE dCur CURSOR LOCAL READ_ONLY FAST_FORWARD FOR
-						SELECT d.DatabaseName
-						FROM #dbList AS d
-						ORDER BY d.[Order];
+						SELECT dl.DatabaseName, d.replica_id
+						FROM #dbList AS dl
+						INNER JOIN sys.databases AS d ON (d.name COLLATE DATABASE_DEFAULT = dl.DatabaseName)
+						ORDER BY dl.[Order];
 
 						OPEN dCur;
 			';
@@ -347,91 +350,114 @@ ELSE BEGIN
 						WHILE (1 = 1)
 						BEGIN
 							FETCH NEXT FROM dCur
-							INTO @database;
+							INTO @database, @replicaId;
 
 							IF (@@FETCH_STATUS <> 0)
 							BEGIN
 								BREAK;
 							END;
 
-							SET @stmt = ''
-								USE '' + QUOTENAME(@database) + '';
+							--
+							-- If is a member of a replica, we will only execute when running on the primary
+							--
+							IF (@replicaId IS NULL)
+								OR (
+									(
+										SELECT
+										CASE
+											WHEN (dhags.primary_replica = ar.replica_server_name) THEN 1
+											ELSE 0
+										END AS IsPrimaryServer
+										FROM master.sys.availability_groups AS ag
+										INNER JOIN master.sys.availability_replicas AS ar ON ag.group_id = ar.group_id
+										INNER JOIN master.sys.dm_hadr_availability_group_states AS dhags ON ag.group_id = dhags.group_id
+										WHERE (ar.replica_server_name = @@SERVERNAME) AND (ar.replica_id = @replicaId)
+									) = 1
+								)
+							BEGIN
+								SET @stmt = ''
+									USE '' + QUOTENAME(@database) + '';
 
-								SELECT
-									DB_NAME() AS DatabaseName
-									,sch.name AS SchemaName
-									,o.name AS ObjectName
-									,i.name AS IndexName
-									,s.user_seeks AS UserSeeks
-									,s.user_scans AS UserScans
-									,s.user_lookups AS UserLookups
-									,s.user_updates AS UserUpdates
-									,s.last_user_seek AS LastUserSeek
-									,s.last_user_scan AS LastUserScan
-									,s.last_user_lookup AS LastUserLookup
-									,s.last_user_update AS LastUserUpdate
-									,i.type AS IndexType
-									,i.is_unique AS IsUnique
-									,i.is_primary_key AS IsPrimaryKey
-									,i.is_unique_constraint AS IsUniqueConstraint
-									,i.fill_factor AS [FillFactor]
-									,i.is_disabled AS IsDisabled
-									,i.is_hypothetical AS IsHypothetical
-									,i.allow_row_locks AS AllowRowLocks
-									,i.allow_page_locks AS AllowPageLocks
-									,i.has_filter AS HasFilter
-									,i.filter_definition AS FilterDefinition
-									,'' + @autoCreatedStmt + '' AS AutoCreated
-									,indexColumns.Columns AS IndexColumns
-									,includedColumns.Columns AS IncludedColumns
-									,(SELECT d.create_date FROM sys.databases AS d WITH (NOLOCK) WHERE (d.name = ''''tempdb'''')) AS LastSQLServiceRestart
-									,@nowUTC, @now
-								FROM sys.indexes AS i WITH (NOLOCK)
-								LEFT OUTER JOIN sys.dm_db_index_usage_stats AS s WITH (NOLOCK) ON (s.database_id = DB_ID()) AND (s.object_id = i.object_id) AND (s.index_id = i.index_id)
-								INNER JOIN sys.objects AS o WITH (NOLOCK) ON (o.object_id = i.object_id)
-								INNER JOIN sys.schemas AS sch WITH (NOLOCK) ON (sch.schema_id = o.schema_id)
-			';
-			SET @stmt += '
-								OUTER APPLY (
-									SELECT STUFF((
-										SELECT '''','''' + QUOTENAME(c.name) AS ColumnName
-										FROM sys.index_columns AS sc WITH (NOLOCK)
-										INNER JOIN sys.columns AS c WITH (NOLOCK) ON (c.object_id = sc.object_id) AND (c.column_id = sc.column_id)
-										WHERE (sc.object_id = i.object_id) AND (sc.index_id = i.index_id) AND (sc.is_included_column = 0)
-										ORDER BY sc.key_ordinal
-										FOR XML PATH (''''''''), type
-									).value(''''.'''', ''''nvarchar(max)''''), 1, 1, '''''''') AS Columns
-								) AS indexColumns
-								OUTER APPLY (
-									SELECT STUFF((
-										SELECT '''','''' + QUOTENAME(c.name) AS ColumnName
-										FROM sys.index_columns AS sc WITH (NOLOCK)
-										INNER JOIN sys.columns AS c WITH (NOLOCK) ON (c.object_id = sc.object_id) AND (c.column_id = sc.column_id)
-										WHERE (sc.object_id = i.object_id) AND (sc.index_id = i.index_id) AND (sc.is_included_column = 1)
-										ORDER BY sc.key_ordinal
-										FOR XML PATH (''''''''), type
-									).value(''''.'''', ''''nvarchar(max)''''), 1, 1, '''''''') AS Columns
-								) AS includedColumns
-								WHERE (o.type IN (''''U'''', ''''V''''))
-							'';
-							INSERT INTO dbo.fhsmIndexUsage(
-								DatabaseName, SchemaName, ObjectName, IndexName
-								,UserSeeks, UserScans, UserLookups, UserUpdates
-								,LastUserSeek, LastUserScan, LastUserLookup, LastUserUpdate
-								,IndexType, IsUnique, IsPrimaryKey, IsUniqueConstraint
-								,[FillFactor]
-								,IsDisabled, IsHypothetical
-								,AllowRowLocks, AllowPageLocks
-								,HasFilter, FilterDefinition
-								,AutoCreated
-								,IndexColumns, IncludedColumns
-								,LastSQLServiceRestart
-								,TimestampUTC, Timestamp
-							)
-							EXEC sp_executesql
-								@stmt
-								,N''@now datetime, @nowUTC datetime''
-								,@now = @now, @nowUTC = @nowUTC;
+									SELECT
+										DB_NAME() AS DatabaseName
+										,sch.name AS SchemaName
+										,o.name AS ObjectName
+										,i.name AS IndexName
+										,s.user_seeks AS UserSeeks
+										,s.user_scans AS UserScans
+										,s.user_lookups AS UserLookups
+										,s.user_updates AS UserUpdates
+										,s.last_user_seek AS LastUserSeek
+										,s.last_user_scan AS LastUserScan
+										,s.last_user_lookup AS LastUserLookup
+										,s.last_user_update AS LastUserUpdate
+										,i.type AS IndexType
+										,i.is_unique AS IsUnique
+										,i.is_primary_key AS IsPrimaryKey
+										,i.is_unique_constraint AS IsUniqueConstraint
+										,i.fill_factor AS [FillFactor]
+										,i.is_disabled AS IsDisabled
+										,i.is_hypothetical AS IsHypothetical
+										,i.allow_row_locks AS AllowRowLocks
+										,i.allow_page_locks AS AllowPageLocks
+										,i.has_filter AS HasFilter
+										,i.filter_definition AS FilterDefinition
+										,'' + @autoCreatedStmt + '' AS AutoCreated
+										,indexColumns.Columns AS IndexColumns
+										,includedColumns.Columns AS IncludedColumns
+										,(SELECT d.create_date FROM sys.databases AS d WITH (NOLOCK) WHERE (d.name = ''''tempdb'''')) AS LastSQLServiceRestart
+										,@nowUTC, @now
+									FROM sys.indexes AS i WITH (NOLOCK)
+									LEFT OUTER JOIN sys.dm_db_index_usage_stats AS s WITH (NOLOCK) ON (s.database_id = DB_ID()) AND (s.object_id = i.object_id) AND (s.index_id = i.index_id)
+									INNER JOIN sys.objects AS o WITH (NOLOCK) ON (o.object_id = i.object_id)
+									INNER JOIN sys.schemas AS sch WITH (NOLOCK) ON (sch.schema_id = o.schema_id)
+				';
+				SET @stmt += '
+									OUTER APPLY (
+										SELECT STUFF((
+											SELECT '''','''' + QUOTENAME(c.name) AS ColumnName
+											FROM sys.index_columns AS sc WITH (NOLOCK)
+											INNER JOIN sys.columns AS c WITH (NOLOCK) ON (c.object_id = sc.object_id) AND (c.column_id = sc.column_id)
+											WHERE (sc.object_id = i.object_id) AND (sc.index_id = i.index_id) AND (sc.is_included_column = 0)
+											ORDER BY sc.key_ordinal
+											FOR XML PATH (''''''''), type
+										).value(''''.'''', ''''nvarchar(max)''''), 1, 1, '''''''') AS Columns
+									) AS indexColumns
+									OUTER APPLY (
+										SELECT STUFF((
+											SELECT '''','''' + QUOTENAME(c.name) AS ColumnName
+											FROM sys.index_columns AS sc WITH (NOLOCK)
+											INNER JOIN sys.columns AS c WITH (NOLOCK) ON (c.object_id = sc.object_id) AND (c.column_id = sc.column_id)
+											WHERE (sc.object_id = i.object_id) AND (sc.index_id = i.index_id) AND (sc.is_included_column = 1)
+											ORDER BY sc.key_ordinal
+											FOR XML PATH (''''''''), type
+										).value(''''.'''', ''''nvarchar(max)''''), 1, 1, '''''''') AS Columns
+									) AS includedColumns
+									WHERE (o.type IN (''''U'''', ''''V''''))
+								'';
+								INSERT INTO dbo.fhsmIndexUsage(
+									DatabaseName, SchemaName, ObjectName, IndexName
+									,UserSeeks, UserScans, UserLookups, UserUpdates
+									,LastUserSeek, LastUserScan, LastUserLookup, LastUserUpdate
+									,IndexType, IsUnique, IsPrimaryKey, IsUniqueConstraint
+									,[FillFactor]
+									,IsDisabled, IsHypothetical
+									,AllowRowLocks, AllowPageLocks
+									,HasFilter, FilterDefinition
+									,AutoCreated
+									,IndexColumns, IncludedColumns
+									,LastSQLServiceRestart
+									,TimestampUTC, Timestamp
+								)
+								EXEC sp_executesql
+									@stmt
+									,N''@now datetime, @nowUTC datetime''
+									,@now = @now, @nowUTC = @nowUTC;
+							END
+							ELSE BEGIN
+								SET @message = ''Database '''''' + @database + '''''' is member of a replica but this server is not the primary node'';
+								EXEC dbo.fhsmSPLog @name = @name, @task = @thisTask, @type = ''Warning'', @message = @message;
+							END;
 						END;
 
 						CLOSE dCur;
