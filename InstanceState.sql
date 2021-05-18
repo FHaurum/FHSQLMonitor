@@ -41,7 +41,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '1.4';
+		SET @version = '1.5';
 	END;
 
 	--
@@ -619,6 +619,54 @@ ELSE BEGIN
 		END;
 
 		--
+		-- Create fact view @pbiSchema.[Instance dump files]
+		--
+		BEGIN
+			SET @stmt = '
+				IF OBJECT_ID(''' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Instance dump files') + ''', ''V'') IS NULL
+				BEGIN
+					EXEC(''CREATE VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Instance dump files') + ' AS SELECT ''''dummy'''' AS Txt'');
+				END;
+			';
+			EXEC(@stmt);
+
+			SET @stmt = '
+				ALTER VIEW  ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Instance dump files') + '
+				AS
+					SELECT
+						pvt.Category AS Sequence
+						,pvt.creation_time AS CreationTime
+						,pvt.filename AS Filename
+						,CAST(pvt.size_in_bytes AS int) AS SizeInBytes
+					FROM (
+						SELECT iState.Category, iState.[Key], iState.Value AS _Value_
+						FROM dbo.fhsmInstanceState AS iState
+						WHERE (iState.Query = 21) AND (iState.ValidTo = ''9999-12-31 23:59:59.000'')
+					) AS p
+					PIVOT (
+						MAX(_Value_)
+						FOR [Key] IN ([creation_time], [filename], [size_in_bytes])
+					) AS pvt;
+			';
+			EXEC(@stmt);
+		END;
+
+		--
+		-- Register extended properties on fact view @pbiSchema.[Instance dump files]
+		--
+		BEGIN
+			SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Instance dump files');
+			SET @objName = PARSENAME(@objectName, 1);
+			SET @schName = PARSENAME(@objectName, 2);
+
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+		END;
+
+		--
 		-- Create fact view @pbiSchema.[Instance hardware]
 		--
 		BEGIN
@@ -875,6 +923,64 @@ ELSE BEGIN
 		--
 		BEGIN
 			SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Instance services');
+			SET @objName = PARSENAME(@objectName, 1);
+			SET @schName = PARSENAME(@objectName, 2);
+
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+		END;
+
+		--
+		-- Create fact view @pbiSchema.[Instance suspect pages]
+		--
+		BEGIN
+			SET @stmt = '
+				IF OBJECT_ID(''' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Instance suspect pages') + ''', ''V'') IS NULL
+				BEGIN
+					EXEC(''CREATE VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Instance suspect pages') + ' AS SELECT ''''dummy'''' AS Txt'');
+				END;
+			';
+			EXEC(@stmt);
+
+			SET @stmt = '
+				ALTER VIEW  ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Instance suspect pages') + '
+				AS
+					SELECT
+						SUBSTRING(pvt.Category, 1, CHARINDEX('':'', pvt.Category) - 1) AS DatabaseName
+						,CAST(SUBSTRING(pvt.Category, CHARINDEX('':'', pvt.Category) + 1, LEN(pvt.Category) - CHARINDEX('':'', REVERSE(pvt.Category)) - (CHARINDEX('':'', pvt.Category))) AS int) AS FileId
+						,CAST(SUBSTRING(pvt.Category, LEN(pvt.Category) - CHARINDEX('':'', REVERSE(pvt.Category)) + 2, LEN(pvt.Category)) AS bigint) AS PageId
+						,CASE pvt.event_type
+							WHEN 1 THEN ''An 823 error that causes a suspect page (such as a disk error) or an 824 error other than a bad checksum or a torn page (such as a bad page ID)''
+							WHEN 2 THEN ''Bad checksum''
+							WHEN 3 THEN ''Torn page''
+							WHEN 4 THEN ''Restored (page was restored after it was marked bad)''
+							WHEN 5 THEN ''Repaired (DBCC repaired the page)''
+							WHEN 7 THEN ''Deallocated by DBCC''
+							ELSE ''?:'' + CAST(pvt.event_type AS nvarchar)
+						END AS EventType
+						,CAST(pvt.error_count AS int) AS ErrorCount
+						,pvt.last_update_date AS LastUpdateDate
+					FROM (
+						SELECT iState.Category, iState.[Key], iState.Value AS _Value_
+						FROM dbo.fhsmInstanceState AS iState
+						WHERE (iState.Query = 22) AND (iState.ValidTo = ''9999-12-31 23:59:59.000'')
+					) AS p
+					PIVOT (
+						MAX(_Value_)
+						FOR [Key] IN ([event_type], [error_count], [last_update_date])
+					) AS pvt;
+			';
+			EXEC(@stmt);
+		END;
+
+		--
+		-- Register extended properties on fact view @pbiSchema.[Instance suspect pages]
+		--
+		BEGIN
+			SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Instance suspect pages');
 			SET @objName = PARSENAME(@objectName, 1);
 			SET @schName = PARSENAME(@objectName, 2);
 
@@ -1577,12 +1683,13 @@ ELSE BEGIN
 						--
 						BEGIN
 							INSERT INTO #inventory(Query, Category, [Key], Value)
-							SELECT 21 AS Query, '''' AS Category, unpvt.K, unpvt.V
+							SELECT 21 AS Query, unpvt.Rnk AS Category, unpvt.K, unpvt.V
 							FROM (
 								SELECT
 									 CAST(dsmd.filename COLLATE DATABASE_DEFAULT AS nvarchar(max)) AS filename
 									,CONVERT(nvarchar(max), dsmd.creation_time, 126)               AS creation_time
 									,CAST(dsmd.size_in_bytes                     AS nvarchar(max)) AS size_in_bytes
+									,ROW_NUMBER() OVER(ORDER BY dsmd.creation_time)                AS Rnk
 								FROM sys.dm_server_memory_dumps AS dsmd WITH (NOLOCK) 
 							) AS p
 							UNPIVOT(
@@ -1599,12 +1706,10 @@ ELSE BEGIN
 						--
 						BEGIN
 							INSERT INTO #inventory(Query, Category, [Key], Value)
-							SELECT 22 AS Query, unpvt.database_name AS Category, unpvt.K, unpvt.V
+							SELECT 22 AS Query, unpvt.database_file_page AS Category, unpvt.K, unpvt.V
 							FROM (
 								SELECT
-									CAST(DB_NAME(sp.database_id) AS nvarchar(max)) AS database_name
-									,CAST(sp.file_id AS nvarchar(max)) AS file_id
-									,CAST(sp.page_id AS nvarchar(max)) AS page_id
+									CAST(DB_NAME(sp.database_id) AS nvarchar(max)) + '':'' +  CAST(sp.file_id AS nvarchar(max)) + '':'' + CAST(sp.page_id AS nvarchar(max)) AS database_file_page
 									,CAST(sp.event_type AS nvarchar(max)) AS event_type
 									,CAST(sp.error_count AS nvarchar(max)) AS error_count
 									,CONVERT(nvarchar(max), sp.last_update_date, 126) AS last_update_date
@@ -1612,9 +1717,7 @@ ELSE BEGIN
 							) AS p
 							UNPIVOT(
 								V FOR K IN (
-									p.file_id
-									,p.page_id
-									,p.event_type
+									p.event_type
 									,p.error_count
 									,p.last_update_date
 								)

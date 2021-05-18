@@ -92,7 +92,7 @@ BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '1.2';
+		SET @version = '1.3';
 	END;
 
 	--
@@ -402,7 +402,7 @@ BEGIN
 				,'Database', 'Schema', 'Object', 'Index'
 		)
 		MERGE dbo.fhsmDimensions AS tgt
-		USING dimensions AS src ON (src.DimensionName = tgt.DimensionName) AND (src.SrcTable = tgt.SrcTable)
+		USING dimensions AS src ON (src.DimensionName = tgt.DimensionName) AND (PARSENAME(src.SrcTable, 1) = PARSENAME(tgt.SrcTable, 1))
 		WHEN MATCHED
 			THEN UPDATE SET
 				tgt.DimensionKey = src.DimensionKey
