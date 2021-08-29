@@ -1,4 +1,6 @@
 # FHSQLMonitor
+August 29, 2021: Version 1.7.0 of Power BI desktop report has been updated with support for SQL2008R2.
+
 May 17, 2021: Version 1.6.0 of Power BI desktop report has been updated with "Dump files" and "Suspect pages" on Instance State report and errors fixed.
 
 May 3, 2021: Version 1.5.1 of Power BI desktop report has been updated with Backup Status report, added IsHypothetical on Statistics Age report and errors fixed.

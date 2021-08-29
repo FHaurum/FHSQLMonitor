@@ -10,6 +10,12 @@ BEGIN
 	DECLARE @objectName nvarchar(128);
 	DECLARE @objName nvarchar(128);
 	DECLARE @pbiSchema nvarchar(128);
+	DECLARE @productEndPos int;
+	DECLARE @productStartPos int;
+	DECLARE @productVersion nvarchar(128);
+	DECLARE @productVersion1 int;
+	DECLARE @productVersion2 int;
+	DECLARE @productVersion3 int;
 	DECLARE @returnValue int;
 	DECLARE @schName nvarchar(128);
 	DECLARE @stmt nvarchar(max);
@@ -41,7 +47,18 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '1.3';
+		SET @version = '1.4';
+
+		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
+		SET @productStartPos = 1;
+		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
+		SET @productVersion1 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+		SET @productStartPos = @productEndPos + 1;
+		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
+		SET @productVersion2 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+		SET @productStartPos = @productEndPos + 1;
+		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
+		SET @productVersion3 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
 	END;
 
 	--
@@ -404,18 +421,31 @@ ELSE BEGIN
 
 					DECLARE @now datetime;
 					DECLARE @nowUTC datetime;
+					DECLARE @numberOfRows int;
+					DECLARE @numberOfRowsStr nvarchar(128);
 					DECLARE @parameters nvarchar(max);
+					DECLARE @parametersTable TABLE([Key] nvarchar(128) NOT NULL, Value nvarchar(128) NULL);
 					DECLARE @stmt nvarchar(max);
 					DECLARE @thisTask nvarchar(128);
+					DECLARE @totalRowsStmt nvarchar(max);
 					DECLARE @totalSpillsStmt nvarchar(max);
 
 					SET @thisTask = OBJECT_NAME(@@PROCID);
 
 					--
-					-- Get the parametrs for the command
+					-- Get the parameters for the command
 					--
 					BEGIN
 						SET @parameters = dbo.fhsmFNGetTaskParameter(@thisTask, @name);
+
+						INSERT INTO @parametersTable([Key], Value)
+						SELECT
+							(SELECT s.Txt FROM dbo.fhsmFNSplitString(p.Txt, ''='') AS s WHERE (s.Part = 1)) AS [Key]
+							,(SELECT s.Txt FROM dbo.fhsmFNSplitString(p.Txt, ''='') AS s WHERE (s.Part = 2)) AS Value
+						FROM dbo.fhsmFNSplitString(@parameters, '';'') AS p;
+
+						SET @numberOfRowsStr = (SELECT pt.Value FROM @parametersTable AS pt WHERE (pt.[Key] = ''@NumberOfRows''));
+						SET @numberOfRows = dbo.fhsmFNTryParseAsInt(@numberOfRowsStr);
 					END;
 
 					--
@@ -424,6 +454,24 @@ ELSE BEGIN
 					BEGIN
 						SET @now = SYSDATETIME();
 						SET @nowUTC = SYSUTCDATETIME();
+
+						--
+						-- Test if total_rows exists on dm_exec_query_stats
+						--
+						BEGIN
+							IF EXISTS(
+								SELECT *
+								FROM master.sys.system_columns AS sc
+								INNER JOIN master.sys.system_objects AS so ON (so.object_id = sc.object_id)
+								WHERE (so.name = ''dm_exec_query_stats'') AND (sc.name = ''total_rows'')
+							)
+							BEGIN
+								SET @totalRowsStmt = ''deqs.total_rows'';
+							END
+							ELSE BEGIN
+								SET @totalRowsStmt = ''NULL'';
+							END;
+						END;
 
 						--
 						-- Test if total_spills exists on dm_exec_query_stats
@@ -454,7 +502,7 @@ ELSE BEGIN
 								TRUNCATE TABLE dbo.fhsmQueryStatisticsTemp;
 
 								INSERT INTO dbo.fhsmQueryStatisticsTemp
-								SELECT
+								SELECT '' + CASE WHEN @numberOfRows > 0 THEN ''TOP ('' + CAST(@numberOfRows AS nvarchar) + '')'' ELSE '''' END + ''
 									COALESCE(DB_NAME(dest.dbid), ''''DbId:'''' + CAST(dest.dbid AS nvarchar), ''''Ad hoc / prepared'''') AS DatabaseName
 									,deqs.query_hash AS QueryHash
 									,deqs.plan_handle AS PlanHandle
@@ -467,7 +515,7 @@ ELSE BEGIN
 									,deqs.total_logical_reads AS TotalLogicalReads
 									,(deqs.total_clr_time / 1000.0) AS TotalClrTimeMS
 									,(deqs.total_elapsed_time / 1000.0) AS TotalElapsedTimeMS
-									,deqs.total_rows AS TotalRows
+									,'' + @totalRowsStmt + '' AS TotalRows
 									,'' + @totalSpillsStmt + '' AS TotalSpills
 									,CASE
 										WHEN deqs.statement_start_offset > 0 THEN
@@ -493,7 +541,8 @@ ELSE BEGIN
 									END AS Statement
 									,ROW_NUMBER() OVER(PARTITION BY dest.dbid, deqs.query_hash ORDER BY deqs.last_execution_time DESC, deqs.creation_time DESC) AS _Rnk_
 								FROM sys.dm_exec_query_stats AS deqs WITH (NOLOCK)
-								OUTER APPLY sys.dm_exec_sql_text(deqs.sql_handle) AS dest;
+								OUTER APPLY sys.dm_exec_sql_text(deqs.sql_handle) AS dest
+								'' + CASE WHEN @numberOfRows > 0 THEN ''ORDER BY TotalLogicalReads DESC'' ELSE '''' END + '';
 							END;
 						'';
 						SET @stmt += ''
@@ -774,37 +823,43 @@ ELSE BEGIN
 	--
 	BEGIN
 		WITH
-		retention(Enabled, TableName, TimeColumn, IsUtc, Days) AS(
+		retention(Enabled, TableName, Sequence, TimeColumn, IsUtc, Days, Filter) AS(
 			SELECT
 				1
 				,'dbo.fhsmQueryStatement'
+				,1
 				,'TimestampUTC'
 				,1
 				,4
+				,NULL
 
 			UNION ALL
 
 			SELECT
 				1
 				,'dbo.fhsmQueryStatistics'
+				,1
 				,'TimestampUTC'
 				,1
 				,30
+				,NULL
 
 			UNION ALL
 
 			SELECT
 				1
 				,'dbo.fhsmQueryStatisticsReport'
+				,1
 				,'TimestampUTC'
 				,1
 				,30
+				,NULL
 		)
 		MERGE dbo.fhsmRetentions AS tgt
-		USING retention AS src ON (src.TableName = tgt.TableName)
+		USING retention AS src ON (src.TableName = tgt.TableName) AND (src.Sequence = tgt.Sequence)
 		WHEN NOT MATCHED BY TARGET
-			THEN INSERT(Enabled, TableName, TimeColumn, IsUtc, Days)
-			VALUES(src.Enabled, src.TableName, src.TimeColumn, src.IsUtc, src.Days);
+			THEN INSERT(Enabled, TableName, Sequence, TimeColumn, IsUtc, Days, Filter)
+			VALUES(src.Enabled, src.TableName, src.Sequence, src.TimeColumn, src.IsUtc, src.Days, src.Filter);
 	END;
 
 	--
@@ -818,10 +873,10 @@ ELSE BEGIN
 				,'Query statistics'
 				,PARSENAME('dbo.fhsmSPQueryStatistics', 1)
 				,15 * 60
-				,TIMEFROMPARTS(0, 0, 0, 0, 0)
-				,TIMEFROMPARTS(23, 59, 59, 0, 0)
+				,CAST('1900-1-1T00:00:00.0000' AS datetime2(0))
+				,CAST('1900-1-1T23:59:59.0000' AS datetime2(0))
 				,1, 1, 1, 1, 1, 1, 1
-				,NULL
+				,'@NumberOfRows=1000'
 		)
 		MERGE dbo.fhsmSchedules AS tgt
 		USING schedules AS src ON (src.Name = tgt.Name)

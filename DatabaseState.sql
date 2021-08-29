@@ -10,6 +10,12 @@ BEGIN
 	DECLARE @objectName nvarchar(128);
 	DECLARE @objName nvarchar(128);
 	DECLARE @pbiSchema nvarchar(128);
+	DECLARE @productEndPos int;
+	DECLARE @productStartPos int;
+	DECLARE @productVersion nvarchar(128);
+	DECLARE @productVersion1 int;
+	DECLARE @productVersion2 int;
+	DECLARE @productVersion3 int;
 	DECLARE @returnValue int;
 	DECLARE @schName nvarchar(128);
 	DECLARE @stmt nvarchar(max);
@@ -41,7 +47,18 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '1.2';
+		SET @version = '1.3';
+
+		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
+		SET @productStartPos = 1;
+		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
+		SET @productVersion1 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+		SET @productStartPos = @productEndPos + 1;
+		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
+		SET @productVersion2 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+		SET @productStartPos = @productEndPos + 1;
+		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
+		SET @productVersion3 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
 	END;
 
 	--
@@ -195,6 +212,34 @@ ELSE BEGIN
 			SET @stmt = '
 				ALTER VIEW  ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Database state history') + '
 				AS
+			';
+			IF (@productVersion1 <= 10)
+			BEGIN
+				-- SQL Versions SQL2008R2 or lower
+
+				SET @stmt += '
+				WITH databaseState AS (
+					SELECT
+						dbState.DatabaseName, dbState.[Key], dbState.Value, dbState.TimestampUTC, dbState.ValidFrom, dbState.ValidTo
+						,ROW_NUMBER() OVER(PARTITION BY dbState.DatabaseName, dbState.[Key] ORDER BY dbState.ValidTo DESC) AS Idx
+					FROM (
+						SELECT DISTINCT dbState.DatabaseName
+						FROM dbo.fhsmDatabaseState AS dbState
+						WHERE
+							(dbState.Query = 31)
+							AND (dbState.ValidTo = ''9999-12-31 23:59:59.000'')
+					) AS toCheck
+					INNER JOIN dbo.fhsmDatabaseState AS dbState ON (dbState.DatabaseName = toCheck.DatabaseName)
+					WHERE (dbState.Query = 31)
+						AND (dbState.[Key] IN (
+							''collation_name'', ''compatibility_level'', ''delayed_durability''
+							,''is_auto_close_on'', ''is_auto_shrink_on'', ''is_auto_update_stats_async_on'', ''is_mixed_page_allocation_on''
+							,''is_read_committed_snapshot_on'', ''page_verify_option'', ''recovery_model'', ''target_recovery_time_in_seconds''
+						))
+				)
+				';
+			END;
+			SET @stmt += '
 					SELECT
 						a.DatabaseName
 						,CASE a.[Key]
@@ -269,9 +314,28 @@ ELSE BEGIN
 						END AS Value
 						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(a.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
 					FROM (
+			';
+			IF (@productVersion1 <= 10)
+			BEGIN
+				-- SQL Versions SQL2008R2 or lower
+
+				SET @stmt += '
 						SELECT
 							dbState.DatabaseName, dbState.[Key], dbState.Value, dbState.TimestampUTC, dbState.ValidFrom, dbState.ValidTo
-							,ROW_NUMBER() OVER(PARTITION BY dbState.DatabaseName, dbState.[Key] ORDER BY dbState.ValidTo DESC) AS _Rnk
+							,prevDBState.Value AS PreviousValue
+						FROM databaseState AS dbState
+						LEFT OUTER JOIN databaseState AS prevDBState ON
+							(prevDBState.DatabaseName = dbState.DatabaseName)
+							AND (prevDBState.[Key] = dbState.[Key])
+							AND (prevDBState.Idx = dbState.Idx - 1)
+				';
+			END
+			ELSE BEGIN
+				-- SQL Versions SQL2012 or higher
+
+				SET @stmt += '
+						SELECT
+							dbState.DatabaseName, dbState.[Key], dbState.Value, dbState.TimestampUTC, dbState.ValidFrom, dbState.ValidTo
 							,LAG(dbState.Value) OVER(PARTITION BY dbState.DatabaseName, dbState.[Key] ORDER BY dbState.ValidTo DESC) AS PreviousValue
 						FROM (
 							SELECT DISTINCT dbState.DatabaseName
@@ -287,6 +351,9 @@ ELSE BEGIN
 								,''is_auto_close_on'', ''is_auto_shrink_on'', ''is_auto_update_stats_async_on'', ''is_mixed_page_allocation_on''
 								,''is_read_committed_snapshot_on'', ''page_verify_option'', ''recovery_model'', ''target_recovery_time_in_seconds''
 							))
+				';
+			END;
+			SET @stmt += '
 					) AS a
 					WHERE (a.Value <> a.PreviousValue);
 			';
@@ -689,6 +756,46 @@ ELSE BEGIN
 							END;
 
 							--
+							-- Test if containment exists on databases
+							--
+							BEGIN
+								DECLARE @containmentStmt nvarchar(max);
+
+								IF EXISTS(
+									SELECT *
+									FROM master.sys.system_columns AS sc
+									INNER JOIN master.sys.system_objects AS so ON (so.object_id = sc.object_id)
+									WHERE (so.name = ''databases'') AND (sc.name = ''containment'')
+								)
+								BEGIN
+									SET @containmentStmt = ''d.containment'';
+								END
+								ELSE BEGIN
+									SET @containmentStmt = ''NULL'';
+								END;
+							END;
+
+							--
+							-- Test if target_recovery_time_in_seconds exists on databases
+							--
+							BEGIN
+								DECLARE @targetRecoveryTimeInSecondsStmt nvarchar(max);
+
+								IF EXISTS(
+									SELECT *
+									FROM master.sys.system_columns AS sc
+									INNER JOIN master.sys.system_objects AS so ON (so.object_id = sc.object_id)
+									WHERE (so.name = ''databases'') AND (sc.name = ''target_recovery_time_in_seconds'')
+								)
+								BEGIN
+									SET @targetRecoveryTimeInSecondsStmt = ''d.target_recovery_time_in_seconds'';
+								END
+								ELSE BEGIN
+									SET @targetRecoveryTimeInSecondsStmt = ''NULL'';
+								END;
+							END;
+
+							--
 							-- Test if encryption_scan_state exists on dm_database_encryption_keys
 							--
 							BEGIN
@@ -785,8 +892,8 @@ ELSE BEGIN
 										,CAST(d.is_cdc_enabled                             AS nvarchar(max)) AS is_cdc_enabled
 										,CAST(d.is_encrypted                               AS nvarchar(max)) AS is_encrypted
 										,CAST(d.is_honor_broker_priority_on                AS nvarchar(max)) AS is_honor_broker_priority_on
-										,CAST(d.containment                                AS nvarchar(max)) AS containment
-										,CAST(d.target_recovery_time_in_seconds            AS nvarchar(max)) AS target_recovery_time_in_seconds
+										,CAST('' + @containmentStmt + ''                                AS nvarchar(max)) AS containment
+										,CAST('' + @targetRecoveryTimeInSecondsStmt + ''            AS nvarchar(max)) AS target_recovery_time_in_seconds
 							'';
 							SET @stmt += ''
 										,CAST('' + @delayedDurabilityStmt + ''                         AS nvarchar(max)) AS delayed_durability
@@ -973,19 +1080,21 @@ ELSE BEGIN
 	--
 	BEGIN
 		WITH
-		retention(Enabled, TableName, TimeColumn, IsUtc, Days) AS(
+		retention(Enabled, TableName, Sequence, TimeColumn, IsUtc, Days, Filter) AS(
 			SELECT
 				1
 				,'dbo.fhsmDatabaseState'
+				,1
 				,'TimestampUTC'
 				,1
 				,180
+				,NULL
 		)
 		MERGE dbo.fhsmRetentions AS tgt
-		USING retention AS src ON (src.TableName = tgt.TableName)
+		USING retention AS src ON (src.TableName = tgt.TableName) AND (src.Sequence = tgt.Sequence)
 		WHEN NOT MATCHED BY TARGET
-			THEN INSERT(Enabled, TableName, TimeColumn, IsUtc, Days)
-			VALUES(src.Enabled, src.TableName, src.TimeColumn, src.IsUtc, src.Days);
+			THEN INSERT(Enabled, TableName, Sequence, TimeColumn, IsUtc, Days, Filter)
+			VALUES(src.Enabled, src.TableName, src.Sequence, src.TimeColumn, src.IsUtc, src.Days, src.Filter);
 	END;
 
 	--
@@ -999,8 +1108,8 @@ ELSE BEGIN
 				,'Database State'
 				,PARSENAME('dbo.fhsmSPDatabaseState', 1)
 				,1 * 60 * 60
-				,TIMEFROMPARTS(0,   0,  0, 0, 0)
-				,TIMEFROMPARTS(23, 59, 59, 0, 0)
+				,CAST('1900-1-1T00:00:00.0000' AS datetime2(0))
+				,CAST('1900-1-1T23:59:59.0000' AS datetime2(0))
 				,1, 1, 1, 1, 1, 1, 1
 				,NULL
 		)

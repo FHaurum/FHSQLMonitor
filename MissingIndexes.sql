@@ -10,6 +10,12 @@ BEGIN
 	DECLARE @objectName nvarchar(128);
 	DECLARE @objName nvarchar(128);
 	DECLARE @pbiSchema nvarchar(128);
+	DECLARE @productEndPos int;
+	DECLARE @productStartPos int;
+	DECLARE @productVersion nvarchar(128);
+	DECLARE @productVersion1 int;
+	DECLARE @productVersion2 int;
+	DECLARE @productVersion3 int;
 	DECLARE @returnValue int;
 	DECLARE @schName nvarchar(128);
 	DECLARE @stmt nvarchar(max);
@@ -41,7 +47,18 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '1.1';
+		SET @version = '1.2';
+
+		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
+		SET @productStartPos = 1;
+		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
+		SET @productVersion1 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+		SET @productStartPos = @productEndPos + 1;
+		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
+		SET @productVersion2 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+		SET @productStartPos = @productEndPos + 1;
+		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
+		SET @productVersion3 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
 	END;
 
 	--
@@ -126,6 +143,47 @@ ELSE BEGIN
 			SET @stmt = '
 				ALTER VIEW  ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Missing indexes') + '
 				AS
+			';
+			IF (@productVersion1 <= 10)
+			BEGIN
+				-- SQL Versions SQL2008R2 or lower
+
+				SET @stmt += '
+				WITH missingIndexes AS (
+					SELECT
+						mi.DatabaseName
+						,mi.SchemaName
+						,mi.ObjectName
+						,mi.EqualityColumns
+						,mi.InequalityColumns
+						,mi.IncludedColumns
+						,mi.UniqueCompiles
+						,mi.UserSeeks
+						,mi.LastUserSeek
+						,mi.UserScans
+						,mi.LastUserScan
+						,mi.AvgTotalUserCost
+						,mi.AvgUserImpact
+						,mi.SystemSeeks
+						,mi.LastSystemSeek
+						,mi.SystemScans
+						,mi.LastSystemScan
+						,mi.AvgTotalSystemCost
+						,mi.AvgSystemImpact
+						,mi.LastSQLServiceRestart
+						,CAST(mi.LastUserSeek AS date) AS LastUserSeekDate
+						,mi.Timestamp
+						,ROW_NUMBER() OVER(PARTITION BY mi.DatabaseName, mi.SchemaName, mi.ObjectName, mi.EqualityColumns, mi.InequalityColumns, mi.IncludedColumns ORDER BY mi.TimestampUTC) AS Idx
+					FROM dbo.fhsmMissingIndexes AS mi
+					WHERE (
+							(mi.DatabaseName <> ''<HeartBeat>'')
+							OR (mi.SchemaName <> ''<HeartBeat>'')
+							OR (mi.ObjectName <> ''<HeartBeat>'')
+					)
+				)
+				';
+			END;
+			SET @stmt += '
 				SELECT
 					b.EqualityColumns
 					,b.InequalityColumns
@@ -200,6 +258,59 @@ ELSE BEGIN
 					FROM (
 			';
 			SET @stmt += '
+
+			';
+			IF (@productVersion1 <= 10)
+			BEGIN
+				-- SQL Versions SQL2008R2 or lower
+
+				SET @stmt += '
+						SELECT
+							mi.EqualityColumns
+							,mi.InequalityColumns
+							,mi.IncludedColumns
+							,mi.UniqueCompiles
+							,prevMi.UniqueCompiles AS PreviousUniqueCompiles
+							,mi.UserSeeks
+							,prevMi.UserSeeks AS PreviousUserSeeks
+							,mi.LastUserSeek
+							,mi.UserScans
+							,prevMi.UserScans AS PreviousUserScans
+							,mi.LastUserScan
+							,mi.AvgTotalUserCost
+							,mi.AvgUserImpact
+							,mi.SystemSeeks
+							,prevMi.SystemSeeks AS PreviousSystemSeeks
+							,mi.LastSystemSeek
+							,mi.SystemScans
+							,prevMi.SystemScans AS PreviousSystemScans
+							,mi.LastSystemScan
+							,mi.AvgTotalSystemCost
+							,mi.AvgSystemImpact
+							,mi.LastSQLServiceRestart
+							,prevMi.LastSQLServiceRestart AS PreviousLastSQLServiceRestart
+							,CAST(mi.LastUserSeek AS date) AS LastUserSeekDate
+							,(DATEPART(HOUR, mi.LastUserSeek) * 60 * 60) + (DATEPART(MINUTE, mi.LastUserSeek) * 60) + (DATEPART(SECOND, mi.LastUserSeek)) AS LastUserSeekTimeKey
+							,CAST(mi.Timestamp AS date) AS Date
+							,(DATEPART(HOUR, mi.Timestamp) * 60 * 60) + (DATEPART(MINUTE, mi.Timestamp) * 60) + (DATEPART(SECOND, mi.Timestamp)) AS TimeKey
+							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(mi.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
+							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(mi.DatabaseName, mi.SchemaName, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS SchemaKey
+							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(mi.DatabaseName, mi.SchemaName, mi.ObjectName, DEFAULT, DEFAULT, DEFAULT) AS k) AS ObjectKey
+						FROM missingIndexes AS mi
+						LEFT OUTER JOIN missingIndexes AS prevMi ON
+							(prevMi.DatabaseName = mi.DatabaseName)
+							AND (prevMi.SchemaName = mi.SchemaName)
+							AND (prevMi.ObjectName = mi.ObjectName)
+							AND ((prevMi.EqualityColumns = mi.EqualityColumns) OR ((prevMi.EqualityColumns IS NULL) AND (mi.EqualityColumns IS NULL)))
+							AND ((prevMi.InequalityColumns = mi.InequalityColumns) OR ((prevMi.InequalityColumns IS NULL) AND (mi.InequalityColumns IS NULL)))
+							AND ((prevMi.IncludedColumns = mi.IncludedColumns) OR ((prevMi.IncludedColumns IS NULL) AND (mi.IncludedColumns IS NULL)))
+							AND (prevMi.Idx = mi.Idx - 1)
+				';
+			END
+			ELSE BEGIN
+				-- SQL Versions SQL2012 or higher
+
+				SET @stmt += '
 						SELECT
 							mi.EqualityColumns
 							,mi.InequalityColumns
@@ -237,6 +348,9 @@ ELSE BEGIN
 								OR (mi.SchemaName <> ''<HeartBeat>'')
 								OR (mi.ObjectName <> ''<HeartBeat>'')
 							)
+				';
+			END;
+			SET @stmt += '
 					) AS a
 				) AS b
 				WHERE
@@ -410,19 +524,21 @@ ELSE BEGIN
 	--
 	BEGIN
 		WITH
-		retention(Enabled, TableName, TimeColumn, IsUtc, Days) AS(
+		retention(Enabled, TableName, Sequence, TimeColumn, IsUtc, Days, Filter) AS(
 			SELECT
 				1
 				,'dbo.fhsmMissingIndexes'
+				,1
 				,'TimestampUTC'
 				,1
 				,90
+				,NULL
 		)
 		MERGE dbo.fhsmRetentions AS tgt
-		USING retention AS src ON (src.TableName = tgt.TableName)
+		USING retention AS src ON (src.TableName = tgt.TableName) AND (src.Sequence = tgt.Sequence)
 		WHEN NOT MATCHED BY TARGET
-			THEN INSERT(Enabled, TableName, TimeColumn, IsUtc, Days)
-			VALUES(src.Enabled, src.TableName, src.TimeColumn, src.IsUtc, src.Days);
+			THEN INSERT(Enabled, TableName, Sequence, TimeColumn, IsUtc, Days, Filter)
+			VALUES(src.Enabled, src.TableName, src.Sequence, src.TimeColumn, src.IsUtc, src.Days, src.Filter);
 	END;
 
 	--
@@ -436,8 +552,8 @@ ELSE BEGIN
 				,'Missing indexes'
 				,PARSENAME('dbo.fhsmSPMissingIndexes', 1)
 				,1 * 60 * 60
-				,TIMEFROMPARTS(0, 0, 0, 0, 0)
-				,TIMEFROMPARTS(23, 59, 59, 0, 0)
+				,CAST('1900-1-1T00:00:00.0000' AS datetime2(0))
+				,CAST('1900-1-1T23:59:59.0000' AS datetime2(0))
 				,1, 1, 1, 1, 1, 1, 1
 				,NULL
 		)

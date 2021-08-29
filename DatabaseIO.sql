@@ -10,6 +10,12 @@ BEGIN
 	DECLARE @objectName nvarchar(128);
 	DECLARE @objName nvarchar(128);
 	DECLARE @pbiSchema nvarchar(128);
+	DECLARE @productEndPos int;
+	DECLARE @productStartPos int;
+	DECLARE @productVersion nvarchar(128);
+	DECLARE @productVersion1 int;
+	DECLARE @productVersion2 int;
+	DECLARE @productVersion3 int;
 	DECLARE @returnValue int;
 	DECLARE @schName nvarchar(128);
 	DECLARE @stmt nvarchar(max);
@@ -41,7 +47,18 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '1.4';
+		SET @version = '1.5';
+
+		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
+		SET @productStartPos = 1;
+		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
+		SET @productVersion1 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+		SET @productStartPos = @productEndPos + 1;
+		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
+		SET @productVersion2 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+		SET @productStartPos = @productEndPos + 1;
+		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
+		SET @productVersion3 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
 	END;
 
 	--
@@ -120,6 +137,35 @@ ELSE BEGIN
 			SET @stmt = '
 				ALTER VIEW  ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Database IO') + '
 				AS
+			';
+			IF (@productVersion1 <= 10)
+			BEGIN
+				-- SQL Versions SQL2008R2 or lower
+
+				SET @stmt += '
+				WITH databaseIO AS (
+					SELECT
+						dio.DatabaseName
+						,dio.LogicalName
+						,dio.Type
+						,dio.SampleMS
+						,dio.IOStall
+						,dio.NumOfReads
+						,dio.NumOfBytesRead
+						,dio.IOStallReadMS
+						,dio.IOStallQueuedReadMS
+						,dio.NumOfWrites
+						,dio.NumOfBytesWritten
+						,dio.IOStallWriteMS
+						,dio.IOStallQueuedWriteMS
+						,dio.Timestamp
+						,CAST(dio.Timestamp AS date) AS Date
+						,ROW_NUMBER() OVER(PARTITION BY dio.DatabaseName, dio.LogicalName, dio.Type ORDER BY dio.TimestampUTC) AS Idx
+					FROM dbo.fhsmDatabaseIO AS dio
+				)
+				';
+			END;
+			SET @stmt += '
 				SELECT
 					b.DeltaNumOfReads AS NumOfReads
 					,b.DeltaNumOfBytesRead AS NumOfBytesRead
@@ -195,6 +241,60 @@ ELSE BEGIN
 			';
 			SET @stmt += '
 					FROM (
+			';
+			IF (@productVersion1 <= 10)
+			BEGIN
+				-- SQL Versions SQL2008R2 or lower
+
+				SET @stmt += '
+						SELECT
+							dio.SampleMS
+							,prevDio.SampleMS AS PreviousSampleMS
+
+							,dio.IOStall
+							,prevDio.IOStall AS PreviousIOStall
+
+							,dio.NumOfReads
+							,prevDio.NumOfReads AS PreviousNumOfReads
+
+							,dio.NumOfBytesRead
+							,prevDio.NumOfBytesRead AS PreviousNumOfBytesRead
+
+							,dio.IOStallReadMS
+							,prevDio.IOStallReadMS AS PreviousIOStallReadMS
+
+							,dio.IOStallQueuedReadMS
+							,prevDio.IOStallQueuedReadMS AS PreviousIOStallQueuedReadMS
+
+							,dio.NumOfWrites
+							,prevDio.NumOfWrites AS PreviousNumOfWrites
+
+							,dio.NumOfBytesWritten
+							,prevDio.NumOfBytesWritten AS PreviousNumOfBytesWritten
+
+							,dio.IOStallWriteMS
+							,prevDio.IOStallWriteMS AS PreviousIOStallWriteMS
+
+							,dio.IOStallQueuedWriteMS
+							,prevDio.IOStallQueuedWriteMS AS PreviousIOStallQueuedWriteMS
+
+							,dio.Timestamp
+							,CAST(dio.Timestamp AS date) AS Date
+							,(DATEPART(HOUR, dio.Timestamp) * 60 * 60) + (DATEPART(MINUTE, dio.Timestamp) * 60) + (DATEPART(SECOND, dio.Timestamp)) AS TimeKey
+							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(dio.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
+							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(dio.DatabaseName, dio.LogicalName, CASE dio.Type WHEN 0 THEN ''Data'' WHEN 1 THEN ''Log'' WHEN 2 THEN ''Filestream'' END, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseFileKey
+						FROM databaseIO AS dio
+						LEFT OUTER JOIN databaseIO AS prevDio ON
+							(prevDio.DatabaseName = dio.DatabaseName)
+							AND (prevDio.LogicalName = dio.LogicalName)
+							AND (prevDio.Type = dio.Type)
+							AND (prevDio.Idx = dio.Idx - 1)
+				';
+			END
+			ELSE BEGIN
+				-- SQL Versions SQL2012 or higher
+
+				SET @stmt += '
 						SELECT
 							dio.SampleMS
 							,LAG(dio.SampleMS) OVER(PARTITION BY dio.DatabaseName, dio.LogicalName, dio.Type ORDER BY dio.TimestampUTC) AS PreviousSampleMS
@@ -222,6 +322,9 @@ ELSE BEGIN
 							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(dio.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
 							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(dio.DatabaseName, dio.LogicalName, CASE dio.Type WHEN 0 THEN ''Data'' WHEN 1 THEN ''Log'' WHEN 2 THEN ''Filestream'' END, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseFileKey
 						FROM dbo.fhsmDatabaseIO AS dio
+				';
+			END;
+			SET @stmt += '
 					) AS a
 				) AS b
 			';
@@ -358,7 +461,7 @@ ELSE BEGIN
 						END;
 
 						DECLARE dCur CURSOR LOCAL READ_ONLY FAST_FORWARD FOR
-						SELECT dl.DatabaseName, d.replica_id
+						SELECT dl.DatabaseName, ' + CASE WHEN (@productVersion1 <= 10) THEN 'NULL' ELSE 'd.replica_id' END + ' AS replica_id
 						FROM #dbList AS dl
 						INNER JOIN sys.databases AS d ON (d.name COLLATE DATABASE_DEFAULT = dl.DatabaseName)
 						ORDER BY dl.[Order];
@@ -379,6 +482,11 @@ ELSE BEGIN
 							-- If is a member of a replica, we will only execute when running on the primary
 							--
 							IF (@replicaId IS NULL)
+			';
+			IF (@productVersion1 >= 11)
+			BEGIN
+				-- SQL Versions SQL2012 or higher
+				SET @stmt += '
 								OR (
 									(
 										SELECT
@@ -392,6 +500,9 @@ ELSE BEGIN
 										WHERE (ar.replica_server_name = @@SERVERNAME) AND (ar.replica_id = @replicaId)
 									) = 1
 								)
+				';
+			END;
+			SET @stmt += '
 							BEGIN
 								SET @stmt = ''
 									USE '' + QUOTENAME(@database) + '';
@@ -457,22 +568,22 @@ ELSE BEGIN
 	-- Register retention
 	--
 	BEGIN
-		BEGIN
-			WITH
-			retention(Enabled, TableName, TimeColumn, IsUtc, Days) AS(
-				SELECT
-					1
-					,'dbo.fhsmDatabaseIO'
-					,'TimestampUTC'
-					,1
-					,30
-			)
-			MERGE dbo.fhsmRetentions AS tgt
-			USING retention AS src ON (src.TableName = tgt.TableName)
-			WHEN NOT MATCHED BY TARGET
-				THEN INSERT(Enabled, TableName, TimeColumn, IsUtc, Days)
-				VALUES(src.Enabled, src.TableName, src.TimeColumn, src.IsUtc, src.Days);
-		END;
+		WITH
+		retention(Enabled, TableName, Sequence, TimeColumn, IsUtc, Days, Filter) AS(
+			SELECT
+				1
+				,'dbo.fhsmDatabaseIO'
+				,1
+				,'TimestampUTC'
+				,1
+				,30
+				,NULL
+		)
+		MERGE dbo.fhsmRetentions AS tgt
+		USING retention AS src ON (src.TableName = tgt.TableName) AND (src.Sequence = tgt.Sequence)
+		WHEN NOT MATCHED BY TARGET
+			THEN INSERT(Enabled, TableName, Sequence, TimeColumn, IsUtc, Days, Filter)
+			VALUES(src.Enabled, src.TableName, src.Sequence, src.TimeColumn, src.IsUtc, src.Days, src.Filter);
 	END;
 
 	--
@@ -486,8 +597,8 @@ ELSE BEGIN
 				,'Database IO'
 				,PARSENAME('dbo.fhsmSPDatabaseIO', 1)
 				,15 * 60
-				,TIMEFROMPARTS(0, 0, 0, 0, 0)
-				,TIMEFROMPARTS(23, 59, 59, 0, 0)
+				,CAST('1900-1-1T00:00:00.0000' AS datetime2(0))
+				,CAST('1900-1-1T23:59:59.0000' AS datetime2(0))
 				,1, 1, 1, 1, 1, 1, 1
 				,'@Databases = ''ALL_DATABASES'''
 		)

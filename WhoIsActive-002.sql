@@ -10,6 +10,12 @@ BEGIN
 	DECLARE @objectName nvarchar(128);
 	DECLARE @objName nvarchar(128);
 	DECLARE @pbiSchema nvarchar(128);
+	DECLARE @productEndPos int;
+	DECLARE @productStartPos int;
+	DECLARE @productVersion nvarchar(128);
+	DECLARE @productVersion1 int;
+	DECLARE @productVersion2 int;
+	DECLARE @productVersion3 int;
 	DECLARE @returnValue int;
 	DECLARE @schName nvarchar(128);
 	DECLARE @stmt nvarchar(max);
@@ -41,7 +47,18 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '1.3';
+		SET @version = '1.4';
+
+		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
+		SET @productStartPos = 1;
+		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
+		SET @productVersion1 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+		SET @productStartPos = @productEndPos + 1;
+		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
+		SET @productVersion2 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+		SET @productStartPos = @productEndPos + 1;
+		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
+		SET @productVersion3 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
 	END;
 
 	--
@@ -138,17 +155,31 @@ ELSE BEGIN
 					,a.percent_complete AS PercentComplete
 					,a.host_name AS HostName
 					,a.program_name AS ProgramName
-					,(SELECT k.[Key] FROM dbo.fhsmfnGenerateKey(a.database_name, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(a.database_name, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
 				FROM (
 					SELECT
 						ROW_NUMBER() OVER(PARTITION BY wia.session_id, wia.login_time, wia.start_time ORDER BY wia.collection_time DESC) AS _Rnk_
 						,wia.*
-						,FIRST_VALUE(wia.CPU) OVER(PARTITION BY wia.session_id, wia.login_time, wia.start_time ORDER BY wia.collection_time) AS FirstCPU
-						,FIRST_VALUE(wia.tempdb_allocations) OVER(PARTITION BY wia.session_id, wia.login_time, wia.start_time ORDER BY wia.collection_time) AS FirstTempdbAllocations
-						,FIRST_VALUE(wia.reads) OVER(PARTITION BY wia.session_id, wia.login_time, wia.start_time ORDER BY wia.collection_time) AS FirstReads
-						,FIRST_VALUE(wia.writes) OVER(PARTITION BY wia.session_id, wia.login_time, wia.start_time ORDER BY wia.collection_time) AS FirstWrites
-						,FIRST_VALUE(wia.physical_reads) OVER(PARTITION BY wia.session_id, wia.login_time, wia.start_time ORDER BY wia.collection_time) AS FirstPhysicalReads
+						,firstWia.CPU AS FirstCPU
+						,firstWia.tempdb_allocations AS FirstTempdbAllocations
+						,firstWia.reads AS FirstReads
+						,firstWia.writes AS FirstWrites
+						,firstWia.physical_reads AS FirstPhysicalReads
 					FROM dbo.fhsmWhoIsActive AS wia
+					CROSS APPLY (
+						SELECT TOP (1)
+							fWia.CPU
+							,fWia.tempdb_allocations
+							,fWia.reads
+							,fWia.writes
+							,fWia.physical_reads
+						FROM dbo.fhsmWhoIsActive AS fWia
+						WHERE
+							(fWia.session_id = wia.session_id)
+							AND (fWia.login_time = wia.login_time)
+							AND (fWia.start_time = wia.start_time)
+						ORDER BY fWia.collection_time
+					) AS firstWia
 					WHERE (DATEDIFF(HOUR, wia.collection_time, (SELECT MAX(wia2.collection_time) FROM dbo.fhsmWhoIsActive AS wia2)) < 24)
 						AND (wia.sql_text <> ''sp_server_diagnostics'')
 						AND (wia.sql_text NOT LIKE ''WAITFOR DELAY %'')
@@ -235,25 +266,22 @@ ELSE BEGIN
 	-- Register retention
 	--
 	BEGIN
-		--
-		-- Register retention for dbo.fhsmIndexUsage
-		--
-		BEGIN
-			WITH
-			retention(Enabled, TableName, TimeColumn, IsUtc, Days) AS(
-				SELECT
-					1
-					,'dbo.fhsmWhoIsActive'
-					,'collection_time'
-					,0
-					,7
-			)
-			MERGE dbo.fhsmRetentions AS tgt
-			USING retention AS src ON (src.TableName = tgt.TableName)
-			WHEN NOT MATCHED BY TARGET
-				THEN INSERT(Enabled, TableName, TimeColumn, IsUtc, Days)
-				VALUES(src.Enabled, src.TableName, src.TimeColumn, src.IsUtc, src.Days);
-		END;
+		WITH
+		retention(Enabled, TableName, Sequence, TimeColumn, IsUtc, Days, Filter) AS(
+			SELECT
+				1
+				,'dbo.fhsmWhoIsActive'
+				,1
+				,'collection_time'
+				,0
+				,7
+				,NULL
+		)
+		MERGE dbo.fhsmRetentions AS tgt
+		USING retention AS src ON (src.TableName = tgt.TableName) AND (src.Sequence = tgt.Sequence)
+		WHEN NOT MATCHED BY TARGET
+			THEN INSERT(Enabled, TableName, Sequence, TimeColumn, IsUtc, Days, Filter)
+			VALUES(src.Enabled, src.TableName, src.Sequence, src.TimeColumn, src.IsUtc, src.Days, src.Filter);
 	END;
 
 	--
@@ -267,8 +295,8 @@ ELSE BEGIN
 				,'Who is active'
 				,PARSENAME('dbo.fhsmSPWhoIsActive', 1)
 				,60
-				,TIMEFROMPARTS(0, 0, 0, 0, 0)
-				,TIMEFROMPARTS(23, 59, 59, 0, 0)
+				,CAST('1900-1-1T00:00:00.0000' AS datetime2(0))
+				,CAST('1900-1-1T23:59:59.0000' AS datetime2(0))
 				,1, 1, 1, 1, 1, 1, 1
 				,'@format_output = 0, @get_transaction_info = 1, @get_outer_command = 1, @get_plans = 1, @destination_table = ''' + QUOTENAME(DB_NAME()) + '.dbo.fhsmWhoIsActive'''
 		)

@@ -10,6 +10,12 @@ BEGIN
 	DECLARE @objectName nvarchar(128);
 	DECLARE @objName nvarchar(128);
 	DECLARE @pbiSchema nvarchar(128);
+	DECLARE @productEndPos int;
+	DECLARE @productStartPos int;
+	DECLARE @productVersion nvarchar(128);
+	DECLARE @productVersion1 int;
+	DECLARE @productVersion2 int;
+	DECLARE @productVersion3 int;
 	DECLARE @returnValue int;
 	DECLARE @schName nvarchar(128);
 	DECLARE @stmt nvarchar(max);
@@ -41,7 +47,18 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '1.5';
+		SET @version = '1.6';
+
+		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
+		SET @productStartPos = 1;
+		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
+		SET @productVersion1 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+		SET @productStartPos = @productEndPos + 1;
+		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
+		SET @productVersion2 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+		SET @productStartPos = @productEndPos + 1;
+		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
+		SET @productVersion3 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
 	END;
 
 	--
@@ -897,7 +914,7 @@ ELSE BEGIN
 							ELSE ''?:'' + CAST(pvt.status AS nvarchar)
 						END AS Status
 						,pvt.service_account AS ServiceAccount
-						,CASE pvt.instant_file_initialization_enabled WHEN ''Y'' THEN 1 ELSE 0 END AS InstantFileInitializationEnabled
+						,CASE pvt.instant_file_initialization_enabled WHEN ''Y'' THEN 1 WHEN ''N'' THEN 0 ELSE -1 END AS InstantFileInitializationEnabled
 					FROM (
 						SELECT iState.Category, iState.[Key], iState.Value AS _Value_
 						FROM (
@@ -1020,7 +1037,7 @@ ELSE BEGIN
 					LEFT OUTER JOIN (
 						SELECT CAST(iState.Category AS int) AS TraceFlag
 						FROM dbo.fhsmInstanceState AS iState
-						WHERE (iState.Query = 5) AND (iState.[Key] = ''Global'') AND (TRY_PARSE(iState.Value AS int) = 1) AND (iState.ValidTo = ''9999-12-31 23:59:59.000'')
+						WHERE (iState.Query = 5) AND (iState.[Key] = ''Global'') AND (dbo.fhsmFNTryParseAsInt(iState.Value) = 1) AND (iState.ValidTo = ''9999-12-31 23:59:59.000'')
 					) AS traceFlagsDetected ON (traceFlagsDetected.TraceFlag = tf.TraceFlag)
 					WHERE (tf.ProductMajorVersion = productMajorVersion.Value);
 			';
@@ -1071,7 +1088,7 @@ ELSE BEGIN
 					INNER JOIN (
 						SELECT iState.ValidFrom, iState.ValidTo, CAST(iState.Category AS int) AS TraceFlag
 						FROM dbo.fhsmInstanceState AS iState
-						WHERE (iState.Query = 5) AND (iState.[Key] = ''Global'') AND (TRY_PARSE(iState.Value AS int) = 1) AND (iState.ValidTo <> ''9999-12-31 23:59:59.000'')
+						WHERE (iState.Query = 5) AND (iState.[Key] = ''Global'') AND (dbo.fhsmFNTryParseAsInt(iState.Value) = 1) AND (iState.ValidTo <> ''9999-12-31 23:59:59.000'')
 					) AS traceFlags ON (traceFlags.TraceFlag = tf.TraceFlag)
 					WHERE (tf.ProductMajorVersion = productMajorVersion.Value);
 			';
@@ -1288,7 +1305,28 @@ ELSE BEGIN
 						--
 						-- SQL Server Services information (Query 7) (SQL Server Services Info)
 						--
+						IF EXISTS(SELECT * FROM master.sys.system_objects AS so WHERE (so.name = ''dm_server_services''))
 						BEGIN
+							--
+							-- Test if instant_file_initialization_enabled exists on dm_server_services
+							--
+							BEGIN
+								DECLARE @instantFileInitializationEnabledStmt nvarchar(max);
+
+								IF EXISTS(
+									SELECT *
+									FROM master.sys.system_columns AS sc
+									INNER JOIN master.sys.system_objects AS so ON (so.object_id = sc.object_id)
+									WHERE (so.name = ''dm_server_services'') AND (sc.name = ''instant_file_initialization_enabled'')
+								)
+								BEGIN
+									SET @instantFileInitializationEnabledStmt = ''dss.instant_file_initialization_enabled'';
+								END
+								ELSE BEGIN
+									SET @instantFileInitializationEnabledStmt = ''NULL'';
+								END;
+							END;
+
 							INSERT INTO #inventory(Query, Category, [Key], Value)
 							SELECT 7 AS Query, unpvt.servicename AS Category, unpvt.K, unpvt.V
 							FROM (
@@ -1302,7 +1340,7 @@ ELSE BEGIN
 									,CAST(dss.filename                            COLLATE DATABASE_DEFAULT AS nvarchar(max)) AS filename
 									,CAST(dss.is_clustered                        COLLATE DATABASE_DEFAULT AS nvarchar(max)) AS is_clustered
 									,CAST(dss.cluster_nodename                    COLLATE DATABASE_DEFAULT AS nvarchar(max)) AS cluster_nodename
-									,CAST(dss.instant_file_initialization_enabled COLLATE DATABASE_DEFAULT AS nvarchar(max)) AS instant_file_initialization_enabled
+									,CAST('' + instantFileInitializationEnabledStmt + '' COLLATE DATABASE_DEFAULT AS nvarchar(max)) AS instant_file_initialization_enabled
 								FROM sys.dm_server_services AS dss WITH (NOLOCK)
 							) AS p
 							UNPIVOT(
@@ -1442,6 +1480,46 @@ ELSE BEGIN
 						--
 						BEGIN
 							--
+							-- Test if online_scheduler_mask exists on dm_os_nodes
+							--
+							BEGIN
+								DECLARE @onlineSchedulerMaskStmt nvarchar(max);
+
+								IF EXISTS(
+									SELECT *
+									FROM master.sys.system_columns AS sc
+									INNER JOIN master.sys.system_objects AS so ON (so.object_id = sc.object_id)
+									WHERE (so.name = ''dm_os_nodes'') AND (sc.name = ''online_scheduler_mask'')
+								)
+								BEGIN
+									SET @onlineSchedulerMaskStmt = ''don.online_scheduler_mask'';
+								END
+								ELSE BEGIN
+									SET @onlineSchedulerMaskStmt = ''NULL'';
+								END;
+							END;
+
+							--
+							-- Test if processor_group exists on dm_os_nodes
+							--
+							BEGIN
+								DECLARE @processorGroupStmt nvarchar(max);
+
+								IF EXISTS(
+									SELECT *
+									FROM master.sys.system_columns AS sc
+									INNER JOIN master.sys.system_objects AS so ON (so.object_id = sc.object_id)
+									WHERE (so.name = ''dm_os_nodes'') AND (sc.name = ''processor_group'')
+								)
+								BEGIN
+									SET @processorGroupStmt = ''don.processor_group'';
+								END
+								ELSE BEGIN
+									SET @processorGroupStmt = ''NULL'';
+								END;
+							END;
+
+							--
 							-- Test if cpu_count exists on dm_os_nodes
 							--
 							BEGIN
@@ -1473,8 +1551,8 @@ ELSE BEGIN
 										,CAST(don.timer_task_affinity_mask     AS nvarchar(max)) AS timer_task_affinity_mask
 										,CAST(don.permanent_task_affinity_mask AS nvarchar(max)) AS permanent_task_affinity_mask
 										,CAST(don.resource_monitor_state       AS nvarchar(max)) AS resource_monitor_state
-										,CAST(don.online_scheduler_mask        AS nvarchar(max)) AS online_scheduler_mask
-										,CAST(don.processor_group              AS nvarchar(max)) AS processor_group
+										,CAST('' + @onlineSchedulerMaskStmt + '' AS nvarchar(max)) AS online_scheduler_mask
+										,CAST('' + @processorGroupStmt + '' AS nvarchar(max)) AS processor_group
 										,CAST('' + @cpuCountStmt + '' AS nvarchar(max)) AS cpu_count
 									FROM sys.dm_os_nodes AS don WITH (NOLOCK) 
 									WHERE (don.node_state_desc <> N''''ONLINE DAC'''')
@@ -1501,6 +1579,66 @@ ELSE BEGIN
 						--
 						BEGIN
 							--
+							-- Test if physical_memory_kb exists on dm_os_sys_info
+							--
+							BEGIN
+								DECLARE @physicalMemoryKBStmt nvarchar(max);
+
+								IF EXISTS(
+									SELECT *
+									FROM master.sys.system_columns AS sc
+									INNER JOIN master.sys.system_objects AS so ON (so.object_id = sc.object_id)
+									WHERE (so.name = ''dm_os_sys_info'') AND (sc.name = ''physical_memory_kb'')
+								)
+								BEGIN
+									SET @physicalMemoryKBStmt = ''dosi.physical_memory_kb'';
+								END
+								ELSE BEGIN
+									SET @physicalMemoryKBStmt = ''NULL'';
+								END;
+							END;
+
+							--
+							-- Test if affinity_type exists on dm_os_sys_info
+							--
+							BEGIN
+								DECLARE @affinityTypeStmt nvarchar(max);
+
+								IF EXISTS(
+									SELECT *
+									FROM master.sys.system_columns AS sc
+									INNER JOIN master.sys.system_objects AS so ON (so.object_id = sc.object_id)
+									WHERE (so.name = ''dm_os_sys_info'') AND (sc.name = ''affinity_type'')
+								)
+								BEGIN
+									SET @affinityTypeStmt = ''dosi.affinity_type'';
+								END
+								ELSE BEGIN
+									SET @affinityTypeStmt = ''NULL'';
+								END;
+							END;
+
+							--
+							-- Test if virtual_machine_type exists on dm_os_sys_info
+							--
+							BEGIN
+								DECLARE @virtualMachineTypeStmt nvarchar(max);
+
+								IF EXISTS(
+									SELECT *
+									FROM master.sys.system_columns AS sc
+									INNER JOIN master.sys.system_objects AS so ON (so.object_id = sc.object_id)
+									WHERE (so.name = ''dm_os_sys_info'') AND (sc.name = ''virtual_machine_type'')
+								)
+								BEGIN
+									SET @virtualMachineTypeStmt = ''dosi.virtual_machine_type'';
+								END
+								ELSE BEGIN
+									SET @virtualMachineTypeStmt = ''NULL'';
+								END;
+							END;
+
+							--
 							-- Test if softnuma_configuration exists on dm_os_sys_info
 							--
 							BEGIN
@@ -1517,6 +1655,26 @@ ELSE BEGIN
 								END
 								ELSE BEGIN
 									SET @softnumaConfigurationStmt = ''NULL'';
+								END;
+							END;
+
+							--
+							-- Test if sql_memory_model exists on dm_os_sys_info
+							--
+							BEGIN
+								DECLARE @sqlMemoryModelStmt nvarchar(max);
+
+								IF EXISTS(
+									SELECT *
+									FROM master.sys.system_columns AS sc
+									INNER JOIN master.sys.system_objects AS so ON (so.object_id = sc.object_id)
+									WHERE (so.name = ''dm_os_sys_info'') AND (sc.name = ''sql_memory_model'')
+								)
+								BEGIN
+									SET @sqlMemoryModelStmt = ''dosi.sql_memory_model'';
+								END
+								ELSE BEGIN
+									SET @sqlMemoryModelStmt = ''NULL'';
 								END;
 							END;
 
@@ -1607,14 +1765,14 @@ ELSE BEGIN
 									SELECT
 										CAST(dosi.cpu_count AS nvarchar(max)) AS cpu_count
 										,CAST(dosi.hyperthread_ratio AS nvarchar(max)) AS hyperthread_ratio
-										,CAST(dosi.physical_memory_kb AS nvarchar(max)) AS physical_memory_kb
+										,CAST('' + @physicalMemoryKBStmt + '' AS nvarchar(max)) AS physical_memory_kb
 										,CAST(dosi.max_workers_count AS nvarchar(max)) AS max_workers_count
 										,CAST(dosi.scheduler_count AS nvarchar(max)) AS scheduler_count
 										,CAST(dosi.sqlserver_start_time AS nvarchar(max)) AS sqlserver_start_time
-										,CAST(dosi.affinity_type AS nvarchar(max)) AS affinity_type
-										,CAST(dosi.virtual_machine_type AS nvarchar(max)) AS virtual_machine_type
+										,CAST('' + @affinityTypeStmt + '' AS nvarchar(max)) AS affinity_type
+										,CAST('' + @virtualMachineTypeStmt + '' AS nvarchar(max)) AS virtual_machine_type
 										,CAST('' + @softnumaConfigurationStmt + '' AS nvarchar(max)) AS softnuma_configuration
-										,CAST(dosi.sql_memory_model AS nvarchar(max)) AS sql_memory_model
+										,CAST('' + @sqlMemoryModelStmt + '' AS nvarchar(max)) AS sql_memory_model
 										,CAST('' + @socketCountStmt + '' AS nvarchar(max)) AS socket_count
 										,CAST('' + @coresPerSocketStmt + '' AS nvarchar(max)) AS cores_per_socket
 										,CAST('' + @numaNodeCountStmt + '' AS nvarchar(max)) AS numa_node_count
@@ -1681,6 +1839,7 @@ ELSE BEGIN
 						--
 						-- Get information on location, time and size of any memory dumps from SQL Server  (Query 21) (Memory Dump Info)
 						--
+						IF EXISTS(SELECT * FROM master.sys.system_objects AS so WHERE (so.name = ''dm_server_memory_dumps''))
 						BEGIN
 							INSERT INTO #inventory(Query, Category, [Key], Value)
 							SELECT 21 AS Query, unpvt.Rnk AS Category, unpvt.K, unpvt.V
@@ -1794,19 +1953,21 @@ ELSE BEGIN
 	--
 	BEGIN
 		WITH
-		retention(Enabled, TableName, TimeColumn, IsUtc, Days) AS(
+		retention(Enabled, TableName, Sequence, TimeColumn, IsUtc, Days, Filter) AS(
 			SELECT
 				1
 				,'dbo.fhsmInstanceState'
+				,1
 				,'TimestampUTC'
 				,1
 				,180
+				,NULL
 		)
 		MERGE dbo.fhsmRetentions AS tgt
-		USING retention AS src ON (src.TableName = tgt.TableName)
+		USING retention AS src ON (src.TableName = tgt.TableName) AND (src.Sequence = tgt.Sequence)
 		WHEN NOT MATCHED BY TARGET
-			THEN INSERT(Enabled, TableName, TimeColumn, IsUtc, Days)
-			VALUES(src.Enabled, src.TableName, src.TimeColumn, src.IsUtc, src.Days);
+			THEN INSERT(Enabled, TableName, Sequence, TimeColumn, IsUtc, Days, Filter)
+			VALUES(src.Enabled, src.TableName, src.Sequence, src.TimeColumn, src.IsUtc, src.Days, src.Filter);
 	END;
 
 	--
@@ -1820,8 +1981,8 @@ ELSE BEGIN
 				,'Instance State'
 				,PARSENAME('dbo.fhsmSPInstanceState', 1)
 				,12 * 60 * 60
-				,TIMEFROMPARTS(8, 0, 0, 0, 0)
-				,TIMEFROMPARTS(9, 0, 0, 0, 0)
+				,CAST('1900-1-1T08:00:00.0000' AS datetime2(0))
+				,CAST('1900-1-1T09:00:00.0000' AS datetime2(0))
 				,1, 1, 1, 1, 1, 1, 1
 				,NULL
 		)

@@ -10,6 +10,12 @@ BEGIN
 	DECLARE @objectName nvarchar(128);
 	DECLARE @objName nvarchar(128);
 	DECLARE @pbiSchema nvarchar(128);
+	DECLARE @productEndPos int;
+	DECLARE @productStartPos int;
+	DECLARE @productVersion nvarchar(128);
+	DECLARE @productVersion1 int;
+	DECLARE @productVersion2 int;
+	DECLARE @productVersion3 int;
 	DECLARE @returnValue int;
 	DECLARE @schName nvarchar(128);
 	DECLARE @serviceName nvarchar(128);
@@ -42,7 +48,18 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '1.3';
+		SET @version = '1.4';
+
+		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
+		SET @productStartPos = 1;
+		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
+		SET @productVersion1 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+		SET @productStartPos = @productEndPos + 1;
+		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
+		SET @productVersion2 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+		SET @productStartPos = @productEndPos + 1;
+		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
+		SET @productVersion3 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
 	END;
 
 	--
@@ -301,15 +318,51 @@ ELSE BEGIN
 							TimestampUTC
 						FROM dbo.fhsmPerfmonStatistics
 					)
+			';
+			IF (@productVersion1 <= 10)
+			BEGIN
+				-- SQL Versions SQL2008R2 or lower
+
+				SET @stmt += '
+					,rankedRowDates AS (
+						SELECT
+							thisDate.TimestampUTC
+							,ROW_NUMBER() OVER(ORDER BY thisDate.TimestampUTC) AS Idx
+						FROM rowDates AS thisDate
+					)
+				';
+			END;
+			SET @stmt += '
 					,checkDates AS (
 						SELECT
 							a.TimestampUTC
 							,a.PreviousTimestampUTC
 						FROM (
+			';
+			IF (@productVersion1 <= 10)
+			BEGIN
+				-- SQL Versions SQL2008R2 or lower
+
+				SET @stmt += '
 							SELECT
 								thisDate.TimestampUTC
-								,LAG(thisDate.TimestampUTC) OVER(ORDER BY thisDate.TimestampUTC) PreviousTimestampUTC
+								,prevDate.TimestampUTC AS PreviousTimestampUTC
+							FROM rankedRowDates AS thisDate
+							LEFT OUTER JOIN rankedRowDates AS prevDate ON
+								(prevDate.Idx = thisDate.Idx - 1)
+				';
+			END
+			ELSE BEGIN
+				-- SQL Versions SQL2012 or higher
+
+				SET @stmt += '
+							SELECT
+								thisDate.TimestampUTC
+								,LAG(thisDate.TimestampUTC) OVER(ORDER BY thisDate.TimestampUTC) AS PreviousTimestampUTC
 							FROM rowDates AS thisDate
+				';
+			END;
+			SET @stmt += '
 						) AS a
 						WHERE (a.PreviousTimestampUTC IS NOT NULL)
 					)
@@ -396,6 +449,8 @@ ELSE BEGIN
 						WHERE (CounterType IN (65792, 65536))
 							AND (CounterDelta > 0)
 					)
+			';
+			SET @stmt += '
 					,AllData AS (
 						SELECT
 							num.ObjectName
@@ -634,19 +689,21 @@ ELSE BEGIN
 	--
 	BEGIN
 		WITH
-		retention(Enabled, TableName, TimeColumn, IsUtc, Days) AS(
+		retention(Enabled, TableName, Sequence, TimeColumn, IsUtc, Days, Filter) AS(
 			SELECT
 				1
 				,'dbo.fhsmPerfmonStatistics'
+				,1
 				,'TimestampUTC'
 				,1
 				,90
+				,NULL
 		)
 		MERGE dbo.fhsmRetentions AS tgt
-		USING retention AS src ON (src.TableName = tgt.TableName)
+		USING retention AS src ON (src.TableName = tgt.TableName) AND (src.Sequence = tgt.Sequence)
 		WHEN NOT MATCHED BY TARGET
-			THEN INSERT(Enabled, TableName, TimeColumn, IsUtc, Days)
-			VALUES(src.Enabled, src.TableName, src.TimeColumn, src.IsUtc, src.Days);
+			THEN INSERT(Enabled, TableName, Sequence, TimeColumn, IsUtc, Days, Filter)
+			VALUES(src.Enabled, src.TableName, src.Sequence, src.TimeColumn, src.IsUtc, src.Days, src.Filter);
 	END;
 
 	--
@@ -660,8 +717,8 @@ ELSE BEGIN
 				,'Performance statistics'
 				,PARSENAME('dbo.fhsmSPPerfmonStatistics', 1)
 				,15 * 60
-				,TIMEFROMPARTS(0, 0, 0, 0, 0)
-				,TIMEFROMPARTS(23, 59, 59, 0, 0)
+				,CAST('1900-1-1T00:00:00.0000' AS datetime2(0))
+				,CAST('1900-1-1T23:59:59.0000' AS datetime2(0))
 				,1, 1, 1, 1, 1, 1, 1
 				,NULL
 		)

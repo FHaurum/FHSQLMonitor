@@ -24,7 +24,7 @@ DECLARE @version nvarchar(128);
 SET @myUserName = SUSER_NAME();
 SET @nowUTC = SYSUTCDATETIME();
 SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
-SET @version = '1.3';
+SET @version = '1.4';
 
 --
 -- Create database if it not already exists
@@ -243,6 +243,111 @@ BEGIN
 END;
 
 --
+-- Create or alter function dbo.fhsmFNTryParseAsInt
+--
+BEGIN
+	SET @stmt = '
+		USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
+
+		DECLARE @stmt nvarchar(max);
+
+		IF OBJECT_ID(''dbo.fhsmFNTryParseAsInt'', ''FN'') IS NULL
+		BEGIN
+			RAISERROR(''Creating stub function dbo.fhsmFNTryParseAsInt'', 0, 1) WITH NOWAIT;
+
+			EXEC(''CREATE FUNCTION dbo.fhsmFNTryParseAsInt() RETURNS int AS BEGIN RETURN NULL; END;'');
+		END;
+
+		--
+		-- Alter dbo.fhsmFNTryParseAsInt
+		--
+		BEGIN
+			RAISERROR(''Alter function dbo.fhsmFNTryParseAsInt'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
+				ALTER FUNCTION dbo.fhsmFNTryParseAsInt(@str nvarchar(128))
+				RETURNS int
+				AS
+				BEGIN
+					DECLARE @i int;
+					DECLARE @chkFlg bit;
+					DECLARE @retVal int;
+
+					SET @chkFlg = 0;
+
+					SET @str = LTRIM(RTRIM(@str));
+
+					IF (@str IS NOT NULL)
+					BEGIN
+						IF (LEN(@str) > 0)
+						BEGIN
+							SET @i = 1;
+
+							WHILE (@i <= LEN(@str))
+							BEGIN
+								IF NOT (SUBSTRING(@str, @i, 1) LIKE ''''[0-9]'''')
+								BEGIN
+									BREAK;
+								END;
+
+								SET @i += 1;
+
+								IF (@i > LEN(@str))
+								BEGIN
+									SET @chkFlg = 1;
+								END;
+							END;
+						END;
+					END;
+
+					IF (@chkFlg = 0)
+					BEGIN
+						SET @retVal = NULL;
+					END
+					ELSE BEGIN
+						SET @retVal = CAST(@str AS int);
+					END;
+
+					RETURN @retVal;
+				END;
+			'';
+			EXEC(@stmt);
+		END;
+	';
+	EXEC(@stmt);
+END;
+
+--
+-- Register extended properties on the function dbo.fhsmFNTryParseAsInt
+--
+BEGIN
+	SET @objectName = 'dbo.fhsmFNTryParseAsInt';
+
+	SET @stmt = '
+		USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
+			
+		DECLARE @objName nvarchar(128);
+		DECLARE @schName nvarchar(128);
+
+		SET @objName = PARSENAME(@objectName, 1);
+		SET @schName = PARSENAME(@objectName, 2);
+
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+	';
+	EXEC sp_executesql
+		@stmt
+		,N'@objectName nvarchar(128), @version sql_variant, @nowUTCStr sql_variant, @myUserName sql_variant'
+		,@objectName = @objectName
+		,@version = @version
+		,@nowUTCStr = @nowUTCStr
+		,@myUserName = @myUserName;
+END;
+
+--
 -- Create table dbo.fhsmConfigurations if it not already exists
 --
 BEGIN
@@ -405,15 +510,17 @@ BEGIN
 				Id int identity(1,1) NOT NULL
 				,Enabled bit NOT NULL
 				,TableName nvarchar(128) NOT NULL
+				,Sequence tinyint NOT NULL
 				,TimeColumn nvarchar(128) NOT NULL
 				,IsUtc bit NOT NULL
 				,Days int NOT NULL
+				,Filter nvarchar(max) NULL
 				,LastExecutedUTC datetime NULL
 				,CONSTRAINT PK_fhsmRetentions PRIMARY KEY(Id)
-				,CONSTRAINT UQ_fhsmRetentions_TableName UNIQUE(TableName)
+				,CONSTRAINT UQ_fhsmRetentions_TableName_Sequence UNIQUE(TableName, Sequence)
 			);
 
-			CREATE NONCLUSTERED INDEX NC_fhsmRetentions_Enabled_TableName ON dbo.fhsmRetentions(Enabled, TableName);
+			CREATE NONCLUSTERED INDEX NC_fhsmRetentions_Enabled_TableName_Sequence ON dbo.fhsmRetentions(Enabled, TableName, Sequence);
 		END;
 	';
 	EXEC(@stmt);
@@ -518,19 +625,21 @@ BEGIN
 		USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
 
 		WITH
-		retention(Enabled, TableName, TimeColumn, IsUtc, Days) AS(
+		retention(Enabled, TableName, Sequence, TimeColumn, IsUtc, Days, Filter) AS(
 			SELECT
 				1
 				,''dbo.fhsmLog''
+				,1
 				,''TimestampUTC''
 				,1
 				,30
+				,NULL
 		)
 		MERGE dbo.fhsmRetentions AS tgt
-		USING retention AS src ON (src.TableName = tgt.TableName)
+		USING retention AS src ON (src.TableName = tgt.TableName) AND (src.Sequence = tgt.Sequence)
 		WHEN NOT MATCHED BY TARGET
-			THEN INSERT(Enabled, TableName, TimeColumn, IsUtc, Days)
-			VALUES(src.Enabled, src.TableName, src.TimeColumn, src.IsUtc, src.Days);
+			THEN INSERT(Enabled, TableName, Sequence, TimeColumn, IsUtc, Days, Filter)
+			VALUES(src.Enabled, src.TableName, src.Sequence, src.TimeColumn, src.IsUtc, src.Days, src.Filter);
 	';
 	EXEC(@stmt);
 END;
@@ -610,7 +719,29 @@ BEGIN
 	SET @stmt = '
 		USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
 
+		DECLARE @productEndPos int;
+		DECLARE @productStartPos int;
+		DECLARE @productVersion nvarchar(128);
+		DECLARE @productVersion1 int;
+		DECLARE @productVersion2 int;
+		DECLARE @productVersion3 int;
 		DECLARE @stmt nvarchar(max);
+
+		--
+		-- Initialize variables
+		--
+		BEGIN
+			SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
+			SET @productStartPos = 1;
+			SET @productEndPos = CHARINDEX(''.'', @productVersion, @productStartPos);
+			SET @productVersion1 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+			SET @productStartPos = @productEndPos + 1;
+			SET @productEndPos = CHARINDEX(''.'', @productVersion, @productStartPos);
+			SET @productVersion2 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+			SET @productStartPos = @productEndPos + 1;
+			SET @productEndPos = CHARINDEX(''.'', @productVersion, @productStartPos);
+			SET @productVersion3 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+		END;
 
 		IF OBJECT_ID(''dbo.fhsmFNGenerateKey'', ''IF'') IS NULL
 		BEGIN
@@ -624,22 +755,72 @@ BEGIN
 		--
 		BEGIN
 			RAISERROR(''Alter function dbo.fhsmFNGenerateKey'', 0, 1) WITH NOWAIT;
+			
+			IF (@productVersion1 <= 10)
+			BEGIN
+				-- SQL Versions SQL2008R2 or lower
 
-			SET @stmt = ''
-				ALTER FUNCTION dbo.fhsmFNGenerateKey(
-					@p1 nchar(128) = NULL
-					,@p2 nchar(128) = NULL
-					,@p3 nchar(128) = NULL
-					,@p4 nchar(128) = NULL
-					,@p5 nchar(128) = NULL
-					,@p6 nchar(128) = NULL
-				)
-				RETURNS TABLE AS RETURN
-				(
-					SELECT CONVERT(bigint, HASHBYTES(''''SHA2_256'''', CONCAT(UPPER(@p1), UPPER(@p2), UPPER(@p3), UPPER(@p4), UPPER(@p5), UPPER(@p6))), 2) AS [Key]
-				);
-			'';
-			EXEC(@stmt);
+				SET @stmt = ''
+					ALTER FUNCTION dbo.fhsmFNGenerateKey(
+						@p1 nchar(128) = NULL
+						,@p2 nchar(128) = NULL
+						,@p3 nchar(128) = NULL
+						,@p4 nchar(128) = NULL
+						,@p5 nchar(128) = NULL
+						,@p6 nchar(128) = NULL
+					)
+					RETURNS TABLE AS RETURN
+					(
+						SELECT CONVERT(
+							bigint
+							,HASHBYTES(
+								''''SHA1''''
+								 ,ISNULL(CAST(UPPER(@p1) AS nvarchar(128)), '''''''')
+								+ ISNULL(CAST(UPPER(@p2) AS nvarchar(128)), '''''''')
+								+ ISNULL(CAST(UPPER(@p3) AS nvarchar(128)), '''''''')
+								+ ISNULL(CAST(UPPER(@p4) AS nvarchar(128)), '''''''')
+								+ ISNULL(CAST(UPPER(@p5) AS nvarchar(128)), '''''''')
+								+ ISNULL(CAST(UPPER(@p6) AS nvarchar(128)), '''''''')
+							)
+							,2
+						) AS [Key]
+					);
+				'';
+				EXEC(@stmt);
+			END
+			ELSE BEGIN
+				-- SQL Versions SQL2012 or higher
+
+				SET @stmt = ''
+					ALTER FUNCTION dbo.fhsmFNGenerateKey(
+						@p1 nchar(128) = NULL
+						,@p2 nchar(128) = NULL
+						,@p3 nchar(128) = NULL
+						,@p4 nchar(128) = NULL
+						,@p5 nchar(128) = NULL
+						,@p6 nchar(128) = NULL
+					)
+					RETURNS TABLE AS RETURN
+					(
+						SELECT CONVERT(
+							bigint
+							,HASHBYTES(
+								''''SHA2_256''''
+								,CONCAT(
+									UPPER(@p1)
+									,UPPER(@p2)
+									,UPPER(@p3)
+									,UPPER(@p4)
+									,UPPER(@p5)
+									,UPPER(@p6)
+								)
+							)
+							,2
+						) AS [Key]
+					);
+				'';
+				EXEC(@stmt);
+			END;
 		END;
 	';
 	EXEC(@stmt);
@@ -1295,7 +1476,8 @@ BEGIN
 
 			EXEC(''CREATE PROC dbo.fhsmSPCleanup AS SELECT ''''dummy'''' AS Txt'');
 		END;
-
+	';
+	SET @stmt += '
 		--
 		-- Alter dbo.fhsmSPCleanup
 		--
@@ -1312,11 +1494,14 @@ BEGIN
 
 					DECLARE @bulkSize int;
 					DECLARE @days int;
+					DECLARE @filter nvarchar(max);
 					DECLARE @id int;
-					DECLARE @isUTC bit;
+					DECLARE @isUtc bit;
 					DECLARE @message nvarchar(max);
 					DECLARE @parameters nvarchar(max);
 					DECLARE @rowsDeleted int;
+					DECLARE @rowsDeletedTotal int;
+					DECLARE @sequence tinyint;
 					DECLARE @stmt nvarchar(max);
 					DECLARE @tableName nvarchar(128);
 					DECLARE @thisTask nvarchar(128);
@@ -1329,64 +1514,85 @@ BEGIN
 					SET @parameters = dbo.fhsmFNGetTaskParameter(@thisTask, @name);
 
 					DECLARE tCur CURSOR LOCAL READ_ONLY FAST_FORWARD FOR
-					SELECT r.Id, r.TableName, r.TimeColumn, r.IsUTC, r.Days
+					SELECT r.Id, r.TableName, r.Sequence, r.TimeColumn, r.IsUtc, r.Days, NULLIF(RTRIM(LTRIM(r.Filter)), '''''''')
 					FROM dbo.fhsmRetentions AS r
 					WHERE (r.Enabled = 1)
-					ORDER BY r.TableName;
+					ORDER BY r.TableName, r.Sequence;
 
 					OPEN tCur;
 
 					WHILE (1 = 1)
 					BEGIN
 						FETCH NEXT FROM tCur
-						INTO @id, @tableName, @timeColumn, @isUTC, @days;
+						INTO @id, @tableName, @sequence, @timeColumn, @isUtc, @days, @filter;
 
 						IF (@@FETCH_STATUS <> 0)
 						BEGIN
 							BREAK;
 						END;
 
-						IF (@isUTC = 0)
+						IF (OBJECT_ID(@tableName) IS NULL)
 						BEGIN
-							SET @timeLimit = DATEADD(DAY, ABS(@days) * -1, SYSDATETIME());
+							SET @message = ''''Table '''''''''''' + @tableName + '''''''''''' does not exist'''';
+							EXEC dbo.fhsmSPLog @name = @name, @task = @thisTask, @type = ''''Warning'''', @message = @message;
 						END
 						ELSE BEGIN
-							SET @timeLimit = DATEADD(DAY, ABS(@days) * -1, SYSUTCDATETIME());
-						END;
-
-						SET @stmt = ''''
-							BEGIN TRANSACTION;
-								DELETE TOP(@bulkSize) t
-								FROM '''' + @tableName + '''' AS t
-								WHERE (t.'''' + @timeColumn + '''' < @timeLimit);
-
-								SET @rowsDeleted = @@ROWCOUNT;
-							COMMIT TRANSACTION;
-
-							CHECKPOINT;
-						'''';
-
-						WHILE (1 = 1)
-						BEGIN
-							EXEC sp_executesql
-								@stmt
-								,N''''@timeLimit datetime, @bulkSize int, @rowsDeleted int OUTPUT''''
-								,@timeLimit = @timeLimit
-								,@bulkSize = @bulkSize
-								,@rowsDeleted = @rowsDeleted OUTPUT;
-
-							IF (@rowsDeleted = 0)
+							IF (@isUtc = 0)
 							BEGIN
-								BREAK;
+								SET @timeLimit = DATEADD(DAY, ABS(@days) * -1, SYSDATETIME());
+							END
+							ELSE BEGIN
+								SET @timeLimit = DATEADD(DAY, ABS(@days) * -1, SYSUTCDATETIME());
 							END;
 
-							UPDATE r
-							SET r.LastExecutedUTC = SYSUTCDATETIME()
-							FROM dbo.fhsmRetentions AS r
-							WHERE (r.Id = @id);
+							SET @stmt = ''''
+								BEGIN TRANSACTION;
+									DELETE TOP(@bulkSize) t
+									FROM '''' + @tableName + '''' AS t
+									WHERE (t.'''' + @timeColumn + '''' < @timeLimit)'''' + COALESCE('''' AND ('''' + @filter + '''')'''', '''''''') + '''';
 
-							SET @message = ''''Deleted '''' + CAST(@rowsDeleted AS nvarchar) + '''' records in table '''' + @tableName + '''' before '''' + CAST(@timeLimit AS nvarchar);
-							EXEC dbo.fhsmSPLog @name = @name, @task = @thisTask, @type = ''''Info'''', @message = @message;
+									SET @rowsDeleted = @@ROWCOUNT;
+								COMMIT TRANSACTION;
+
+								CHECKPOINT;
+							'''';
+
+							SET @rowsDeletedTotal = 0;
+
+							WHILE (1 = 1)
+							BEGIN
+								EXEC sp_executesql
+									@stmt
+									,N''''@timeLimit datetime, @bulkSize int, @rowsDeleted int OUTPUT''''
+									,@timeLimit = @timeLimit
+									,@bulkSize = @bulkSize
+									,@rowsDeleted = @rowsDeleted OUTPUT;
+
+								IF (@rowsDeleted = 0)
+								BEGIN
+									BREAK;
+								END;
+
+								SET @rowsDeletedTotal += @rowsDeleted;
+
+								UPDATE r
+								SET r.LastExecutedUTC = SYSUTCDATETIME()
+								FROM dbo.fhsmRetentions AS r
+								WHERE (r.Id = @id);
+
+								SET @message = ''''Deleted ''''
+									+ CAST(@rowsDeleted AS nvarchar) + '''' records in table '''' + @tableName + '''' sequence '''' + CAST(@sequence AS nvarchar)
+									+ '''' before '''' + CAST(@timeLimit AS nvarchar);
+								EXEC dbo.fhsmSPLog @name = @name, @task = @thisTask, @type = ''''Info'''', @message = @message;
+							END;
+
+							IF (@rowsDeletedTotal > 0)
+							BEGIN
+								SET @message = ''''Deleted in total ''''
+									+ CAST(@rowsDeletedTotal AS nvarchar) + '''' records in table '''' + @tableName + '''' sequence '''' + CAST(@sequence AS nvarchar)
+									+ '''' before '''' + CAST(@timeLimit AS nvarchar);
+								EXEC dbo.fhsmSPLog @name = @name, @task = @thisTask, @type = ''''Info'''', @message = @message;
+							END;
 						END;
 					END;
 
@@ -1447,8 +1653,8 @@ BEGIN
 				,''Cleanup data''
 				,PARSENAME(''dbo.fhsmSPCleanup'', 1)
 				,12 * 60 * 60
-				,TIMEFROMPARTS(23, 0, 0, 0, 0)
-				,TIMEFROMPARTS(23, 59, 59, 0, 0)
+				,CAST(''1900-1-1T23:00:00.0000'' AS datetime2(0))
+				,CAST(''1900-1-1T23:59:59.0000'' AS datetime2(0))
 				,1, 1, 1, 1, 1, 1, 1
 				,''''
 		)
@@ -1805,7 +2011,7 @@ BEGIN
 											,months.MonthName
 											,months.MonthAbbreviation
 											,DATEPART(QUARTER, a.DateKey) AS QuarterNumber
-											,CONCAT(''''''''Q'''''''', DATEPART(QUARTER, a.DateKey)) AS QuarterLabel
+											,''''''''Q'''''''' + CAST(DATEPART(QUARTER, a.DateKey) AS varchar) AS QuarterLabel
 											,YEAR(a.DateKey) AS Year
 											,months.MonthAbbreviation + ''''''''-'''''''' + CAST(YEAR(a.DateKey) AS nvarchar) AS MonthYearLabel
 											,-1 * DATEDIFF(DAY, SYSDATETIME(), a.DateKey) AS DayIndex
@@ -1813,10 +2019,10 @@ BEGIN
 		SET @stmt += '
 										FROM (
 											SELECT
-												DATEADD(DAY, Nums.n - 1, DATEFROMPARTS(YearRange.MinYear, 1, 1)) AS DateKey
+												DATEADD(DAY, Nums.n - 1, CAST((CAST(YearRange.MinYear AS nvarchar) + ''''''''-01-01T00:00:00.000'''''''') AS date)) AS DateKey
 											FROM Nums
 											CROSS APPLY YearRange
-											WHERE (YEAR(DATEADD(DAY, Nums.n - 1, DATEFROMPARTS(YearRange.MinYear, 1, 1))) <= YearRange.MaxYear)
+											WHERE (YEAR(DATEADD(DAY, Nums.n - 1,  CAST((CAST(YearRange.MinYear AS nvarchar) + ''''''''-01-01T00:00:00.000'''''''') AS date))) <= YearRange.MaxYear)
 										) AS a
 										LEFT OUTER JOIN (
 											VALUES  (2, 1, ''''''''Monday'''''''',    ''''''''Mon''''''''),	

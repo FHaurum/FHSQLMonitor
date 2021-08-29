@@ -10,6 +10,12 @@ BEGIN
 	DECLARE @objectName nvarchar(128);
 	DECLARE @objName nvarchar(128);
 	DECLARE @pbiSchema nvarchar(128);
+	DECLARE @productEndPos int;
+	DECLARE @productStartPos int;
+	DECLARE @productVersion nvarchar(128);
+	DECLARE @productVersion1 int;
+	DECLARE @productVersion2 int;
+	DECLARE @productVersion3 int;
 	DECLARE @returnValue int;
 	DECLARE @schName nvarchar(128);
 	DECLARE @stmt nvarchar(max);
@@ -41,7 +47,18 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '1.0';
+		SET @version = '1.1';
+
+		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
+		SET @productStartPos = 1;
+		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
+		SET @productVersion1 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+		SET @productStartPos = @productEndPos + 1;
+		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
+		SET @productVersion2 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+		SET @productStartPos = @productEndPos + 1;
+		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
+		SET @productVersion3 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
 	END;
 
 	--
@@ -271,22 +288,33 @@ ELSE BEGIN
 	-- Register retention
 	--
 	BEGIN
-		BEGIN
-			WITH
-			retention(Enabled, TableName, TimeColumn, IsUtc, Days) AS(
-				SELECT
-					1
-					,'dbo.fhsmBackupStatus'
-					,'TimestampUTC'
-					,1
-					,90
-			)
-			MERGE dbo.fhsmRetentions AS tgt
-			USING retention AS src ON (src.TableName = tgt.TableName)
-			WHEN NOT MATCHED BY TARGET
-				THEN INSERT(Enabled, TableName, TimeColumn, IsUtc, Days)
-				VALUES(src.Enabled, src.TableName, src.TimeColumn, src.IsUtc, src.Days);
-		END;
+		WITH
+		retention(Enabled, TableName, Sequence, TimeColumn, IsUtc, Days, Filter) AS(
+			SELECT
+				1
+				,'dbo.fhsmBackupStatus'
+				,1
+				,'TimestampUTC'
+				,1
+				,90
+				,NULL
+
+			UNION ALL
+
+			SELECT
+				1
+				,'dbo.fhsmBackupStatus'
+				,2
+				,'TimestampUTC'
+				,1
+				,7
+				,'Type = ''L'''
+		)
+		MERGE dbo.fhsmRetentions AS tgt
+		USING retention AS src ON (src.TableName = tgt.TableName) AND (src.Sequence = tgt.Sequence)
+		WHEN NOT MATCHED BY TARGET
+			THEN INSERT(Enabled, TableName, Sequence, TimeColumn, IsUtc, Days, Filter)
+			VALUES(src.Enabled, src.TableName, src.Sequence, src.TimeColumn, src.IsUtc, src.Days, src.Filter);
 	END;
 
 	--
@@ -300,8 +328,8 @@ ELSE BEGIN
 				,'Backup status'
 				,PARSENAME('dbo.fhsmSPBackupStatus', 1)
 				,60 * 60
-				,TIMEFROMPARTS(6, 0, 0, 0, 0)
-				,TIMEFROMPARTS(7, 0, 0, 0, 0)
+				,CAST('1900-1-1T06:00:00.0000' AS datetime2(0))
+				,CAST('1900-1-1T07:00:00.0000' AS datetime2(0))
 				,1, 1, 1, 1, 1, 1, 1
 				,NULL
 		)

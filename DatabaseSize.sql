@@ -10,6 +10,12 @@ BEGIN
 	DECLARE @objectName nvarchar(128);
 	DECLARE @objName nvarchar(128);
 	DECLARE @pbiSchema nvarchar(128);
+	DECLARE @productEndPos int;
+	DECLARE @productStartPos int;
+	DECLARE @productVersion nvarchar(128);
+	DECLARE @productVersion1 int;
+	DECLARE @productVersion2 int;
+	DECLARE @productVersion3 int;
 	DECLARE @returnValue int;
 	DECLARE @schName nvarchar(128);
 	DECLARE @stmt nvarchar(max);
@@ -41,7 +47,18 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '1.2';
+		SET @version = '1.3';
+
+		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
+		SET @productStartPos = 1;
+		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
+		SET @productVersion1 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+		SET @productStartPos = @productEndPos + 1;
+		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
+		SET @productVersion2 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+		SET @productStartPos = @productEndPos + 1;
+		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
+		SET @productVersion3 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
 	END;
 
 	--
@@ -228,7 +245,7 @@ ELSE BEGIN
 						SET @nowUTC = SYSUTCDATETIME();
 
 						DECLARE dCur CURSOR LOCAL READ_ONLY FAST_FORWARD FOR
-						SELECT dl.DatabaseName, d.replica_id
+						SELECT dl.DatabaseName, ' + CASE WHEN (@productVersion1 <= 10) THEN 'NULL' ELSE 'd.replica_id' END + ' AS replica_id
 						FROM #dbList AS dl
 						INNER JOIN sys.databases AS d ON (d.name COLLATE DATABASE_DEFAULT = dl.DatabaseName)
 						ORDER BY dl.[Order];
@@ -249,6 +266,11 @@ ELSE BEGIN
 							-- If is a member of a replica, we will only execute when running on the primary
 							--
 							IF (@replicaId IS NULL)
+			';
+			IF (@productVersion1 >= 11)
+			BEGIN
+				-- SQL Versions SQL2012 or higher
+				SET @stmt += '
 								OR (
 									(
 										SELECT
@@ -262,6 +284,9 @@ ELSE BEGIN
 										WHERE (ar.replica_server_name = @@SERVERNAME) AND (ar.replica_id = @replicaId)
 									) = 1
 								)
+				';
+			END;
+			SET @stmt += '
 							BEGIN
 								SET @stmt = ''
 									USE '' + QUOTENAME(@database) + '';
@@ -325,19 +350,21 @@ ELSE BEGIN
 	--
 	BEGIN
 		WITH
-		retention(Enabled, TableName, TimeColumn, IsUtc, Days) AS(
+		retention(Enabled, TableName, Sequence, TimeColumn, IsUtc, Days, Filter) AS(
 			SELECT
 				1
 				,'dbo.fhsmDatabaseSize'
+				,1
 				,'TimestampUTC'
 				,1
 				,180
+				,NULL
 		)
 		MERGE dbo.fhsmRetentions AS tgt
-		USING retention AS src ON (src.TableName = tgt.TableName)
+		USING retention AS src ON (src.TableName = tgt.TableName) AND (src.Sequence = tgt.Sequence)
 		WHEN NOT MATCHED BY TARGET
-			THEN INSERT(Enabled, TableName, TimeColumn, IsUtc, Days)
-			VALUES(src.Enabled, src.TableName, src.TimeColumn, src.IsUtc, src.Days);
+			THEN INSERT(Enabled, TableName, Sequence, TimeColumn, IsUtc, Days, Filter)
+			VALUES(src.Enabled, src.TableName, src.Sequence, src.TimeColumn, src.IsUtc, src.Days, src.Filter);
 	END;
 
 	--
@@ -351,8 +378,8 @@ ELSE BEGIN
 				,'Database size'
 				,PARSENAME('dbo.fhsmSPDatabaseSize', 1)
 				,12 * 60 * 60
-				,TIMEFROMPARTS(7, 0, 0, 0, 0)
-				,TIMEFROMPARTS(8, 0, 0, 0, 0)
+				,CAST('1900-1-1T07:00:00.0000' AS datetime2(0))
+				,CAST('1900-1-1T08:00:00.0000' AS datetime2(0))
 				,1, 1, 1, 1, 1, 1, 1
 				,'@Databases = ''USER_DATABASES, msdb'''
 		)

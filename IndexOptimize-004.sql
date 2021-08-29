@@ -25,6 +25,12 @@ BEGIN
 	DECLARE @objectName nvarchar(128);
 	DECLARE @objName nvarchar(128);
 	DECLARE @pbiSchema nvarchar(128);
+	DECLARE @productEndPos int;
+	DECLARE @productStartPos int;
+	DECLARE @productVersion nvarchar(128);
+	DECLARE @productVersion1 int;
+	DECLARE @productVersion2 int;
+	DECLARE @productVersion3 int;
 	DECLARE @returnValue int;
 	DECLARE @schName nvarchar(128);
 	DECLARE @stmt nvarchar(max);
@@ -92,7 +98,18 @@ BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '1.3';
+		SET @version = '1.4';
+
+		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
+		SET @productStartPos = 1;
+		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
+		SET @productVersion1 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+		SET @productStartPos = @productEndPos + 1;
+		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
+		SET @productVersion2 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+		SET @productStartPos = @productEndPos + 1;
+		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
+		SET @productVersion3 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
 	END;
 
 	--
@@ -269,19 +286,21 @@ BEGIN
 	IF (DB_NAME() = COALESCE(@olaDatabase, DB_NAME()))
 	BEGIN
 		WITH
-		retention(Enabled, TableName, TimeColumn, IsUtc, Days) AS(
+		retention(Enabled, TableName, Sequence, TimeColumn, IsUtc, Days, Filter) AS(
 			SELECT
 				1
 				,'dbo.CommandLog'
+				,1
 				,'StartTime'
 				,0
 				,30
+				,NULL
 		)
 		MERGE dbo.fhsmRetentions AS tgt
-		USING retention AS src ON (src.TableName = tgt.TableName)
+		USING retention AS src ON (src.TableName = tgt.TableName) AND (src.Sequence = tgt.Sequence)
 		WHEN NOT MATCHED BY TARGET
-			THEN INSERT(Enabled, TableName, TimeColumn, IsUtc, Days)
-			VALUES(src.Enabled, src.TableName, src.TimeColumn, src.IsUtc, src.Days);
+			THEN INSERT(Enabled, TableName, Sequence, TimeColumn, IsUtc, Days, Filter)
+			VALUES(src.Enabled, src.TableName, src.Sequence, src.TimeColumn, src.IsUtc, src.Days, src.Filter);
 	END;
 
 	--
@@ -296,8 +315,8 @@ BEGIN
 				,'Index rebuild'
 				,PARSENAME('dbo.fhsmSPIndexOptimize', 1)
 				,12 * 60 * 60
-				,TIMEFROMPARTS(2, 0, 0, 0, 0)
-				,TIMEFROMPARTS(4, 0, 0, 0, 0)
+				,CAST('1900-1-1T02:00:00.0000' AS datetime2(0))
+				,CAST('1900-1-1T04:00:00.0000' AS datetime2(0))
 				,1, 1, 1, 1, 1, 1, 1
 				,'@Databases = ''USER_DATABASES, msdb'', @TimeLimit = 1800, @FragmentationLow = NULL, @FragmentationMedium = NULL, @FragmentationHigh = ''INDEX_REBUILD_ONLINE,INDEX_REBUILD_OFFLINE'', @FragmentationLevel2 = 30, @LogToTable = ''Y'''
 
@@ -308,8 +327,8 @@ BEGIN
 				,'Index reorganize'
 				,PARSENAME('dbo.fhsmSPIndexOptimize', 1)
 				,12 * 60 * 60
-				,TIMEFROMPARTS(0, 0, 0, 0, 0)
-				,TIMEFROMPARTS(2, 0, 0, 0, 0)
+				,CAST('1900-1-1T00:00:00.0000' AS datetime2(0))
+				,CAST('1900-1-1T02:00:00.0000' AS datetime2(0))
 				,1, 1, 1, 1, 1, 1, 1
 				,'@Databases = ''USER_DATABASES, msdb'', @TimeLimit = 1800, @FragmentationLow = NULL, @FragmentationMedium = ''INDEX_REORGANIZE,INDEX_REBUILD_ONLINE,INDEX_REBUILD_OFFLINE'', @FragmentationHigh = NULL, @FragmentationLevel1 = 5, @LogToTable = ''Y'''
 
@@ -320,8 +339,8 @@ BEGIN
 				,'Update modified statistics'
 				,PARSENAME('dbo.fhsmSPIndexOptimize', 1)
 				,12 * 60 * 60
-				,TIMEFROMPARTS(4, 0, 0, 0, 0)
-				,TIMEFROMPARTS(6, 0, 0, 0, 0)
+				,CAST('1900-1-1T04:00:00.0000' AS datetime2(0))
+				,CAST('1900-1-1T06:00:00.0000' AS datetime2(0))
 				,1, 1, 1, 1, 1, 1, 0
 				,'@Databases = ''USER_DATABASES, msdb'', @TimeLimit = 1800, @FragmentationLow = NULL, @FragmentationMedium = NULL, @FragmentationHigh = NULL, @UpdateStatistics = ''ALL'', @OnlyModifiedStatistics = ''Y'', @LogToTable = ''Y'''
 
@@ -332,8 +351,8 @@ BEGIN
 				,'Update all statistics'
 				,PARSENAME('dbo.fhsmSPIndexOptimize', 1)
 				,12 * 60 * 60
-				,TIMEFROMPARTS(4, 0, 0, 0, 0)
-				,TIMEFROMPARTS(6, 0, 0, 0, 0)
+				,CAST('1900-1-1T04:00:00.0000' AS datetime2(0))
+				,CAST('1900-1-1T06:00:00.0000' AS datetime2(0))
 				,0, 0, 0, 0, 0, 0, 1
 				,'@Databases = ''USER_DATABASES, msdb'', @TimeLimit = 1800, @FragmentationLow = NULL, @FragmentationMedium = NULL, @FragmentationHigh = NULL, @UpdateStatistics = ''ALL'', @LogToTable = ''Y'''
 		)

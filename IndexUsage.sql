@@ -10,6 +10,12 @@ BEGIN
 	DECLARE @objectName nvarchar(128);
 	DECLARE @objName nvarchar(128);
 	DECLARE @pbiSchema nvarchar(128);
+	DECLARE @productEndPos int;
+	DECLARE @productStartPos int;
+	DECLARE @productVersion nvarchar(128);
+	DECLARE @productVersion1 int;
+	DECLARE @productVersion2 int;
+	DECLARE @productVersion3 int;
 	DECLARE @returnValue int;
 	DECLARE @schName nvarchar(128);
 	DECLARE @stmt nvarchar(max);
@@ -41,7 +47,18 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '1.2';
+		SET @version = '1.3';
+
+		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
+		SET @productStartPos = 1;
+		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
+		SET @productVersion1 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+		SET @productStartPos = @productEndPos + 1;
+		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
+		SET @productVersion2 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+		SET @productStartPos = @productEndPos + 1;
+		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
+		SET @productVersion3 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
 	END;
 
 	--
@@ -133,6 +150,35 @@ ELSE BEGIN
 			SET @stmt = '
 				ALTER VIEW  ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Index usage') + '
 				AS
+			';
+			IF (@productVersion1 <= 10)
+			BEGIN
+				-- SQL Versions SQL2008R2 or lower
+
+				SET @stmt += '
+				WITH indexUsage AS (
+					SELECT
+						iu.DatabaseName
+						,iu.SchemaName
+						,iu.ObjectName
+						,iu.IndexName
+						,iu.UserSeeks
+						,iu.LastUserSeek
+						,iu.UserScans
+						,iu.LastUserScan
+						,iu.UserLookups
+						,iu.LastUserLookup
+						,iu.UserUpdates
+						,iu.LastUserUpdate
+						,iu.LastSQLServiceRestart
+						,iu.Timestamp
+						,CAST(iu.Timestamp AS date) AS Date
+						,ROW_NUMBER() OVER(PARTITION BY iu.DatabaseName, iu.SchemaName, iu.ObjectName, iu.IndexName ORDER BY iu.TimestampUTC) AS Idx
+					FROM dbo.fhsmIndexUsage AS iu
+				)
+				';
+			END;
+			SET @stmt += '
 				SELECT
 					b.DeltaUserSeeks AS UserSeeks
 					,b.LastUserSeek
@@ -186,7 +232,46 @@ ELSE BEGIN
 						,a.IndexKey
 					FROM (
 			';
-			SET @stmt += '
+			IF (@productVersion1 <= 10)
+			BEGIN
+				-- SQL Versions SQL2008R2 or lower
+
+				SET @stmt += '
+						SELECT
+							iu.UserSeeks
+							,prevIU.UserSeeks AS PreviousUserSeeks
+							,iu.LastUserSeek
+							,iu.UserScans
+							,prevIU.UserScans AS PreviousUserScans
+							,iu.LastUserScan
+							,iu.UserLookups
+							,prevIU.UserLookups AS PreviousUserLookups
+							,iu.LastUserLookup
+							,iu.UserUpdates
+							,prevIU.UserUpdates AS PreviousUserUpdates
+							,iu.LastUserUpdate
+							,iu.LastSQLServiceRestart
+							,prevIU.LastSQLServiceRestart AS PreviousLastSQLServiceRestart
+							,iu.Timestamp
+							,CAST(iu.Timestamp AS date) AS Date
+							,(DATEPART(HOUR, iu.Timestamp) * 60 * 60) + (DATEPART(MINUTE, iu.Timestamp) * 60) + (DATEPART(SECOND, iu.Timestamp)) AS TimeKey
+							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iu.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
+							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iu.DatabaseName, iu.SchemaName, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS SchemaKey
+							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iu.DatabaseName, iu.SchemaName, iu.ObjectName, DEFAULT, DEFAULT, DEFAULT) AS k) AS ObjectKey
+							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iu.DatabaseName, iu.SchemaName, iu.ObjectName, COALESCE(iu.IndexName, ''N.A.''), DEFAULT, DEFAULT) AS k) AS IndexKey
+						FROM indexUsage AS iu
+						LEFT OUTER JOIN indexUsage AS prevIU ON
+							(prevIU.DatabaseName = iu.DatabaseName)
+							AND (prevIU.SchemaName = iu.SchemaName)
+							AND (prevIU.ObjectName = iu.ObjectName)
+							AND ((prevIU.IndexName = iu.IndexName) OR ((prevIU.IndexName IS NULL) AND (iu.IndexName IS NULL)))
+							AND (prevIU.Idx = iu.Idx - 1)
+				';
+			END
+			ELSE BEGIN
+				-- SQL Versions SQL2012 or higher
+
+				SET @stmt += '
 						SELECT
 							iu.UserSeeks
 							,LAG(iu.UserSeeks) OVER(PARTITION BY iu.DatabaseName, iu.SchemaName, iu.ObjectName, iu.IndexName ORDER BY iu.TimestampUTC) AS PreviousUserSeeks
@@ -210,6 +295,9 @@ ELSE BEGIN
 							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iu.DatabaseName, iu.SchemaName, iu.ObjectName, DEFAULT, DEFAULT, DEFAULT) AS k) AS ObjectKey
 							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iu.DatabaseName, iu.SchemaName, iu.ObjectName, COALESCE(iu.IndexName, ''N.A.''), DEFAULT, DEFAULT) AS k) AS IndexKey
 						FROM dbo.fhsmIndexUsage AS iu
+				';
+			END;
+			SET @stmt += '
 					) AS a
 				) AS b
 				WHERE
@@ -338,7 +426,7 @@ ELSE BEGIN
 						END;
 
 						DECLARE dCur CURSOR LOCAL READ_ONLY FAST_FORWARD FOR
-						SELECT dl.DatabaseName, d.replica_id
+						SELECT dl.DatabaseName, ' + CASE WHEN (@productVersion1 <= 10) THEN 'NULL' ELSE 'd.replica_id' END + ' AS replica_id
 						FROM #dbList AS dl
 						INNER JOIN sys.databases AS d ON (d.name COLLATE DATABASE_DEFAULT = dl.DatabaseName)
 						ORDER BY dl.[Order];
@@ -361,6 +449,11 @@ ELSE BEGIN
 							-- If is a member of a replica, we will only execute when running on the primary
 							--
 							IF (@replicaId IS NULL)
+			';
+			IF (@productVersion1 >= 11)
+			BEGIN
+				-- SQL Versions SQL2012 or higher
+				SET @stmt += '
 								OR (
 									(
 										SELECT
@@ -374,6 +467,9 @@ ELSE BEGIN
 										WHERE (ar.replica_server_name = @@SERVERNAME) AND (ar.replica_id = @replicaId)
 									) = 1
 								)
+				';
+			END;
+			SET @stmt += '
 							BEGIN
 								SET @stmt = ''
 									USE '' + QUOTENAME(@database) + '';
@@ -491,19 +587,21 @@ ELSE BEGIN
 	--
 	BEGIN
 		WITH
-		retention(Enabled, TableName, TimeColumn, IsUtc, Days) AS(
+		retention(Enabled, TableName, Sequence, TimeColumn, IsUtc, Days, Filter) AS(
 			SELECT
 				1
 				,'dbo.fhsmIndexUsage'
+				,1
 				,'TimestampUTC'
 				,1
 				,90
+				,NULL
 		)
 		MERGE dbo.fhsmRetentions AS tgt
-		USING retention AS src ON (src.TableName = tgt.TableName)
+		USING retention AS src ON (src.TableName = tgt.TableName) AND (src.Sequence = tgt.Sequence)
 		WHEN NOT MATCHED BY TARGET
-			THEN INSERT(Enabled, TableName, TimeColumn, IsUtc, Days)
-			VALUES(src.Enabled, src.TableName, src.TimeColumn, src.IsUtc, src.Days);
+			THEN INSERT(Enabled, TableName, Sequence, TimeColumn, IsUtc, Days, Filter)
+			VALUES(src.Enabled, src.TableName, src.Sequence, src.TimeColumn, src.IsUtc, src.Days, src.Filter);
 	END;
 
 	--
@@ -517,8 +615,8 @@ ELSE BEGIN
 				,'Index usage'
 				,PARSENAME('dbo.fhsmSPIndexUsage', 1)
 				,4 * 60 * 60
-				,TIMEFROMPARTS(6, 0, 0, 0, 0)
-				,TIMEFROMPARTS(23, 59, 59, 0, 0)
+				,CAST('1900-1-1T06:00:00.0000' AS datetime2(0))
+				,CAST('1900-1-1T23:59:59.0000' AS datetime2(0))
 				,1, 1, 1, 1, 1, 1, 1
 				,'@Databases = ''USER_DATABASES, msdb'''
 		)
