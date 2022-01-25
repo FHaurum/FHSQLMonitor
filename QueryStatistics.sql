@@ -47,7 +47,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '1.4';
+		SET @version = '1.5';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -414,6 +414,7 @@ ELSE BEGIN
 			SET @stmt = '
 				ALTER PROC dbo.fhsmSPQueryStatistics (
 					@name nvarchar(128)
+					,@version nvarchar(128) OUTPUT
 				)
 				AS
 				BEGIN
@@ -431,6 +432,7 @@ ELSE BEGIN
 					DECLARE @totalSpillsStmt nvarchar(max);
 
 					SET @thisTask = OBJECT_NAME(@@PROCID);
+					SET @version = ''' + @version + ''';
 
 					--
 					-- Get the parameters for the command
@@ -452,8 +454,9 @@ ELSE BEGIN
 					-- Collect data
 					--
 					BEGIN
-						SET @now = SYSDATETIME();
-						SET @nowUTC = SYSUTCDATETIME();
+						SELECT
+							@now = SYSDATETIME()
+							,@nowUTC = SYSUTCDATETIME();
 
 						--
 						-- Test if total_rows exists on dm_exec_query_stats

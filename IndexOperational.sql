@@ -47,7 +47,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '1.4';
+		SET @version = '1.5';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -355,6 +355,7 @@ ELSE BEGIN
 			SET @stmt = '
 				ALTER PROC dbo.fhsmSPIndexOperational (
 					@name nvarchar(128)
+					,@version nvarchar(128) OUTPUT
 				)
 				AS
 				BEGIN
@@ -378,9 +379,10 @@ ELSE BEGIN
 					DECLARE @versionGeneratedOffrowStmt nvarchar(max);
 
 					SET @thisTask = OBJECT_NAME(@@PROCID);
+					SET @version = ''' + @version + ''';
 
 					--
-					-- Get the parametrs for the command
+					-- Get the parameters for the command
 					--
 					BEGIN
 						SET @parameters = dbo.fhsmFNGetTaskParameter(@thisTask, @name);
@@ -414,12 +416,15 @@ ELSE BEGIN
 						FROM dbo.fhsmFNParseDatabasesStr(@databases) AS d;
 					END;
 
+			';
+			SET @stmt += '
 					--
 					-- Collect data
 					--
 					BEGIN
-						SET @now = SYSDATETIME();
-						SET @nowUTC = SYSUTCDATETIME();
+						SELECT
+							@now = SYSDATETIME()
+							,@nowUTC = SYSUTCDATETIME();
 
 						--
 						-- Test if version_generated_inrow (and thereby all other *version*) exists on dm_db_index_operational_stats
@@ -448,6 +453,8 @@ ELSE BEGIN
 								SET @insertOverGhostVersionOffrowStmt = ''NULL'';
 							END;
 						END;
+			';
+			SET @stmt += '
 
 						DECLARE dCur CURSOR LOCAL READ_ONLY FAST_FORWARD FOR
 						SELECT dl.DatabaseName, ' + CASE WHEN (@productVersion1 <= 10) THEN 'NULL' ELSE 'd.replica_id' END + ' AS replica_id

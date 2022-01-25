@@ -98,7 +98,7 @@ BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '1.4';
+		SET @version = '1.6';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -210,6 +210,66 @@ BEGIN
 			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
 			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
 		END;
+
+		--
+		-- Create fact view @pbiSchema.[OH errors]
+		--
+		BEGIN
+			SET @stmt = '
+				IF OBJECT_ID(''' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('OH errors') + ''', ''V'') IS NULL
+				BEGIN
+					EXEC(''CREATE VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('OH errors') + ' AS SELECT ''''dummy'''' AS Txt'');
+				END;
+			';
+			EXEC(@stmt);
+
+			SET @stmt = '
+				ALTER VIEW  ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('OH errors') + '
+				AS
+				SELECT
+					CASE
+						WHEN (cl.CommandType = ''ALTER_INDEX'') AND (cl.Command LIKE ''% REBUILD %'') THEN 1
+						WHEN (cl.CommandType = ''ALTER_INDEX'') AND (cl.Command LIKE ''% REORGANIZE %'') THEN 2
+						WHEN (cl.CommandType = ''UPDATE_STATISTICS'') THEN 3
+						WHEN (cl.CommandType = ''BACKUP_DATABASE'') THEN 4
+						WHEN (cl.CommandType = ''BACKUP_LOG'') THEN 5
+						WHEN (cl.CommandType = ''RESTORE_VERIFYONLY'') THEN 6
+						WHEN (cl.CommandType = ''DBCC_CHECKDB'') THEN 7
+						WHEN (cl.CommandType = ''xp_create_subdir'') THEN 8
+						WHEN (cl.CommandType = ''xp_delete_file'') THEN 9
+					END Type
+					,cl.StartTime
+					,cl.EndTime
+					,COALESCE(NULLIF(DATEDIFF(SECOND, cl.StartTime, cl.EndTime), 0), 1) AS Duration		-- Duration of 0 sec. will always be 1 sec.
+					,cl.Command
+					,cl.ErrorNumber
+					,cl.ErrorMessage
+					,CAST(cl.StartTime AS date) AS Date
+					,(DATEPART(HOUR, cl.StartTime) * 60 * 60) + (DATEPART(MINUTE, cl.StartTime) * 60) + (DATEPART(SECOND, cl.StartTime)) AS TimeKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(cl.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(cl.DatabaseName, cl.SchemaName, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS SchemaKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(cl.DatabaseName, cl.SchemaName, cl.ObjectName, DEFAULT, DEFAULT, DEFAULT) AS k) AS ObjectKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(cl.DatabaseName, cl.SchemaName, cl.ObjectName, COALESCE(cl.IndexName, ''N.A.''), DEFAULT, DEFAULT) AS k) AS IndexKey
+				FROM ' + COALESCE(QUOTENAME(@olaDatabase) + '.', '') + COALESCE(@olaSchema, 'dbo') + '.CommandLog AS cl
+				WHERE (cl.ErrorNumber <> 0) OR (cl.ErrorMessage IS NOT NULL);
+			';
+			EXEC(@stmt);
+		END;
+
+		--
+		-- Register extended properties on fact view @pbiSchema.[OH errors]
+		--
+		BEGIN
+			SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('OH errors');
+			SET @objName = PARSENAME(@objectName, 1);
+			SET @schName = PARSENAME(@objectName, 2);
+
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+		END;
 	END;
 
 	--
@@ -232,6 +292,7 @@ BEGIN
 			SET @stmt = '
 				ALTER PROC dbo.fhsmSPIndexOptimize (
 					@name nvarchar(128)
+					,@version nvarchar(128) OUTPUT
 				)
 				AS
 				BEGIN
@@ -242,9 +303,10 @@ BEGIN
 					DECLARE @thisTask nvarchar(128);
 
 					SET @thisTask = OBJECT_NAME(@@PROCID);
+					SET @version = ''' + @version + ''';
 
 					--
-					-- Get the parametrs for the command
+					-- Get the parameters for the command
 					--
 					BEGIN
 						SET @parameters = dbo.fhsmFNGetTaskParameter(@thisTask, @name);

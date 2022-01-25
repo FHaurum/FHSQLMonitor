@@ -47,7 +47,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '1.4';
+		SET @version = '1.0';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -66,34 +66,46 @@ ELSE BEGIN
 	--
 	BEGIN
 		--
-		-- Create table dbo.fhsmDatabaseSize if it not already exists
+		-- Create table dbo.fhsmPlanGuides if it not already exists
 		--
-		IF OBJECT_ID('dbo.fhsmDatabaseSize', 'U') IS NULL
+		IF OBJECT_ID('dbo.fhsmPlanGuides', 'U') IS NULL
 		BEGIN
-			RAISERROR('Creating table dbo.fhsmDatabaseSize', 0, 1) WITH NOWAIT;
+			RAISERROR('Creating table dbo.fhsmPlanGuides', 0, 1) WITH NOWAIT;
 
-			CREATE TABLE dbo.fhsmDatabaseSize(
+			CREATE TABLE dbo.fhsmPlanGuides(
 				Id int identity(1,1) NOT NULL
 				,DatabaseName nvarchar(128) NOT NULL
-				,LogicalName nvarchar(128) NOT NULL
-				,Type tinyint NOT NULL
-				,CurrentSize int NOT NULL
-				,UsedSize int NULL
+				,PlanGuideId int NOT NULL
+				,Name nvarchar(128) NOT NULL
+				,CreateDate datetime NOT NULL
+				,ModifyDate datetime NOT NULL
+				,IsDisabled bit NOT NULL
+				,QueryText nvarchar(max) NULL
+				,ScopeTypeDesc nvarchar(60) NULL
+				,ScopedSchema nvarchar(128) NULL
+				,ScopedObject nvarchar(128) NULL
+				,ScopeBatch nvarchar(max) NULL
+				,Parameters nvarchar(max) NULL
+				,Hints nvarchar(max) NULL
+				,MsgNum int NULL
+				,Severity tinyint NULL
+				,State smallint NULL
+				,Message nvarchar(1024) NULL
 				,TimestampUTC datetime NOT NULL
 				,Timestamp datetime NOT NULL
-				,CONSTRAINT PK_fhsmDatabaseSize PRIMARY KEY(Id)
+				,CONSTRAINT PK_fhsmPlanGuides PRIMARY KEY(Id)
 			);
 
-			CREATE NONCLUSTERED INDEX NC_fhsmDatabaseSize_TimestampUTC ON dbo.fhsmDatabaseSize(TimestampUTC);
-			CREATE NONCLUSTERED INDEX NC_fhsmDatabaseSize_Timestamp ON dbo.fhsmDatabaseSize(Timestamp);
-			CREATE NONCLUSTERED INDEX NC_fhsmDatabaseSize_DatabaseName_LogicalName_Type ON dbo.fhsmDatabaseSize(DatabaseName, LogicalName, Type);
+			CREATE NONCLUSTERED INDEX NC_fhsmPlanGuides_TimestampUTC ON dbo.fhsmPlanGuides(TimestampUTC);
+			CREATE NONCLUSTERED INDEX NC_fhsmPlanGuides_Timestamp ON dbo.fhsmPlanGuides(Timestamp);
+			CREATE NONCLUSTERED INDEX NC_fhsmPlanGuides_DatabaseName ON dbo.fhsmPlanGuides(DatabaseName);
 		END;
 
 		--
-		-- Register extended properties on the table dbo.fhsmDatabaseSize
+		-- Register extended properties on the table dbo.fhsmPlanGuides
 		--
 		BEGIN
-			SET @objectName = 'dbo.fhsmDatabaseSize';
+			SET @objectName = 'dbo.fhsmPlanGuides';
 			SET @objName = PARSENAME(@objectName, 1);
 			SET @schName = PARSENAME(@objectName, 2);
 
@@ -114,46 +126,52 @@ ELSE BEGIN
 	--
 	BEGIN
 		--
-		-- Create fact view @pbiSchema.[Database size]
+		-- Create fact view @pbiSchema.[Plan guides]
 		--
 		BEGIN
 			SET @stmt = '
-				IF OBJECT_ID(''' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Database size') + ''', ''V'') IS NULL
+				IF OBJECT_ID(''' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Plan guides') + ''', ''V'') IS NULL
 				BEGIN
-					EXEC(''CREATE VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Database size') + ' AS SELECT ''''dummy'''' AS Txt'');
+					EXEC(''CREATE VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Plan guides') + ' AS SELECT ''''dummy'''' AS Txt'');
 				END;
 			';
 			EXEC(@stmt);
 
 			SET @stmt = '
-				ALTER VIEW  ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Database size') + '
+				ALTER VIEW  ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Plan guides') + '
 				AS
 				SELECT
-					ds.CurrentSize
-					,ds.UsedSize
-					,CAST(ds.Timestamp AS date) AS Date
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ds.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ds.DatabaseName, ds.LogicalName, CASE ds.Type WHEN 0 THEN ''Data'' WHEN 1 THEN ''Log'' WHEN 2 THEN ''Filestream'' END, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseFileKey
-				FROM dbo.fhsmDatabaseSize AS ds
-				WHERE (ds.Timestamp IN (
-					SELECT a.Timestamp
-					FROM (
-						SELECT
-							ds2.Timestamp
-							,ROW_NUMBER() OVER(PARTITION BY CAST(ds2.Timestamp AS date) ORDER BY ds2.Timestamp DESC) AS _Rnk_
-						FROM dbo.fhsmDatabaseSize AS ds2
-					) AS a
-					WHERE (a._Rnk_ = 1)
-				));
+					pg.PlanGuideId
+					,pg.Name
+					,pg.CreateDate
+					,pg.ModifyDate
+					,pg.IsDisabled
+					,pg.QueryText
+					,pg.ScopeTypeDesc
+					,QUOTENAME(pg.ScopedSchema) + ''.'' + QUOTENAME(ScopedObject) AS ScopedObject
+					,pg.ScopeBatch
+					,pg.Parameters
+					,pg.Hints
+					,pg.MsgNum
+					,pg.Severity
+					,pg.State
+					,pg.Message
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(pg.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
+				FROM dbo.fhsmPlanGuides AS pg
+				WHERE (pg.TimestampUTC = (
+					SELECT TOP (1) pg2.TimestampUTC
+					FROM dbo.fhsmPlanGuides AS pg2
+					ORDER BY pg2.TimestampUTC DESC
+				))
 			';
 			EXEC(@stmt);
 		END;
 
 		--
-		-- Register extended properties on fact view @pbiSchema.[Database size]
+		-- Register extended properties on fact view @pbiSchema.[Plan guides]
 		--
 		BEGIN
-			SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Database size');
+			SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Plan guides');
 			SET @objName = PARSENAME(@objectName, 1);
 			SET @schName = PARSENAME(@objectName, 2);
 
@@ -170,19 +188,19 @@ ELSE BEGIN
 	--
 	BEGIN
 		--
-		-- Create stored procedure dbo.fhsmSPDatabaseSize
+		-- Create stored procedure dbo.fhsmSPPlanGuides
 		--
 		BEGIN
 			SET @stmt = '
-				IF OBJECT_ID(''dbo.fhsmSPDatabaseSize'', ''P'') IS NULL
+				IF OBJECT_ID(''dbo.fhsmSPPlanGuides'', ''P'') IS NULL
 				BEGIN
-					EXEC(''CREATE PROC dbo.fhsmSPDatabaseSize AS SELECT ''''dummy'''' AS Txt'');
+					EXEC(''CREATE PROC dbo.fhsmSPPlanGuides AS SELECT ''''dummy'''' AS Txt'');
 				END;
 			';
 			EXEC(@stmt);
 
 			SET @stmt = '
-				ALTER PROC dbo.fhsmSPDatabaseSize (
+				ALTER PROC dbo.fhsmSPPlanGuides (
 					@name nvarchar(128)
 					,@version nvarchar(128) OUTPUT
 				)
@@ -229,6 +247,8 @@ ELSE BEGIN
 							END;
 						END;
 					END;
+			';
+			SET @stmt += '
 
 					--
 					-- Get the list of databases to process
@@ -254,6 +274,8 @@ ELSE BEGIN
 						ORDER BY dl.[Order];
 
 						OPEN dCur;
+			';
+			SET @stmt += '
 
 						WHILE (1 = 1)
 						BEGIN
@@ -296,21 +318,38 @@ ELSE BEGIN
 
 									SELECT
 										DB_NAME() AS DatabaseName
-										,a.LogicalName
-										,a.Type
-										,a.CurrentSize
-										,a.UsedSize
+										,pg.plan_guide_id AS PlanGuideId
+										,pg.name AS Name
+										,pg.create_date AS CreateDate
+										,pg.modify_date AS ModifyDate
+										,pg.is_disabled AS IsDisabled
+										,pg.query_text AS QueryText
+										,pg.scope_type_desc AS ScopeTypeDesc
+										,sch.name AS ScopedSchema
+										,o.name AS ScopedObject
+										,pg.scope_batch AS ScopeBatch
+										,pg.parameters AS Parameters
+										,pg.hints AS Hints
+										,vpg.msgnum AS MsgNum
+										,vpg.severity AS Severity
+										,vpg.state AS State
+										,vpg.message AS Message
 										,@nowUTC, @now
-									FROM (
-										SELECT
-											df.name AS LogicalName
-											,df.type AS Type
-											,CAST((df.size / 128.0) AS int) AS CurrentSize
-											,CAST((CAST(FILEPROPERTY(df.name, ''''SpaceUsed'''') AS int) / 128.0) AS int) AS UsedSize
-										FROM sys.database_files AS df WITH (NOLOCK)
-									) AS a;
+									FROM sys.plan_guides AS pg
+									LEFT OUTER JOIN sys.objects AS o ON (o.object_id = pg.scope_object_id)
+									LEFT OUTER JOIN sys.schemas AS sch ON (sch.schema_id = o.schema_id)
+									OUTER APPLY fn_validate_plan_guide(pg.plan_guide_id) AS vpg
 								'';
-								INSERT INTO dbo.fhsmDatabaseSize(DatabaseName, LogicalName, Type, CurrentSize, UsedSize, TimestampUTC, Timestamp)
+								INSERT INTO dbo.fhsmPlanGuides(
+									DatabaseName
+									,PlanGuideId, Name
+									,CreateDate, ModifyDate
+									,IsDisabled, QueryText, ScopeTypeDesc
+									,ScopedSchema, ScopedObject
+									,ScopeBatch, Parameters, Hints
+									,MsgNum, Severity, State, Message
+									,TimestampUTC, Timestamp
+								)
 								EXEC sp_executesql
 									@stmt
 									,N''@now datetime, @nowUTC datetime''
@@ -333,10 +372,10 @@ ELSE BEGIN
 		END;
 
 		--
-		-- Register extended properties on the stored procedure dbo.fhsmSPDatabaseSize
+		-- Register extended properties on the stored procedure dbo.fhsmSPPlanGuides
 		--
 		BEGIN
-			SET @objectName = 'dbo.fhsmSPDatabaseSize';
+			SET @objectName = 'dbo.fhsmSPPlanGuides';
 			SET @objName = PARSENAME(@objectName, 1);
 			SET @schName = PARSENAME(@objectName, 2);
 
@@ -356,11 +395,11 @@ ELSE BEGIN
 		retention(Enabled, TableName, Sequence, TimeColumn, IsUtc, Days, Filter) AS(
 			SELECT
 				1
-				,'dbo.fhsmDatabaseSize'
+				,'dbo.fhsmPlanGuides'
 				,1
 				,'TimestampUTC'
 				,1
-				,180
+				,90
 				,NULL
 		)
 		MERGE dbo.fhsmRetentions AS tgt
@@ -378,11 +417,11 @@ ELSE BEGIN
 		schedules(Enabled, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters) AS(
 			SELECT
 				1
-				,'Database size'
-				,PARSENAME('dbo.fhsmSPDatabaseSize', 1)
-				,12 * 60 * 60
-				,CAST('1900-1-1T07:00:00.0000' AS datetime2(0))
-				,CAST('1900-1-1T08:00:00.0000' AS datetime2(0))
+				,'Plan guides'
+				,PARSENAME('dbo.fhsmSPPlanGuides', 1)
+				,1 * 60 * 60
+				,CAST('1900-1-1T00:00:00.0000' AS datetime2(0))
+				,CAST('1900-1-1T23:59:59.0000' AS datetime2(0))
 				,1, 1, 1, 1, 1, 1, 1
 				,'@Databases = ''USER_DATABASES, msdb'''
 		)
@@ -401,30 +440,18 @@ ELSE BEGIN
 		dimensions(
 			DimensionName, DimensionKey
 			,SrcTable, SrcAlias, SrcWhere, SrcDateColumn
-			,SrcColumn1, SrcColumn2, SrcColumn3
-			,OutputColumn1, OutputColumn2, OutputColumn3
+			,SrcColumn1, SrcColumn2, SrcColumn3, SrcColumn4
+			,OutputColumn1, OutputColumn2, OutputColumn3, OutputColumn4
 		) AS (
 			SELECT
 				'Database' AS DimensionName
 				,'DatabaseKey' AS DimensionKey
-				,'dbo.fhsmDatabaseSize' AS SrcTable
+				,'dbo.fhsmPlanGuides' AS SrcTable
 				,'src' AS SrcAlias
 				,NULL AS SrcWhere
 				,'src.[Timestamp]' AS SrcDateColumn
-				,'src.[DatabaseName]', NULL, NULL
-				,'Database', NULL, NULL
-
-			UNION ALL
-
-			SELECT
-				'Database file' AS DimensionName
-				,'DatabaseFileKey' AS DimensionKey
-				,'dbo.fhsmDatabaseSize' AS SrcTable
-				,'src' AS SrcAlias
-				,NULL AS SrcWhere
-				,'src.[Timestamp]' AS SrcDateColumn
-				,'src.[DatabaseName]', 'src.[LogicalName]', 'CASE src.[Type] WHEN 0 THEN ''Data'' WHEN 1 THEN ''Log'' WHEN 2 THEN ''Filestream'' END'
-				,'Database name', 'Logical name', 'Type'
+				,'src.[DatabaseName]', NULL, NULL, NULL
+				,'Database', NULL, NULL, NULL
 		)
 		MERGE dbo.fhsmDimensions AS tgt
 		USING dimensions AS src ON (src.DimensionName = tgt.DimensionName) AND (src.SrcTable = tgt.SrcTable)
@@ -438,21 +465,23 @@ ELSE BEGIN
 				,tgt.SrcColumn1 = src.SrcColumn1
 				,tgt.SrcColumn2 = src.SrcColumn2
 				,tgt.SrcColumn3 = src.SrcColumn3
+				,tgt.SrcColumn4 = src.SrcColumn4
 				,tgt.OutputColumn1 = src.OutputColumn1
 				,tgt.OutputColumn2 = src.OutputColumn2
 				,tgt.OutputColumn3 = src.OutputColumn3
+				,tgt.OutputColumn4 = src.OutputColumn4
 		WHEN NOT MATCHED BY TARGET
 			THEN INSERT(
 				DimensionName, DimensionKey
 				,SrcTable, SrcAlias, SrcWhere, SrcDateColumn
-				,SrcColumn1, SrcColumn2, SrcColumn3
-				,OutputColumn1, OutputColumn2, OutputColumn3
+				,SrcColumn1, SrcColumn2, SrcColumn3, SrcColumn4
+				,OutputColumn1, OutputColumn2, OutputColumn3, OutputColumn4
 			)
 			VALUES(
 				src.DimensionName, src.DimensionKey
 				,src.SrcTable, src.SrcAlias, src.SrcWhere, src.SrcDateColumn
-				,src.SrcColumn1, src.SrcColumn2, src.SrcColumn3
-				,src.OutputColumn1, src.OutputColumn2, src.OutputColumn3
+				,src.SrcColumn1, src.SrcColumn2, src.SrcColumn3, src.SrcColumn4
+				,src.OutputColumn1, src.OutputColumn2, src.OutputColumn3, src.OutputColumn4
 			);
 	END;
 
@@ -460,6 +489,6 @@ ELSE BEGIN
 	-- Update dimensions based upon the fact tables
 	--
 	BEGIN
-		EXEC dbo.fhsmSPUpdateDimensions @table = 'dbo.fhsmDatabaseSize';
+		EXEC dbo.fhsmSPUpdateDimensions @table = 'dbo.fhsmPlanGuides';
 	END;
 END;

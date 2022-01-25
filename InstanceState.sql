@@ -47,7 +47,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '1.6';
+		SET @version = '1.8';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -108,13 +108,14 @@ ELSE BEGIN
 			CREATE TABLE dbo.fhsmInstanceConfigurations(
 				Id int identity(1,1) NOT NULL
 				,ProductMajorVersion int NOT NULL
+				,ProductMinorVersion int NOT NULL
 				,ConfigurationId int NOT NULL
 				,Minimum int NOT NULL
 				,Maximum int NOT NULL
 				,CONSTRAINT PK_fhsmInstanceConfigurations PRIMARY KEY(Id)
 			);
 
-			CREATE NONCLUSTERED INDEX NC_fhsmInstanceConfigurations_ConfigurationId_ProductMajorVersion ON dbo.fhsmInstanceConfigurations(ConfigurationId, ProductMajorVersion);
+			CREATE NONCLUSTERED INDEX NC_fhsmInstanceConfigurations_ConfigurationId_ProductMajorVersion_ProductMinorVersion ON dbo.fhsmInstanceConfigurations(ConfigurationId, ProductMajorVersion, ProductMinorVersion);
 		END;
 
 		--
@@ -183,13 +184,14 @@ ELSE BEGIN
 			CREATE TABLE dbo.fhsmTraceFlags(
 				Id int identity(1,1) NOT NULL
 				,ProductMajorVersion int NOT NULL
+				,ProductMinorVersion int NOT NULL
 				,TraceFlag int NOT NULL
 				,Description nvarchar(max) NOT NULL
 				,URL nvarchar(max) NULL
 				,CONSTRAINT PK_fhsmTraceFlags PRIMARY KEY(Id)
 			);
 
-			CREATE NONCLUSTERED INDEX NC_fhsmTraceFlags_TraceFlag_ProductMajorVersion ON dbo.fhsmTraceFlags(TraceFlag, ProductMajorVersion);
+			CREATE NONCLUSTERED INDEX NC_fhsmTraceFlags_TraceFlag_ProductMajorVersion_ProductMinorVersion ON dbo.fhsmTraceFlags(TraceFlag, ProductMajorVersion, ProductMinorVersion);
 		END;
 
 		--
@@ -241,68 +243,90 @@ ELSE BEGIN
 		MERGE dbo.fhsmInstanceConfigurations AS tgt
 		USING (
 			--SQL2019
-			SELECT '15' AS ProductMajorVersion, 1585 AS ConfigurationId,    0 AS Minimum,      0 AS Maximum UNION ALL	--automatic soft-NUMA disabled
-			SELECT '15' AS ProductMajorVersion, 1584 AS ConfigurationId,    1 AS Minimum,      1 AS Maximum UNION ALL	--backup checksum default
-			SELECT '15' AS ProductMajorVersion, 1579 AS ConfigurationId,    1 AS Minimum,      1 AS Maximum UNION ALL	--backup compression default
-			SELECT '15' AS ProductMajorVersion, 1562 AS ConfigurationId,    0 AS Minimum,      0 AS Maximum UNION ALL	--clr enabled
-			SELECT '15' AS ProductMajorVersion, 1538 AS ConfigurationId,    6 AS Minimum,  32767 AS Maximum UNION ALL	--cost threshold for parallelism
-			SELECT '15' AS ProductMajorVersion, 1546 AS ConfigurationId,    0 AS Minimum,      0 AS Maximum UNION ALL	--lightweight pooling
-			SELECT '15' AS ProductMajorVersion, 1539 AS ConfigurationId,    0 AS Minimum,  32767 AS Maximum UNION ALL	--max degree of parallelism
-			SELECT '15' AS ProductMajorVersion, 1544 AS ConfigurationId, 2048 AS Minimum, 524288 AS Maximum UNION ALL	--max server memory (MB)
-			SELECT '15' AS ProductMajorVersion, 1581 AS ConfigurationId,    1 AS Minimum,      1 AS Maximum UNION ALL	--optimize for ad hoc workloads
-			SELECT '15' AS ProductMajorVersion, 1517 AS ConfigurationId,    0 AS Minimum,      0 AS Maximum UNION ALL	--priority boost
-			SELECT '15' AS ProductMajorVersion, 1576 AS ConfigurationId,    1 AS Minimum,      1 AS Maximum UNION ALL	--remote admin connections
-			SELECT '15' AS ProductMajorVersion, 1589 AS ConfigurationId,    0 AS Minimum,      1 AS Maximum UNION ALL	--tempdb metadata memory-optimized
+			SELECT '15' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1585 AS ConfigurationId,    0 AS Minimum,      0 AS Maximum UNION ALL	--automatic soft-NUMA disabled
+			SELECT '15' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1584 AS ConfigurationId,    1 AS Minimum,      1 AS Maximum UNION ALL	--backup checksum default
+			SELECT '15' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1579 AS ConfigurationId,    1 AS Minimum,      1 AS Maximum UNION ALL	--backup compression default
+			SELECT '15' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1562 AS ConfigurationId,    0 AS Minimum,      0 AS Maximum UNION ALL	--clr enabled
+			SELECT '15' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1538 AS ConfigurationId,    6 AS Minimum,  32767 AS Maximum UNION ALL	--cost threshold for parallelism
+			SELECT '15' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1546 AS ConfigurationId,    0 AS Minimum,      0 AS Maximum UNION ALL	--lightweight pooling
+			SELECT '15' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1539 AS ConfigurationId,    0 AS Minimum,  32767 AS Maximum UNION ALL	--max degree of parallelism
+			SELECT '15' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1544 AS ConfigurationId, 2048 AS Minimum, 524288 AS Maximum UNION ALL	--max server memory (MB)
+			SELECT '15' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1581 AS ConfigurationId,    1 AS Minimum,      1 AS Maximum UNION ALL	--optimize for ad hoc workloads
+			SELECT '15' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1517 AS ConfigurationId,    0 AS Minimum,      0 AS Maximum UNION ALL	--priority boost
+			SELECT '15' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1576 AS ConfigurationId,    1 AS Minimum,      1 AS Maximum UNION ALL	--remote admin connections
+			SELECT '15' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1589 AS ConfigurationId,    0 AS Minimum,      1 AS Maximum UNION ALL	--tempdb metadata memory-optimized
 			--SQL2017
-			SELECT '14' AS ProductMajorVersion, 1585 AS ConfigurationId,    0 AS Minimum,      0 AS Maximum UNION ALL	--automatic soft-NUMA disabled
-			SELECT '14' AS ProductMajorVersion, 1584 AS ConfigurationId,    1 AS Minimum,      1 AS Maximum UNION ALL	--backup checksum default
-			SELECT '14' AS ProductMajorVersion, 1579 AS ConfigurationId,    1 AS Minimum,      1 AS Maximum UNION ALL	--backup compression default
-			SELECT '14' AS ProductMajorVersion, 1562 AS ConfigurationId,    0 AS Minimum,      0 AS Maximum UNION ALL	--clr enabled
-			SELECT '14' AS ProductMajorVersion, 1538 AS ConfigurationId,    6 AS Minimum,  32767 AS Maximum UNION ALL	--cost threshold for parallelism
-			SELECT '14' AS ProductMajorVersion, 1546 AS ConfigurationId,    0 AS Minimum,      0 AS Maximum UNION ALL	--lightweight pooling
-			SELECT '14' AS ProductMajorVersion, 1539 AS ConfigurationId,    0 AS Minimum,  32767 AS Maximum UNION ALL	--max degree of parallelism
-			SELECT '14' AS ProductMajorVersion, 1544 AS ConfigurationId, 2048 AS Minimum, 524288 AS Maximum UNION ALL	--max server memory (MB)
-			SELECT '14' AS ProductMajorVersion, 1581 AS ConfigurationId,    1 AS Minimum,      1 AS Maximum UNION ALL	--optimize for ad hoc workloads
-			SELECT '14' AS ProductMajorVersion, 1517 AS ConfigurationId,    0 AS Minimum,      0 AS Maximum UNION ALL	--priority boost
-			SELECT '14' AS ProductMajorVersion, 1576 AS ConfigurationId,    1 AS Minimum,      1 AS Maximum UNION ALL	--remote admin connections
+			SELECT '14' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1585 AS ConfigurationId,    0 AS Minimum,      0 AS Maximum UNION ALL	--automatic soft-NUMA disabled
+			SELECT '14' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1584 AS ConfigurationId,    1 AS Minimum,      1 AS Maximum UNION ALL	--backup checksum default
+			SELECT '14' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1579 AS ConfigurationId,    1 AS Minimum,      1 AS Maximum UNION ALL	--backup compression default
+			SELECT '14' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1562 AS ConfigurationId,    0 AS Minimum,      0 AS Maximum UNION ALL	--clr enabled
+			SELECT '14' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1538 AS ConfigurationId,    6 AS Minimum,  32767 AS Maximum UNION ALL	--cost threshold for parallelism
+			SELECT '14' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1546 AS ConfigurationId,    0 AS Minimum,      0 AS Maximum UNION ALL	--lightweight pooling
+			SELECT '14' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1539 AS ConfigurationId,    0 AS Minimum,  32767 AS Maximum UNION ALL	--max degree of parallelism
+			SELECT '14' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1544 AS ConfigurationId, 2048 AS Minimum, 524288 AS Maximum UNION ALL	--max server memory (MB)
+			SELECT '14' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1581 AS ConfigurationId,    1 AS Minimum,      1 AS Maximum UNION ALL	--optimize for ad hoc workloads
+			SELECT '14' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1517 AS ConfigurationId,    0 AS Minimum,      0 AS Maximum UNION ALL	--priority boost
+			SELECT '14' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1576 AS ConfigurationId,    1 AS Minimum,      1 AS Maximum UNION ALL	--remote admin connections
 			--SQL2016
-			SELECT '13' AS ProductMajorVersion, 1585 AS ConfigurationId,    0 AS Minimum,      0 AS Maximum UNION ALL	--automatic soft-NUMA disabled
-			SELECT '13' AS ProductMajorVersion, 1584 AS ConfigurationId,    1 AS Minimum,      1 AS Maximum UNION ALL	--backup checksum default
-			SELECT '13' AS ProductMajorVersion, 1579 AS ConfigurationId,    1 AS Minimum,      1 AS Maximum UNION ALL	--backup compression default
-			SELECT '13' AS ProductMajorVersion, 1562 AS ConfigurationId,    0 AS Minimum,      0 AS Maximum UNION ALL	--clr enabled
-			SELECT '13' AS ProductMajorVersion, 1538 AS ConfigurationId,    6 AS Minimum,  32767 AS Maximum UNION ALL	--cost threshold for parallelism
-			SELECT '13' AS ProductMajorVersion, 1546 AS ConfigurationId,    0 AS Minimum,      0 AS Maximum UNION ALL	--lightweight pooling
-			SELECT '13' AS ProductMajorVersion, 1539 AS ConfigurationId,    0 AS Minimum,  32767 AS Maximum UNION ALL	--max degree of parallelism
-			SELECT '13' AS ProductMajorVersion, 1544 AS ConfigurationId, 2048 AS Minimum, 524288 AS Maximum UNION ALL	--max server memory (MB)
-			SELECT '13' AS ProductMajorVersion, 1581 AS ConfigurationId,    1 AS Minimum,      1 AS Maximum UNION ALL	--optimize for ad hoc workloads
-			SELECT '13' AS ProductMajorVersion, 1517 AS ConfigurationId,    0 AS Minimum,      0 AS Maximum UNION ALL	--priority boost
-			SELECT '13' AS ProductMajorVersion, 1576 AS ConfigurationId,    1 AS Minimum,      1 AS Maximum UNION ALL	--remote admin connections
+			SELECT '13' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1585 AS ConfigurationId,    0 AS Minimum,      0 AS Maximum UNION ALL	--automatic soft-NUMA disabled
+			SELECT '13' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1584 AS ConfigurationId,    1 AS Minimum,      1 AS Maximum UNION ALL	--backup checksum default
+			SELECT '13' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1579 AS ConfigurationId,    1 AS Minimum,      1 AS Maximum UNION ALL	--backup compression default
+			SELECT '13' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1562 AS ConfigurationId,    0 AS Minimum,      0 AS Maximum UNION ALL	--clr enabled
+			SELECT '13' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1538 AS ConfigurationId,    6 AS Minimum,  32767 AS Maximum UNION ALL	--cost threshold for parallelism
+			SELECT '13' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1546 AS ConfigurationId,    0 AS Minimum,      0 AS Maximum UNION ALL	--lightweight pooling
+			SELECT '13' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1539 AS ConfigurationId,    0 AS Minimum,  32767 AS Maximum UNION ALL	--max degree of parallelism
+			SELECT '13' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1544 AS ConfigurationId, 2048 AS Minimum, 524288 AS Maximum UNION ALL	--max server memory (MB)
+			SELECT '13' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1581 AS ConfigurationId,    1 AS Minimum,      1 AS Maximum UNION ALL	--optimize for ad hoc workloads
+			SELECT '13' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1517 AS ConfigurationId,    0 AS Minimum,      0 AS Maximum UNION ALL	--priority boost
+			SELECT '13' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1576 AS ConfigurationId,    1 AS Minimum,      1 AS Maximum UNION ALL	--remote admin connections
 			--SQL2014
-			SELECT '12' AS ProductMajorVersion, 1584 AS ConfigurationId,    1 AS Minimum,      1 AS Maximum UNION ALL	--backup checksum default
-			SELECT '12' AS ProductMajorVersion, 1579 AS ConfigurationId,    1 AS Minimum,      1 AS Maximum UNION ALL	--backup compression default
-			SELECT '12' AS ProductMajorVersion, 1562 AS ConfigurationId,    0 AS Minimum,      0 AS Maximum UNION ALL	--clr enabled
-			SELECT '12' AS ProductMajorVersion, 1538 AS ConfigurationId,    6 AS Minimum,  32767 AS Maximum UNION ALL	--cost threshold for parallelism
-			SELECT '12' AS ProductMajorVersion, 1546 AS ConfigurationId,    0 AS Minimum,      0 AS Maximum UNION ALL	--lightweight pooling
-			SELECT '12' AS ProductMajorVersion, 1539 AS ConfigurationId,    0 AS Minimum,  32767 AS Maximum UNION ALL	--max degree of parallelism
-			SELECT '12' AS ProductMajorVersion, 1544 AS ConfigurationId, 2048 AS Minimum, 524288 AS Maximum UNION ALL	--max server memory (MB)
-			SELECT '12' AS ProductMajorVersion, 1581 AS ConfigurationId,    1 AS Minimum,      1 AS Maximum UNION ALL	--optimize for ad hoc workloads
-			SELECT '12' AS ProductMajorVersion, 1517 AS ConfigurationId,    0 AS Minimum,      0 AS Maximum UNION ALL	--priority boost
-			SELECT '12' AS ProductMajorVersion, 1576 AS ConfigurationId,    1 AS Minimum,      1 AS Maximum UNION ALL	--remote admin connections
+			SELECT '12' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1584 AS ConfigurationId,    1 AS Minimum,      1 AS Maximum UNION ALL	--backup checksum default
+			SELECT '12' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1579 AS ConfigurationId,    1 AS Minimum,      1 AS Maximum UNION ALL	--backup compression default
+			SELECT '12' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1562 AS ConfigurationId,    0 AS Minimum,      0 AS Maximum UNION ALL	--clr enabled
+			SELECT '12' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1538 AS ConfigurationId,    6 AS Minimum,  32767 AS Maximum UNION ALL	--cost threshold for parallelism
+			SELECT '12' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1546 AS ConfigurationId,    0 AS Minimum,      0 AS Maximum UNION ALL	--lightweight pooling
+			SELECT '12' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1539 AS ConfigurationId,    0 AS Minimum,  32767 AS Maximum UNION ALL	--max degree of parallelism
+			SELECT '12' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1544 AS ConfigurationId, 2048 AS Minimum, 524288 AS Maximum UNION ALL	--max server memory (MB)
+			SELECT '12' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1581 AS ConfigurationId,    1 AS Minimum,      1 AS Maximum UNION ALL	--optimize for ad hoc workloads
+			SELECT '12' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1517 AS ConfigurationId,    0 AS Minimum,      0 AS Maximum UNION ALL	--priority boost
+			SELECT '12' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1576 AS ConfigurationId,    1 AS Minimum,      1 AS Maximum UNION ALL	--remote admin connections
 			--SQL2012
-			SELECT '11' AS ProductMajorVersion, 1579 AS ConfigurationId,    1 AS Minimum,      1 AS Maximum UNION ALL	--backup compression default
-			SELECT '11' AS ProductMajorVersion, 1562 AS ConfigurationId,    0 AS Minimum,      0 AS Maximum UNION ALL	--clr enabled
-			SELECT '11' AS ProductMajorVersion, 1538 AS ConfigurationId,    6 AS Minimum,  32767 AS Maximum UNION ALL	--cost threshold for parallelism
-			SELECT '11' AS ProductMajorVersion, 1546 AS ConfigurationId,    0 AS Minimum,      0 AS Maximum UNION ALL	--lightweight pooling
-			SELECT '11' AS ProductMajorVersion, 1539 AS ConfigurationId,    0 AS Minimum,  32767 AS Maximum UNION ALL	--max degree of parallelism
-			SELECT '11' AS ProductMajorVersion, 1544 AS ConfigurationId, 2048 AS Minimum, 524288 AS Maximum UNION ALL	--max server memory (MB)
-			SELECT '11' AS ProductMajorVersion, 1581 AS ConfigurationId,    1 AS Minimum,      1 AS Maximum UNION ALL	--optimize for ad hoc workloads
-			SELECT '11' AS ProductMajorVersion, 1517 AS ConfigurationId,    0 AS Minimum,      0 AS Maximum UNION ALL	--priority boost
-			SELECT '11' AS ProductMajorVersion, 1576 AS ConfigurationId,    1 AS Minimum,      1 AS Maximum				--remote admin connections
+			SELECT '11' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1579 AS ConfigurationId,    1 AS Minimum,      1 AS Maximum UNION ALL	--backup compression default
+			SELECT '11' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1562 AS ConfigurationId,    0 AS Minimum,      0 AS Maximum UNION ALL	--clr enabled
+			SELECT '11' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1538 AS ConfigurationId,    6 AS Minimum,  32767 AS Maximum UNION ALL	--cost threshold for parallelism
+			SELECT '11' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1546 AS ConfigurationId,    0 AS Minimum,      0 AS Maximum UNION ALL	--lightweight pooling
+			SELECT '11' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1539 AS ConfigurationId,    0 AS Minimum,  32767 AS Maximum UNION ALL	--max degree of parallelism
+			SELECT '11' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1544 AS ConfigurationId, 2048 AS Minimum, 524288 AS Maximum UNION ALL	--max server memory (MB)
+			SELECT '11' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1581 AS ConfigurationId,    1 AS Minimum,      1 AS Maximum UNION ALL	--optimize for ad hoc workloads
+			SELECT '11' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1517 AS ConfigurationId,    0 AS Minimum,      0 AS Maximum UNION ALL	--priority boost
+			SELECT '11' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1576 AS ConfigurationId,    1 AS Minimum,      1 AS Maximum UNION ALL	--remote admin connections
+			--SQL2008R2
+			SELECT '10' AS ProductMajorVersion, 50 AS ProductMinorVersion, 1579 AS ConfigurationId,    1 AS Minimum,      1 AS Maximum UNION ALL	--backup compression default
+			SELECT '10' AS ProductMajorVersion, 50 AS ProductMinorVersion, 1562 AS ConfigurationId,    0 AS Minimum,      0 AS Maximum UNION ALL	--clr enabled
+			SELECT '10' AS ProductMajorVersion, 50 AS ProductMinorVersion, 1538 AS ConfigurationId,    6 AS Minimum,  32767 AS Maximum UNION ALL	--cost threshold for parallelism
+			SELECT '10' AS ProductMajorVersion, 50 AS ProductMinorVersion, 1546 AS ConfigurationId,    0 AS Minimum,      0 AS Maximum UNION ALL	--lightweight pooling
+			SELECT '10' AS ProductMajorVersion, 50 AS ProductMinorVersion, 1539 AS ConfigurationId,    0 AS Minimum,  32767 AS Maximum UNION ALL	--max degree of parallelism
+			SELECT '10' AS ProductMajorVersion, 50 AS ProductMinorVersion, 1544 AS ConfigurationId, 2048 AS Minimum, 524288 AS Maximum UNION ALL	--max server memory (MB)
+			SELECT '10' AS ProductMajorVersion, 50 AS ProductMinorVersion, 1581 AS ConfigurationId,    1 AS Minimum,      1 AS Maximum UNION ALL	--optimize for ad hoc workloads
+			SELECT '10' AS ProductMajorVersion, 50 AS ProductMinorVersion, 1517 AS ConfigurationId,    0 AS Minimum,      0 AS Maximum UNION ALL	--priority boost
+			SELECT '10' AS ProductMajorVersion, 50 AS ProductMinorVersion, 1576 AS ConfigurationId,    1 AS Minimum,      1 AS Maximum UNION ALL	--remote admin connections
+			--SQL2008
+			SELECT '10' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1579 AS ConfigurationId,    1 AS Minimum,      1 AS Maximum UNION ALL	--backup compression default
+			SELECT '10' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1562 AS ConfigurationId,    0 AS Minimum,      0 AS Maximum UNION ALL	--clr enabled
+			SELECT '10' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1538 AS ConfigurationId,    6 AS Minimum,  32767 AS Maximum UNION ALL	--cost threshold for parallelism
+			SELECT '10' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1546 AS ConfigurationId,    0 AS Minimum,      0 AS Maximum UNION ALL	--lightweight pooling
+			SELECT '10' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1539 AS ConfigurationId,    0 AS Minimum,  32767 AS Maximum UNION ALL	--max degree of parallelism
+			SELECT '10' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1544 AS ConfigurationId, 2048 AS Minimum, 524288 AS Maximum UNION ALL	--max server memory (MB)
+			SELECT '10' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1581 AS ConfigurationId,    1 AS Minimum,      1 AS Maximum UNION ALL	--optimize for ad hoc workloads
+			SELECT '10' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1517 AS ConfigurationId,    0 AS Minimum,      0 AS Maximum UNION ALL	--priority boost
+			SELECT '10' AS ProductMajorVersion,  0 AS ProductMinorVersion, 1576 AS ConfigurationId,    1 AS Minimum,      1 AS Maximum				--remote admin connections
 		) AS src
-		ON (tgt.ProductMajorVersion = src.ProductMajorVersion) AND (tgt.ConfigurationId = src.ConfigurationId)
+		ON (tgt.ProductMajorVersion = src.ProductMajorVersion) AND
+			(tgt.ProductMinorVersion = src.ProductMinorVersion) AND
+			(tgt.ConfigurationId = src.ConfigurationId)
 		WHEN NOT MATCHED BY TARGET
-			THEN INSERT (ProductMajorVersion, ConfigurationId, Minimum, Maximum)
-				VALUES(src.ProductMajorVersion, src.ConfigurationId, src.Minimum, src.Maximum);
+			THEN INSERT (ProductMajorVersion, ProductMinorVersion, ConfigurationId, Minimum, Maximum)
+				VALUES(src.ProductMajorVersion, src.ProductMinorVersion, src.ConfigurationId, src.Minimum, src.Maximum);
 	END;
 
 	--
@@ -312,63 +336,83 @@ ELSE BEGIN
 		MERGE dbo.fhsmTraceFlags AS tgt
 		USING (
 			--SQL2019
-			SELECT '15' AS ProductMajorVersion, 3226 AS TraceFlag, 'Supresses logging of successful database backup messages to the SQL Server Error Log' AS Description
+			SELECT '15' AS ProductMajorVersion, 0 AS ProductMinorVersion, 3226 AS TraceFlag, 'Supresses logging of successful database backup messages to the SQL Server Error Log' AS Description
 				,'https://bit.ly/38zDNAK' AS URL UNION ALL
-			SELECT '15' AS ProductMajorVersion, 7745 AS TraceFlag, 'Prevents Query Store data from being written to disk in case of a failover or shutdown command' AS Description
+			SELECT '15' AS ProductMajorVersion, 0 AS ProductMinorVersion, 7745 AS TraceFlag, 'Prevents Query Store data from being written to disk in case of a failover or shutdown command' AS Description
 				,'https://bit.ly/2GU69Km' AS URL UNION ALL
 			--SQL2017
-			SELECT '14' AS ProductMajorVersion,  460 AS TraceFlag, 'Improvement: Optional replacement for "String or binary data would be truncated" message with extended information (added in CU12)' AS Description
+			SELECT '14' AS ProductMajorVersion, 0 AS ProductMinorVersion,  460 AS TraceFlag, 'Improvement: Optional replacement for "String or binary data would be truncated" message with extended information (added in CU12)' AS Description
 				,'https://bit.ly/2sboMli' AS URL UNION ALL
-			SELECT '14' AS ProductMajorVersion, 3226 AS TraceFlag, 'Supresses logging of successful database backup messages to the SQL Server Error Log' AS Description
+			SELECT '14' AS ProductMajorVersion, 0 AS ProductMinorVersion, 3226 AS TraceFlag, 'Supresses logging of successful database backup messages to the SQL Server Error Log' AS Description
 				,'https://bit.ly/38zDNAK' AS URL UNION ALL
-			SELECT '14' AS ProductMajorVersion, 7745 AS TraceFlag, 'Prevents Query Store data from being written to disk in case of a failover or shutdown command' AS Description
+			SELECT '14' AS ProductMajorVersion, 0 AS ProductMinorVersion, 7745 AS TraceFlag, 'Prevents Query Store data from being written to disk in case of a failover or shutdown command' AS Description
 				,'https://bit.ly/2GU69Km' AS URL UNION ALL
-			SELECT '14' AS ProductMajorVersion, 7752 AS TraceFlag, 'Enables asynchronous load of Query Store' AS Description
+			SELECT '14' AS ProductMajorVersion, 0 AS ProductMinorVersion, 7752 AS TraceFlag, 'Enables asynchronous load of Query Store' AS Description
 				,'https://bit.ly/2GU69Km' AS URL UNION ALL
 			--SQL2016
-			SELECT '13' AS ProductMajorVersion,  460 AS TraceFlag, 'Improvement: Optional replacement for "String or binary data would be truncated" message with extended information (added in SP2 CU6)' AS Description
+			SELECT '13' AS ProductMajorVersion, 0 AS ProductMinorVersion,  460 AS TraceFlag, 'Improvement: Optional replacement for "String or binary data would be truncated" message with extended information (added in SP2 CU6)' AS Description
 				,'https://bit.ly/2sboMli' AS URL UNION ALL
-			SELECT '13' AS ProductMajorVersion, 3226 AS TraceFlag, 'Supresses logging of successful database backup messages to the SQL Server Error Log' AS Description
+			SELECT '13' AS ProductMajorVersion, 0 AS ProductMinorVersion, 3226 AS TraceFlag, 'Supresses logging of successful database backup messages to the SQL Server Error Log' AS Description
 				,'https://bit.ly/38zDNAK' AS URL UNION ALL
-			SELECT '13' AS ProductMajorVersion, 7745 AS TraceFlag, 'Prevents Query Store data from being written to disk in case of a failover or shutdown command' AS Description
+			SELECT '13' AS ProductMajorVersion, 0 AS ProductMinorVersion, 7745 AS TraceFlag, 'Prevents Query Store data from being written to disk in case of a failover or shutdown command' AS Description
 				,'https://bit.ly/2GU69Km' AS URL UNION ALL
-			SELECT '13' AS ProductMajorVersion, 7752 AS TraceFlag, 'Enables asynchronous load of Query Store' AS Description
+			SELECT '13' AS ProductMajorVersion, 0 AS ProductMinorVersion, 7752 AS TraceFlag, 'Enables asynchronous load of Query Store' AS Description
 				,'https://bit.ly/2GU69Km' AS URL UNION ALL
 			--SQL2014
-			SELECT '12' AS ProductMajorVersion, 1117 AS TraceFlag, 'When growing a data file, grow all files at the same time so they remain the same size, reducing allocation contention points' AS Description
+			SELECT '12' AS ProductMajorVersion, 0 AS ProductMinorVersion, 1117 AS TraceFlag, 'When growing a data file, grow all files at the same time so they remain the same size, reducing allocation contention points' AS Description
 				,NULL AS URL UNION ALL
-			SELECT '12' AS ProductMajorVersion, 1118 AS TraceFlag, 'Helps alleviate allocation contention in tempdb, SQL Server allocates full extents to each database object, thereby eliminating the contention on SGAM pages' AS Description
+			SELECT '12' AS ProductMajorVersion, 0 AS ProductMinorVersion, 1118 AS TraceFlag, 'Helps alleviate allocation contention in tempdb, SQL Server allocates full extents to each database object, thereby eliminating the contention on SGAM pages' AS Description
 				,NULL AS URL UNION ALL
-			SELECT '12' AS ProductMajorVersion, 2371 AS TraceFlag, 'Lowers auto update statistics threshold for large tables (on tables with more than 25,000 rows)' AS Description
+			SELECT '12' AS ProductMajorVersion, 0 AS ProductMinorVersion, 2371 AS TraceFlag, 'Lowers auto update statistics threshold for large tables (on tables with more than 25,000 rows)' AS Description
 				,'https://bit.ly/30KO4Hh' AS URL UNION ALL
-			SELECT '12' AS ProductMajorVersion, 3226 AS TraceFlag, 'Supresses logging of successful database backup messages to the SQL Server Error Log' AS Description
+			SELECT '12' AS ProductMajorVersion, 0 AS ProductMinorVersion, 3226 AS TraceFlag, 'Supresses logging of successful database backup messages to the SQL Server Error Log' AS Description
 				,'https://bit.ly/38zDNAK' AS URL UNION ALL
-			SELECT '12' AS ProductMajorVersion, 3449 AS TraceFlag, 'Enables use of dirty page manager (SQL Server 2014 SP1 CU7 and later)' AS Description
+			SELECT '12' AS ProductMajorVersion, 0 AS ProductMinorVersion, 3449 AS TraceFlag, 'Enables use of dirty page manager (SQL Server 2014 SP1 CU7 and later)' AS Description
 				,'https://bit.ly/2uj0h5M' AS URL UNION ALL
-			SELECT '12' AS ProductMajorVersion, 8079 AS TraceFlag, 'Enables automatic soft-NUMA on systems with eight or more physical cores per NUMA node (with SQL Server 2014 SP2)' AS Description
+			SELECT '12' AS ProductMajorVersion, 0 AS ProductMinorVersion, 8079 AS TraceFlag, 'Enables automatic soft-NUMA on systems with eight or more physical cores per NUMA node (with SQL Server 2014 SP2)' AS Description
 				,'https://bit.ly/29B7oR8' AS URL UNION ALL
 			--SQL2012
-			SELECT '11' AS ProductMajorVersion, 1117 AS TraceFlag, 'When growing a data file, grow all files at the same time so they remain the same size, reducing allocation contention points' AS Description
+			SELECT '11' AS ProductMajorVersion, 0 AS ProductMinorVersion, 1117 AS TraceFlag, 'When growing a data file, grow all files at the same time so they remain the same size, reducing allocation contention points' AS Description
 				,NULL AS URL UNION ALL
-			SELECT '11' AS ProductMajorVersion, 1118 AS TraceFlag, 'Helps alleviate allocation contention in tempdb, SQL Server allocates full extents to each database object, thereby eliminating the contention on SGAM pages' AS Description
+			SELECT '11' AS ProductMajorVersion, 0 AS ProductMinorVersion, 1118 AS TraceFlag, 'Helps alleviate allocation contention in tempdb, SQL Server allocates full extents to each database object, thereby eliminating the contention on SGAM pages' AS Description
 				,NULL AS URL UNION ALL
-			SELECT '11' AS ProductMajorVersion, 2371 AS TraceFlag, 'Lowers auto update statistics threshold for large tables (on tables with more than 25,000 rows)' AS Description
+			SELECT '11' AS ProductMajorVersion, 0 AS ProductMinorVersion, 2371 AS TraceFlag, 'Lowers auto update statistics threshold for large tables (on tables with more than 25,000 rows)' AS Description
 				,'https://bit.ly/30KO4Hh' AS URL UNION ALL
-			SELECT '11' AS ProductMajorVersion, 3023 AS TraceFlag, 'Enables backup checksum default' AS Description
+			SELECT '11' AS ProductMajorVersion, 0 AS ProductMinorVersion, 3023 AS TraceFlag, 'Enables backup checksum default' AS Description
 				,'https://bit.ly/2vtjqqc' AS URL UNION ALL
-			SELECT '11' AS ProductMajorVersion, 3226 AS TraceFlag, 'Supresses logging of successful database backup messages to the SQL Server Error Log' AS Description
+			SELECT '11' AS ProductMajorVersion, 0 AS ProductMinorVersion, 3226 AS TraceFlag, 'Supresses logging of successful database backup messages to the SQL Server Error Log' AS Description
 				,'https://bit.ly/38zDNAK' AS URL UNION ALL
-			SELECT '11' AS ProductMajorVersion, 3449 AS TraceFlag, 'Enables use of dirty page manager (SQL Server 2012 SP3 CU3 and later)' AS Description
+			SELECT '11' AS ProductMajorVersion, 0 AS ProductMinorVersion, 3449 AS TraceFlag, 'Enables use of dirty page manager (SQL Server 2012 SP3 CU3 and later)' AS Description
 				,'https://bit.ly/2uj0h5M' AS URL UNION ALL
-			SELECT '11' AS ProductMajorVersion, 8079 AS TraceFlag, 'Enables automatic soft-NUMA on systems with eight or more physical cores per NUMA node (with SQL Server 2012 SP4)' AS Description
-				,'https://bit.ly/2qN8kr3' AS URL
+			SELECT '11' AS ProductMajorVersion, 0 AS ProductMinorVersion, 8079 AS TraceFlag, 'Enables automatic soft-NUMA on systems with eight or more physical cores per NUMA node (with SQL Server 2012 SP4)' AS Description
+				,'https://bit.ly/2qN8kr3' AS URL UNION ALL
+			--SQL2008R2
+			SELECT '10' AS ProductMajorVersion, 50 AS ProductMinorVersion, 1117 AS TraceFlag, 'When growing a data file, grow all files at the same time so they remain the same size, reducing allocation contention points' AS Description
+				,NULL AS URL UNION ALL
+			SELECT '10' AS ProductMajorVersion, 50 AS ProductMinorVersion, 1118 AS TraceFlag, 'Helps alleviate allocation contention in tempdb, SQL Server allocates full extents to each database object, thereby eliminating the contention on SGAM pages' AS Description
+				,NULL AS URL UNION ALL
+			SELECT '10' AS ProductMajorVersion, 50 AS ProductMinorVersion, 2371 AS TraceFlag, 'Lowers auto update statistics threshold for large tables (on tables with more than 25,000 rows)' AS Description
+				,'https://bit.ly/30KO4Hh' AS URL UNION ALL
+			SELECT '10' AS ProductMajorVersion, 50 AS ProductMinorVersion, 3226 AS TraceFlag, 'Supresses logging of successful database backup messages to the SQL Server Error Log' AS Description
+				,'https://bit.ly/38zDNAK' AS URL UNION ALL
+			--SQL2008
+			SELECT '10' AS ProductMajorVersion, 0 AS ProductMinorVersion, 1117 AS TraceFlag, 'When growing a data file, grow all files at the same time so they remain the same size, reducing allocation contention points' AS Description
+				,NULL AS URL UNION ALL
+			SELECT '10' AS ProductMajorVersion, 0 AS ProductMinorVersion, 1118 AS TraceFlag, 'Helps alleviate allocation contention in tempdb, SQL Server allocates full extents to each database object, thereby eliminating the contention on SGAM pages' AS Description
+				,NULL AS URL UNION ALL
+			SELECT '10' AS ProductMajorVersion, 0 AS ProductMinorVersion, 2371 AS TraceFlag, 'Lowers auto update statistics threshold for large tables (on tables with more than 25,000 rows)' AS Description
+				,'https://bit.ly/30KO4Hh' AS URL UNION ALL
+			SELECT '10' AS ProductMajorVersion, 0 AS ProductMinorVersion, 3226 AS TraceFlag, 'Supresses logging of successful database backup messages to the SQL Server Error Log' AS Description
+				,'https://bit.ly/38zDNAK' AS URL
 		) AS src
-		ON (tgt.ProductMajorVersion = src.ProductMajorVersion) AND (tgt.TraceFlag = src.TraceFlag)
+		ON (tgt.ProductMajorVersion = src.ProductMajorVersion) AND
+			(tgt.ProductMinorVersion = src.ProductMinorVersion) AND
+			(tgt.TraceFlag = src.TraceFlag)
 		WHEN MATCHED AND (tgt.Description <> src.Description) OR ((tgt.URL <> src.URL) OR (tgt.URL IS NULL AND src.URL IS NOT NULL) OR (tgt.URL IS NOT NULL AND src.URL IS NULL))
 			THEN UPDATE SET tgt.Description = src.Description, tgt.URL = src.URL
 		WHEN NOT MATCHED BY TARGET
-			THEN INSERT (ProductMajorVersion, TraceFlag, Description, URL)
-				VALUES(src.ProductMajorVersion, src.TraceFlag, src.Description, src.URL);
+			THEN INSERT (ProductMajorVersion, ProductMinorVersion, TraceFlag, Description, URL)
+				VALUES(src.ProductMajorVersion, src.ProductMinorVersion, src.TraceFlag, src.Description, src.URL);
 	END;
 
 	--
@@ -525,6 +569,11 @@ ELSE BEGIN
 						FROM dbo.fhsmInstanceState AS iState
 						WHERE (iState.Query = 3) AND (iState.[Key] = ''ProductMajorVersion'') AND (iState.ValidTo = ''9999-12-31 23:59:59.000'')
 					) AS productMajorVersion
+					CROSS APPLY (
+						SELECT CAST(iState.Value AS int) AS Value
+						FROM dbo.fhsmInstanceState AS iState
+						WHERE (iState.Query = 3) AND (iState.[Key] = ''ProductMinorVersion'') AND (iState.ValidTo = ''9999-12-31 23:59:59.000'')
+					) AS productMinorVersion
 					INNER JOIN (
 						SELECT pvt.Category, pvt.name, CAST(pvt.value AS int) AS value, CAST(pvt.minimum AS int) AS minimum, CAST(pvt.maximum AS int) AS maximum, CAST(pvt.value_in_use AS int) AS value_in_use, pvt.description, pvt.is_dynamic, pvt.is_advanced
 						FROM (
@@ -545,7 +594,7 @@ ELSE BEGIN
 							FOR [Key] IN ([name], [value], [minimum], [maximum], [value_in_use], [description], [is_dynamic], [is_advanced])
 						) AS pvt
 					) AS configurationsDetected ON (configurationsDetected.Category = c.ConfigurationId)
-					WHERE (c.ProductMajorVersion = productMajorVersion.Value);
+					WHERE (c.ProductMajorVersion = productMajorVersion.Value) AND (c.ProductMinorVersion = productMinorVersion.Value);
 			';
 			EXEC(@stmt);
 		END;
@@ -592,6 +641,11 @@ ELSE BEGIN
 						FROM dbo.fhsmInstanceState AS iState
 						WHERE (iState.Query = 3) AND (iState.[Key] = ''ProductMajorVersion'') AND (iState.ValidTo = ''9999-12-31 23:59:59.000'')
 					) AS productMajorVersion
+					CROSS APPLY (
+						SELECT CAST(iState.Value AS int) AS Value
+						FROM dbo.fhsmInstanceState AS iState
+						WHERE (iState.Query = 3) AND (iState.[Key] = ''ProductMinorVersion'') AND (iState.ValidTo = ''9999-12-31 23:59:59.000'')
+					) AS productMinorVersion
 					INNER JOIN (
 						SELECT pvt.ValidFrom, pvt.ValidTo, pvt.Category, CAST(pvt.value AS int) AS value, CAST(pvt.value_in_use AS int) AS value_in_use
 						FROM (
@@ -615,7 +669,7 @@ ELSE BEGIN
 							AND (iState.[Key] = ''name'')
 							AND (iState.ValidTo = ''9999-12-31 23:59:59.000'')
 					) AS latestName ON (latestName.Category = c.ConfigurationId)
-					WHERE (c.ProductMajorVersion = productMajorVersion.Value);
+					WHERE (c.ProductMajorVersion = productMajorVersion.Value) AND (c.ProductMinorVersion = productMinorVersion.Value);
 			';
 			EXEC(@stmt);
 		END;
@@ -1034,12 +1088,17 @@ ELSE BEGIN
 						FROM dbo.fhsmInstanceState AS iState
 						WHERE (iState.Query = 3) AND (iState.[Key] = ''ProductMajorVersion'') AND (iState.ValidTo = ''9999-12-31 23:59:59.000'')
 					) AS productMajorVersion
+					CROSS APPLY (
+						SELECT CAST(iState.Value AS int) AS Value
+						FROM dbo.fhsmInstanceState AS iState
+						WHERE (iState.Query = 3) AND (iState.[Key] = ''ProductMinorVersion'') AND (iState.ValidTo = ''9999-12-31 23:59:59.000'')
+					) AS productMinorVersion
 					LEFT OUTER JOIN (
 						SELECT CAST(iState.Category AS int) AS TraceFlag
 						FROM dbo.fhsmInstanceState AS iState
 						WHERE (iState.Query = 5) AND (iState.[Key] = ''Global'') AND (dbo.fhsmFNTryParseAsInt(iState.Value) = 1) AND (iState.ValidTo = ''9999-12-31 23:59:59.000'')
 					) AS traceFlagsDetected ON (traceFlagsDetected.TraceFlag = tf.TraceFlag)
-					WHERE (tf.ProductMajorVersion = productMajorVersion.Value);
+					WHERE (tf.ProductMajorVersion = productMajorVersion.Value) AND (tf.ProductMinorVersion = productMinorVersion.Value);
 			';
 			EXEC(@stmt);
 		END;
@@ -1085,12 +1144,17 @@ ELSE BEGIN
 						FROM dbo.fhsmInstanceState AS iState
 						WHERE (iState.Query = 3) AND (iState.[Key] = ''ProductMajorVersion'') AND (iState.ValidTo = ''9999-12-31 23:59:59.000'')
 					) AS productMajorVersion
+					CROSS APPLY (
+						SELECT CAST(iState.Value AS int) AS Value
+						FROM dbo.fhsmInstanceState AS iState
+						WHERE (iState.Query = 3) AND (iState.[Key] = ''ProductMinorVersion'') AND (iState.ValidTo = ''9999-12-31 23:59:59.000'')
+					) AS productMinorVersion
 					INNER JOIN (
 						SELECT iState.ValidFrom, iState.ValidTo, CAST(iState.Category AS int) AS TraceFlag
 						FROM dbo.fhsmInstanceState AS iState
 						WHERE (iState.Query = 5) AND (iState.[Key] = ''Global'') AND (dbo.fhsmFNTryParseAsInt(iState.Value) = 1) AND (iState.ValidTo <> ''9999-12-31 23:59:59.000'')
 					) AS traceFlags ON (traceFlags.TraceFlag = tf.TraceFlag)
-					WHERE (tf.ProductMajorVersion = productMajorVersion.Value);
+					WHERE (tf.ProductMajorVersion = productMajorVersion.Value) AND (tf.ProductMinorVersion = productMinorVersion.Value);
 			';
 			EXEC(@stmt);
 		END;
@@ -1130,6 +1194,7 @@ ELSE BEGIN
 			SET @stmt = '
 				ALTER PROC dbo.fhsmSPInstanceState (
 					@name nvarchar(128)
+					,@version nvarchar(128) OUTPUT
 				)
 				AS
 				BEGIN
@@ -1142,6 +1207,7 @@ ELSE BEGIN
 					DECLARE @thisTask nvarchar(128);
 
 					SET @thisTask = OBJECT_NAME(@@PROCID);
+					SET @version = ''' + @version + ''';
 
 					--******************************************************************************
 					--*   Copyright (C) 2020 Glenn Berry
@@ -1160,7 +1226,7 @@ ELSE BEGIN
 					--******************************************************************************
 
 					--
-					-- Get the parametrs for the command
+					-- Get the parameters for the command
 					--
 					BEGIN
 						SET @parameters = dbo.fhsmFNGetTaskParameter(@thisTask, @name);
@@ -1170,8 +1236,9 @@ ELSE BEGIN
 					-- Collect data
 					--
 					BEGIN
-						SET @now = SYSDATETIME();
-						SET @nowUTC = SYSUTCDATETIME();
+						SELECT
+							@now = SYSDATETIME()
+							,@nowUTC = SYSUTCDATETIME();
 
 						IF (OBJECT_ID(''tempdb..#inventory'') IS NOT NULL) DROP TABLE #inventory;
 
@@ -1212,35 +1279,40 @@ ELSE BEGIN
 						-- Get selected server properties (Query 3) (Server Properties)
 						--
 						BEGIN
+                            WITH
+							productVersion AS (SELECT CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar(max)) AS Str),
+							productVersionP1 AS (SELECT t.Txt AS Str FROM dbo.fhsmFNSplitString((SELECT a.Str FROM productVersion AS a), ''.'') AS t WHERE (t.Part = 1)),
+							productVersionP2 AS (SELECT t.Txt AS Str FROM dbo.fhsmFNSplitString((SELECT a.Str FROM productVersion AS a), ''.'') AS t WHERE (t.Part = 2)),
+							productVersionP3 AS (SELECT t.Txt AS Str FROM dbo.fhsmFNSplitString((SELECT a.Str FROM productVersion AS a), ''.'') AS t WHERE (t.Part = 3))
 							INSERT INTO #inventory(Query, Category, [Key], Value)
-							SELECT 3 AS Query, '''' AS Category, ''MachineName''                     AS K, CAST(SERVERPROPERTY(''MachineName'') AS nvarchar(max))                     AS V UNION ALL
-							SELECT 3 AS Query, '''' AS Category, ''ServerName''                      AS K, CAST(SERVERPROPERTY(''ServerName'') AS nvarchar(max))                      AS V UNION ALL
-							SELECT 3 AS Query, '''' AS Category, ''InstanceName''                    AS K, CAST(SERVERPROPERTY(''InstanceName'') AS nvarchar(max))                    AS V UNION ALL
-							SELECT 3 AS Query, '''' AS Category, ''IsClustered''                     AS K, CAST(SERVERPROPERTY(''IsClustered'') AS nvarchar(max))                     AS V UNION ALL
-							SELECT 3 AS Query, '''' AS Category, ''ComputerNamePhysicalNetBIOS''     AS K, CAST(SERVERPROPERTY(''ComputerNamePhysicalNetBIOS'') AS nvarchar(max))     AS V UNION ALL
-							SELECT 3 AS Query, '''' AS Category, ''Edition''                         AS K, CAST(SERVERPROPERTY(''Edition'') AS nvarchar(max))                         AS V UNION ALL
-							SELECT 3 AS Query, '''' AS Category, ''ProductLevel''                    AS K, CAST(SERVERPROPERTY(''ProductLevel'') AS nvarchar(max))                    AS V UNION ALL
-							SELECT 3 AS Query, '''' AS Category, ''ProductUpdateLevel''              AS K, CAST(SERVERPROPERTY(''ProductUpdateLevel'') AS nvarchar(max))              AS V UNION ALL
-							SELECT 3 AS Query, '''' AS Category, ''ProductVersion''                  AS K, CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar(max))                  AS V UNION ALL
-							SELECT 3 AS Query, '''' AS Category, ''ProductMajorVersion''             AS K, CAST(SERVERPROPERTY(''ProductMajorVersion'') AS nvarchar(max))             AS V UNION ALL
-							SELECT 3 AS Query, '''' AS Category, ''ProductMinorVersion''             AS K, CAST(SERVERPROPERTY(''ProductMinorVersion'') AS nvarchar(max))             AS V UNION ALL
-							SELECT 3 AS Query, '''' AS Category, ''ProductBuild''                    AS K, CAST(SERVERPROPERTY(''ProductBuild'') AS nvarchar(max))                    AS V UNION ALL
-							SELECT 3 AS Query, '''' AS Category, ''ProductBuildType''                AS K, CAST(SERVERPROPERTY(''ProductBuildType'') AS nvarchar(max))                AS V UNION ALL
-							SELECT 3 AS Query, '''' AS Category, ''ProductUpdateReference''          AS K, CAST(SERVERPROPERTY(''ProductUpdateReference'') AS nvarchar(max))          AS V UNION ALL
-							SELECT 3 AS Query, '''' AS Category, ''ProcessID''                       AS K, CAST(SERVERPROPERTY(''ProcessID'') AS nvarchar(max))                       AS V UNION ALL
-							SELECT 3 AS Query, '''' AS Category, ''Collation''                       AS K, CAST(SERVERPROPERTY(''Collation'') AS nvarchar(max))                       AS V UNION ALL
-							SELECT 3 AS Query, '''' AS Category, ''IsFullTextInstalled''             AS K, CAST(SERVERPROPERTY(''IsFullTextInstalled'') AS nvarchar(max))             AS V UNION ALL
-							SELECT 3 AS Query, '''' AS Category, ''IsIntegratedSecurityOnly''        AS K, CAST(SERVERPROPERTY(''IsIntegratedSecurityOnly'') AS nvarchar(max))        AS V UNION ALL
-							SELECT 3 AS Query, '''' AS Category, ''FilestreamConfiguredLevel''       AS K, CAST(SERVERPROPERTY(''FilestreamConfiguredLevel'') AS nvarchar(max))       AS V UNION ALL
-							SELECT 3 AS Query, '''' AS Category, ''IsHadrEnabled''                   AS K, CAST(SERVERPROPERTY(''IsHadrEnabled'') AS nvarchar(max))                   AS V UNION ALL
-							SELECT 3 AS Query, '''' AS Category, ''HadrManagerStatus''               AS K, CAST(SERVERPROPERTY(''HadrManagerStatus'') AS nvarchar(max))               AS V UNION ALL
-							SELECT 3 AS Query, '''' AS Category, ''InstanceDefaultDataPath''         AS K, CAST(SERVERPROPERTY(''InstanceDefaultDataPath'') AS nvarchar(max))         AS V UNION ALL
-							SELECT 3 AS Query, '''' AS Category, ''InstanceDefaultLogPath''          AS K, CAST(SERVERPROPERTY(''InstanceDefaultLogPath'') AS nvarchar(max))          AS V UNION ALL
-							SELECT 3 AS Query, '''' AS Category, ''BuildClrVersion''                 AS K, CAST(SERVERPROPERTY(''BuildClrVersion'') AS nvarchar(max))                 AS V UNION ALL
-							SELECT 3 AS Query, '''' AS Category, ''IsXTPSupported''                  AS K, CAST(SERVERPROPERTY(''IsXTPSupported'') AS nvarchar(max))                  AS V UNION ALL
-							SELECT 3 AS Query, '''' AS Category, ''IsPolybaseInstalled''             AS K, CAST(SERVERPROPERTY(''IsPolybaseInstalled'') AS nvarchar(max))             AS V UNION ALL
-							SELECT 3 AS Query, '''' AS Category, ''IsAdvancedAnalyticsInstalled''    AS K, CAST(SERVERPROPERTY(''IsAdvancedAnalyticsInstalled'') AS nvarchar(max))    AS V UNION ALL
-							SELECT 3 AS Query, '''' AS Category, ''IsTempdbMetadataMemoryOptimized'' AS K, CAST(SERVERPROPERTY(''IsTempdbMetadataMemoryOptimized'') AS nvarchar(max)) AS V;
+                            SELECT 3 AS Query, '''' AS Category, ''MachineName''                     AS K, CAST(SERVERPROPERTY(''MachineName'') AS nvarchar(max))                     AS V UNION ALL
+                            SELECT 3 AS Query, '''' AS Category, ''ServerName''                      AS K, CAST(SERVERPROPERTY(''ServerName'') AS nvarchar(max))                      AS V UNION ALL
+                            SELECT 3 AS Query, '''' AS Category, ''InstanceName''                    AS K, CAST(SERVERPROPERTY(''InstanceName'') AS nvarchar(max))                    AS V UNION ALL
+                            SELECT 3 AS Query, '''' AS Category, ''IsClustered''                     AS K, CAST(SERVERPROPERTY(''IsClustered'') AS nvarchar(max))                     AS V UNION ALL
+                            SELECT 3 AS Query, '''' AS Category, ''ComputerNamePhysicalNetBIOS''     AS K, CAST(SERVERPROPERTY(''ComputerNamePhysicalNetBIOS'') AS nvarchar(max))     AS V UNION ALL
+                            SELECT 3 AS Query, '''' AS Category, ''Edition''                         AS K, CAST(SERVERPROPERTY(''Edition'') AS nvarchar(max))                         AS V UNION ALL
+                            SELECT 3 AS Query, '''' AS Category, ''ProductLevel''                    AS K, CAST(SERVERPROPERTY(''ProductLevel'') AS nvarchar(max))                    AS V UNION ALL
+                            SELECT 3 AS Query, '''' AS Category, ''ProductUpdateLevel''              AS K, CAST(SERVERPROPERTY(''ProductUpdateLevel'') AS nvarchar(max))              AS V UNION ALL
+                            SELECT 3 AS Query, '''' AS Category, ''ProductVersion''                  AS K, (SELECT t.Str FROM productVersion   AS t)                                  AS V UNION ALL
+                            SELECT 3 AS Query, '''' AS Category, ''ProductMajorVersion''             AS K, (SELECT t.Str FROM productVersionP1 AS t)                                  AS V UNION ALL
+                            SELECT 3 AS Query, '''' AS Category, ''ProductMinorVersion''             AS K, (SELECT t.Str FROM productVersionP2 AS t)                                  AS V UNION ALL
+                            SELECT 3 AS Query, '''' AS Category, ''ProductBuild''                    AS K, (SELECT t.Str FROM productVersionP3 AS t)                                  AS V UNION ALL
+                            SELECT 3 AS Query, '''' AS Category, ''ProductBuildType''                AS K, CAST(SERVERPROPERTY(''ProductBuildType'') AS nvarchar(max))                AS V UNION ALL
+                            SELECT 3 AS Query, '''' AS Category, ''ProductUpdateReference''          AS K, CAST(SERVERPROPERTY(''ProductUpdateReference'') AS nvarchar(max))          AS V UNION ALL
+                            SELECT 3 AS Query, '''' AS Category, ''ProcessID''                       AS K, CAST(SERVERPROPERTY(''ProcessID'') AS nvarchar(max))                       AS V UNION ALL
+                            SELECT 3 AS Query, '''' AS Category, ''Collation''                       AS K, CAST(SERVERPROPERTY(''Collation'') AS nvarchar(max))                       AS V UNION ALL
+                            SELECT 3 AS Query, '''' AS Category, ''IsFullTextInstalled''             AS K, CAST(SERVERPROPERTY(''IsFullTextInstalled'') AS nvarchar(max))             AS V UNION ALL
+                            SELECT 3 AS Query, '''' AS Category, ''IsIntegratedSecurityOnly''        AS K, CAST(SERVERPROPERTY(''IsIntegratedSecurityOnly'') AS nvarchar(max))        AS V UNION ALL
+                            SELECT 3 AS Query, '''' AS Category, ''FilestreamConfiguredLevel''       AS K, CAST(SERVERPROPERTY(''FilestreamConfiguredLevel'') AS nvarchar(max))       AS V UNION ALL
+                            SELECT 3 AS Query, '''' AS Category, ''IsHadrEnabled''                   AS K, CAST(SERVERPROPERTY(''IsHadrEnabled'') AS nvarchar(max))                   AS V UNION ALL
+                            SELECT 3 AS Query, '''' AS Category, ''HadrManagerStatus''               AS K, CAST(SERVERPROPERTY(''HadrManagerStatus'') AS nvarchar(max))               AS V UNION ALL
+                            SELECT 3 AS Query, '''' AS Category, ''InstanceDefaultDataPath''         AS K, CAST(SERVERPROPERTY(''InstanceDefaultDataPath'') AS nvarchar(max))         AS V UNION ALL
+                            SELECT 3 AS Query, '''' AS Category, ''InstanceDefaultLogPath''          AS K, CAST(SERVERPROPERTY(''InstanceDefaultLogPath'') AS nvarchar(max))          AS V UNION ALL
+                            SELECT 3 AS Query, '''' AS Category, ''BuildClrVersion''                 AS K, CAST(SERVERPROPERTY(''BuildClrVersion'') AS nvarchar(max))                 AS V UNION ALL
+                            SELECT 3 AS Query, '''' AS Category, ''IsXTPSupported''                  AS K, CAST(SERVERPROPERTY(''IsXTPSupported'') AS nvarchar(max))                  AS V UNION ALL
+                            SELECT 3 AS Query, '''' AS Category, ''IsPolybaseInstalled''             AS K, CAST(SERVERPROPERTY(''IsPolybaseInstalled'') AS nvarchar(max))             AS V UNION ALL
+                            SELECT 3 AS Query, '''' AS Category, ''IsAdvancedAnalyticsInstalled''    AS K, CAST(SERVERPROPERTY(''IsAdvancedAnalyticsInstalled'') AS nvarchar(max))    AS V UNION ALL
+                            SELECT 3 AS Query, '''' AS Category, ''IsTempdbMetadataMemoryOptimized'' AS K, CAST(SERVERPROPERTY(''IsTempdbMetadataMemoryOptimized'') AS nvarchar(max)) AS V;
 						END;
 
 						--

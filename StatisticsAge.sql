@@ -47,7 +47,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '1.4';
+		SET @version = '1.5';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -345,6 +345,7 @@ ELSE BEGIN
 			SET @stmt = '
 				ALTER PROC dbo.fhsmSPStatisticsAge (
 					@name nvarchar(128)
+					,@version nvarchar(128) OUTPUT
 				)
 				AS
 				BEGIN
@@ -362,9 +363,10 @@ ELSE BEGIN
 					DECLARE @thisTask nvarchar(128);
 
 					SET @thisTask = OBJECT_NAME(@@PROCID);
+					SET @version = ''' + @version + ''';
 
 					--
-					-- Get the parametrs for the command
+					-- Get the parameters for the command
 					--
 					BEGIN
 						SET @parameters = dbo.fhsmFNGetTaskParameter(@thisTask, @name);
@@ -422,9 +424,9 @@ ELSE BEGIN
 							END;
 						END;
 
-
-						SET @now = SYSDATETIME();
-						SET @nowUTC = SYSUTCDATETIME();
+						SELECT
+							@now = SYSDATETIME()
+							,@nowUTC = SYSUTCDATETIME();
 
 						DECLARE dCur CURSOR LOCAL READ_ONLY FAST_FORWARD FOR
 						SELECT dl.DatabaseName, ' + CASE WHEN (@productVersion1 <= 10) THEN 'NULL' ELSE 'd.replica_id' END + ' AS replica_id

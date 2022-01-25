@@ -48,7 +48,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '1.4';
+		SET @version = '1.5';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -605,6 +605,7 @@ ELSE BEGIN
 			SET @stmt = '
 				ALTER PROC dbo.fhsmSPPerfmonStatistics (
 					@name nvarchar(128)
+					,@version nvarchar(128) OUTPUT
 				)
 				AS
 				BEGIN
@@ -617,9 +618,10 @@ ELSE BEGIN
 					DECLARE @thisTask nvarchar(128);
 
 					SET @thisTask = OBJECT_NAME(@@PROCID);
+					SET @version = ''' + @version + ''';
 
 					--
-					-- Get the parametrs for the command
+					-- Get the parameters for the command
 					--
 					BEGIN
 						SET @parameters = dbo.fhsmFNGetTaskParameter(@thisTask, @name);
@@ -629,8 +631,9 @@ ELSE BEGIN
 					-- Collect data
 					--
 					BEGIN
-						SET @now = SYSDATETIME();
-						SET @nowUTC = SYSUTCDATETIME();
+						SELECT
+							@now = SYSDATETIME()
+							,@nowUTC = SYSUTCDATETIME();
 
 						SET @stmt = ''
 							SELECT

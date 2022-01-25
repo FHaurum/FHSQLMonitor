@@ -47,7 +47,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '1.4';
+		SET @version = '1.0';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -66,34 +66,34 @@ ELSE BEGIN
 	--
 	BEGIN
 		--
-		-- Create table dbo.fhsmDatabaseSize if it not already exists
+		-- Create table dbo.fhsmConnections if it not already exists
 		--
-		IF OBJECT_ID('dbo.fhsmDatabaseSize', 'U') IS NULL
+		IF OBJECT_ID('dbo.fhsmConnections', 'U') IS NULL
 		BEGIN
-			RAISERROR('Creating table dbo.fhsmDatabaseSize', 0, 1) WITH NOWAIT;
+			RAISERROR('Creating table dbo.fhsmConnections', 0, 1) WITH NOWAIT;
 
-			CREATE TABLE dbo.fhsmDatabaseSize(
+			CREATE TABLE dbo.fhsmConnections(
 				Id int identity(1,1) NOT NULL
 				,DatabaseName nvarchar(128) NOT NULL
-				,LogicalName nvarchar(128) NOT NULL
-				,Type tinyint NOT NULL
-				,CurrentSize int NOT NULL
-				,UsedSize int NULL
+				,HostName nvarchar(128) NULL
+				,ProgramName nvarchar(128) NULL
+				,ClientInterfaceName nvarchar(32) NULL
+				,IsUserProcess bit NOT NULL
+				,ConnectionCount int NOT NULL
 				,TimestampUTC datetime NOT NULL
 				,Timestamp datetime NOT NULL
-				,CONSTRAINT PK_fhsmDatabaseSize PRIMARY KEY(Id)
+				,CONSTRAINT PK_Connections PRIMARY KEY(Id)
 			);
 
-			CREATE NONCLUSTERED INDEX NC_fhsmDatabaseSize_TimestampUTC ON dbo.fhsmDatabaseSize(TimestampUTC);
-			CREATE NONCLUSTERED INDEX NC_fhsmDatabaseSize_Timestamp ON dbo.fhsmDatabaseSize(Timestamp);
-			CREATE NONCLUSTERED INDEX NC_fhsmDatabaseSize_DatabaseName_LogicalName_Type ON dbo.fhsmDatabaseSize(DatabaseName, LogicalName, Type);
+			CREATE NONCLUSTERED INDEX NC_fhsmConnections_TimestampUTC ON dbo.fhsmConnections(TimestampUTC);
+			CREATE NONCLUSTERED INDEX NC_fhsmConnections_Timestamp ON dbo.fhsmConnections(Timestamp);
 		END;
 
 		--
-		-- Register extended properties on the table dbo.fhsmDatabaseSize
+		-- Register extended properties on the table dbo.fhsmConnections
 		--
 		BEGIN
-			SET @objectName = 'dbo.fhsmDatabaseSize';
+			SET @objectName = 'dbo.fhsmConnections';
 			SET @objName = PARSENAME(@objectName, 1);
 			SET @schName = PARSENAME(@objectName, 2);
 
@@ -113,47 +113,42 @@ ELSE BEGIN
 	-- Create views
 	--
 	BEGIN
+
 		--
-		-- Create fact view @pbiSchema.[Database size]
+		-- Create fact view @pbiSchema.[Connections]
 		--
 		BEGIN
 			SET @stmt = '
-				IF OBJECT_ID(''' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Database size') + ''', ''V'') IS NULL
+				IF OBJECT_ID(''' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Connections') + ''', ''V'') IS NULL
 				BEGIN
-					EXEC(''CREATE VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Database size') + ' AS SELECT ''''dummy'''' AS Txt'');
+					EXEC(''CREATE VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Connections') + ' AS SELECT ''''dummy'''' AS Txt'');
 				END;
 			';
 			EXEC(@stmt);
 
 			SET @stmt = '
-				ALTER VIEW  ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Database size') + '
+				ALTER VIEW  ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Connections') + '
 				AS
 				SELECT
-					ds.CurrentSize
-					,ds.UsedSize
-					,CAST(ds.Timestamp AS date) AS Date
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ds.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ds.DatabaseName, ds.LogicalName, CASE ds.Type WHEN 0 THEN ''Data'' WHEN 1 THEN ''Log'' WHEN 2 THEN ''Filestream'' END, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseFileKey
-				FROM dbo.fhsmDatabaseSize AS ds
-				WHERE (ds.Timestamp IN (
-					SELECT a.Timestamp
-					FROM (
-						SELECT
-							ds2.Timestamp
-							,ROW_NUMBER() OVER(PARTITION BY CAST(ds2.Timestamp AS date) ORDER BY ds2.Timestamp DESC) AS _Rnk_
-						FROM dbo.fhsmDatabaseSize AS ds2
-					) AS a
-					WHERE (a._Rnk_ = 1)
-				));
+					c.HostName
+					,c.ProgramName
+					,c.ClientInterfaceName
+					,c.IsUserProcess
+					,c.ConnectionCount
+					,c.Timestamp
+					,CAST(c.Timestamp AS date) AS Date
+					,(DATEPART(HOUR, c.Timestamp) * 60 * 60) + (DATEPART(MINUTE, c.Timestamp) * 60) + (DATEPART(SECOND, c.Timestamp)) AS TimeKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(c.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
+				FROM dbo.fhsmConnections AS c;
 			';
 			EXEC(@stmt);
 		END;
 
 		--
-		-- Register extended properties on fact view @pbiSchema.[Database size]
+		-- Register extended properties on fact view @pbiSchema.[Connections]
 		--
 		BEGIN
-			SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Database size');
+			SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Connections');
 			SET @objName = PARSENAME(@objectName, 1);
 			SET @schName = PARSENAME(@objectName, 2);
 
@@ -170,19 +165,19 @@ ELSE BEGIN
 	--
 	BEGIN
 		--
-		-- Create stored procedure dbo.fhsmSPDatabaseSize
+		-- Create stored procedure dbo.fhsmSPConnections
 		--
 		BEGIN
 			SET @stmt = '
-				IF OBJECT_ID(''dbo.fhsmSPDatabaseSize'', ''P'') IS NULL
+				IF OBJECT_ID(''dbo.fhsmSPConnections'', ''P'') IS NULL
 				BEGIN
-					EXEC(''CREATE PROC dbo.fhsmSPDatabaseSize AS SELECT ''''dummy'''' AS Txt'');
+					EXEC(''CREATE PROC dbo.fhsmSPConnections AS SELECT ''''dummy'''' AS Txt'');
 				END;
 			';
 			EXEC(@stmt);
 
 			SET @stmt = '
-				ALTER PROC dbo.fhsmSPDatabaseSize (
+				ALTER PROC dbo.fhsmSPConnections (
 					@name nvarchar(128)
 					,@version nvarchar(128) OUTPUT
 				)
@@ -190,14 +185,9 @@ ELSE BEGIN
 				BEGIN
 					SET NOCOUNT ON;
 
-					DECLARE @database nvarchar(128);
-					DECLARE @databases nvarchar(max);
-					DECLARE @message nvarchar(max);
 					DECLARE @now datetime;
 					DECLARE @nowUTC datetime;
 					DECLARE @parameters nvarchar(max);
-					DECLARE @parametersTable TABLE([Key] nvarchar(128) NOT NULL, Value nvarchar(128) NULL);
-					DECLARE @replicaId uniqueidentifier;
 					DECLARE @stmt nvarchar(max);
 					DECLARE @thisTask nvarchar(128);
 
@@ -209,121 +199,73 @@ ELSE BEGIN
 					--
 					BEGIN
 						SET @parameters = dbo.fhsmFNGetTaskParameter(@thisTask, @name);
-
-						INSERT INTO @parametersTable([Key], Value)
-						SELECT
-							(SELECT s.Txt FROM dbo.fhsmFNSplitString(p.Txt, ''='') AS s WHERE (s.Part = 1)) AS [Key]
-							,(SELECT s.Txt FROM dbo.fhsmFNSplitString(p.Txt, ''='') AS s WHERE (s.Part = 2)) AS Value
-						FROM dbo.fhsmFNSplitString(@parameters, '';'') AS p;
-
-						SET @databases = (SELECT pt.Value FROM @parametersTable AS pt WHERE (pt.[Key] = ''@Databases''));
-
-						--
-						-- Trim @databases if Ola Hallengren style has been chosen
-						--
-						BEGIN
-							SET @databases = LTRIM(RTRIM(@databases));
-							WHILE (LEFT(@databases, 1) = '''''''') AND (LEFT(@databases, 1) = '''''''')
-							BEGIN
-								SET @databases = SUBSTRING(@databases, 2, LEN(@databases) - 2);
-							END;
-						END;
-					END;
-
-					--
-					-- Get the list of databases to process
-					--
-					BEGIN
-						SELECT d.DatabaseName, d.[Order]
-						INTO #dbList
-						FROM dbo.fhsmFNParseDatabasesStr(@databases) AS d;
 					END;
 
 					--
 					-- Collect data
 					--
 					BEGIN
+						--
+						-- Test if database_id exists on dm_exec_sessions
+						--
+						BEGIN
+							DECLARE @databaseIdGroupStmt nvarchar(max);
+							DECLARE @databaseIdStmt nvarchar(max);
+							DECLARE @databaseIdJoinStmt nvarchar(max);
+							DECLARE @databaseIdWhereStmt nvarchar(max);
+
+							IF EXISTS(
+								SELECT *
+								FROM master.sys.system_columns AS sc
+								INNER JOIN master.sys.system_objects AS so ON (so.object_id = sc.object_id)
+								WHERE (so.name = ''dm_exec_sessions'') AND (sc.name = ''database_id'')
+							)
+							BEGIN
+								SET @databaseIdGroupStmt= ''d.name,'';
+								SET @databaseIdStmt = ''d.Name'';
+								SET @databaseIdJoinStmt = ''INNER JOIN sys.databases AS d WITH (NOLOCK) ON (d.database_id = des.database_id)'';
+								SET @databaseIdWhereStmt= ''WHERE (des.database_id > 0)'';
+							END
+							ELSE BEGIN
+								SET @databaseIdGroupStmt= '''';
+								SET @databaseIdStmt = ''''''N.A.'''''';
+								SET @databaseIdJoinStmt = '''';
+								SET @databaseIdWhereStmt= '''';
+							END;
+						END;
+
 						SELECT
 							@now = SYSDATETIME()
 							,@nowUTC = SYSUTCDATETIME();
 
-						DECLARE dCur CURSOR LOCAL READ_ONLY FAST_FORWARD FOR
-						SELECT dl.DatabaseName, ' + CASE WHEN (@productVersion1 <= 10) THEN 'NULL' ELSE 'd.replica_id' END + ' AS replica_id
-						FROM #dbList AS dl
-						INNER JOIN sys.databases AS d ON (d.name COLLATE DATABASE_DEFAULT = dl.DatabaseName)
-						ORDER BY dl.[Order];
-
-						OPEN dCur;
-
-						WHILE (1 = 1)
-						BEGIN
-							FETCH NEXT FROM dCur
-							INTO @database, @replicaId;
-
-							IF (@@FETCH_STATUS <> 0)
-							BEGIN
-								BREAK;
-							END;
-
-							--
-							-- If is a member of a replica, we will only execute when running on the primary
-							--
-							IF (@replicaId IS NULL)
-			';
-			IF (@productVersion1 >= 11)
-			BEGIN
-				-- SQL Versions SQL2012 or higher
-				SET @stmt += '
-								OR (
-									(
-										SELECT
-										CASE
-											WHEN (dhags.primary_replica = ar.replica_server_name) THEN 1
-											ELSE 0
-										END AS IsPrimaryServer
-										FROM master.sys.availability_groups AS ag
-										INNER JOIN master.sys.availability_replicas AS ar ON ag.group_id = ar.group_id
-										INNER JOIN master.sys.dm_hadr_availability_group_states AS dhags ON ag.group_id = dhags.group_id
-										WHERE (ar.replica_server_name = @@SERVERNAME) AND (ar.replica_id = @replicaId)
-									) = 1
-								)
-				';
-			END;
-			SET @stmt += '
-							BEGIN
-								SET @stmt = ''
-									USE '' + QUOTENAME(@database) + '';
-
-									SELECT
-										DB_NAME() AS DatabaseName
-										,a.LogicalName
-										,a.Type
-										,a.CurrentSize
-										,a.UsedSize
-										,@nowUTC, @now
-									FROM (
-										SELECT
-											df.name AS LogicalName
-											,df.type AS Type
-											,CAST((df.size / 128.0) AS int) AS CurrentSize
-											,CAST((CAST(FILEPROPERTY(df.name, ''''SpaceUsed'''') AS int) / 128.0) AS int) AS UsedSize
-										FROM sys.database_files AS df WITH (NOLOCK)
-									) AS a;
-								'';
-								INSERT INTO dbo.fhsmDatabaseSize(DatabaseName, LogicalName, Type, CurrentSize, UsedSize, TimestampUTC, Timestamp)
-								EXEC sp_executesql
-									@stmt
-									,N''@now datetime, @nowUTC datetime''
-									,@now = @now, @nowUTC = @nowUTC;
-							END
-							ELSE BEGIN
-								SET @message = ''Database '''''' + @database + '''''' is member of a replica but this server is not the primary node'';
-								EXEC dbo.fhsmSPLog @name = @name, @task = @thisTask, @type = ''Warning'', @message = @message;
-							END;
-						END;
-
-						CLOSE dCur;
-						DEALLOCATE dCur;
+						SET @stmt = ''
+							INSERT INTO dbo.fhsmConnections(
+								DatabaseName, HostName, ProgramName, ClientInterfaceName
+								,IsUserProcess, ConnectionCount
+								,TimestampUTC, Timestamp
+							)
+							SELECT
+								'' + @databaseIdStmt + '' AS DatabaseName,
+								des.host_name AS HostName,
+								des.program_name AS ProgramName,
+								des.client_interface_name AS ClientInterfaceName,
+								des.is_user_process AS IsUserProcess,
+								COUNT(*) AS ConnectionCount,
+								@nowUTC, @now
+							FROM sys.dm_exec_sessions AS des WITH (NOLOCK)
+							'' + @databaseIdJoinStmt + ''
+							'' + @databaseIdWhereStmt + ''
+							GROUP BY
+								'' + @databaseIdGroupStmt + ''
+								des.host_name,
+								des.program_name,
+								des.client_interface_name,
+								des.is_user_process;
+						'';
+						EXEC sp_executesql
+							@stmt
+							,N''@nowUTC datetime, @now datetime''
+							,@nowUTC = @nowUTC, @now = @now;
 					END;
 
 					RETURN 0;
@@ -333,10 +275,10 @@ ELSE BEGIN
 		END;
 
 		--
-		-- Register extended properties on the stored procedure dbo.fhsmSPDatabaseSize
+		-- Register extended properties on the stored procedure dbo.fhsmSPConnections
 		--
 		BEGIN
-			SET @objectName = 'dbo.fhsmSPDatabaseSize';
+			SET @objectName = 'dbo.fhsmSPConnections';
 			SET @objName = PARSENAME(@objectName, 1);
 			SET @schName = PARSENAME(@objectName, 2);
 
@@ -356,11 +298,11 @@ ELSE BEGIN
 		retention(Enabled, TableName, Sequence, TimeColumn, IsUtc, Days, Filter) AS(
 			SELECT
 				1
-				,'dbo.fhsmDatabaseSize'
+				,'dbo.fhsmConnections'
 				,1
 				,'TimestampUTC'
 				,1
-				,180
+				,30
 				,NULL
 		)
 		MERGE dbo.fhsmRetentions AS tgt
@@ -378,13 +320,13 @@ ELSE BEGIN
 		schedules(Enabled, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters) AS(
 			SELECT
 				1
-				,'Database size'
-				,PARSENAME('dbo.fhsmSPDatabaseSize', 1)
-				,12 * 60 * 60
-				,CAST('1900-1-1T07:00:00.0000' AS datetime2(0))
-				,CAST('1900-1-1T08:00:00.0000' AS datetime2(0))
+				,'Connections'
+				,PARSENAME('dbo.fhsmSPConnections', 1)
+				,5 * 60
+				,CAST('1900-1-1T00:00:00.0000' AS datetime2(0))
+				,CAST('1900-1-1T23:59:59.0000' AS datetime2(0))
 				,1, 1, 1, 1, 1, 1, 1
-				,'@Databases = ''USER_DATABASES, msdb'''
+				,NULL
 		)
 		MERGE dbo.fhsmSchedules AS tgt
 		USING schedules AS src ON (src.Name = tgt.Name)
@@ -407,24 +349,12 @@ ELSE BEGIN
 			SELECT
 				'Database' AS DimensionName
 				,'DatabaseKey' AS DimensionKey
-				,'dbo.fhsmDatabaseSize' AS SrcTable
+				,'dbo.fhsmConnections' AS SrcTable
 				,'src' AS SrcAlias
 				,NULL AS SrcWhere
 				,'src.[Timestamp]' AS SrcDateColumn
 				,'src.[DatabaseName]', NULL, NULL
 				,'Database', NULL, NULL
-
-			UNION ALL
-
-			SELECT
-				'Database file' AS DimensionName
-				,'DatabaseFileKey' AS DimensionKey
-				,'dbo.fhsmDatabaseSize' AS SrcTable
-				,'src' AS SrcAlias
-				,NULL AS SrcWhere
-				,'src.[Timestamp]' AS SrcDateColumn
-				,'src.[DatabaseName]', 'src.[LogicalName]', 'CASE src.[Type] WHEN 0 THEN ''Data'' WHEN 1 THEN ''Log'' WHEN 2 THEN ''Filestream'' END'
-				,'Database name', 'Logical name', 'Type'
 		)
 		MERGE dbo.fhsmDimensions AS tgt
 		USING dimensions AS src ON (src.DimensionName = tgt.DimensionName) AND (src.SrcTable = tgt.SrcTable)
@@ -460,6 +390,6 @@ ELSE BEGIN
 	-- Update dimensions based upon the fact tables
 	--
 	BEGIN
-		EXEC dbo.fhsmSPUpdateDimensions @table = 'dbo.fhsmDatabaseSize';
+		EXEC dbo.fhsmSPUpdateDimensions @table = 'dbo.fhsmConnections';
 	END;
 END;

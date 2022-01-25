@@ -47,7 +47,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '1.6';
+		SET @version = '1.0';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -66,37 +66,30 @@ ELSE BEGIN
 	--
 	BEGIN
 		--
-		-- Create dbo.fhsmWhoIsActive
+		-- Create table dbo.fhsmPlanCacheUsage if it not already exists
 		--
-		IF OBJECT_ID('dbo.fhsmWhoIsActive', 'U') IS NULL
+		IF OBJECT_ID('dbo.fhsmPlanCacheUsage', 'U') IS NULL
 		BEGIN
-			RAISERROR('Creating table dbo.fhsmWhoIsActive', 0, 1) WITH NOWAIT;
+			RAISERROR('Creating table dbo.fhsmPlanCacheUsage', 0, 1) WITH NOWAIT;
 
-			EXEC dbo.sp_WhoIsActive
-				@format_output = 0
-				,@get_transaction_info = 1
-				,@get_outer_command = 1
-				,@get_plans = 1
-				,@return_schema = 1
-				,@schema = @stmt OUTPUT;
+			CREATE TABLE dbo.fhsmPlanCacheUsage(
+				Id int identity(1,1) NOT NULL
+				,ObjectType nvarchar(16) NOT NULL
+				,CacheSize bigint NOT NULL
+				,TimestampUTC datetime NOT NULL
+				,Timestamp datetime NOT NULL
+				,CONSTRAINT PK_fhsmPlanCacheUsage PRIMARY KEY(Id)
+			);
 
-			SET @stmt = REPLACE(@stmt, '<table_name>', QUOTENAME(DB_NAME()) + '.dbo.fhsmWhoIsActive');
-			EXEC(@stmt);
+			CREATE NONCLUSTERED INDEX NC_fhsmPlanCacheUsage_TimestampUTC ON dbo.fhsmPlanCacheUsage(TimestampUTC);
+			CREATE NONCLUSTERED INDEX NC_fhsmPlanCacheUsage_Timestamp ON dbo.fhsmPlanCacheUsage(Timestamp);
 		END;
 
 		--
-		-- Create index on dbo.fhsmWhoIsActive
-		--
-		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmWhoIsActive')) AND (i.name = 'CL_fhsmWhoIsActive_collection_time'))
-		BEGIN
-			CREATE CLUSTERED INDEX CL_fhsmWhoIsActive_collection_time ON dbo.fhsmWhoIsActive(collection_time ASC);
-		END;
-
-		--
-		-- Register extended properties on the table dbo.fhsmWhoIsActive
+		-- Register extended properties on the table dbo.fhsmPlanCacheUsage
 		--
 		BEGIN
-			SET @objectName = 'dbo.fhsmWhoIsActive';
+			SET @objectName = 'dbo.fhsmPlanCacheUsage';
 			SET @objName = PARSENAME(@objectName, 1);
 			SET @schName = PARSENAME(@objectName, 2);
 
@@ -117,84 +110,36 @@ ELSE BEGIN
 	--
 	BEGIN
 		--
-		-- Create fact view @pbiSchema.[Who is active]
+		-- Create fact view @pbiSchema.[Plan cache usage]
 		--
 		BEGIN
 			SET @stmt = '
-				IF OBJECT_ID(''' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Who is active') + ''', ''V'') IS NULL
+				IF OBJECT_ID(''' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Plan cache usage') + ''', ''V'') IS NULL
 				BEGIN
-					EXEC(''CREATE VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Who is active') + ' AS SELECT ''''dummy'''' AS Txt'');
+					EXEC(''CREATE VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Plan cache usage') + ' AS SELECT ''''dummy'''' AS Txt'');
 				END;
 			';
 			EXEC(@stmt);
 
 			SET @stmt = '
-				ALTER VIEW  ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Who is active') + '
+				ALTER VIEW  ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Plan cache usage') + '
 				AS
 				SELECT
-					DATEDIFF(SECOND, a.collection_time, SYSDATETIME()) AS SecondsSinceLastSeen
-					,a.collection_time AS CollectionTime
-					,a.login_time AS LoginTime
-					,DATEDIFF(MILLISECOND, a.start_time, a.collection_time) AS ElapsedTimeMS
-					,a.session_id AS SessionId
-					,a.sql_text AS SQLText
-					,a.sql_command AS SQLCommand
-					,a.login_name AS LoginName
-					,a.wait_info AS WaitInfo
-					,a.tran_log_writes AS TransLogWrite
-					,a.CPU - a.FirstCPU AS CPU
-					,a.tempdb_allocations - a.FirstTempdbAllocations AS TempdbAllocations
-					,a.blocking_session_id AS BlockingSessionId
-					,a.reads - a.FirstReads AS Reads
-					,a.writes - a.FirstWrites AS Writes
-					,a.physical_reads - a.FirstPhysicalReads AS PhysicalReads
-					,a.used_memory AS UsedMemory
-					,a.status AS Status
-					,a.tran_start_time AS TranStartTime
-					,a.implicit_tran AS ImplicitTran
-					,a.open_tran_count AS OpenTranCount
-					,a.percent_complete AS PercentComplete
-					,a.host_name AS HostName
-					,a.program_name AS ProgramName
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(a.database_name, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
-				FROM (
-					SELECT
-						ROW_NUMBER() OVER(PARTITION BY wia.session_id, wia.login_time, wia.start_time ORDER BY wia.collection_time DESC) AS _Rnk_
-						,wia.*
-						,firstWia.CPU AS FirstCPU
-						,firstWia.tempdb_allocations AS FirstTempdbAllocations
-						,firstWia.reads AS FirstReads
-						,firstWia.writes AS FirstWrites
-						,firstWia.physical_reads AS FirstPhysicalReads
-					FROM dbo.fhsmWhoIsActive AS wia
-					CROSS APPLY (
-						SELECT TOP (1)
-							fWia.CPU
-							,fWia.tempdb_allocations
-							,fWia.reads
-							,fWia.writes
-							,fWia.physical_reads
-						FROM dbo.fhsmWhoIsActive AS fWia
-						WHERE
-							(fWia.session_id = wia.session_id)
-							AND (fWia.login_time = wia.login_time)
-							AND (fWia.start_time = wia.start_time)
-						ORDER BY fWia.collection_time
-					) AS firstWia
-					WHERE (DATEDIFF(HOUR, wia.collection_time, (SELECT MAX(wia2.collection_time) FROM dbo.fhsmWhoIsActive AS wia2)) < 24)
-						AND (wia.sql_text <> ''sp_server_diagnostics'')
-						AND (wia.sql_text NOT LIKE ''WAITFOR DELAY %'')
-				) AS a
-				WHERE (a._Rnk_ = 1);
+					pcu.ObjectType
+					,(pcu.CacheSize / 1048576.0) AS CacheSize_MB
+					,pcu.Timestamp
+					,CAST(pcu.Timestamp AS date) AS Date
+					,(DATEPART(HOUR, pcu.Timestamp) * 60 * 60) + (DATEPART(MINUTE, pcu.Timestamp) * 60) + (DATEPART(SECOND, pcu.Timestamp)) AS TimeKey
+				FROM dbo.fhsmPlanCacheUsage AS pcu;
 			';
 			EXEC(@stmt);
 		END;
 
 		--
-		-- Register extended properties on fact view @pbiSchema.[Who is active]
+		-- Register extended properties on fact view @pbiSchema.[Plan cache usage]
 		--
 		BEGIN
-			SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Who is active');
+			SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Plan cache usage');
 			SET @objName = PARSENAME(@objectName, 1);
 			SET @schName = PARSENAME(@objectName, 2);
 
@@ -211,19 +156,19 @@ ELSE BEGIN
 	--
 	BEGIN
 		--
-		-- Create stored procedure dbo.fhsmSPWhoIsActive
+		-- Create stored procedure dbo.fhsmSPPlanCacheUsage
 		--
 		BEGIN
 			SET @stmt = '
-				IF OBJECT_ID(''dbo.fhsmSPWhoIsActive'', ''P'') IS NULL
+				IF OBJECT_ID(''dbo.fhsmSPPlanCacheUsage'', ''P'') IS NULL
 				BEGIN
-					EXEC(''CREATE PROC dbo.fhsmSPWhoIsActive AS SELECT ''''dummy'''' AS Txt'');
+					EXEC(''CREATE PROC dbo.fhsmSPPlanCacheUsage AS SELECT ''''dummy'''' AS Txt'');
 				END;
 			';
 			EXEC(@stmt);
 
 			SET @stmt = '
-				ALTER PROC dbo.fhsmSPWhoIsActive(
+				ALTER PROC dbo.fhsmSPPlanCacheUsage (
 					@name nvarchar(128)
 					,@version nvarchar(128) OUTPUT
 				)
@@ -231,17 +176,40 @@ ELSE BEGIN
 				BEGIN
 					SET NOCOUNT ON;
 
+					DECLARE @now datetime;
+					DECLARE @nowUTC datetime;
 					DECLARE @parameters nvarchar(max);
-					DECLARE @stmt nvarchar(max);
 					DECLARE @thisTask nvarchar(128);
 
 					SET @thisTask = OBJECT_NAME(@@PROCID);
 					SET @version = ''' + @version + ''';
 
-					SET @parameters = dbo.fhsmFNGetTaskParameter(@thisTask, @name);
+					--
+					-- Get the parameters for the command
+					--
+					BEGIN
+						SET @parameters = dbo.fhsmFNGetTaskParameter(@thisTask, @name);
+					END;
+			';
+			SET @stmt += '
 
-					SET @stmt = ''EXEC dbo.sp_WhoIsActive '' + @parameters;
-					EXEC(@stmt);
+					--
+					-- Collect data
+					--
+					BEGIN
+						SELECT
+							@now = SYSDATETIME()
+							,@nowUTC = SYSUTCDATETIME();
+
+						INSERT INTO dbo.fhsmPlanCacheUsage(ObjectType, CacheSize, TimestampUTC, Timestamp)
+						SELECT
+							decp.objtype AS ObjectType
+							,SUM(CAST(decp.size_in_bytes AS bigint)) AS CacheSize
+							,@nowUTC AS TimestampUTC
+							,@now AS Timestamp
+						FROM sys.dm_exec_cached_plans AS decp
+						GROUP BY decp.objtype;
+					END;
 
 					RETURN 0;
 				END;
@@ -250,10 +218,10 @@ ELSE BEGIN
 		END;
 
 		--
-		-- Register extended properties on the stored procedure dbo.fhsmSPIndexUsage
+		-- Register extended properties on the stored procedure dbo.fhsmSPPlanCacheUsage
 		--
 		BEGIN
-			SET @objectName = 'dbo.fhsmSPWhoIsActive';
+			SET @objectName = 'dbo.fhsmSPPlanCacheUsage';
 			SET @objName = PARSENAME(@objectName, 1);
 			SET @schName = PARSENAME(@objectName, 2);
 
@@ -273,11 +241,11 @@ ELSE BEGIN
 		retention(Enabled, TableName, Sequence, TimeColumn, IsUtc, Days, Filter) AS(
 			SELECT
 				1
-				,'dbo.fhsmWhoIsActive'
+				,'dbo.fhsmPlanCacheUsage'
 				,1
-				,'collection_time'
-				,0
-				,7
+				,'TimestampUTC'
+				,1
+				,90
 				,NULL
 		)
 		MERGE dbo.fhsmRetentions AS tgt
@@ -295,13 +263,13 @@ ELSE BEGIN
 		schedules(Enabled, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters) AS(
 			SELECT
 				1
-				,'Who is active'
-				,PARSENAME('dbo.fhsmSPWhoIsActive', 1)
-				,60
+				,'Plan cache usage'
+				,PARSENAME('dbo.fhsmSPPlanCacheUsage', 1)
+				,5 * 60
 				,CAST('1900-1-1T00:00:00.0000' AS datetime2(0))
 				,CAST('1900-1-1T23:59:59.0000' AS datetime2(0))
 				,1, 1, 1, 1, 1, 1, 1
-				,'@format_output = 0, @get_transaction_info = 1, @get_outer_command = 1, @get_plans = 1, @destination_table = ''' + QUOTENAME(DB_NAME()) + '.dbo.fhsmWhoIsActive'''
+				,NULL
 		)
 		MERGE dbo.fhsmSchedules AS tgt
 		USING schedules AS src ON (src.Name = tgt.Name)
@@ -313,54 +281,11 @@ ELSE BEGIN
 	--
 	-- Register dimensions
 	--
-	BEGIN
-		WITH
-		dimensions(
-			DimensionName, DimensionKey
-			,SrcTable, SrcAlias, SrcWhere, SrcDateColumn
-			,SrcColumn1
-			,OutputColumn1
-		) AS (
-			SELECT
-				'Database' AS DimensionName
-				,'DatabaseKey' AS DimensionKey
-				,'dbo.fhsmWhoIsActive' AS SrcTable
-				,'src' AS SrcAlias
-				,NULL AS SrcWhere
-				,'src.[collection_time]' AS SrcDateColumn
-				,'src.[database_name]'
-				,'Database'
-		)
-		MERGE dbo.fhsmDimensions AS tgt
-		USING dimensions AS src ON (src.DimensionName = tgt.DimensionName) AND (src.SrcTable = tgt.SrcTable)
-		WHEN MATCHED
-			THEN UPDATE SET
-				tgt.DimensionKey = src.DimensionKey
-				,tgt.SrcTable = src.SrcTable
-				,tgt.SrcAlias = src.SrcAlias
-				,tgt.SrcWhere = src.SrcWhere
-				,tgt.SrcDateColumn = src.SrcDateColumn
-				,tgt.SrcColumn1 = src.SrcColumn1
-				,tgt.OutputColumn1 = src.OutputColumn1
-		WHEN NOT MATCHED BY TARGET
-			THEN INSERT(
-				DimensionName, DimensionKey
-				,SrcTable, SrcAlias, SrcWhere, SrcDateColumn
-				,SrcColumn1
-				,OutputColumn1
-			)
-			VALUES(
-				src.DimensionName, src.DimensionKey
-				,src.SrcTable, src.SrcAlias, src.SrcWhere, src.SrcDateColumn
-				,src.SrcColumn1
-				,src.OutputColumn1
-			);
-	END;
 
 	--
 	-- Update dimensions based upon the fact tables
 	--
 	BEGIN
-		EXEC dbo.fhsmSPUpdateDimensions @table = 'dbo.fhsmWhoIsActive';
+		EXEC dbo.fhsmSPUpdateDimensions @table = 'dbo.fhsmPlanCacheUsage';
 	END;
 END;

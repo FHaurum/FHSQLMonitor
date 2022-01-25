@@ -24,7 +24,7 @@ DECLARE @version nvarchar(128);
 SET @myUserName = SUSER_NAME();
 SET @nowUTC = SYSUTCDATETIME();
 SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
-SET @version = '1.4';
+SET @version = '1.5';
 
 --
 -- Create database if it not already exists
@@ -515,6 +515,7 @@ BEGIN
 				,IsUtc bit NOT NULL
 				,Days int NOT NULL
 				,Filter nvarchar(max) NULL
+				,LastStartedUTC datetime NULL
 				,LastExecutedUTC datetime NULL
 				,CONSTRAINT PK_fhsmRetentions PRIMARY KEY(Id)
 				,CONSTRAINT UQ_fhsmRetentions_TableName_Sequence UNIQUE(TableName, Sequence)
@@ -570,6 +571,7 @@ BEGIN
 			CREATE TABLE dbo.fhsmLog(
 				Id int identity(1,1) NOT NULL
 				,Name nvarchar(128) NOT NULL
+				,Version nvarchar(128) NULL
 				,Task nvarchar(128) NOT NULL
 				,Type nvarchar(16) NOT NULL
 				,Message nvarchar(max) NOT NULL
@@ -671,7 +673,9 @@ BEGIN
 				,Friday bit NOT NULL
 				,Saturday bit NOT NULL
 				,Sunday bit NOT NULL
+				,LastStartedUTC datetime NULL
 				,LastExecutedUTC datetime NULL
+				,LastErrorMessage nvarchar(max) NULL
 				,CONSTRAINT PK_fhsmSchedules PRIMARY KEY(Id)
 				,CONSTRAINT UQ_fhsmSchedules_Name UNIQUE(Name)
 			);
@@ -1010,6 +1014,83 @@ BEGIN
 END;
 
 --
+-- Create or alter function dbo.fhsmFNGetExecutionDelaySec
+--
+BEGIN
+	SET @stmt = '
+		USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
+
+		DECLARE @stmt nvarchar(max);
+
+		IF OBJECT_ID(''dbo.fhsmFNGetExecutionDelaySec'', ''FN'') IS NULL
+		BEGIN
+			RAISERROR(''Creating stub function dbo.fhsmFNGetExecutionDelaySec'', 0, 1) WITH NOWAIT;
+
+			EXEC(''CREATE FUNCTION dbo.fhsmFNGetExecutionDelaySec() RETURNS bit AS BEGIN RETURN 0; END;'');
+		END;
+
+		--
+		-- Alter dbo.fhsmFNGetExecutionDelaySec
+		--
+		BEGIN
+			RAISERROR(''Alter function dbo.fhsmFNGetExecutionDelaySec'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
+				ALTER FUNCTION dbo.fhsmFNGetExecutionDelaySec(
+					@task nvarchar(128)
+					,@name nvarchar(128)
+				)
+				RETURNS int
+				AS
+				BEGIN
+					DECLARE @parameters nvarchar(max);
+
+					SET @parameters = (
+						SELECT s.ExecutionDelaySec
+						FROM dbo.fhsmSchedules AS s
+						WHERE (s.Task = @task) AND (s.Name = @name)
+					);
+
+					RETURN @parameters;
+				END;
+			'';
+			EXEC(@stmt);
+		END;
+	';
+	EXEC(@stmt);
+END;
+
+--
+-- Register extended properties on the function dbo.fhsmFNGetExecutionDelaySec
+--
+BEGIN
+	SET @objectName = 'dbo.fhsmFNGetExecutionDelaySec';
+
+	SET @stmt = '
+		USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
+			
+		DECLARE @objName nvarchar(128);
+		DECLARE @schName nvarchar(128);
+
+		SET @objName = PARSENAME(@objectName, 1);
+		SET @schName = PARSENAME(@objectName, 2);
+
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+		EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+	';
+	EXEC sp_executesql
+		@stmt
+		,N'@objectName nvarchar(128), @version sql_variant, @nowUTCStr sql_variant, @myUserName sql_variant'
+		,@objectName = @objectName
+		,@version = @version
+		,@nowUTCStr = @nowUTCStr
+		,@myUserName = @myUserName;
+END;
+
+--
 -- Create or alter function dbo.fhsmFNIsValidInstallation
 --
 BEGIN
@@ -1048,11 +1129,15 @@ BEGIN
 							CROSS APPLY (SELECT sch.name FROM sys.schemas AS sch WHERE (sch.schema_id = Object.schema_id)) AS [Schema]
 							WHERE (ep.class = 1) AND (ep.name = ''''FHSMVersion'''')
 								AND ([Schema].name = ''''dbo'''')
-								AND (Object.name IN (''''fhsmLog'''', ''''fhsmRetentions'''', ''''fhsmSchedules'''', ''''fhsmSPCleanup'''', ''''fhsmSPLog'''', ''''fhsmSPSchedules'''', ''''fhsmFNGenerateKey'''', ''''fhsmFNParseDatabasesStr'''', ''''fhsmFNSplitString''''))
+								AND (Object.name IN (
+									''''fhsmConfigurations'''', ''''fhsmDimensions'''', ''''fhsmLog'''', ''''fhsmRetentions'''', ''''fhsmSchedules''''
+									,''''fhsmSPCleanup'''', ''''fhsmSPExtendedProperties'''', ''''fhsmSPLog'''', ''''fhsmSPSchedules'''', ''''fhsmSPUpdateDimensions''''
+									,''''fhsmFNGenerateKey'''', ''''fhsmFNGetConfiguration'''', ''''fhsmFNGetExecutionDelaySec'''', ''''fhsmFNGetTaskParameter'''', ''''fhsmFNParseDatabasesStr'''', ''''fhsmFNSplitString'''', ''''fhsmFNTryParseAsInt''''
+								))
 						) AS a
 					);
 
-					SET @retVal = CASE WHEN (@checkCount <> 9) THEN 0 ELSE 1 END;
+					SET @retVal = CASE WHEN (@checkCount <> 17) THEN 0 ELSE 1 END;
 
 					RETURN @retVal;
 				END;
@@ -1406,6 +1491,7 @@ BEGIN
 			SET @stmt = ''
 				ALTER PROC dbo.fhsmSPLog(
 					@name nvarchar(128)
+					,@version nvarchar(128) = NULL
 					,@task nvarchar(128)
 					,@type nvarchar(16)
 					,@message nvarchar(max)
@@ -1416,11 +1502,11 @@ BEGIN
 
 					DECLARE @printMessage nvarchar(max);
 
-					SET @printMessage = @name + '''': '''' + @task + '''': '''' + @type + '''': '''' + @message;
+					SET @printMessage = @name + '''': '''' + COALESCE(@version, ''''N.A.'''') + '''': '''' + @task + '''': '''' + @type + '''': '''' + @message;
 					PRINT @printMessage;
 
-					INSERT INTO dbo.fhsmLog(Name, Task, Type, Message)
-					VALUES (@name, @task, @type, @message);
+					INSERT INTO dbo.fhsmLog(Name, Version, Task, Type, Message)
+					VALUES (@name, @version, @task, @type, @message);
 
 					RETURN 0;
 				END;
@@ -1487,6 +1573,7 @@ BEGIN
 			SET @stmt = ''
 				ALTER PROC dbo.fhsmSPCleanup(
 					@name nvarchar(128)
+					,@version nvarchar(128) OUTPUT
 				)
 				AS
 				BEGIN
@@ -1496,7 +1583,6 @@ BEGIN
 					DECLARE @days int;
 					DECLARE @filter nvarchar(max);
 					DECLARE @id int;
-					DECLARE @isUtc bit;
 					DECLARE @message nvarchar(max);
 					DECLARE @parameters nvarchar(max);
 					DECLARE @rowsDeleted int;
@@ -1506,25 +1592,27 @@ BEGIN
 					DECLARE @tableName nvarchar(128);
 					DECLARE @thisTask nvarchar(128);
 					DECLARE @timeColumn nvarchar(128);
-					DECLARE @timeLimit datetime;
 
 					SET @bulkSize = 5000;
 					SET @thisTask = OBJECT_NAME(@@PROCID);
+					SET @version = ''''' + @version + ''''';
 
 					SET @parameters = dbo.fhsmFNGetTaskParameter(@thisTask, @name);
 
 					DECLARE tCur CURSOR LOCAL READ_ONLY FAST_FORWARD FOR
-					SELECT r.Id, r.TableName, r.Sequence, r.TimeColumn, r.IsUtc, r.Days, NULLIF(RTRIM(LTRIM(r.Filter)), '''''''')
+					SELECT r.Id, r.TableName, r.Sequence, r.TimeColumn, r.Days, NULLIF(RTRIM(LTRIM(r.Filter)), '''''''')
 					FROM dbo.fhsmRetentions AS r
 					WHERE (r.Enabled = 1)
 					ORDER BY r.TableName, r.Sequence;
 
 					OPEN tCur;
+	';
+	SET @stmt += '
 
 					WHILE (1 = 1)
 					BEGIN
 						FETCH NEXT FROM tCur
-						INTO @id, @tableName, @sequence, @timeColumn, @isUtc, @days, @filter;
+						INTO @id, @tableName, @sequence, @timeColumn, @days, @filter;
 
 						IF (@@FETCH_STATUS <> 0)
 						BEGIN
@@ -1534,18 +1622,16 @@ BEGIN
 						IF (OBJECT_ID(@tableName) IS NULL)
 						BEGIN
 							SET @message = ''''Table '''''''''''' + @tableName + '''''''''''' does not exist'''';
-							EXEC dbo.fhsmSPLog @name = @name, @task = @thisTask, @type = ''''Warning'''', @message = @message;
+							EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''''Warning'''', @message = @message;
 						END
 						ELSE BEGIN
-							IF (@isUtc = 0)
-							BEGIN
-								SET @timeLimit = DATEADD(DAY, ABS(@days) * -1, SYSDATETIME());
-							END
-							ELSE BEGIN
-								SET @timeLimit = DATEADD(DAY, ABS(@days) * -1, SYSUTCDATETIME());
-							END;
-
 							SET @stmt = ''''
+								DECLARE @latestDate datetime;
+								DECLARE @timeLimit datetime;
+
+								SET @latestDate = (SELECT MAX(t.'''' + @timeColumn + '''') FROM '''' + @tableName + '''' AS t);
+								SET @timeLimit = DATEADD(DAY, ABS(@days) * -1, @latestDate);
+
 								BEGIN TRANSACTION;
 									DELETE TOP(@bulkSize) t
 									FROM '''' + @tableName + '''' AS t
@@ -1557,14 +1643,19 @@ BEGIN
 								CHECKPOINT;
 							'''';
 
+							UPDATE r
+							SET r.LastStartedUTC = SYSUTCDATETIME()
+							FROM dbo.fhsmRetentions AS r
+							WHERE (r.Id = @id);
+
 							SET @rowsDeletedTotal = 0;
 
 							WHILE (1 = 1)
 							BEGIN
 								EXEC sp_executesql
 									@stmt
-									,N''''@timeLimit datetime, @bulkSize int, @rowsDeleted int OUTPUT''''
-									,@timeLimit = @timeLimit
+									,N''''@days int, @bulkSize int, @rowsDeleted int OUTPUT''''
+									,@days = @days
 									,@bulkSize = @bulkSize
 									,@rowsDeleted = @rowsDeleted OUTPUT;
 
@@ -1582,16 +1673,21 @@ BEGIN
 
 								SET @message = ''''Deleted ''''
 									+ CAST(@rowsDeleted AS nvarchar) + '''' records in table '''' + @tableName + '''' sequence '''' + CAST(@sequence AS nvarchar)
-									+ '''' before '''' + CAST(@timeLimit AS nvarchar);
-								EXEC dbo.fhsmSPLog @name = @name, @task = @thisTask, @type = ''''Info'''', @message = @message;
+									+ '''' older than '''' + CAST(@days AS nvarchar) + '''' days'''';
+								EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''''Info'''', @message = @message;
 							END;
+
+							UPDATE r
+							SET r.LastExecutedUTC = SYSUTCDATETIME()
+							FROM dbo.fhsmRetentions AS r
+							WHERE (r.Id = @id);
 
 							IF (@rowsDeletedTotal > 0)
 							BEGIN
 								SET @message = ''''Deleted in total ''''
 									+ CAST(@rowsDeletedTotal AS nvarchar) + '''' records in table '''' + @tableName + '''' sequence '''' + CAST(@sequence AS nvarchar)
-									+ '''' before '''' + CAST(@timeLimit AS nvarchar);
-								EXEC dbo.fhsmSPLog @name = @name, @task = @thisTask, @type = ''''Info'''', @message = @message;
+									+ '''' older than '''' + CAST(@days AS nvarchar) + '''' days'''';
+								EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''''Info'''', @message = @message;
 							END;
 						END;
 					END;
@@ -1690,15 +1786,20 @@ BEGIN
 			RAISERROR(''Alter stored procedure dbo.fhsmSPSchedules'', 0, 1) WITH NOWAIT;
 
 			SET @stmt = ''
-				ALTER PROC dbo.fhsmSPSchedules
+				ALTER PROC dbo.fhsmSPSchedules (
+					@test bit = 0
+				)
 				AS
 				BEGIN
 					SET NOCOUNT ON;
 
+					DECLARE @enabled bit;
+					DECLARE @errorMsg nvarchar(max);
 					DECLARE @executionDelaySec int;
 					DECLARE @fromTime time(0);
 					DECLARE @id int;
 					DECLARE @lastExecutedUTC datetime;
+					DECLARE @lastStartedUTC datetime;
 					DECLARE @message nvarchar(max);
 					DECLARE @monday bit, @tuesday bit, @wednesday bit, @thursday bit, @friday bit, @saturday bit, @sunday bit;
 					DECLARE @name nvarchar(128);
@@ -1710,21 +1811,23 @@ BEGIN
 					DECLARE @thisTask nvarchar(128);
 					DECLARE @timeNow time(0);
 					DECLARE @toTime time(0);
+					DECLARE @version nvarchar(128);
 
 					SET @thisTask = OBJECT_NAME(@@PROCID);
 
 					DECLARE sCur CURSOR LOCAL READ_ONLY FAST_FORWARD FOR
-					SELECT s.Id, s.Name, s.Task, s.Parameters, s.ExecutionDelaySec, s.FromTime, s.ToTime, s.Monday, s.Tuesday, s.Wednesday, s.Thursday, s.Friday, s.Saturday, s.Sunday, s.LastExecutedUTC
+					SELECT s.Enabled, s.Id, s.Name, s.Task, s.Parameters, s.ExecutionDelaySec, s.FromTime, s.ToTime, s.Monday, s.Tuesday, s.Wednesday, s.Thursday, s.Friday, s.Saturday, s.Sunday, s.LastStartedUTC, s.LastExecutedUTC
 					FROM dbo.fhsmSchedules AS s
-					WHERE (s.Enabled = 1)
-					ORDER BY s.Name;
+					ORDER BY s.Task, s.Name;
 
 					OPEN sCur;
+	';
+	SET @stmt += '
 
 					WHILE (1 = 1)
 					BEGIN
 						FETCH NEXT FROM sCur
-						INTO @id, @name, @task, @parameters, @executionDelaySec, @fromTime, @toTime, @monday, @tuesday, @wednesday, @thursday, @friday, @saturday, @sunday, @lastExecutedUTC;
+						INTO @enabled, @id, @name, @task, @parameters, @executionDelaySec, @fromTime, @toTime, @monday, @tuesday, @wednesday, @thursday, @friday, @saturday, @sunday, @lastStartedUTC, @lastExecutedUTC;
 
 						IF (@@FETCH_STATUS <> 0)
 						BEGIN
@@ -1737,45 +1840,66 @@ BEGIN
 						SET @parameters = NULLIF(@parameters, '''''''');
 
 						-- Update time for every loop
-						SET @now = SYSDATETIME();
-						SET @nowUTC = SYSUTCDATETIME();
+						SELECT
+							@now = SYSDATETIME()
+							,@nowUTC = SYSUTCDATETIME();
 						SET @timeNow = CAST(@now AS time(0));
 
-						IF (@timeNow >= @fromTime) AND (@timeNow <= @toTime)
-							AND (
-								(@lastExecutedUTC IS NULL)
-								OR (DATEADD(SECOND, ABS(@executionDelaySec), @lastExecutedUTC) < @nowUTC)
-							)
-							AND ((
-								CASE DATEPART(WEEKDAY, @now)
-									WHEN 1 THEN @sunday
-									WHEN 2 THEN @monday
-									WHEN 3 THEN @tuesday
-									WHEN 4 THEN @wednesday
-									WHEN 5 THEN @thursday
-									WHEN 6 THEN @friday
-									WHEN 7 THEN @saturday
-								END
+						IF	(@test = 1)
+							OR (
+								(@enabled = 1)
+								AND (@timeNow >= @fromTime) AND (@timeNow <= @toTime)
+								AND (
+									(@lastStartedUTC IS NULL)
+									OR (DATEADD(SECOND, ABS(@executionDelaySec), DATEADD(MILLISECOND, -DATEPART(MILLISECOND, @lastStartedUTC), @lastStartedUTC)) < @nowUTC)
+								)
+								AND ((
+									CASE DATEPART(WEEKDAY, @now)
+										WHEN 1 THEN @sunday
+										WHEN 2 THEN @monday
+										WHEN 3 THEN @tuesday
+										WHEN 4 THEN @wednesday
+										WHEN 5 THEN @thursday
+										WHEN 6 THEN @friday
+										WHEN 7 THEN @saturday
+									END
 								) = 1)
+							)
 						BEGIN
 							BEGIN TRY;
-								SET @stmt = ''''EXEC '''' + @task + '''' @name = @name;'''';
-								EXEC sp_executesql
-									@stmt
-									,N''''@name nvarchar(128)''''
-									,@name = @name;
-
 								UPDATE s
-								SET s.LastExecutedUTC = DATEADD(MILLISECOND, -DATEPART(MILLISECOND, @nowUTC), @nowUTC)
+								SET s.LastStartedUTC = @nowUTC
 								FROM dbo.fhsmSchedules AS s
 								WHERE (s.Id = @id);
 
-								SET @message = ''''Executed '''' + @task + '''' - '''' + @name + COALESCE('''' - '''' + @parameters, '''''''');
-								EXEC dbo.fhsmSPLog @name = @name, @task = @thisTask, @type = ''''Info'''', @message = @message;
+								SET @stmt = ''''EXEC '''' + @task + '''' @name = @name, @version = @version OUTPUT;'''';
+								EXEC sp_executesql
+									@stmt
+									,N''''@name nvarchar(128), @version nvarchar(128) OUTPUT''''
+									,@name = @name, @version = @version OUTPUT;
+
+								UPDATE s
+								SET
+									s.LastExecutedUTC = SYSUTCDATETIME()
+									,s.LastErrorMessage = NULL
+								FROM dbo.fhsmSchedules AS s
+								WHERE (s.Id = @id);
+
+								SET @message = @thisTask + CASE WHEN (@test = 1) THEN '''' TEST'''' ELSE '''''''' END + '''' executed '''' + @task + '''' - '''' + @name + COALESCE('''' - '''' + @parameters, '''''''');
+								EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @task, @type = ''''Info'''', @message = @message;
 							END TRY
 							BEGIN CATCH
-								SET @message = ''''Executing '''' + @task + '''' - '''' + @name + '''' failed due to - '''' + ERROR_MESSAGE();
-								EXEC dbo.fhsmSPLog @name = @name, @task = @thisTask, @type = ''''Error'''', @message = @message;
+								SET @errorMsg = ERROR_MESSAGE();
+
+								UPDATE s
+								SET
+									s.LastExecutedUTC = SYSUTCDATETIME()
+									,s.LastErrorMessage = @errorMsg
+								FROM dbo.fhsmSchedules AS s
+								WHERE (s.Id = @id);
+
+								SET @message = @thisTask + '''' executing '''' + @task + '''' - '''' + @name + '''' failed due to - '''' + @errorMsg;
+								EXEC dbo.fhsmSPLog @name = @name, @task = @task, @type = ''''Error'''', @message = @message;
 							END CATCH;
 						END;
 					END;
@@ -2355,7 +2479,11 @@ BEGIN
 				AS
 				SELECT
 					l.Id
-					,l.Name, l.Task, l.Type, l.Message
+					,l.Name
+					,l.Task
+					,l.Type
+					,l.Message
+					,l.Version
 					,l.TimestampUTC, l.Timestamp
 				FROM dbo.fhsmLog AS l
 				WHERE (l.TimestampUTC > DATEADD(DAY, -1, SYSUTCDATETIME()));
@@ -2427,6 +2555,7 @@ BEGIN
 					,r.TimeColumn AS [Time column]
 					,r.IsUtc AS [Is UTC]
 					,r.Days
+					,r.LastStartedUTC AS [Last started UTC]
 					,r.LastExecutedUTC AS [Last executed UTC]
 				FROM dbo.fhsmRetentions AS r;
 			'';
@@ -2500,7 +2629,9 @@ BEGIN
 					,s.FromTime AS [From time]
 					,s.ToTime AS [To time]
 					,s.Monday, s.Tuesday, s.Wednesday, s.Thursday, s.Friday, s.Saturday, s.Sunday
+					,s.LastStartedUTC AS [Last started UTC]
 					,s.LastExecutedUTC AS [Last executed UTC]
+					,s.LastErrorMessage
 				FROM dbo.fhsmSchedules AS s;
 			'';
 			EXEC(@stmt);

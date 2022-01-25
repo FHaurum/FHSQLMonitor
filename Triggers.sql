@@ -47,7 +47,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '1.4';
+		SET @version = '1.0';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -66,34 +66,40 @@ ELSE BEGIN
 	--
 	BEGIN
 		--
-		-- Create table dbo.fhsmDatabaseSize if it not already exists
+		-- Create table dbo.fhsmTriggers if it not already exists
 		--
-		IF OBJECT_ID('dbo.fhsmDatabaseSize', 'U') IS NULL
+		IF OBJECT_ID('dbo.fhsmTriggers', 'U') IS NULL
 		BEGIN
-			RAISERROR('Creating table dbo.fhsmDatabaseSize', 0, 1) WITH NOWAIT;
+			RAISERROR('Creating table dbo.fhsmTriggers', 0, 1) WITH NOWAIT;
 
-			CREATE TABLE dbo.fhsmDatabaseSize(
+			CREATE TABLE dbo.fhsmTriggers(
 				Id int identity(1,1) NOT NULL
 				,DatabaseName nvarchar(128) NOT NULL
-				,LogicalName nvarchar(128) NOT NULL
-				,Type tinyint NOT NULL
-				,CurrentSize int NOT NULL
-				,UsedSize int NULL
+				,ParentClass tinyint NULL
+				,ParentSchema nvarchar(128) NULL
+				,ParentObject nvarchar(128) NULL
+				,Type char(2) NULL
+				,CreateDate datetime NOT NULL
+				,ModifyDate datetime NOT NULL
+				,IsMsShipped bit NOT NULL
+				,IsDisabled bit NOT NULL
+				,IsNotForReplication bit NOT NULL
+				,IsInsteadOfTrigger bit NOT NULL
 				,TimestampUTC datetime NOT NULL
 				,Timestamp datetime NOT NULL
-				,CONSTRAINT PK_fhsmDatabaseSize PRIMARY KEY(Id)
+				,CONSTRAINT PK_fhsmTriggers PRIMARY KEY(Id)
 			);
 
-			CREATE NONCLUSTERED INDEX NC_fhsmDatabaseSize_TimestampUTC ON dbo.fhsmDatabaseSize(TimestampUTC);
-			CREATE NONCLUSTERED INDEX NC_fhsmDatabaseSize_Timestamp ON dbo.fhsmDatabaseSize(Timestamp);
-			CREATE NONCLUSTERED INDEX NC_fhsmDatabaseSize_DatabaseName_LogicalName_Type ON dbo.fhsmDatabaseSize(DatabaseName, LogicalName, Type);
+			CREATE NONCLUSTERED INDEX NC_fhsmTriggers_TimestampUTC ON dbo.fhsmTriggers(TimestampUTC);
+			CREATE NONCLUSTERED INDEX NC_fhsmTriggers_Timestamp ON dbo.fhsmTriggers(Timestamp);
+			CREATE NONCLUSTERED INDEX NC_fhsmTriggers_DatabaseName ON dbo.fhsmTriggers(DatabaseName);
 		END;
 
 		--
-		-- Register extended properties on the table dbo.fhsmDatabaseSize
+		-- Register extended properties on the table dbo.fhsmTriggers
 		--
 		BEGIN
-			SET @objectName = 'dbo.fhsmDatabaseSize';
+			SET @objectName = 'dbo.fhsmTriggers';
 			SET @objName = PARSENAME(@objectName, 1);
 			SET @schName = PARSENAME(@objectName, 2);
 
@@ -114,46 +120,57 @@ ELSE BEGIN
 	--
 	BEGIN
 		--
-		-- Create fact view @pbiSchema.[Database size]
+		-- Create fact view @pbiSchema.[Triggers]
 		--
 		BEGIN
 			SET @stmt = '
-				IF OBJECT_ID(''' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Database size') + ''', ''V'') IS NULL
+				IF OBJECT_ID(''' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Triggers') + ''', ''V'') IS NULL
 				BEGIN
-					EXEC(''CREATE VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Database size') + ' AS SELECT ''''dummy'''' AS Txt'');
+					EXEC(''CREATE VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Triggers') + ' AS SELECT ''''dummy'''' AS Txt'');
 				END;
 			';
 			EXEC(@stmt);
 
 			SET @stmt = '
-				ALTER VIEW  ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Database size') + '
+				ALTER VIEW  ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Triggers') + '
 				AS
 				SELECT
-					ds.CurrentSize
-					,ds.UsedSize
-					,CAST(ds.Timestamp AS date) AS Date
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ds.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ds.DatabaseName, ds.LogicalName, CASE ds.Type WHEN 0 THEN ''Data'' WHEN 1 THEN ''Log'' WHEN 2 THEN ''Filestream'' END, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseFileKey
-				FROM dbo.fhsmDatabaseSize AS ds
-				WHERE (ds.Timestamp IN (
-					SELECT a.Timestamp
-					FROM (
-						SELECT
-							ds2.Timestamp
-							,ROW_NUMBER() OVER(PARTITION BY CAST(ds2.Timestamp AS date) ORDER BY ds2.Timestamp DESC) AS _Rnk_
-						FROM dbo.fhsmDatabaseSize AS ds2
-					) AS a
-					WHERE (a._Rnk_ = 1)
-				));
+					CASE t.ParentClass
+						WHEN 0 THEN ''Database''
+						WHEN 1 THEN ''Object/Column''
+						ELSE ''ParentClass:'' + CAST(t.ParentClass AS nvarchar)
+					END AS ParentClass
+					,QUOTENAME(t.ParentSchema) + ''.'' + QUOTENAME(t.ParentObject) AS ParentObject
+					,CASE t.Type
+						WHEN ''TA'' THEN ''Assembly trigger''
+						WHEN ''TR'' THEN ''SQL trigger''
+						ELSE ''Type:'' + t.Type
+					END AS Type
+					,t.CreateDate
+					,t.ModifyDate
+					,t.IsMsShipped
+					,t.IsDisabled
+					,t.IsNotForReplication
+					,CASE t.IsInsteadOfTrigger
+						WHEN 0 THEN ''After trigger''
+						ELSE ''Instead of trigger''
+					END TriggerType
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(t.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
+				FROM dbo.fhsmTriggers AS t
+				WHERE (t.TimestampUTC = (
+					SELECT TOP (1) t2.TimestampUTC
+					FROM dbo.fhsmTriggers AS t2
+					ORDER BY t2.TimestampUTC DESC
+				))
 			';
 			EXEC(@stmt);
 		END;
 
 		--
-		-- Register extended properties on fact view @pbiSchema.[Database size]
+		-- Register extended properties on fact view @pbiSchema.[Triggers]
 		--
 		BEGIN
-			SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Database size');
+			SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Triggers');
 			SET @objName = PARSENAME(@objectName, 1);
 			SET @schName = PARSENAME(@objectName, 2);
 
@@ -170,19 +187,19 @@ ELSE BEGIN
 	--
 	BEGIN
 		--
-		-- Create stored procedure dbo.fhsmSPDatabaseSize
+		-- Create stored procedure dbo.fhsmSPTriggers
 		--
 		BEGIN
 			SET @stmt = '
-				IF OBJECT_ID(''dbo.fhsmSPDatabaseSize'', ''P'') IS NULL
+				IF OBJECT_ID(''dbo.fhsmSPTriggers'', ''P'') IS NULL
 				BEGIN
-					EXEC(''CREATE PROC dbo.fhsmSPDatabaseSize AS SELECT ''''dummy'''' AS Txt'');
+					EXEC(''CREATE PROC dbo.fhsmSPTriggers AS SELECT ''''dummy'''' AS Txt'');
 				END;
 			';
 			EXEC(@stmt);
 
 			SET @stmt = '
-				ALTER PROC dbo.fhsmSPDatabaseSize (
+				ALTER PROC dbo.fhsmSPTriggers (
 					@name nvarchar(128)
 					,@version nvarchar(128) OUTPUT
 				)
@@ -229,6 +246,8 @@ ELSE BEGIN
 							END;
 						END;
 					END;
+			';
+			SET @stmt += '
 
 					--
 					-- Get the list of databases to process
@@ -254,6 +273,8 @@ ELSE BEGIN
 						ORDER BY dl.[Order];
 
 						OPEN dCur;
+			';
+			SET @stmt += '
 
 						WHILE (1 = 1)
 						BEGIN
@@ -296,21 +317,28 @@ ELSE BEGIN
 
 									SELECT
 										DB_NAME() AS DatabaseName
-										,a.LogicalName
-										,a.Type
-										,a.CurrentSize
-										,a.UsedSize
+										,t.parent_class AS ParentClass
+										,sch.name AS ParentSchema
+										,o.name AS ParentObject
+										,t.type AS Type
+										,t.create_date AS CreateDate
+										,t.modify_date AS ModifyDate
+										,t.is_ms_shipped AS IsMsShipped
+										,t.is_disabled AS IsDisabled
+										,t.is_not_for_replication AS IsNotForReplication
+										,t.is_instead_of_trigger AS IsInsteadOfTrigger
 										,@nowUTC, @now
-									FROM (
-										SELECT
-											df.name AS LogicalName
-											,df.type AS Type
-											,CAST((df.size / 128.0) AS int) AS CurrentSize
-											,CAST((CAST(FILEPROPERTY(df.name, ''''SpaceUsed'''') AS int) / 128.0) AS int) AS UsedSize
-										FROM sys.database_files AS df WITH (NOLOCK)
-									) AS a;
+									FROM sys.triggers AS t
+									LEFT OUTER JOIN sys.objects AS o ON (o.object_id = t.parent_id)
+									LEFT OUTER JOIN sys.schemas AS sch ON (sch.schema_id = o.schema_id)
 								'';
-								INSERT INTO dbo.fhsmDatabaseSize(DatabaseName, LogicalName, Type, CurrentSize, UsedSize, TimestampUTC, Timestamp)
+								INSERT INTO dbo.fhsmTriggers(
+									DatabaseName
+									,ParentClass, ParentSchema, ParentObject, Type
+									,CreateDate, ModifyDate
+									,IsMsShipped, IsDisabled, IsNotForReplication, IsInsteadOfTrigger
+									,TimestampUTC, Timestamp
+								)
 								EXEC sp_executesql
 									@stmt
 									,N''@now datetime, @nowUTC datetime''
@@ -333,10 +361,10 @@ ELSE BEGIN
 		END;
 
 		--
-		-- Register extended properties on the stored procedure dbo.fhsmSPDatabaseSize
+		-- Register extended properties on the stored procedure dbo.fhsmSPTriggers
 		--
 		BEGIN
-			SET @objectName = 'dbo.fhsmSPDatabaseSize';
+			SET @objectName = 'dbo.fhsmSPTriggers';
 			SET @objName = PARSENAME(@objectName, 1);
 			SET @schName = PARSENAME(@objectName, 2);
 
@@ -356,11 +384,11 @@ ELSE BEGIN
 		retention(Enabled, TableName, Sequence, TimeColumn, IsUtc, Days, Filter) AS(
 			SELECT
 				1
-				,'dbo.fhsmDatabaseSize'
+				,'dbo.fhsmTriggers'
 				,1
 				,'TimestampUTC'
 				,1
-				,180
+				,30
 				,NULL
 		)
 		MERGE dbo.fhsmRetentions AS tgt
@@ -378,11 +406,11 @@ ELSE BEGIN
 		schedules(Enabled, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters) AS(
 			SELECT
 				1
-				,'Database size'
-				,PARSENAME('dbo.fhsmSPDatabaseSize', 1)
+				,'Triggers'
+				,PARSENAME('dbo.fhsmSPTriggers', 1)
 				,12 * 60 * 60
-				,CAST('1900-1-1T07:00:00.0000' AS datetime2(0))
-				,CAST('1900-1-1T08:00:00.0000' AS datetime2(0))
+				,CAST('1900-1-1T22:00:00.0000' AS datetime2(0))
+				,CAST('1900-1-1T23:00:00.0000' AS datetime2(0))
 				,1, 1, 1, 1, 1, 1, 1
 				,'@Databases = ''USER_DATABASES, msdb'''
 		)
@@ -401,30 +429,18 @@ ELSE BEGIN
 		dimensions(
 			DimensionName, DimensionKey
 			,SrcTable, SrcAlias, SrcWhere, SrcDateColumn
-			,SrcColumn1, SrcColumn2, SrcColumn3
-			,OutputColumn1, OutputColumn2, OutputColumn3
+			,SrcColumn1, SrcColumn2, SrcColumn3, SrcColumn4
+			,OutputColumn1, OutputColumn2, OutputColumn3, OutputColumn4
 		) AS (
 			SELECT
 				'Database' AS DimensionName
 				,'DatabaseKey' AS DimensionKey
-				,'dbo.fhsmDatabaseSize' AS SrcTable
+				,'dbo.fhsmTriggers' AS SrcTable
 				,'src' AS SrcAlias
 				,NULL AS SrcWhere
 				,'src.[Timestamp]' AS SrcDateColumn
-				,'src.[DatabaseName]', NULL, NULL
-				,'Database', NULL, NULL
-
-			UNION ALL
-
-			SELECT
-				'Database file' AS DimensionName
-				,'DatabaseFileKey' AS DimensionKey
-				,'dbo.fhsmDatabaseSize' AS SrcTable
-				,'src' AS SrcAlias
-				,NULL AS SrcWhere
-				,'src.[Timestamp]' AS SrcDateColumn
-				,'src.[DatabaseName]', 'src.[LogicalName]', 'CASE src.[Type] WHEN 0 THEN ''Data'' WHEN 1 THEN ''Log'' WHEN 2 THEN ''Filestream'' END'
-				,'Database name', 'Logical name', 'Type'
+				,'src.[DatabaseName]', NULL, NULL, NULL
+				,'Database', NULL, NULL, NULL
 		)
 		MERGE dbo.fhsmDimensions AS tgt
 		USING dimensions AS src ON (src.DimensionName = tgt.DimensionName) AND (src.SrcTable = tgt.SrcTable)
@@ -438,21 +454,23 @@ ELSE BEGIN
 				,tgt.SrcColumn1 = src.SrcColumn1
 				,tgt.SrcColumn2 = src.SrcColumn2
 				,tgt.SrcColumn3 = src.SrcColumn3
+				,tgt.SrcColumn4 = src.SrcColumn4
 				,tgt.OutputColumn1 = src.OutputColumn1
 				,tgt.OutputColumn2 = src.OutputColumn2
 				,tgt.OutputColumn3 = src.OutputColumn3
+				,tgt.OutputColumn4 = src.OutputColumn4
 		WHEN NOT MATCHED BY TARGET
 			THEN INSERT(
 				DimensionName, DimensionKey
 				,SrcTable, SrcAlias, SrcWhere, SrcDateColumn
-				,SrcColumn1, SrcColumn2, SrcColumn3
-				,OutputColumn1, OutputColumn2, OutputColumn3
+				,SrcColumn1, SrcColumn2, SrcColumn3, SrcColumn4
+				,OutputColumn1, OutputColumn2, OutputColumn3, OutputColumn4
 			)
 			VALUES(
 				src.DimensionName, src.DimensionKey
 				,src.SrcTable, src.SrcAlias, src.SrcWhere, src.SrcDateColumn
-				,src.SrcColumn1, src.SrcColumn2, src.SrcColumn3
-				,src.OutputColumn1, src.OutputColumn2, src.OutputColumn3
+				,src.SrcColumn1, src.SrcColumn2, src.SrcColumn3, src.SrcColumn4
+				,src.OutputColumn1, src.OutputColumn2, src.OutputColumn3, src.OutputColumn4
 			);
 	END;
 
@@ -460,6 +478,6 @@ ELSE BEGIN
 	-- Update dimensions based upon the fact tables
 	--
 	BEGIN
-		EXEC dbo.fhsmSPUpdateDimensions @table = 'dbo.fhsmDatabaseSize';
+		EXEC dbo.fhsmSPUpdateDimensions @table = 'dbo.fhsmTriggers';
 	END;
 END;
