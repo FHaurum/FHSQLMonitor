@@ -1090,7 +1090,7 @@ ELSE BEGIN
 				,1
 				,'TimestampUTC'
 				,1
-				,180
+				,1825	-- 5 years
 				,NULL
 		)
 		MERGE dbo.fhsmRetentions AS tgt

@@ -47,7 +47,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '1.3';
+		SET @version = '1.4';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -141,9 +141,11 @@ ELSE BEGIN
 					,b.RecoveryModeChangeTimestampUTC
 					,b.RecoveryModel
 					,CASE WHEN (b.LatestFullBackupStartDate = 0) THEN NULL ELSE b.LatestFullBackupStartDate END AS LatestFullBackupStartDate
-					,DATEDIFF(HOUR, b.LatestFullBackupStartDate, GETDATE()) AS LatestFullBackupAgeHours
+					,DATEDIFF(MINUTE, b.LatestFullBackupStartDate, GETDATE()) / 60 AS LatestFullBackupAgeHours
+					,CASE WHEN (b.LatestDiffBackupStartDate = 0) THEN NULL ELSE b.LatestDiffBackupStartDate END AS LatestDiffBackupStartDate
+					,DATEDIFF(MINUTE, b.LatestDiffBackupStartDate, GETDATE()) / 60 AS LatestDiffBackupAgeHours
 					,CASE WHEN (b.LatestLogBackupStartDate = 0) THEN NULL ELSE b.LatestLogBackupStartDate END AS LatestLogBackupStartDate
-					,DATEDIFF(HOUR, b.LatestLogBackupStartDate, GETDATE()) AS LatestLogBackupAgeHours
+					,DATEDIFF(MINUTE, b.LatestLogBackupStartDate, GETDATE()) / 60 AS LatestLogBackupAgeHours
 					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(b.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
 				FROM (
 					SELECT
@@ -154,6 +156,10 @@ ELSE BEGIN
 							WHEN (a.LatestFullBackupStartDate > a.RecoveryModeChangeTimestamp) THEN a.LatestFullBackupStartDate
 							ELSE 0
 						END AS LatestFullBackupStartDate
+						,CASE
+							WHEN (a.LatestDiffBackupStartDate > a.RecoveryModeChangeTimestamp) THEN a.LatestDiffBackupStartDate
+							WHEN (a.LatestDiffBackupStartDate IS NOT NULL) THEN 0
+						END AS LatestDiffBackupStartDate
 						,CASE
 							WHEN (a.RecoveryModel IN (''FULL'', ''BULK_LOGGED'')) THEN CASE
 								WHEN (a.LatestLogBackupStartDate > a.RecoveryModeChangeTimestamp) THEN a.LatestLogBackupStartDate
@@ -172,6 +178,7 @@ ELSE BEGIN
 								ELSE ''?:'' + d.recovery_model
 							END AS RecoveryModel
 							,latestFull.BackupStartDate AS LatestFullBackupStartDate
+							,latestDiff.BackupStartDate AS LatestDiffBackupStartDate
 							,latestLog.BackupStartDate AS LatestLogBackupStartDate
 						FROM (
 							SELECT dbState.DatabaseName, dbState.TimestampUTC, dbState.Timestamp, dbState.Value AS [recovery_model]
@@ -180,7 +187,10 @@ ELSE BEGIN
 								(dbState.Query = 31)
 								AND (dbState.ValidTo = ''9999-12-31 23:59:59.000'')
 								AND (dbState.[Key] = ''recovery_model'')
+								AND (dbState.DatabaseName <> ''tempdb'')
 						) AS d
+				';
+			SET @stmt += '
 						LEFT OUTER JOIN (
 							SELECT bsRanked.DatabaseName, bsRanked.BackupStartDate
 							FROM (
@@ -191,7 +201,7 @@ ELSE BEGIN
 									,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(bs.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
 									,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(1, bs.Type, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS BackupTypeJunkDimensionKey
 								FROM dbo.fhsmBackupStatus AS bs
-								WHERE (bs.Type = ''D'')
+								WHERE (bs.Type = ''D'') AND (bs.IsCopyOnly = 0) AND (bs.IsDamaged = 0)
 							) AS bsRanked
 							WHERE (bsRanked._Rnk = 1)
 						) AS latestFull ON (d.DatabaseName = latestFull.DatabaseName)
@@ -205,7 +215,21 @@ ELSE BEGIN
 									,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(bs.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
 									,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(1, bs.Type, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS BackupTypeJunkDimensionKey
 								FROM dbo.fhsmBackupStatus AS bs
-								WHERE (bs.Type = ''L'')
+								WHERE (bs.Type = ''I'') AND (bs.IsCopyOnly = 0) AND (bs.IsDamaged = 0)
+							) AS bsRanked
+							WHERE (bsRanked._Rnk = 1)
+						) AS latestDiff ON (d.DatabaseName = latestDiff.DatabaseName)
+						LEFT OUTER JOIN (
+							SELECT bsRanked.DatabaseName, bsRanked.BackupStartDate
+							FROM (
+								SELECT
+									bs.DatabaseName
+									,bs.BackupStartDate
+									,ROW_NUMBER() OVER(PARTITION BY bs.DatabaseName ORDER BY bs.BackupStartDate DESC) AS _Rnk
+									,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(bs.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
+									,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(1, bs.Type, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS BackupTypeJunkDimensionKey
+								FROM dbo.fhsmBackupStatus AS bs
+								WHERE (bs.Type = ''L'') AND (bs.IsCopyOnly = 0) AND (bs.IsDamaged = 0)
 							) AS bsRanked
 							WHERE (bsRanked._Rnk = 1)
 						) AS latestLog ON (d.DatabaseName = latestLog.DatabaseName)
