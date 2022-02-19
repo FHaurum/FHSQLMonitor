@@ -66,6 +66,7 @@ GO
 --
 -- AgentJobs.sql
 -- BackupStatus.sql
+-- DatabaseState.sql
 -- IndexOptimize-002-OlaHallengren-CommandExecute.sql
 -- IndexOptimize-003-OlaHallengren-IndexOptimize.sql
 -- IndexOptimize-004.sql			-- !!! REMEBER to set the used OLA database and schema in the file if it is different to FHSQLMonitor !!!
