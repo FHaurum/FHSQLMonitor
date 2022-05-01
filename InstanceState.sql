@@ -47,7 +47,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '1.8';
+		SET @version = '1.9';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -1119,6 +1119,344 @@ ELSE BEGIN
 		END;
 
 		--
+		-- Create fact view @pbiSchema.[Resource governor configuration]
+		--
+		BEGIN
+			SET @stmt = '
+				IF OBJECT_ID(''' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Resource governor configuration') + ''', ''V'') IS NULL
+				BEGIN
+					EXEC(''CREATE VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Resource governor configuration') + ' AS SELECT ''''dummy'''' AS Txt'');
+				END;
+			';
+			EXEC(@stmt);
+
+			SET @stmt = '
+				ALTER VIEW  ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Resource governor configuration') + '
+				AS
+					SELECT
+						pvt.is_enabled AS IsEnabled
+						,pvt.max_outstanding_io_per_volume AS MaxOutstandingIOperVolume
+						,pvt.ClassifierFunction
+						,pvt.ClassifierFunctionDefinition
+					FROM (
+						SELECT iState.Category, iState.[Key], iState.Value AS _Value_
+						FROM (
+							SELECT DISTINCT iState.Category
+							FROM dbo.fhsmInstanceState AS iState
+							WHERE
+								(iState.Query = 23)
+								AND (iState.ValidTo = ''9999-12-31 23:59:59.000'')
+						) AS toCheck
+						INNER JOIN dbo.fhsmInstanceState AS iState ON (iState.Category = toCheck.Category)
+						WHERE (iState.Query = 23) AND (iState.ValidTo = ''9999-12-31 23:59:59.000'')
+					) AS p
+					PIVOT (
+						MAX(_Value_)
+						FOR [Key] IN ([is_enabled], [max_outstanding_io_per_volume], [ClassifierFunction], [ClassifierFunctionDefinition])
+					) AS pvt;
+			';
+			EXEC(@stmt);
+		END;
+
+		--
+		-- Register extended properties on fact view @pbiSchema.[Resource governor configuration]
+		--
+		BEGIN
+			SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Resource governor configuration');
+			SET @objName = PARSENAME(@objectName, 1);
+			SET @schName = PARSENAME(@objectName, 2);
+
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+		END;
+
+		--
+		-- Create fact view @pbiSchema.[Resource governor resource pool affinity]
+		--
+		BEGIN
+			SET @stmt = '
+				IF OBJECT_ID(''' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Resource governor resource pool affinity') + ''', ''V'') IS NULL
+				BEGIN
+					EXEC(''CREATE VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Resource governor resource pool affinity') + ' AS SELECT ''''dummy'''' AS Txt'');
+				END;
+			';
+			EXEC(@stmt);
+
+			SET @stmt = '
+				ALTER VIEW  ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Resource governor resource pool affinity') + '
+				AS
+					SELECT
+						pvt.Category AS PoolName
+						,pvt.processor_group AS ProcessorGroup
+						,pvt.scheduler_mask AS SchedulerMask
+					FROM (
+						SELECT iState.Category, iState.[Key], iState.Value AS _Value_
+						FROM (
+							SELECT DISTINCT iState.Category
+							FROM dbo.fhsmInstanceState AS iState
+							WHERE
+								(iState.Query = 24)
+								AND (iState.ValidTo = ''9999-12-31 23:59:59.000'')
+						) AS toCheck
+						INNER JOIN dbo.fhsmInstanceState AS iState ON (iState.Category = toCheck.Category)
+						WHERE (iState.Query = 24) AND (iState.ValidTo = ''9999-12-31 23:59:59.000'')
+					) AS p
+					PIVOT (
+						MAX(_Value_)
+						FOR [Key] IN ([processor_group], [scheduler_mask])
+					) AS pvt;
+			';
+			EXEC(@stmt);
+		END;
+
+		--
+		-- Register extended properties on fact view @pbiSchema.[Resource governor resource pool affinity]
+		--
+		BEGIN
+			SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Resource governor resource pool affinity');
+			SET @objName = PARSENAME(@objectName, 1);
+			SET @schName = PARSENAME(@objectName, 2);
+
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+		END;
+
+		--
+		-- Create fact view @pbiSchema.[Resource governor resource pools]
+		--
+		BEGIN
+			SET @stmt = '
+				IF OBJECT_ID(''' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Resource governor resource pools') + ''', ''V'') IS NULL
+				BEGIN
+					EXEC(''CREATE VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Resource governor resource pools') + ' AS SELECT ''''dummy'''' AS Txt'');
+				END;
+			';
+			EXEC(@stmt);
+
+			SET @stmt = '
+				ALTER VIEW  ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Resource governor resource pools') + '
+				AS
+					SELECT
+						pvt.Category AS PoolName
+						,pvt.min_cpu_percent AS MinCPUpercent
+						,pvt.max_cpu_percent AS MaxCPUpercent
+						,pvt.min_memory_percent AS MinMemoryPercent
+						,pvt.max_memory_percent AS MaxMemoryPercent
+						,pvt.cap_cpu_percent AS CapCPUpercent
+						,pvt.min_iops_per_volume AS MinIOPSperVolume
+						,pvt.max_iops_per_volume AS MaxIOPSperVolume
+					FROM (
+						SELECT iState.Category, iState.[Key], iState.Value AS _Value_
+						FROM (
+							SELECT DISTINCT iState.Category
+							FROM dbo.fhsmInstanceState AS iState
+							WHERE
+								(iState.Query = 25)
+								AND (iState.ValidTo = ''9999-12-31 23:59:59.000'')
+						) AS toCheck
+						INNER JOIN dbo.fhsmInstanceState AS iState ON (iState.Category = toCheck.Category)
+						WHERE (iState.Query = 25) AND (iState.ValidTo = ''9999-12-31 23:59:59.000'')
+					) AS p
+					PIVOT (
+						MAX(_Value_)
+						FOR [Key] IN ([min_cpu_percent], [max_cpu_percent], [min_memory_percent], [max_memory_percent], [cap_cpu_percent], [min_iops_per_volume], [max_iops_per_volume])
+					) AS pvt;
+			';
+			EXEC(@stmt);
+		END;
+
+		--
+		-- Register extended properties on fact view @pbiSchema.[Resource governor resource pools]
+		--
+		BEGIN
+			SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Resource governor resource pools');
+			SET @objName = PARSENAME(@objectName, 1);
+			SET @schName = PARSENAME(@objectName, 2);
+
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+		END;
+
+		--
+		-- Create fact view @pbiSchema.[Resource governor workload groups]
+		--
+		BEGIN
+			SET @stmt = '
+				IF OBJECT_ID(''' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Resource governor workload groups') + ''', ''V'') IS NULL
+				BEGIN
+					EXEC(''CREATE VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Resource governor workload groups') + ' AS SELECT ''''dummy'''' AS Txt'');
+				END;
+			';
+			EXEC(@stmt);
+
+			SET @stmt = '
+				ALTER VIEW  ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Resource governor workload groups') + '
+				AS
+					SELECT
+						PARSENAME(pvt.Category, 2) AS PoolName
+						,PARSENAME(pvt.Category, 1) AS WorkloadGroupName
+						,pvt.importance AS Importance
+						,pvt.request_max_memory_grant_percent AS RequestMaxMemoryGrantPercent
+						,pvt.request_max_cpu_time_sec AS RequestMaxCPUtimeSec
+						,pvt.request_memory_grant_timeout_sec AS RequestMemoryGrantTimeoutSec
+						,pvt.max_dop AS MaxDOP
+						,pvt.group_max_requests AS GroupMaxRequests
+						,pvt.request_max_memory_grant_percent_numeric AS RequestMaxMemoryGrantPercentNumeric
+					FROM (
+						SELECT iState.Category, iState.[Key], iState.Value AS _Value_
+						FROM (
+							SELECT DISTINCT iState.Category
+							FROM dbo.fhsmInstanceState AS iState
+							WHERE
+								(iState.Query = 26)
+								AND (iState.ValidTo = ''9999-12-31 23:59:59.000'')
+						) AS toCheck
+						INNER JOIN dbo.fhsmInstanceState AS iState ON (iState.Category = toCheck.Category)
+						WHERE (iState.Query = 26) AND (iState.ValidTo = ''9999-12-31 23:59:59.000'')
+					) AS p
+					PIVOT (
+						MAX(_Value_)
+						FOR [Key] IN ([importance], [request_max_memory_grant_percent], [request_max_cpu_time_sec], [request_memory_grant_timeout_sec], [max_dop], [group_max_requests], [request_max_memory_grant_percent_numeric])
+					) AS pvt;
+			';
+			EXEC(@stmt);
+		END;
+
+		--
+		-- Register extended properties on fact view @pbiSchema.[Resource governor workload groups]
+		--
+		BEGIN
+			SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Resource governor workload groups');
+			SET @objName = PARSENAME(@objectName, 1);
+			SET @schName = PARSENAME(@objectName, 2);
+
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+		END;
+
+		--
+		-- Create fact view @pbiSchema.[Resource governor external resource pool affinity]
+		--
+		BEGIN
+			SET @stmt = '
+				IF OBJECT_ID(''' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Resource governor external resource pool affinity') + ''', ''V'') IS NULL
+				BEGIN
+					EXEC(''CREATE VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Resource governor external resource pool affinity') + ' AS SELECT ''''dummy'''' AS Txt'');
+				END;
+			';
+			EXEC(@stmt);
+
+			SET @stmt = '
+				ALTER VIEW  ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Resource governor external resource pool affinity') + '
+				AS
+					SELECT
+						pvt.Category AS PoolName
+						,pvt.processor_group AS ProcessorGroup
+						,pvt.cpu_mask AS CPUmask
+					FROM (
+						SELECT iState.Category, iState.[Key], iState.Value AS _Value_
+						FROM (
+							SELECT DISTINCT iState.Category
+							FROM dbo.fhsmInstanceState AS iState
+							WHERE
+								(iState.Query = 27)
+								AND (iState.ValidTo = ''9999-12-31 23:59:59.000'')
+						) AS toCheck
+						INNER JOIN dbo.fhsmInstanceState AS iState ON (iState.Category = toCheck.Category)
+						WHERE (iState.Query = 27) AND (iState.ValidTo = ''9999-12-31 23:59:59.000'')
+					) AS p
+					PIVOT (
+						MAX(_Value_)
+						FOR [Key] IN ([processor_group], [cpu_mask])
+					) AS pvt;
+			';
+			EXEC(@stmt);
+		END;
+
+		--
+		-- Register extended properties on fact view @pbiSchema.[Resource governor external resource pool affinity]
+		--
+		BEGIN
+			SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Resource governor external resource pool affinity');
+			SET @objName = PARSENAME(@objectName, 1);
+			SET @schName = PARSENAME(@objectName, 2);
+
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+		END;
+
+		--
+		-- Create fact view @pbiSchema.[Resource governor external resource pools]
+		--
+		BEGIN
+			SET @stmt = '
+				IF OBJECT_ID(''' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Resource governor external resource pools') + ''', ''V'') IS NULL
+				BEGIN
+					EXEC(''CREATE VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Resource governor external resource pools') + ' AS SELECT ''''dummy'''' AS Txt'');
+				END;
+			';
+			EXEC(@stmt);
+
+			SET @stmt = '
+				ALTER VIEW  ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Resource governor external resource pools') + '
+				AS
+					SELECT
+						pvt.Category AS PoolName
+						,pvt.max_cpu_percent AS MaxCPUpercent
+						,pvt.max_memory_percent AS MaxMemoryPercent
+						,pvt.max_processes AS MaxProcesses
+						,pvt.version AS Version
+					FROM (
+						SELECT iState.Category, iState.[Key], iState.Value AS _Value_
+						FROM (
+							SELECT DISTINCT iState.Category
+							FROM dbo.fhsmInstanceState AS iState
+							WHERE
+								(iState.Query = 28)
+								AND (iState.ValidTo = ''9999-12-31 23:59:59.000'')
+						) AS toCheck
+						INNER JOIN dbo.fhsmInstanceState AS iState ON (iState.Category = toCheck.Category)
+						WHERE (iState.Query = 28) AND (iState.ValidTo = ''9999-12-31 23:59:59.000'')
+					) AS p
+					PIVOT (
+						MAX(_Value_)
+						FOR [Key] IN ([max_cpu_percent], [max_memory_percent], [max_processes], [version])
+					) AS pvt;
+			';
+			EXEC(@stmt);
+		END;
+
+		--
+		-- Register extended properties on fact view @pbiSchema.[Resource governor external resource pools]
+		--
+		BEGIN
+			SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Resource governor external resource pools');
+			SET @objName = PARSENAME(@objectName, 1);
+			SET @schName = PARSENAME(@objectName, 2);
+
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+		END;
+
+		--
 		-- Create fact view @pbiSchema.[Trace flags history]
 		--
 		BEGIN
@@ -1395,39 +1733,42 @@ ELSE BEGIN
 									SET @instantFileInitializationEnabledStmt = ''dss.instant_file_initialization_enabled'';
 								END
 								ELSE BEGIN
-									SET @instantFileInitializationEnabledStmt = ''NULL'';
+									SET @instantFileInitializationEnabledStmt = ''CAST(NULL AS nvarchar(1))'';
 								END;
 							END;
 
-							INSERT INTO #inventory(Query, Category, [Key], Value)
-							SELECT 7 AS Query, unpvt.servicename AS Category, unpvt.K, unpvt.V
-							FROM (
-								SELECT
-									dss.servicename
-									,CAST(dss.startup_type                                                 AS nvarchar(max)) AS startup_type
-									,CAST(dss.status                                                       AS nvarchar(max)) AS status
-									,CAST(dss.process_id                                                   AS nvarchar(max)) AS process_id
-									,CONVERT(nvarchar(max), dss.last_startup_time, 126)                                      AS last_startup_time
-									,CAST(dss.service_account                     COLLATE DATABASE_DEFAULT AS nvarchar(max)) AS service_account
-									,CAST(dss.filename                            COLLATE DATABASE_DEFAULT AS nvarchar(max)) AS filename
-									,CAST(dss.is_clustered                        COLLATE DATABASE_DEFAULT AS nvarchar(max)) AS is_clustered
-									,CAST(dss.cluster_nodename                    COLLATE DATABASE_DEFAULT AS nvarchar(max)) AS cluster_nodename
-									,CAST('' + instantFileInitializationEnabledStmt + '' COLLATE DATABASE_DEFAULT AS nvarchar(max)) AS instant_file_initialization_enabled
-								FROM sys.dm_server_services AS dss WITH (NOLOCK)
-							) AS p
-							UNPIVOT(
-								V FOR K IN (
-									p.startup_type
-									,p.status
-									,p.process_id
-									,p.last_startup_time
-									,p.service_account
-									,p.filename
-									,p.is_clustered
-									,p.cluster_nodename
-									,p.instant_file_initialization_enabled
-								)
-							) AS unpvt OPTION (RECOMPILE);
+							SET @stmt = ''
+								INSERT INTO #inventory(Query, Category, [Key], Value)
+								SELECT 7 AS Query, unpvt.servicename AS Category, unpvt.K, unpvt.V
+								FROM (
+									SELECT
+										dss.servicename
+										,CAST(dss.startup_type                                                 AS nvarchar(max)) AS startup_type
+										,CAST(dss.status                                                       AS nvarchar(max)) AS status
+										,CAST(dss.process_id                                                   AS nvarchar(max)) AS process_id
+										,CONVERT(nvarchar(max), dss.last_startup_time, 126)                                      AS last_startup_time
+										,CAST(dss.service_account                     COLLATE DATABASE_DEFAULT AS nvarchar(max)) AS service_account
+										,CAST(dss.filename                            COLLATE DATABASE_DEFAULT AS nvarchar(max)) AS filename
+										,CAST(dss.is_clustered                        COLLATE DATABASE_DEFAULT AS nvarchar(max)) AS is_clustered
+										,CAST(dss.cluster_nodename                    COLLATE DATABASE_DEFAULT AS nvarchar(max)) AS cluster_nodename
+										,CAST('' + @instantFileInitializationEnabledStmt + '' COLLATE DATABASE_DEFAULT AS nvarchar(max)) AS instant_file_initialization_enabled
+									FROM sys.dm_server_services AS dss WITH (NOLOCK)
+								) AS p
+								UNPIVOT(
+									V FOR K IN (
+										p.startup_type
+										,p.status
+										,p.process_id
+										,p.last_startup_time
+										,p.service_account
+										,p.filename
+										,p.is_clustered
+										,p.cluster_nodename
+										,p.instant_file_initialization_enabled
+									)
+								) AS unpvt OPTION (RECOMPILE);
+							'';
+							EXEC(@stmt);
 						END;
 
 						--
@@ -1956,6 +2297,278 @@ ELSE BEGIN
 						END;
 
 						--
+						-- Look at Resource Governor configuration
+						--
+						BEGIN
+							--
+							-- Test if max_outstanding_io_per_volume exists on resource_governor_configuration
+							--
+							BEGIN
+								DECLARE @maxOutstandingIOperVolumeStmt nvarchar(max);
+
+								IF EXISTS(
+									SELECT *
+									FROM master.sys.system_columns AS sc
+									INNER JOIN master.sys.system_objects AS so ON (so.object_id = sc.object_id)
+									WHERE (so.name = ''resource_governor_configuration'') AND (sc.name = ''max_outstanding_io_per_volume'')
+								)
+								BEGIN
+									SET @maxOutstandingIOperVolumeStmt = ''rgc.max_outstanding_io_per_volume'';
+								END
+								ELSE BEGIN
+									SET @maxOutstandingIOperVolumeStmt = ''NULL'';
+								END;
+							END;
+
+							SET @stmt = ''
+								INSERT INTO #inventory(Query, Category, [Key], Value)
+								SELECT 23 AS Query, '''''''' AS Category, unpvt.K, unpvt.V
+								FROM (
+									SELECT
+										CAST(rgc.is_enabled AS nvarchar(max)) AS is_enabled
+										,CAST('' + @maxOutstandingIOperVolumeStmt + '' AS nvarchar(max)) AS max_outstanding_io_per_volume
+										,CAST(QUOTENAME(sch.name) + ''''.'''' + QUOTENAME(o.name) COLLATE DATABASE_DEFAULT AS nvarchar(max)) AS ClassifierFunction
+										,sm.definition COLLATE DATABASE_DEFAULT AS ClassifierFunctionDefinition
+									FROM master.sys.resource_governor_configuration AS rgc
+									LEFT OUTER JOIN master.sys.objects AS o ON (o.object_id = rgc.classifier_function_id)
+									LEFT OUTER JOIN master.sys.schemas AS sch ON (sch.schema_id = o.schema_id)
+									LEFT OUTER JOIN master.sys.sql_modules AS sm ON (sm.object_id = rgc.classifier_function_id)
+								) AS p
+								UNPIVOT(
+									V FOR K IN (
+										p.is_enabled
+										,p.max_outstanding_io_per_volume
+										,p.ClassifierFunction
+										,p.ClassifierFunctionDefinition
+									)
+								) AS unpvt OPTION (RECOMPILE);
+							'';
+							EXEC(@stmt);
+						END;
+
+						--
+						-- Look at Resource Governor resource pool affinity
+						--
+						IF EXISTS(SELECT * FROM master.sys.system_objects AS so WHERE (so.name = ''resource_governor_resource_pool_affinity''))
+						BEGIN
+							INSERT INTO #inventory(Query, Category, [Key], Value)
+							SELECT 24 AS Query, unpvt.PoolName AS Category, unpvt.K, unpvt.V
+							FROM (
+								SELECT
+									CAST(rgrp.name AS nvarchar(max)) AS PoolName
+									,CAST(rgrpa.processor_group AS nvarchar(max)) AS processor_group
+									,CAST(rgrpa.scheduler_mask AS nvarchar(max)) AS scheduler_mask
+								FROM sys.resource_governor_resource_pool_affinity AS rgrpa
+								LEFT OUTER JOIN sys.resource_governor_resource_pools AS rgrp ON (rgrp.pool_id = rgrpa.pool_id)
+							) AS p
+							UNPIVOT(
+								V FOR K IN (
+									p.processor_group
+									,p.scheduler_mask
+								)
+							) AS unpvt OPTION (RECOMPILE);
+						END;
+
+						--
+						-- Look at Resource Governor resource pools
+						--
+						BEGIN
+							--
+							-- Test if cap_cpu_percent exists on resource_governor_resource_pools
+							--
+							BEGIN
+								DECLARE @capCPUpercentStmt nvarchar(max);
+
+								IF EXISTS(
+									SELECT *
+									FROM master.sys.system_columns AS sc
+									INNER JOIN master.sys.system_objects AS so ON (so.object_id = sc.object_id)
+									WHERE (so.name = ''resource_governor_resource_pools'') AND (sc.name = ''cap_cpu_percent'')
+								)
+								BEGIN
+									SET @capCPUpercentStmt = ''rgrp.cap_cpu_percent'';
+								END
+								ELSE BEGIN
+									SET @capCPUpercentStmt = ''NULL'';
+								END;
+							END;
+
+							--
+							-- Test if min_iops_per_volume exists on resource_governor_resource_pools
+							--
+							BEGIN
+								DECLARE @minIOPSperVolumeStmt nvarchar(max);
+
+								IF EXISTS(
+									SELECT *
+									FROM master.sys.system_columns AS sc
+									INNER JOIN master.sys.system_objects AS so ON (so.object_id = sc.object_id)
+									WHERE (so.name = ''resource_governor_resource_pools'') AND (sc.name = ''min_iops_per_volume'')
+								)
+								BEGIN
+									SET @minIOPSperVolumeStmt = ''rgrp.min_iops_per_volume'';
+								END
+								ELSE BEGIN
+									SET @minIOPSperVolumeStmt = ''NULL'';
+								END;
+							END;
+
+							--
+							-- Test if max_iops_per_volume exists on resource_governor_resource_pools
+							--
+							BEGIN
+								DECLARE @maxIOPSperVolumeStmt nvarchar(max);
+
+								IF EXISTS(
+									SELECT *
+									FROM master.sys.system_columns AS sc
+									INNER JOIN master.sys.system_objects AS so ON (so.object_id = sc.object_id)
+									WHERE (so.name = ''resource_governor_resource_pools'') AND (sc.name = ''max_iops_per_volume'')
+								)
+								BEGIN
+									SET @maxIOPSperVolumeStmt = ''rgrp.max_iops_per_volume'';
+								END
+								ELSE BEGIN
+									SET @maxIOPSperVolumeStmt = ''NULL'';
+								END;
+							END;
+
+							SET @stmt = ''
+								INSERT INTO #inventory(Query, Category, [Key], Value)
+								SELECT 25 AS Query, unpvt.PoolName AS Category, unpvt.K, unpvt.V
+								FROM (
+									SELECT
+										rgrp.name AS PoolName
+										,CAST(rgrp.min_cpu_percent AS nvarchar(max)) AS min_cpu_percent
+										,CAST(rgrp.max_cpu_percent AS nvarchar(max)) AS max_cpu_percent
+										,CAST(rgrp.min_memory_percent AS nvarchar(max)) AS min_memory_percent
+										,CAST(rgrp.max_memory_percent AS nvarchar(max)) AS max_memory_percent
+										,CAST('' + @capCPUpercentStmt + '' AS nvarchar(max)) AS cap_cpu_percent
+										,CAST('' + @minIOPSperVolumeStmt + '' AS nvarchar(max)) AS min_iops_per_volume
+										,CAST('' + @maxIOPSperVolumeStmt + '' AS nvarchar(max)) AS max_iops_per_volume
+									FROM sys.resource_governor_resource_pools AS rgrp
+								) AS p
+								UNPIVOT(
+									V FOR K IN (
+										p.min_cpu_percent
+										,p.max_cpu_percent
+										,p.min_memory_percent
+										,p.max_memory_percent
+										,p.cap_cpu_percent
+										,p.min_iops_per_volume
+										,p.max_iops_per_volume
+									)
+								) AS unpvt OPTION (RECOMPILE);
+							'';
+							EXEC(@stmt);
+						END;
+
+						--
+						-- Look at Resource Governor workload groups
+						--
+						BEGIN
+							--
+							-- Test if request_max_memory_grant_percent_numeric exists on resource_governor_workload_groups
+							--
+							BEGIN
+								DECLARE @requestMaxMemoryGrantPercentNumericStmt nvarchar(max);
+
+								IF EXISTS(
+									SELECT *
+									FROM master.sys.system_columns AS sc
+									INNER JOIN master.sys.system_objects AS so ON (so.object_id = sc.object_id)
+									WHERE (so.name = ''resource_governor_workload_groups'') AND (sc.name = ''request_max_memory_grant_percent_numeric'')
+								)
+								BEGIN
+									SET @requestMaxMemoryGrantPercentNumericStmt = ''rgwg.request_max_memory_grant_percent_numeric'';
+								END
+								ELSE BEGIN
+									SET @requestMaxMemoryGrantPercentNumericStmt = ''NULL'';
+								END;
+							END;
+
+							SET @stmt = ''
+								INSERT INTO #inventory(Query, Category, [Key], Value)
+								SELECT 26 AS Query, QUOTENAME(unpvt.PoolName) + ''''.'''' + QUOTENAME(unpvt.WorkloadGroupName) AS Category, unpvt.K, unpvt.V
+								FROM (
+									SELECT
+										CAST(rgrp.name AS nvarchar(max)) AS PoolName
+										,CAST(rgwg.name AS nvarchar(max)) AS WorkloadGroupName
+										,CAST(rgwg.importance AS nvarchar(max)) COLLATE DATABASE_DEFAULT AS importance
+										,CAST(rgwg.request_max_memory_grant_percent AS nvarchar(max)) AS request_max_memory_grant_percent
+										,CAST(rgwg.request_max_cpu_time_sec AS nvarchar(max)) AS request_max_cpu_time_sec
+										,CAST(rgwg.request_memory_grant_timeout_sec AS nvarchar(max)) AS request_memory_grant_timeout_sec
+										,CAST(rgwg.max_dop AS nvarchar(max)) AS max_dop
+										,CAST(rgwg.group_max_requests AS nvarchar(max)) AS group_max_requests
+										,CAST('' + @requestMaxMemoryGrantPercentNumericStmt + '' AS nvarchar(max)) AS request_max_memory_grant_percent_numeric
+									FROM sys.resource_governor_workload_groups AS rgwg
+									LEFT OUTER JOIN sys.resource_governor_resource_pools AS rgrp ON (rgrp.pool_id = rgwg.pool_id)
+								) AS p
+								UNPIVOT(
+									V FOR K IN (
+										p.importance
+										,p.request_max_memory_grant_percent
+										,p.request_max_cpu_time_sec
+										,p.request_memory_grant_timeout_sec
+										,p.max_dop
+										,p.group_max_requests
+										,p.request_max_memory_grant_percent_numeric
+									)
+								) AS unpvt OPTION (RECOMPILE);
+							'';
+							EXEC(@stmt);
+						END;
+
+						--
+						-- Look at Resource Governor external resource pool affinity
+						--
+						IF EXISTS(SELECT * FROM master.sys.system_objects AS so WHERE (so.name = ''resource_governor_external_resource_pool_affinity''))
+						BEGIN
+							INSERT INTO #inventory(Query, Category, [Key], Value)
+							SELECT 27 AS Query, unpvt.PoolName AS Category, unpvt.K, unpvt.V
+							FROM (
+								SELECT
+									CAST(rgerp.name AS nvarchar(max)) AS PoolName
+									,CAST(rgerpa.processor_group AS nvarchar(max)) AS processor_group
+									,CAST(rgerpa.cpu_mask AS nvarchar(max)) AS cpu_mask
+								FROM sys.resource_governor_external_resource_pool_affinity AS rgerpa
+								LEFT OUTER JOIN sys.resource_governor_external_resource_pools AS rgerp ON (rgerp.external_pool_id = rgerpa.external_pool_id)
+							) AS p
+							UNPIVOT(
+								V FOR K IN (
+									p.processor_group
+									,p.cpu_mask
+								)
+							) AS unpvt OPTION (RECOMPILE);
+						END;
+
+						--
+						-- Look at Resource Governor external resource pool affinity
+						--
+						IF EXISTS(SELECT * FROM master.sys.system_objects AS so WHERE (so.name = ''resource_governor_external_resource_pools''))
+						BEGIN
+							INSERT INTO #inventory(Query, Category, [Key], Value)
+							SELECT 28 AS Query, unpvt.PoolName AS Category, unpvt.K, unpvt.V
+							FROM (
+								SELECT
+									CAST(rgerp.name AS nvarchar(max)) AS PoolName
+									,CAST(rgerp.max_cpu_percent AS nvarchar(max)) AS max_cpu_percent
+									,CAST(rgerp.max_memory_percent AS nvarchar(max)) AS max_memory_percent
+									,CAST(rgerp.max_processes AS nvarchar(max)) AS max_processes
+									,CAST(rgerp.version AS nvarchar(max)) AS version
+								FROM sys.resource_governor_external_resource_pools AS rgerp
+							) AS p
+							UNPIVOT(
+								V FOR K IN (
+									p.max_cpu_percent
+									,p.max_memory_percent
+									,p.max_processes
+									,p.version
+								)
+							) AS unpvt OPTION (RECOMPILE);
+						END;
+
+						--
 						-- Remove records where Value is NULL
 						--
 						BEGIN
@@ -2052,9 +2665,9 @@ ELSE BEGIN
 				1
 				,'Instance State'
 				,PARSENAME('dbo.fhsmSPInstanceState', 1)
-				,12 * 60 * 60
-				,CAST('1900-1-1T08:00:00.0000' AS datetime2(0))
-				,CAST('1900-1-1T09:00:00.0000' AS datetime2(0))
+				,1 * 60 * 60
+				,CAST('1900-1-1T00:00:00.0000' AS datetime2(0))
+				,CAST('1900-1-1T23:59:59.0000' AS datetime2(0))
 				,1, 1, 1, 1, 1, 1, 1
 				,NULL
 		)

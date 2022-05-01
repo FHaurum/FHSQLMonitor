@@ -4,6 +4,11 @@ SET NOCOUNT ON;
 -- Declare variables
 --
 BEGIN
+	DECLARE @fhsmPerfmonCounters TABLE(
+		ObjectName nvarchar(128) NOT NULL
+		,CounterName nvarchar(128) NOT NULL
+		,InstanceName nvarchar(128) NULL
+	);
 	DECLARE @myUserName nvarchar(128);
 	DECLARE @nowUTC datetime;
 	DECLARE @nowUTCStr nvarchar(128);
@@ -48,7 +53,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '1.5';
+		SET @version = '1.6';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -141,151 +146,158 @@ ELSE BEGIN
 	END;
 
 	--
-	-- Create default perfmon counters
+	-- Add default perfmon counters if they dont exists
 	--
 	BEGIN
-		IF ((SELECT COUNT(*) FROM dbo.fhsmPerfmonCounters) = 0)
-		BEGIN
-			SET @serviceName = CASE WHEN @@SERVICENAME = 'MSSQLSERVER' THEN 'SQLServer' ELSE 'MSSQL$' + @@SERVICENAME END;
+		SET @serviceName = CASE WHEN @@SERVICENAME = 'MSSQLSERVER' THEN 'SQLServer' ELSE 'MSSQL$' + @@SERVICENAME END;
 
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Access Methods','Forwarded Records/sec', NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Access Methods','Page compression attempts/sec', NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Access Methods','Page Splits/sec', NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Access Methods','Skipped Ghosted Records/sec', NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Access Methods','Table Lock Escalations/sec', NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Access Methods','Worktables Created/sec', NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Availability Group','Active Hadr Threads','_Total');
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Availability Replica','Bytes Received from Replica/sec','_Total');
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Availability Replica','Bytes Sent to Replica/sec','_Total');
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Availability Replica','Bytes Sent to Transport/sec','_Total');
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Availability Replica','Flow Control Time (ms/sec)','_Total');
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Availability Replica','Flow Control/sec','_Total');
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Availability Replica','Resent Messages/sec','_Total');
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Availability Replica','Sends to Replica/sec','_Total');
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Buffer Manager','Page life expectancy', NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Buffer Manager','Page reads/sec', NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Buffer Manager','Page writes/sec', NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Buffer Manager','Readahead pages/sec', NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Buffer Manager','Target pages', NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Buffer Manager','Total pages', NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Databases','', NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Buffer Manager','Active Transactions','_Total');
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Database Replica','Database Flow Control Delay', '_Total');
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Database Replica','Database Flow Controls/sec', '_Total');
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Database Replica','Group Commit Time', '_Total');
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Database Replica','Group Commits/Sec', '_Total');
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Database Replica','Log Apply Pending Queue', '_Total');
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Database Replica','Log Apply Ready Queue', '_Total');
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Database Replica','Log Compression Cache misses/sec', '_Total');
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Database Replica','Log remaining for undo', '_Total');
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Database Replica','Log Send Queue', '_Total');
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Database Replica','Recovery Queue', '_Total');
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Database Replica','Redo blocked/sec', '_Total');
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Database Replica','Redo Bytes Remaining', '_Total');
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Database Replica','Redone Bytes/sec', '_Total');
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Databases','Log Bytes Flushed/sec', '_Total');
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Databases','Log Growths', '_Total');
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Databases','Log Pool LogWriter Pushes/sec', '_Total');
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Databases','Log Shrinks', '_Total');
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Databases','Transactions/sec',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Databases','Write Transactions/sec',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Databases','XTP Memory Used (KB)',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Exec Statistics','Distributed Query', 'Execs in progress');
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Exec Statistics','DTC calls', 'Execs in progress');
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Exec Statistics','Extended Procedures', 'Execs in progress');
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Exec Statistics','OLEDB calls', 'Execs in progress');
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':General Statistics','Active Temp Tables', NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':General Statistics','Logins/sec', NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':General Statistics','Logouts/sec', NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':General Statistics','Mars Deadlocks', NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':General Statistics','Processes blocked', NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Locks','Number of Deadlocks/sec', NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Memory Manager','Memory Grants Pending', NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':SQL Errors','Errors/sec', '_Total');
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':SQL Statistics','Batch Requests/sec', NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':SQL Statistics','Forced Parameterizations/sec', NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':SQL Statistics','Guided plan executions/sec', NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':SQL Statistics','SQL Attention rate', NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':SQL Statistics','SQL Compilations/sec', NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':SQL Statistics','SQL Re-Compilations/sec', NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Workload Group Stats','Query optimizations/sec',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Workload Group Stats','Suboptimal plans/sec',NULL);
-			/* Below counters added by Jefferson Elias */
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Access Methods','Worktables From Cache Base',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Access Methods','Worktables From Cache Ratio',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Buffer Manager','Database pages',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Buffer Manager','Free pages',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Buffer Manager','Stolen pages',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Memory Manager','Granted Workspace Memory (KB)',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Memory Manager','Maximum Workspace Memory (KB)',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Memory Manager','Target Server Memory (KB)',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Memory Manager','Total Server Memory (KB)',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Buffer Manager','Buffer cache hit ratio',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Buffer Manager','Buffer cache hit ratio base',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Buffer Manager','Checkpoint pages/sec',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Buffer Manager','Free list stalls/sec',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Buffer Manager','Lazy writes/sec',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':SQL Statistics','Auto-Param Attempts/sec',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':SQL Statistics','Failed Auto-Params/sec',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':SQL Statistics','Safe Auto-Params/sec',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':SQL Statistics','Unsafe Auto-Params/sec',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Access Methods','Workfiles Created/sec',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':General Statistics','User Connections',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Latches','Average Latch Wait Time (ms)',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Latches','Average Latch Wait Time Base',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Latches','Latch Waits/sec',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Latches','Total Latch Wait Time (ms)',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Locks','Average Wait Time (ms)',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Locks','Average Wait Time Base',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Locks','Lock Requests/sec',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Locks','Lock Timeouts/sec',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Locks','Lock Wait Time (ms)',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Locks','Lock Waits/sec',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Transactions','Longest Transaction Running Time',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Access Methods','Full Scans/sec',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Access Methods','Index Searches/sec',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Buffer Manager','Page lookups/sec',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Cursor Manager by Type','Active cursors',NULL);
-			/* Below counters are for In-Memory OLTP (Hekaton), which have a different naming convention.
-				And yes, they actually hard-coded the version numbers into the counters, and SQL 2019 still says 2017, oddly.
-				For why, see: https://connect.microsoft.com/SQLServer/feedback/details/817216/xtp-perfmon-counters-should-appear-under-sql-server-perfmon-counter-group
-			*/
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2014 XTP Cursors','Expired rows removed/sec',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2014 XTP Cursors','Expired rows touched/sec',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2014 XTP Garbage Collection','Rows processed/sec',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2014 XTP IO Governor','Io Issued/sec',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2014 XTP Phantom Processor','Phantom expired rows touched/sec',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2014 XTP Phantom Processor','Phantom rows touched/sec',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2014 XTP Transaction Log','Log bytes written/sec',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2014 XTP Transaction Log','Log records written/sec',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2014 XTP Transactions','Transactions aborted by user/sec',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2014 XTP Transactions','Transactions aborted/sec',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2014 XTP Transactions','Transactions created/sec',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2016 XTP Cursors','Expired rows removed/sec',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2016 XTP Cursors','Expired rows touched/sec',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2016 XTP Garbage Collection','Rows processed/sec',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2016 XTP IO Governor','Io Issued/sec',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2016 XTP Phantom Processor','Phantom expired rows touched/sec',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2016 XTP Phantom Processor','Phantom rows touched/sec',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2016 XTP Transaction Log','Log bytes written/sec',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2016 XTP Transaction Log','Log records written/sec',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2016 XTP Transactions','Transactions aborted by user/sec',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2016 XTP Transactions','Transactions aborted/sec',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2016 XTP Transactions','Transactions created/sec',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2017 XTP Cursors','Expired rows removed/sec',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2017 XTP Cursors','Expired rows touched/sec',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2017 XTP Garbage Collection','Rows processed/sec',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2017 XTP IO Governor','Io Issued/sec',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2017 XTP Phantom Processor','Phantom expired rows touched/sec',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2017 XTP Phantom Processor','Phantom rows touched/sec',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2017 XTP Transaction Log','Log bytes written/sec',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2017 XTP Transaction Log','Log records written/sec',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2017 XTP Transactions','Transactions aborted by user/sec',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2017 XTP Transactions','Transactions aborted/sec',NULL);
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2017 XTP Transactions','Transactions created/sec',NULL);
-			/* Added by Flemming Haurum */
-			INSERT INTO dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Buffer Node','Page life expectancy',NULL);
-		END;
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Access Methods', 'Forwarded Records/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Access Methods', 'Page compression attempts/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Access Methods', 'Page Splits/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Access Methods', 'Skipped Ghosted Records/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Access Methods', 'Table Lock Escalations/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Access Methods', 'Worktables Created/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Availability Group', 'Active Hadr Threads', '_Total');
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Availability Replica', 'Bytes Received from Replica/sec', '_Total');
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Availability Replica', 'Bytes Sent to Replica/sec', '_Total');
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Availability Replica', 'Bytes Sent to Transport/sec', '_Total');
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Availability Replica', 'Flow Control Time (ms/sec)', '_Total');
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Availability Replica', 'Flow Control/sec', '_Total');
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Availability Replica', 'Resent Messages/sec', '_Total');
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Availability Replica', 'Sends to Replica/sec', '_Total');
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Buffer Manager', 'Page life expectancy', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Buffer Manager', 'Page reads/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Buffer Manager', 'Page writes/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Buffer Manager', 'Readahead pages/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Buffer Manager', 'Target pages', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Buffer Manager', 'Total pages', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Databases', '', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Buffer Manager', 'Active Transactions', '_Total');
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Database Replica', 'Database Flow Control Delay', '_Total');
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Database Replica', 'Database Flow Controls/sec', '_Total');
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Database Replica', 'Group Commit Time', '_Total');
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Database Replica', 'Group Commits/Sec', '_Total');
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Database Replica', 'Log Apply Pending Queue', '_Total');
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Database Replica', 'Log Apply Ready Queue', '_Total');
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Database Replica', 'Log Compression Cache misses/sec', '_Total');
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Database Replica', 'Log remaining for undo', '_Total');
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Database Replica', 'Log Send Queue', '_Total');
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Database Replica', 'Recovery Queue', '_Total');
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Database Replica', 'Redo blocked/sec', '_Total');
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Database Replica', 'Redo Bytes Remaining', '_Total');
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Database Replica', 'Redone Bytes/sec', '_Total');
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Databases', 'Log Bytes Flushed/sec', '_Total');
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Databases', 'Log Growths', '_Total');
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Databases', 'Log Pool LogWriter Pushes/sec', '_Total');
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Databases', 'Log Shrinks', '_Total');
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Databases', 'Transactions/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Databases', 'Write Transactions/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Databases', 'XTP Memory Used (KB)', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Exec Statistics', 'Distributed Query', 'Execs in progress');
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Exec Statistics', 'DTC calls', 'Execs in progress');
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Exec Statistics', 'Extended Procedures', 'Execs in progress');
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Exec Statistics', 'OLEDB calls', 'Execs in progress');
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':General Statistics', 'Active Temp Tables', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':General Statistics', 'Logins/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':General Statistics', 'Logouts/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':General Statistics', 'Mars Deadlocks', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':General Statistics', 'Processes blocked', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Locks', 'Number of Deadlocks/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Memory Manager', 'Memory Grants Pending', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':SQL Errors', 'Errors/sec', '_Total');
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':SQL Statistics', 'Batch Requests/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':SQL Statistics', 'Forced Parameterizations/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':SQL Statistics', 'Guided plan executions/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':SQL Statistics', 'SQL Attention rate', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':SQL Statistics', 'SQL Compilations/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':SQL Statistics', 'SQL Re-Compilations/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Workload Group Stats', 'Query optimizations/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Workload Group Stats', 'Suboptimal plans/sec', NULL);
+		/* Below counters added by Jefferson Elias */
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Access Methods', 'Worktables From Cache Base', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Access Methods', 'Worktables From Cache Ratio', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Buffer Manager', 'Database pages', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Buffer Manager', 'Free pages', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Buffer Manager', 'Stolen pages', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Memory Manager', 'Granted Workspace Memory (KB)', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Memory Manager', 'Maximum Workspace Memory (KB)', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Memory Manager', 'Target Server Memory (KB)', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Memory Manager', 'Total Server Memory (KB)', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Buffer Manager', 'Buffer cache hit ratio', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Buffer Manager', 'Buffer cache hit ratio base', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Buffer Manager', 'Checkpoint pages/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Buffer Manager', 'Free list stalls/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Buffer Manager', 'Lazy writes/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':SQL Statistics', 'Auto-Param Attempts/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':SQL Statistics', 'Failed Auto-Params/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':SQL Statistics', 'Safe Auto-Params/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':SQL Statistics', 'Unsafe Auto-Params/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Access Methods', 'Workfiles Created/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':General Statistics', 'User Connections', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Latches', 'Average Latch Wait Time (ms)', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Latches', 'Average Latch Wait Time Base', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Latches', 'Latch Waits/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Latches', 'Total Latch Wait Time (ms)', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Locks', 'Average Wait Time (ms)', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Locks', 'Average Wait Time Base', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Locks', 'Lock Requests/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Locks', 'Lock Timeouts/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Locks', 'Lock Wait Time (ms)', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Locks', 'Lock Waits/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Transactions', 'Longest Transaction Running Time', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Access Methods', 'Full Scans/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Access Methods', 'Index Searches/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Buffer Manager', 'Page lookups/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Cursor Manager by Type', 'Active cursors', NULL);
+		/* Below counters are for In-Memory OLTP (Hekaton), which have a different naming convention.
+			And yes, they actually hard-coded the version numbers into the counters, and SQL 2019 still says 2017, oddly.
+			For why, see: https://connect.microsoft.com/SQLServer/feedback/details/817216/xtp-perfmon-counters-should-appear-under-sql-server-perfmon-counter-group
+		*/
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2014 XTP Cursors', 'Expired rows removed/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2014 XTP Cursors', 'Expired rows touched/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2014 XTP Garbage Collection', 'Rows processed/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2014 XTP IO Governor', 'Io Issued/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2014 XTP Phantom Processor', 'Phantom expired rows touched/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2014 XTP Phantom Processor', 'Phantom rows touched/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2014 XTP Transaction Log', 'Log bytes written/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2014 XTP Transaction Log', 'Log records written/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2014 XTP Transactions', 'Transactions aborted by user/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2014 XTP Transactions', 'Transactions aborted/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2014 XTP Transactions', 'Transactions created/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2016 XTP Cursors', 'Expired rows removed/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2016 XTP Cursors', 'Expired rows touched/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2016 XTP Garbage Collection', 'Rows processed/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2016 XTP IO Governor', 'Io Issued/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2016 XTP Phantom Processor', 'Phantom expired rows touched/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2016 XTP Phantom Processor', 'Phantom rows touched/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2016 XTP Transaction Log', 'Log bytes written/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2016 XTP Transaction Log', 'Log records written/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2016 XTP Transactions', 'Transactions aborted by user/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2016 XTP Transactions', 'Transactions aborted/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2016 XTP Transactions', 'Transactions created/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2017 XTP Cursors', 'Expired rows removed/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2017 XTP Cursors', 'Expired rows touched/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2017 XTP Garbage Collection', 'Rows processed/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2017 XTP IO Governor', 'Io Issued/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2017 XTP Phantom Processor', 'Phantom expired rows touched/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2017 XTP Phantom Processor', 'Phantom rows touched/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2017 XTP Transaction Log', 'Log bytes written/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2017 XTP Transaction Log', 'Log records written/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2017 XTP Transactions', 'Transactions aborted by user/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2017 XTP Transactions', 'Transactions aborted/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2017 XTP Transactions', 'Transactions created/sec', NULL);
+		/* Added by Flemming Haurum */
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Buffer Node', 'Page life expectancy', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Resource Pool Stats', 'CPU usage %', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Resource Pool Stats', 'CPU usage % base', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Workload Group Stats', 'CPU usage %', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Workload Group Stats', 'CPU usage % base', NULL);
+
+		MERGE dbo.fhsmPerfmonCounters AS tgt
+		USING @fhsmPerfmonCounters AS src ON (src.ObjectName = tgt.ObjectName) AND (src.CounterName = tgt.CounterName) AND ((src.InstanceName = tgt.InstanceName) OR ((src.InstanceName IS NULL) AND (tgt.InstanceName IS NULL)))
+		WHEN NOT MATCHED BY TARGET
+			THEN INSERT(ObjectName, CounterName, InstanceName)
+			VALUES(src.ObjectName, src.CounterName, src.InstanceName);
 	END;
 
 	--
@@ -398,32 +410,29 @@ ELSE BEGIN
 							,Timestamp
 						FROM PerfmonDeltas
 						WHERE (CounterType IN (1073874176))
-							AND (CounterDelta > 0)
 					)
 					,PerfLargeRawBase AS (
 						SELECT
 							ObjectName
 							,InstanceName
 							,LEFT(CounterName, CHARINDEX(''BASE'', UPPER(CounterName)) - 1) AS CounterJoin
-							,CounterDelta
+							,CounterValue
 							,TimestampUTC
 							,Timestamp
 						FROM PerfmonDeltas
 						WHERE (CounterType IN (1073939712))
-							AND (CounterDelta > 0)
 					)
-					,PerfAverageFraction AS (
+					,PerfLargeRawFraction AS (
 						SELECT
 							ObjectName
 							,InstanceName
 							,CounterName
 							,CounterName AS CounterJoin
-							,CounterDelta
+							,CounterValue
 							,TimestampUTC
 							,Timestamp
 						FROM PerfmonDeltas
 						WHERE (CounterType IN (537003264))
-							AND (CounterDelta > 0)
 					)
 					,PerfCounterBulkCount AS (
 						SELECT
@@ -435,7 +444,6 @@ ELSE BEGIN
 							,Timestamp
 						FROM PerfmonDeltas
 						WHERE (CounterType IN (272696576, 272696320))
-							AND (CounterDelta > 0)
 					)
 					,PerfCounterRawCount AS (
 						SELECT
@@ -447,7 +455,6 @@ ELSE BEGIN
 							,Timestamp
 						FROM PerfmonDeltas
 						WHERE (CounterType IN (65792, 65536))
-							AND (CounterDelta > 0)
 					)
 			';
 			SET @stmt += '
@@ -456,7 +463,7 @@ ELSE BEGIN
 							num.ObjectName
 							,num.CounterName
 							,num.InstanceName
-							,num.CounterDelta / den.CounterDelta AS CounterValue
+							,num.CounterDelta / den.CounterValue AS CounterValue
 							,num.TimestampUTC
 							,num.Timestamp
 						FROM PerfAverageBulk AS num
@@ -465,7 +472,7 @@ ELSE BEGIN
 							AND (den.TimestampUTC = num.TimestampUTC)
 							AND (den.ObjectName = num.ObjectName)
 							AND (den.InstanceName = num.InstanceName)
-							AND (den.CounterDelta <> 0)
+							AND (den.CounterValue <> 0)
 
 						UNION ALL
 
@@ -473,17 +480,17 @@ ELSE BEGIN
 							num.ObjectName
 							,num.CounterName
 							,num.InstanceName
-							,CAST((CAST(num.CounterDelta AS decimal(19)) / den.CounterDelta) AS decimal(23,3)) AS CounterValue
+							,CAST((CAST(num.CounterValue AS decimal(19)) / den.CounterValue) AS decimal(23,3)) AS CounterValue
 							,num.TimestampUTC
 							,num.Timestamp
-						FROM PerfAverageFraction AS num
+						FROM PerfLargeRawFraction AS num
 						INNER JOIN PerfLargeRawBase AS den
 							ON (1=1)
 							AND (den.CounterJoin = num.CounterJoin)
 							AND (den.TimestampUTC = num.TimestampUTC)
 							AND (den.ObjectName = num.ObjectName)
 							AND (den.InstanceName = num.InstanceName)
-							AND (den.CounterDelta <> 0)
+							AND (den.CounterValue <> 0)
 
 						UNION ALL
 
@@ -514,8 +521,7 @@ ELSE BEGIN
 						,a.CounterValue
 						,a.TimestampUTC
 						,a.Timestamp
-					FROM AllData AS a
-					WHERE (a.CounterValue <> 0);
+					FROM AllData AS a;
 			';
 			EXEC(@stmt);
 		END;
@@ -557,15 +563,16 @@ ELSE BEGIN
 					,(DATEPART(HOUR, psa.Timestamp) * 60 * 60) + (DATEPART(MINUTE, psa.Timestamp) * 60) + (DATEPART(SECOND, psa.Timestamp)) AS TimeKey
 					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(psa.ObjectName, psa.CounterName, psa.InstanceName, DEFAULT, DEFAULT, DEFAULT) AS k) AS PerfmonKey
 				FROM dbo.fhsmPerformStatisticsActual AS psa
-				WHERE (psa.CounterValue <> 0)
-					AND (
-						   ((psa.ObjectName = ''SQLServer:Availability Replica'') AND (psa.CounterName = ''Bytes Received from Replica/sec''))
-						OR ((psa.ObjectName = ''SQLServer:Availability Replica'') AND (psa.CounterName = ''Bytes Sent to Replica/sec''))
-						OR ((psa.ObjectName = ''SQLServer:Availability Replica'') AND (psa.CounterName = ''Bytes Sent to Transport/sec''))
-						OR ((psa.ObjectName = ''SQLServer:Buffer Manager'')       AND (psa.CounterName = ''Page life expectancy''))
-						OR ((psa.ObjectName = ''SQLServer:Buffer Node'')          AND (psa.CounterName = ''Page life expectancy''))
-						OR ((psa.ObjectName = ''SQLServer:SQL Statistics'')       AND (psa.CounterName = ''Batch Requests/sec''))
-					)
+				WHERE (
+					   ((psa.ObjectName LIKE ''%:Availability Replica'') AND (psa.CounterName = ''Bytes Received from Replica/sec''))
+					OR ((psa.ObjectName LIKE ''%:Availability Replica'') AND (psa.CounterName = ''Bytes Sent to Replica/sec''))
+					OR ((psa.ObjectName LIKE ''%:Availability Replica'') AND (psa.CounterName = ''Bytes Sent to Transport/sec''))
+					OR ((psa.ObjectName LIKE ''%:Buffer Manager'')       AND (psa.CounterName = ''Page life expectancy''))
+					OR ((psa.ObjectName LIKE ''%:Buffer Node'')          AND (psa.CounterName = ''Page life expectancy''))
+					OR ((psa.ObjectName LIKE ''%:SQL Statistics'')       AND (psa.CounterName = ''Batch Requests/sec''))
+					OR ((psa.ObjectName LIKE ''%:Resource Pool Stats'')  AND (psa.CounterName = ''CPU usage %''))
+					OR ((psa.ObjectName LIKE ''%:Workload Group Stats'') AND (psa.CounterName = ''CPU usage %''))
+				)
 			';
 			EXEC(@stmt);
 		END;
@@ -699,7 +706,7 @@ ELSE BEGIN
 				,1
 				,'TimestampUTC'
 				,1
-				,90
+				,60
 				,NULL
 		)
 		MERGE dbo.fhsmRetentions AS tgt
@@ -719,7 +726,7 @@ ELSE BEGIN
 				1
 				,'Performance statistics'
 				,PARSENAME('dbo.fhsmSPPerfmonStatistics', 1)
-				,15 * 60
+				,5 * 60
 				,CAST('1900-1-1T00:00:00.0000' AS datetime2(0))
 				,CAST('1900-1-1T23:59:59.0000' AS datetime2(0))
 				,1, 1, 1, 1, 1, 1, 1

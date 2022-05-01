@@ -1,4 +1,6 @@
 # FHSQLMonitor
+May 1, 2022: Version 1.10.0 of Power BI desktop report has been updated with Resource Governor reports.
+
 February 19, 2022: Version 1.9.1 of Power BI desktop report has the Backup Status report updated.
 
 January 25, 2022: Version 1.9.0 of Power BI desktop report has been updated with Agent jobs, Plan cache usage, Plan guides and Triggers reports.
