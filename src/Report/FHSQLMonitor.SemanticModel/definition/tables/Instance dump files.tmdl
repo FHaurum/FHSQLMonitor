@@ -1,0 +1,68 @@
+table 'Instance dump files'
+	excludeFromModelRefresh
+	lineageTag: d36c29b6-5636-4941-9201-911e797158a1
+
+	column Sequence
+		dataType: string
+		lineageTag: d7067ed7-ad76-42c1-a006-d4056eab2920
+		summarizeBy: none
+		sourceColumn: Sequence
+
+		annotation SummarizationSetBy = Automatic
+
+	column Created
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: 1d356ea7-74cd-4b54-bbf5-618dd09dd0c5
+		summarizeBy: none
+		sourceColumn: Created
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	column Filename
+		dataType: string
+		lineageTag: 20447c88-7730-4e17-a39b-b883e3ed1d99
+		summarizeBy: none
+		sourceColumn: Filename
+
+		annotation SummarizationSetBy = Automatic
+
+	column SizeInBytes
+		dataType: int64
+		isHidden
+		formatString: #,0
+		lineageTag: eb3dd68f-874d-4412-b70a-286d3063f85e
+		summarizeBy: none
+		sourceColumn: SizeInBytes
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	partition 'Instance dump files' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Instance status")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db = dbList{[Name = #"Database name"]}[Data], 
+				  table = db{[Schema = #"Schema name", Item = "Instance dump files"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  RenamedColumns = Table.RenameColumns(datasetToUse, {{"CreationTime", "Created"}})
+				in
+				  RenamedColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

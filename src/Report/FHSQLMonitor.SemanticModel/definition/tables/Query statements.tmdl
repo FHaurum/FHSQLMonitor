@@ -1,0 +1,46 @@
+table 'Query statements'
+	lineageTag: df58290f-5d69-42c9-883b-b4e56b9cb2d2
+
+	column Statement
+		dataType: string
+		lineageTag: cab5a71b-abf8-4313-b46a-0533a0c273e4
+		summarizeBy: none
+		sourceColumn: Statement
+
+		annotation SummarizationSetBy = Automatic
+
+	column QueryStatisticKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: e433572c-eefc-48c4-832c-f036f7b4e398
+		summarizeBy: none
+		sourceColumn: QueryStatisticKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Query statements' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Query statistics")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db = dbList{[Name = #"Database name"]}[Data], 
+				  table = db{[Schema = #"Schema name", Item = "Query statements"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  SelectColumns = Table.SelectColumns(datasetToUse, {"Statement", "QueryStatisticKey"})
+				in
+				  SelectColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

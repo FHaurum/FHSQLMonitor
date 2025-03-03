@@ -1,0 +1,76 @@
+table 'Connection info'
+	lineageTag: 27a7a02d-fedb-4f30-8e5c-fe57888bc236
+
+	column Database
+		dataType: string
+		lineageTag: 1788a4a7-ebf5-4238-8f30-7660ca562eff
+		summarizeBy: none
+		sourceColumn: Database
+
+		annotation SummarizationSetBy = Automatic
+
+	column Host
+		dataType: string
+		lineageTag: 33c70f7c-c06f-4572-b1c5-53a5d0df9f24
+		summarizeBy: none
+		sourceColumn: Host
+
+		annotation SummarizationSetBy = Automatic
+
+	column Program
+		dataType: string
+		lineageTag: dcb6279e-ef6b-4795-9d1b-867641f52944
+		summarizeBy: none
+		sourceColumn: Program
+
+		annotation SummarizationSetBy = Automatic
+
+	column ConnectionInfoKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 2141f307-48f3-4327-ab4e-a387a56facb4
+		summarizeBy: none
+		sourceColumn: ConnectionInfoKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column ClientInterface
+		dataType: string
+		lineageTag: d1997b8c-a8fc-47e3-b45a-9c89f49dc7d9
+		summarizeBy: none
+		sourceColumn: ClientInterface
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Connection info' = m
+		mode: import
+		queryGroup: Dimensions
+		source = ```
+				let
+				  loadConfigFirstMatch = Table.First(
+				    Table.SelectRows(
+				      #"Data load", 
+				      each List.Contains({"Connections"}, [Service]) and List.Contains({"Yes"}, [DataLoad])
+				    )
+				  ), 
+				  loadConfig = 
+				    if (loadConfigFirstMatch = null) then
+				      "No"
+				    else
+				      Record.Field(loadConfigFirstMatch, "DataLoad"), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db = dbList{[Name = #"Database name"]}[Data], 
+				  table = db{[Schema = #"Schema name", Item = "Connection info"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset
+				in
+				  datasetToUse
+				```
+
+	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navigation
+

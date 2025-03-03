@@ -1,0 +1,65 @@
+table 'Instance hardware history'
+	excludeFromModelRefresh
+	lineageTag: 708a7b6c-dea0-4bd3-b6a3-6520e33f6dfd
+
+	column Key
+		dataType: string
+		lineageTag: 7d8c4275-d089-4ea2-9a5f-305686e03b6e
+		summarizeBy: none
+		sourceColumn: Key
+
+		annotation SummarizationSetBy = Automatic
+
+	column From
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: 1d04eb09-2b1a-46aa-b125-9d9aa1fca58f
+		summarizeBy: none
+		sourceColumn: From
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	column To
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: a7e29c66-7257-47d7-859c-39ccc32fcb6e
+		summarizeBy: none
+		sourceColumn: To
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	column Value
+		dataType: string
+		lineageTag: 2d8e62e1-7a7c-4cbe-8572-4cd50b602349
+		summarizeBy: none
+		sourceColumn: Value
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Instance hardware history' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Instance configuration")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db = dbList{[Name = #"Database name"]}[Data], 
+				  table = db{[Schema = #"Schema name", Item = "Instance hardware history"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  RenameColumns = Table.RenameColumns(datasetToUse, {{"ValidFrom", "From"}, {"ValidTo", "To"}})
+				in
+				  RenameColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

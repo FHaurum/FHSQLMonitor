@@ -1,0 +1,198 @@
+table 'Missing indexes'
+	lineageTag: 4e2f9b8d-4655-459d-9e27-4fa6c5dd5b22
+
+	column 'Equality columns'
+		dataType: string
+		lineageTag: b5b27c66-41be-4a3d-bfaf-c768fb07a375
+		summarizeBy: none
+		sourceColumn: Equality columns
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Inequality columns'
+		dataType: string
+		lineageTag: 994c0bda-584f-4bde-8d91-3f716328fba1
+		summarizeBy: none
+		sourceColumn: Inequality columns
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Included columns'
+		dataType: string
+		lineageTag: 0888dd55-722c-4331-8140-ab692aabc4ff
+		summarizeBy: none
+		sourceColumn: Included columns
+
+		annotation SummarizationSetBy = Automatic
+
+	column UniqueCompiles
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 961fdf26-a970-41cf-9cc3-03a6e3857ced
+		summarizeBy: none
+		sourceColumn: UniqueCompiles
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column UserSeeks
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: fae75ac7-4a80-4362-93dd-9126be948af3
+		summarizeBy: none
+		sourceColumn: UserSeeks
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column LastUserSeek
+		dataType: dateTime
+		isHidden
+		formatString: General Date
+		lineageTag: 9f45e56a-eaa4-45f3-9c46-2ebd6e7365aa
+		summarizeBy: none
+		sourceColumn: LastUserSeek
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column UserScans
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 8f3a34c7-f817-4ac5-a035-1592767b60f2
+		summarizeBy: none
+		sourceColumn: UserScans
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column LastUserScan
+		dataType: dateTime
+		isHidden
+		formatString: General Date
+		lineageTag: 1562f71a-362c-44ad-ab9b-83c4320ce26b
+		summarizeBy: none
+		sourceColumn: LastUserScan
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column AvgTotalUserCost
+		dataType: double
+		isHidden
+		lineageTag: 5fa16766-9be9-4c69-b2c3-5eff4340093f
+		summarizeBy: none
+		sourceColumn: AvgTotalUserCost
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column AvgUserImpact
+		dataType: double
+		isHidden
+		lineageTag: d63dbcc9-538d-4f3c-ba56-0c4832fd9588
+		summarizeBy: none
+		sourceColumn: AvgUserImpact
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column LastUserSeekDate
+		dataType: dateTime
+		isHidden
+		formatString: Long Date
+		lineageTag: d53272fd-6940-497f-9a7c-664cd72a523a
+		summarizeBy: none
+		sourceColumn: LastUserSeekDate
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column Date
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 9c950885-98cc-4e12-8b4c-75971fa373a8
+		summarizeBy: none
+		sourceColumn: Date
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column ObjectKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: c09c2c44-2fb1-4e01-ba1a-e6818121f674
+		summarizeBy: none
+		sourceColumn: ObjectKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Missing indexes' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Missing indexes")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db = dbList{[Name = #"Database name"]}[Data], 
+				  table = db{[Schema = #"Schema name", Item = "Missing indexes"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  SelectColumns = Table.SelectColumns(
+				    datasetToUse, 
+				    {
+				      "EqualityColumns", 
+				      "InequalityColumns", 
+				      "IncludedColumns", 
+				      "UniqueCompiles", 
+				      "UserSeeks", 
+				      "LastUserSeek", 
+				      "UserScans", 
+				      "LastUserScan", 
+				      "AvgTotalUserCost", 
+				      "AvgUserImpact", 
+				      "LastUserSeekDate", 
+				      "Date", 
+				      "ObjectKey"
+				    }
+				  ), 
+				  RenameColumns = Table.RenameColumns(
+				    SelectColumns, 
+				    {
+				      {"EqualityColumns", "Equality columns"}, 
+				      {"IncludedColumns", "Included columns"}, 
+				      {"InequalityColumns", "Inequality columns"}
+				    }
+				  )
+				in
+				  RenameColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

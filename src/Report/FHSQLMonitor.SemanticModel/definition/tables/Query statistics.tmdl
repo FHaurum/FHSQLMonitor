@@ -1,0 +1,162 @@
+table 'Query statistics'
+	lineageTag: f34bf419-b7f7-4e37-93d4-461f35fc3251
+
+	column ExecutionCount
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: d7c6c4da-bb0b-484e-a630-b3ba6c9d4369
+		summarizeBy: none
+		sourceColumn: ExecutionCount
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column WorkerTimeMS
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: bb38171c-326b-408d-a62b-f5d128632a1d
+		summarizeBy: none
+		sourceColumn: WorkerTimeMS
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column PhysicalReads
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 68e67be4-736a-4738-9c2d-4e3e1cd53de2
+		summarizeBy: none
+		sourceColumn: PhysicalReads
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column LogicalWrites
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: a7510069-f76f-4852-946a-15d0b4ca03f5
+		summarizeBy: none
+		sourceColumn: LogicalWrites
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column LogicalReads
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 8c411b48-91d3-41af-a22f-fefaf39ef490
+		summarizeBy: none
+		sourceColumn: LogicalReads
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column ElapsedTimeMS
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 0030f581-40da-432b-bf5c-1f5982ff690d
+		summarizeBy: none
+		sourceColumn: ElapsedTimeMS
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column Rows
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 6ae2f6d3-7c62-497c-9eaa-f8254fd2dcbe
+		summarizeBy: none
+		sourceColumn: Rows
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column Date
+		dataType: dateTime
+		isHidden
+		formatString: Long Date
+		lineageTag: 894e6ba1-c0ee-4b78-9217-bf4a7ee84c82
+		summarizeBy: none
+		sourceColumn: Date
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column TimeKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: c8d20b73-0667-4878-805a-57a1be9de58d
+		summarizeBy: none
+		sourceColumn: TimeKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column QueryStatisticKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 538274a6-6d82-4a25-8ec0-76faad2f401f
+		summarizeBy: none
+		sourceColumn: QueryStatisticKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Query statistics' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Query statistics")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db = dbList{[Name = #"Database name"]}[Data], 
+				  table = db{[Schema = #"Schema name", Item = "Query statistics"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  SelectColumns = Table.SelectColumns(
+				    datasetToUse, 
+				    {
+				      "ExecutionCount", 
+				      "WorkerTimeMS", 
+				      "PhysicalReads", 
+				      "LogicalWrites", 
+				      "LogicalReads", 
+				      "ElapsedTimeMS", 
+				      "Rows", 
+				      "Date", 
+				      "TimeKey", 
+				      "QueryStatisticKey"
+				    }
+				  )
+				in
+				  SelectColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

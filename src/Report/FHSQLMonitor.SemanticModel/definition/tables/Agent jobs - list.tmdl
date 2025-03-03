@@ -1,0 +1,77 @@
+table 'Agent jobs - list'
+	lineageTag: 7b08474b-4299-4d9e-8dbf-84f60144c13f
+
+	column Job
+		dataType: string
+		lineageTag: 1af15eb6-8d53-4e1c-9542-7b9387b1921b
+		summarizeBy: none
+		sourceColumn: Job
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Job enabled'
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: b0f99a80-59ad-4967-8ed5-5f7a9ccb5a16
+		summarizeBy: none
+		sourceColumn: Job enabled
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Schedule enabled'
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 33c64cce-99c2-4a29-b885-7bcb606f383e
+		summarizeBy: none
+		sourceColumn: Schedule enabled
+
+		annotation SummarizationSetBy = Automatic
+
+	column Description
+		dataType: string
+		lineageTag: 877db0e0-1074-4bfb-9f07-20ff5793725f
+		summarizeBy: none
+		sourceColumn: Description
+
+		annotation SummarizationSetBy = Automatic
+
+	column Timestamp
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: c5aebefc-bf74-4751-9a76-90cd431e2dd4
+		summarizeBy: none
+		sourceColumn: Timestamp
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Agent jobs - list' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Agent jobs configuration")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db = dbList{[Name = #"Database name"]}[Data], 
+				  table = db{[Schema = #"Schema name", Item = "Agent jobs - list"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  RenamedColumns = Table.RenameColumns(
+				    datasetToUse, 
+				    {
+				      {"JobName", "Job"}, 
+				      {"JobEnabled", "Job enabled"}, 
+				      {"ScheduleEnabled", "Schedule enabled"}, 
+				      {"TotalDesc", "Description"}
+				    }
+				  )
+				in
+				  RenamedColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

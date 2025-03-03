@@ -1,0 +1,163 @@
+table 'Agent jobs'
+	lineageTag: c241097b-2387-4915-8d2e-7980291cb53a
+
+	column Job
+		dataType: string
+		lineageTag: 2476142e-8c64-406a-9ae3-35eece021550
+		summarizeBy: none
+		sourceColumn: Job
+		sortByColumn: JobSortOrder
+
+		changedProperty = SortByColumn
+
+		annotation SummarizationSetBy = Automatic
+
+	column JobEnabled
+		dataType: boolean
+		isHidden
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 68dc2ff8-581b-42bb-b30d-7d92e0611b5a
+		summarizeBy: none
+		sourceColumn: JobEnabled
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column NumberOfEnabledSchedules
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: b92eebd2-6e42-419e-91a3-d0678b08e18b
+		summarizeBy: none
+		sourceColumn: NumberOfEnabledSchedules
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column NotifyEmailOperatorId
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 41ba8f04-87cf-4900-adee-5b364a2df92a
+		summarizeBy: none
+		sourceColumn: NotifyEmailOperatorId
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column NotifyLevelEmail
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: acc719df-8852-42ba-9a4f-ecf5049a81ea
+		summarizeBy: none
+		sourceColumn: NotifyLevelEmail
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column 'Job enabled' = ```
+			
+			IF ( 'Agent jobs'[JobEnabled] = FALSE, UNICHAR ( 128993 ), UNICHAR ( 128994 ) )
+			
+			```
+		lineageTag: d7ca6148-ab0d-4f7f-9a43-212177a9fe2b
+		summarizeBy: none
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Schedules enabled' = ```
+			
+			IF (
+			    'Agent jobs'[NumberOfEnabledSchedules] = 0,
+			    UNICHAR ( 128993 ),
+			    UNICHAR ( 128994 )
+			)
+			
+			```
+		lineageTag: ea0657fe-a4fd-4f75-a2eb-07020355e6ab
+		summarizeBy: none
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'E-mail operator' = ```
+			
+			IF (
+			    'Agent jobs'[NotifyEmailOperatorId] = 0,
+			    UNICHAR ( 128993 ),
+			    UNICHAR ( 128994 )
+			)
+			
+			```
+		lineageTag: 00394c2f-5e74-47df-9893-0e48245d07e6
+		summarizeBy: none
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Sending e-mail' = ```
+			
+			IF (
+			    'Agent jobs'[NotifyLevelEmail] = 0,
+			    UNICHAR ( 128993 ),
+			    UNICHAR ( 128994 )
+			)
+			
+			```
+		lineageTag: 387ef1af-261d-4076-bf07-bccef61cac4b
+		summarizeBy: none
+
+		annotation SummarizationSetBy = Automatic
+
+	column JobSortOrder
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 8ab17b2d-67f2-4ecb-93c2-5215660bb8ed
+		summarizeBy: none
+		sourceColumn: JobSortOrder
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	partition 'Agent jobs' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Instance configuration")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db = dbList{[Name = #"Database name"]}[Data], 
+				  table = db{[Schema = #"Schema name", Item = "Agent jobs"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  SelectColumns = Table.SelectColumns(
+				    datasetToUse, 
+				    {
+				      "JobName", 
+				      "JobEnabled", 
+				      "NumberOfEnabledSchedules", 
+				      "NotifyEmailOperatorId", 
+				      "NotifyLevelEmail", 
+				      "JobNameSortOrder"
+				    }
+				  ), 
+				  RenameColumns = Table.RenameColumns(
+				    SelectColumns, 
+				    {{"JobName", "Job"}, {"JobNameSortOrder", "JobSortOrder"}}
+				  )
+				in
+				  RenameColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

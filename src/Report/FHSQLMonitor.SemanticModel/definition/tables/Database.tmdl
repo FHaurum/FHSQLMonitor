@@ -1,0 +1,56 @@
+table Database
+	lineageTag: afa4b2f5-6362-4b41-9da5-56394d652976
+
+	column Database
+		dataType: string
+		lineageTag: d20a57c0-130d-4b34-9d95-46036cb2b9b3
+		summarizeBy: none
+		sourceColumn: Database
+
+		annotation SummarizationSetBy = Automatic
+
+	column DatabaseKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 672d37cb-16e9-4df5-85e3-b079f5519200
+		summarizeBy: none
+		sourceColumn: DatabaseKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Database = m
+		mode: import
+		queryGroup: Dimensions
+		source = ```
+				let
+				  loadConfigFirstMatch = Table.First(
+				    Table.SelectRows(
+				      #"Data load", 
+				      each List.Contains(
+				        {"Backup", "CPU", "Database configuration", "Plan guides", "Triggers", "Who is active"}, 
+				        [Service]
+				      )
+				        and List.Contains({"Yes"}, [DataLoad])
+				    )
+				  ), 
+				  loadConfig = 
+				    if (loadConfigFirstMatch = null) then
+				      "No"
+				    else
+				      Record.Field(loadConfigFirstMatch, "DataLoad"), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db = dbList{[Name = #"Database name"]}[Data], 
+				  table = db{[Schema = #"Schema name", Item = "Database"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset
+				in
+				  datasetToUse
+				```
+
+	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navigation
+

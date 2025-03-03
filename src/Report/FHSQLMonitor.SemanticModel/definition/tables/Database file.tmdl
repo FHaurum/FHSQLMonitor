@@ -1,0 +1,77 @@
+table 'Database file'
+	lineageTag: afa6ba19-a2bd-43bf-b843-77efe912cb06
+
+	column Database
+		dataType: string
+		isNullable: false
+		lineageTag: 2386147c-0d3b-4b36-b1f2-1b5f927551e8
+		summarizeBy: none
+		sourceColumn: Database
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Logical file'
+		dataType: string
+		isNullable: false
+		lineageTag: 99e0f95e-7b76-4827-ab6a-12970953b853
+		summarizeBy: none
+		sourceColumn: Logical file
+
+		annotation SummarizationSetBy = Automatic
+
+	column Type
+		dataType: string
+		isNullable: false
+		lineageTag: 23e80504-6e3b-4406-96d5-24ae3f5a0c3f
+		summarizeBy: none
+		sourceColumn: Type
+
+		annotation SummarizationSetBy = Automatic
+
+	column DatabaseFileKey
+		dataType: int64
+		isHidden
+		isNullable: false
+		formatString: 0
+		lineageTag: 33de5e54-c13c-4c52-b6f4-b8f885cc5f58
+		summarizeBy: none
+		sourceColumn: DatabaseFileKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Database file' = m
+		mode: import
+		queryGroup: Dimensions
+		source = ```
+				let
+				  loadConfigFirstMatch = Table.First(
+				    Table.SelectRows(
+				      #"Data load", 
+				      each List.Contains({"Database IO", "Database size"}, [Service])
+				        and List.Contains({"Yes"}, [DataLoad])
+				    )
+				  ), 
+				  loadConfig = 
+				    if (loadConfigFirstMatch = null) then
+				      "No"
+				    else
+				      Record.Field(loadConfigFirstMatch, "DataLoad"), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db = dbList{[Name = #"Database name"]}[Data], 
+				  table = db{[Schema = #"Schema name", Item = "Database file"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  RenameColumns = Table.RenameColumns(
+				    datasetToUse, 
+				    {{"Logical name", "Logical file"}, {"Database name", "Database"}}
+				  )
+				in
+				  RenameColumns
+				```
+
+	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navigation
+

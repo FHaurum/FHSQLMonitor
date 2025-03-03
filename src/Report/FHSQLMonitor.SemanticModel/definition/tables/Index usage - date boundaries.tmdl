@@ -1,0 +1,32 @@
+table 'Index usage - date boundaries'
+	isHidden
+	lineageTag: c3cdd9a0-4b67-482c-a0f6-c21c46791ad9
+
+	column Date
+		isHidden
+		formatString: dd-mmm-yyyy
+		lineageTag: 01909170-8a10-43b2-a11d-c30dcc903487
+		summarizeBy: none
+		sourceColumn: [Value]
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	partition 'Index usage - date boundaries' = calculated
+		mode: import
+		source = ```
+				
+				DISTINCT (
+				    UNION (
+				        { MIN ( 'Index usage'[Date] ) },
+				        { MAX ( 'Index usage'[Date] ) }
+				    )
+				)
+				
+				```
+
+	annotation PBI_Id = 16a03466a9ea4f94847ac566aa4c9e3c
+

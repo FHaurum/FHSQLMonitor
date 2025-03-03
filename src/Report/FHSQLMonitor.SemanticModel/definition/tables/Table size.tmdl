@@ -1,0 +1,127 @@
+table 'Table size'
+	lineageTag: e1bfb39d-10d8-491f-9e8d-7b3e79b7cc82
+
+	column Rows
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 564ac3ea-f9f8-4e32-9ebb-99027b1e5213
+		summarizeBy: none
+		sourceColumn: Rows
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column Reserved
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 5c69fb72-0c7a-4bdb-8092-10825a3dbe9b
+		summarizeBy: none
+		sourceColumn: Reserved
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column Data
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: c334e724-8e47-477a-8d6b-d60df93a834f
+		summarizeBy: none
+		sourceColumn: Data
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column IndexSize
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 74ca7635-1b28-4286-8d3b-83262e07aea5
+		summarizeBy: none
+		sourceColumn: IndexSize
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column Unused
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: b2aa3f0f-d5ba-4347-8aa3-ea5911214d55
+		summarizeBy: none
+		sourceColumn: Unused
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column Date
+		dataType: dateTime
+		isHidden
+		formatString: Long Date
+		lineageTag: a231161c-ed7b-4bbb-bf86-8fa2281cbf06
+		summarizeBy: none
+		sourceColumn: Date
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column ObjectKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 0ed7af80-166c-40e2-afbe-3319114a1a93
+		summarizeBy: none
+		sourceColumn: ObjectKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column ObjectPartitionKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 38d316e4-c02f-4220-b1cb-17bfaa27e4bf
+		summarizeBy: none
+		sourceColumn: ObjectPartitionKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	partition 'Table size' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Table size")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db = dbList{[Name = #"Database name"]}[Data], 
+				  table = db{[Schema = #"Schema name", Item = "Table size"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  SelectColumns = Table.SelectColumns(
+				    datasetToUse, 
+				    {"Rows", "Reserved", "Data", "IndexSize", "Unused", "Date", "ObjectKey", "ObjectPartitionKey"}
+				  )
+				in
+				  SelectColumns
+				```
+
+	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navigation
+

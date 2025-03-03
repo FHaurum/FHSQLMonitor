@@ -1,4 +1,10 @@
 # FHSQLMonitor
+To read more about the project go to my blog [SQL Server Monitoring](https://www.haurumit.dk/sql-server-monitoring)
+
+Have fun :-)
+
+March 3, 2025: Version 2.0.0 with a completely redesigned Power BI report and added ability to specify which of the collected data should be loaded into the report and presented.
+
 May 1, 2022: Version 1.10.0 of Power BI desktop report has been updated with Resource Governor reports.
 
 February 19, 2022: Version 1.9.1 of Power BI desktop report has the Backup Status report updated.
@@ -24,7 +30,3 @@ November 12, 2020: Version 1.1.1 of Power BI desktop report has been updated wit
 October 23, 2020: Version 1.1 has been released and it contains more features and reports, error changes as well as improved reports.
 
 This project is a SQL Server Monitoring tool that can easily be installed on a single SQL server instance, helping to monitor the state of it.
-
-To read more about the project go to my blog [SQL Server Monitoring](https://www.haurumit.dk/sql-server-monitoring)
-
-Have fun :-)

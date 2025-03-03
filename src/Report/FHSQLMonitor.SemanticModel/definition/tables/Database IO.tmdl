@@ -1,0 +1,125 @@
+table 'Database IO'
+	lineageTag: 45165dee-8cd0-4f3e-a23e-da892a314ed0
+
+	column NumOfBytesRead
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: fd31996e-2e9b-4751-9223-b3dd3afdc46c
+		summarizeBy: none
+		sourceColumn: NumOfBytesRead
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column ReadLatencyMS
+		dataType: double
+		isHidden
+		lineageTag: 86d75a34-df9d-4b8d-9e12-09f5a256df14
+		summarizeBy: none
+		sourceColumn: ReadLatencyMS
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column NumOfBytesWritten
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 74479f6d-d180-4eb2-bb14-4e2a673c3ec7
+		summarizeBy: none
+		sourceColumn: NumOfBytesWritten
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column WriteLatencyMS
+		dataType: double
+		isHidden
+		lineageTag: c1ac22d1-823f-4ba9-aaec-fb1c9435eaa8
+		summarizeBy: none
+		sourceColumn: WriteLatencyMS
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column TimeKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: d9a21670-ef6f-4661-9114-3d1afc9dcf76
+		summarizeBy: none
+		sourceColumn: TimeKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column Date
+		dataType: dateTime
+		isHidden
+		formatString: Long Date
+		lineageTag: 7e901c0f-0413-46c5-b9e3-34379d859ad9
+		summarizeBy: none
+		sourceColumn: Date
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column DatabaseFileKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: fbfb2ea9-d286-4b6d-b32d-4eed0d7e1379
+		summarizeBy: none
+		sourceColumn: DatabaseFileKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Database IO' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Database IO")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db = dbList{[Name = #"Database name"]}[Data], 
+				  table = db{[Schema = #"Schema name", Item = "Database IO"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  SelectColumns = Table.SelectColumns(
+				    datasetToUse, 
+				    {
+				      "NumOfBytesRead", 
+				      "ReadLatencyMS", 
+				      "NumOfBytesWritten", 
+				      "WriteLatencyMS", 
+				      "TimeKey", 
+				      "Date", 
+				      "DatabaseFileKey"
+				    }
+				  )
+				in
+				  SelectColumns
+				```
+
+	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navigation
+

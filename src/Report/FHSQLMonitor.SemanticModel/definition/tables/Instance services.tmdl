@@ -1,0 +1,88 @@
+table 'Instance services'
+	lineageTag: 69f33caf-f6da-4278-9bc3-fb401fe8f7f1
+
+	column Service
+		dataType: string
+		lineageTag: e4fc4c34-f995-41d6-aa37-8366b0cb5975
+		summarizeBy: none
+		sourceColumn: Service
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Startup type'
+		dataType: string
+		lineageTag: 7998e4b6-fbcb-45ac-a641-045cfd84f832
+		summarizeBy: none
+		sourceColumn: Startup type
+
+		annotation SummarizationSetBy = Automatic
+
+	column Status
+		dataType: string
+		lineageTag: 178cea57-cf30-4e96-9117-634c68795d73
+		summarizeBy: none
+		sourceColumn: Status
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Service account'
+		dataType: string
+		lineageTag: 39805154-fefa-4c92-9a0a-64b89c58d5b9
+		summarizeBy: none
+		sourceColumn: Service account
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'IFI enabled'
+		dataType: int64
+		formatString: 0
+		lineageTag: 2ff0dfd5-7a0b-4eb5-85dc-e57d398d7424
+		summarizeBy: none
+		sourceColumn: IFI enabled
+
+		annotation SummarizationSetBy = User
+
+	column Timestamp
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: 89e5fb90-cd06-418f-a91d-08ee66eb6ad1
+		summarizeBy: none
+		sourceColumn: Timestamp
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	partition 'Instance services' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Instance configuration")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db = dbList{[Name = #"Database name"]}[Data], 
+				  table = db{[Schema = #"Schema name", Item = "Instance services"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  RenameColumns = Table.RenameColumns(
+				    datasetToUse, 
+				    {
+				      {"StartupType", "Startup type"}, 
+				      {"ServiceAccount", "Service account"}, 
+				      {"InstantFileInitializationEnabled", "IFI enabled"}, 
+				      {"Name", "Service"}
+				    }
+				  )
+				in
+				  RenameColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

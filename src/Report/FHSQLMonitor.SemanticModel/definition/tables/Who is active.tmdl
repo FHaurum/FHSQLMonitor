@@ -1,0 +1,229 @@
+table 'Who is active'
+	lineageTag: bae50cf7-5d19-4139-b0ca-8ea695d3672b
+
+	column 'Last seen in sec.'
+		dataType: int64
+		formatString: #,0
+		lineageTag: 8c03845d-8038-44aa-8ac1-f914f1760ec3
+		summarizeBy: none
+		sourceColumn: Last seen in sec.
+
+		annotation SummarizationSetBy = User
+
+	column 'Collection time'
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: cd027187-ba73-44b2-bcaa-6566e424e04f
+		summarizeBy: none
+		sourceColumn: Collection time
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	column 'Elapsed time mS'
+		dataType: int64
+		formatString: #,0
+		lineageTag: 18f5a00d-3934-40c8-8a8f-8f3849f881b1
+		summarizeBy: none
+		sourceColumn: Elapsed time mS
+
+		annotation SummarizationSetBy = User
+
+	column SPID
+		dataType: int64
+		formatString: 0
+		lineageTag: cbe83e91-85e9-48d0-bb19-c436ab37a606
+		summarizeBy: none
+		sourceColumn: SPID
+
+		annotation SummarizationSetBy = User
+
+	column SQL
+		dataType: string
+		lineageTag: 8d36d821-c588-45df-8df9-4dba0d7c02cd
+		summarizeBy: none
+		sourceColumn: SQL
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Login name'
+		dataType: string
+		lineageTag: a3c9f8f2-4183-47bb-877f-e7aef1f94acb
+		summarizeBy: none
+		sourceColumn: Login name
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Wait info'
+		dataType: string
+		lineageTag: c32d3438-3663-4030-8de8-52c04ebb2b15
+		summarizeBy: none
+		sourceColumn: Wait info
+
+		annotation SummarizationSetBy = Automatic
+
+	column CPU
+		dataType: int64
+		formatString: 0
+		lineageTag: 25359a80-4018-4598-8046-651420124f21
+		summarizeBy: none
+		sourceColumn: CPU
+
+		annotation SummarizationSetBy = User
+
+	column 'Blocked by SPID'
+		dataType: int64
+		formatString: 0
+		lineageTag: 2964e9c5-3026-4c03-baa2-cb65381429e3
+		summarizeBy: none
+		sourceColumn: Blocked by SPID
+
+		annotation SummarizationSetBy = User
+
+	column Reads
+		dataType: int64
+		formatString: 0
+		lineageTag: 2e5c0451-d433-47a0-bbbe-bb46e8681102
+		summarizeBy: none
+		sourceColumn: Reads
+
+		annotation SummarizationSetBy = User
+
+	column 'Used memory'
+		dataType: int64
+		formatString: 0
+		lineageTag: 469ca5cb-5969-427d-9a11-a88dd5e3ca0f
+		summarizeBy: none
+		sourceColumn: Used memory
+
+		annotation SummarizationSetBy = User
+
+	column Status
+		dataType: string
+		lineageTag: f46020be-3bfc-4550-a3b0-9592d950ead3
+		summarizeBy: none
+		sourceColumn: Status
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Implicit tran.'
+		dataType: string
+		lineageTag: 7cfc2270-a3ca-4b1c-966b-e9881f75d3cd
+		summarizeBy: none
+		sourceColumn: Implicit tran.
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Open tran. cnt.'
+		dataType: int64
+		formatString: 0
+		lineageTag: 98c864aa-2d87-4158-825f-eb67daef9ba2
+		summarizeBy: none
+		sourceColumn: Open tran. cnt.
+
+		annotation SummarizationSetBy = User
+
+	column 'Host name'
+		dataType: string
+		lineageTag: 91a7cff5-cbf1-49de-a3ce-80defa5b98f2
+		summarizeBy: none
+		sourceColumn: Host name
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Program name'
+		dataType: string
+		lineageTag: f9ce4e0f-2001-4e23-906b-6df766dc6c5c
+		summarizeBy: none
+		sourceColumn: Program name
+
+		annotation SummarizationSetBy = Automatic
+
+	column DatabaseKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 1b350071-7206-4866-b39a-0260cf337321
+		summarizeBy: none
+		sourceColumn: DatabaseKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column ConcatenatedColumns
+		dataType: string
+		lineageTag: 1c61fbed-02c2-442d-ac30-9b82cb35d4d8
+		summarizeBy: none
+		sourceColumn: ConcatenatedColumns
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Who is active' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Who is active")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db = dbList{[Name = #"Database name"]}[Data], 
+				  table = db{[Schema = #"Schema name", Item = "Who is active"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  SelectColumns = Table.SelectColumns(
+				    datasetToUse, 
+				    {
+				      "SecondsSinceLastSeen", 
+				      "CollectionTime", 
+				      "ElapsedTimeMS", 
+				      "SessionId", 
+				      "SQLText", 
+				      "LoginName", 
+				      "WaitInfo", 
+				      "CPU", 
+				      "BlockingSessionId", 
+				      "Reads", 
+				      "UsedMemory", 
+				      "Status", 
+				      "ImplicitTran", 
+				      "OpenTranCount", 
+				      "HostName", 
+				      "ProgramName", 
+				      "DatabaseKey"
+				    }
+				  ), 
+				  ConcatenateColumns = Table.AddColumn(
+				    SelectColumns, 
+				    "ConcatenatedColumns", 
+				    each (([ProgramName] & "|") ?? "") & (([HostName] & "|") ?? "") & (([LoginName] & "|") ?? "")
+				  ), 
+				  RenameColumns = Table.RenameColumns(
+				    ConcatenateColumns, 
+				    {
+				      {"HostName", "Host name"}, 
+				      {"LoginName", "Login name"}, 
+				      {"ProgramName", "Program name"}, 
+				      {"SecondsSinceLastSeen", "Last seen in sec."}, 
+				      {"CollectionTime", "Collection time"}, 
+				      {"SessionId", "SPID"}, 
+				      {"SQLText", "SQL"}, 
+				      {"WaitInfo", "Wait info"}, 
+				      {"BlockingSessionId", "Blocked by SPID"}, 
+				      {"UsedMemory", "Used memory"}, 
+				      {"ImplicitTran", "Implicit tran."}, 
+				      {"OpenTranCount", "Open tran. cnt."}, 
+				      {"ElapsedTimeMS", "Elapsed time mS"}
+				    }
+				  )
+				in
+				  RenameColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

@@ -1,0 +1,86 @@
+table 'Instance suspect pages'
+	excludeFromModelRefresh
+	lineageTag: 22b445cc-df34-4a23-a92a-fc9bf9e9fbbf
+
+	column Database
+		dataType: string
+		lineageTag: 90845dbf-ecee-4659-b6b2-b0b5acc81062
+		summarizeBy: none
+		sourceColumn: Database
+
+		annotation SummarizationSetBy = Automatic
+
+	column FileId
+		dataType: int64
+		formatString: 0
+		lineageTag: ae195443-4bae-4593-b08f-ce8114b415b7
+		summarizeBy: none
+		sourceColumn: FileId
+
+		annotation SummarizationSetBy = User
+
+	column PageId
+		dataType: int64
+		formatString: 0
+		lineageTag: 5baf59a8-78dd-4144-8094-cd4bc94ebf84
+		summarizeBy: none
+		sourceColumn: PageId
+
+		annotation SummarizationSetBy = User
+
+	column EventType
+		dataType: string
+		lineageTag: 42ced957-47e9-4a91-bf1d-3c35407c9d6f
+		summarizeBy: none
+		sourceColumn: EventType
+
+		annotation SummarizationSetBy = Automatic
+
+	column ErrorCount
+		dataType: int64
+		formatString: 0
+		lineageTag: 90009abf-ecea-4c32-b1b5-12784e8b4601
+		summarizeBy: none
+		sourceColumn: ErrorCount
+
+		annotation SummarizationSetBy = User
+
+	column Updated
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: de36dcec-1278-4995-8a48-ec4ed6e81ab3
+		summarizeBy: none
+		sourceColumn: Updated
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	partition 'Instance suspect pages' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Instance status")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db = dbList{[Name = #"Database name"]}[Data], 
+				  table = db{[Schema = #"Schema name", Item = "Instance suspect pages"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  RenamedColumns = Table.RenameColumns(
+				    datasetToUse, 
+				    {{"LastUpdateDate", "Updated"}, {"DatabaseName", "Database"}}
+				  )
+				in
+				  RenamedColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

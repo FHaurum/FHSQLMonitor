@@ -1,0 +1,91 @@
+table 'CPU utilization'
+	lineageTag: 6a84afda-4a71-4483-aef0-c746c83baf54
+
+	column SQLProcessUtilization
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: eb4bb061-d39b-4fef-bb01-252b3eb77cd6
+		summarizeBy: none
+		sourceColumn: SQLProcessUtilization
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column SystemIdle
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: a5f59654-c759-4698-a337-7f1ab9d82974
+		summarizeBy: none
+		sourceColumn: SystemIdle
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column OtherProcessUtilization
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 0a6478cb-07f4-496f-a433-94a48cacb221
+		summarizeBy: none
+		sourceColumn: OtherProcessUtilization
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column Date
+		dataType: dateTime
+		isHidden
+		formatString: Long Date
+		lineageTag: 66333cb7-ce62-4872-8d8c-139ec248f47b
+		summarizeBy: none
+		sourceColumn: Date
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column TimeKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 317d30ec-29e3-4186-adc5-98239d46011c
+		summarizeBy: none
+		sourceColumn: TimeKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'CPU utilization' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "CPU")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db = dbList{[Name = #"Database name"]}[Data], 
+				  table = db{[Schema = #"Schema name", Item = "CPU utilization"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  SelectColumns = Table.SelectColumns(
+				    datasetToUse, 
+				    {"SQLProcessUtilization", "SystemIdle", "OtherProcessUtilization", "Date", "TimeKey"}
+				  )
+				in
+				  SelectColumns
+				```
+
+	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navigation
+

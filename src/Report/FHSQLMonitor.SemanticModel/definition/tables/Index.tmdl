@@ -1,0 +1,80 @@
+table Index
+	lineageTag: 35fe447e-23e3-463a-9e2f-27d415dffb56
+
+	column Database
+		dataType: string
+		lineageTag: 3036a3a1-3a94-4429-875f-733f93822b96
+		summarizeBy: none
+		sourceColumn: Database
+
+		annotation SummarizationSetBy = Automatic
+
+	column Schema
+		dataType: string
+		lineageTag: fcdc0d51-a4e5-4b56-afc9-4b3f28b2b910
+		summarizeBy: none
+		sourceColumn: Schema
+
+		annotation SummarizationSetBy = Automatic
+
+	column Object
+		dataType: string
+		lineageTag: 47b171cd-e298-4166-93da-84cd9163e84a
+		summarizeBy: none
+		sourceColumn: Object
+
+		annotation SummarizationSetBy = Automatic
+
+	column Index
+		dataType: string
+		lineageTag: 07d0c17f-8dec-41e3-b541-ad1b2ea2c83f
+		summarizeBy: none
+		sourceColumn: Index
+
+		annotation SummarizationSetBy = Automatic
+
+	column IndexKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 57485f27-b748-478f-bafc-90eca3b6b412
+		summarizeBy: none
+		sourceColumn: IndexKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Index = m
+		mode: import
+		queryGroup: Dimensions
+		source = ```
+				let
+				  loadConfigFirstMatch = Table.First(
+				    Table.SelectRows(
+				      #"Data load", 
+				      each List.Contains(
+				        {"Index operational", "Index optimize", "Index usage", "OH errors", "Statistics"}, 
+				        [Service]
+				      )
+				        and List.Contains({"Yes"}, [DataLoad])
+				    )
+				  ), 
+				  loadConfig = 
+				    if (loadConfigFirstMatch = null) then
+				      "No"
+				    else
+				      Record.Field(loadConfigFirstMatch, "DataLoad"), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db = dbList{[Name = #"Database name"]}[Data], 
+				  table = db{[Schema = #"Schema name", Item = "Index"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset
+				in
+				  datasetToUse
+				```
+
+	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navigation
+

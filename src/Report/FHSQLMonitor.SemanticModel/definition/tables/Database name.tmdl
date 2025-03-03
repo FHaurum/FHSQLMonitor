@@ -1,0 +1,23 @@
+table 'Database name'
+	isHidden
+	lineageTag: 835ce4c3-7090-4bb7-8fb8-18d7d98a64f3
+
+	column 'Database name'
+		dataType: string
+		lineageTag: afc8f647-00b7-44fe-a65f-60dd25b49c53
+		summarizeBy: none
+		sourceColumn: Database name
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Database name' = m
+		mode: import
+		queryGroup: 'Connection parameters'
+		source = "FHSQLMonitor" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+
+	changedProperty = IsHidden
+
+	annotation PBI_ResultType = Text
+
+	annotation PBI_NavigationStepName = Navigation
+

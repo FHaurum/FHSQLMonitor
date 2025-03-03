@@ -1,0 +1,153 @@
+table 'Backup status'
+	lineageTag: 63c46383-684b-4fc0-975b-0bd36af8c503
+
+	column BackupStartDate
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: d85c17d7-6218-437f-b6ec-5e8c78193e0b
+		summarizeBy: none
+		sourceColumn: BackupStartDate
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	column BackupFinishDate
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: 2b21343a-6e37-4abf-876b-aec13e7ee7fb
+		summarizeBy: none
+		sourceColumn: BackupFinishDate
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	column Duration
+		dataType: int64
+		formatString: #,0
+		lineageTag: e9bed00c-3c66-49e1-8f35-42c33604e6a2
+		summarizeBy: none
+		sourceColumn: Duration
+
+		annotation SummarizationSetBy = User
+
+	column BackupSize
+		dataType: int64
+		formatString: #,0
+		lineageTag: 577ab3cb-374a-4f4e-8cea-5411771e05fd
+		summarizeBy: none
+		sourceColumn: BackupSize
+
+		annotation SummarizationSetBy = User
+
+	column CompressedBackupSize
+		dataType: int64
+		formatString: #,0
+		lineageTag: 7aef708b-e7be-48ec-adf4-ac19bde340a1
+		summarizeBy: none
+		sourceColumn: CompressedBackupSize
+
+		annotation SummarizationSetBy = User
+
+	column 'Copy only'
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: d00971ef-7cc4-47e5-bff1-13614a6ce750
+		summarizeBy: none
+		sourceColumn: Copy only
+
+		annotation SummarizationSetBy = Automatic
+
+	column Damaged
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 93eddb36-52b4-44fb-b79c-75410c7abeac
+		summarizeBy: none
+		sourceColumn: Damaged
+
+		annotation SummarizationSetBy = Automatic
+
+	column Date
+		dataType: dateTime
+		isHidden
+		formatString: Long Date
+		lineageTag: 80a4a1b6-e817-4e4d-9bc9-51dd4cbe3820
+		summarizeBy: none
+		sourceColumn: Date
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column DatabaseKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 09682f82-6688-4ccf-8434-f6231b9a9787
+		summarizeBy: none
+		sourceColumn: DatabaseKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column BackupTypeJunkDimensionKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 3be36ea2-d29a-4b40-9fc6-4b8cc2712b7c
+		summarizeBy: none
+		sourceColumn: BackupTypeJunkDimensionKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Backup status' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Backup")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db = dbList{[Name = #"Database name"]}[Data], 
+				  table = db{[Schema = #"Schema name", Item = "Backup status"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  ChangeType = Table.TransformColumnTypes(
+				    datasetToUse, 
+				    {{"BackupSize", Int64.Type}, {"CompressedBackupSize", Int64.Type}}
+				  ), 
+				  SelectColumns = Table.SelectColumns(
+				    ChangeType, 
+				    {
+				      "BackupStartDate", 
+				      "BackupFinishDate", 
+				      "Duration", 
+				      "BackupSize", 
+				      "CompressedBackupSize", 
+				      "IsCopyOnly", 
+				      "IsDamaged", 
+				      "Date", 
+				      "DatabaseKey", 
+				      "BackupTypeJunkDimensionKey"
+				    }
+				  ), 
+				  RenameColumns = Table.RenameColumns(
+				    SelectColumns, 
+				    {{"IsCopyOnly", "Copy only"}, {"IsDamaged", "Damaged"}}
+				  )
+				in
+				  RenameColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

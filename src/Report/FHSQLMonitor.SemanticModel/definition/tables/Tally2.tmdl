@@ -1,0 +1,23 @@
+table Tally2
+	lineageTag: 226480fa-04bd-42ed-a2a8-9fb14fbe0316
+
+	column Value
+		isHidden
+		formatString: 0
+		lineageTag: e1b025d7-b48f-4ada-a1bf-2c8d74196f6e
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Value]
+
+		annotation SummarizationSetBy = User
+
+	partition Tally2 = calculated
+		mode: import
+		source = ```
+				
+				GENERATESERIES ( 0, 999 )
+				
+				```
+
+	annotation PBI_Id = c407107a22424edba7b2bf5631036904
+

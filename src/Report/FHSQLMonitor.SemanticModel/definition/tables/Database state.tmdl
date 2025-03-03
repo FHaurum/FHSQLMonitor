@@ -1,0 +1,202 @@
+table 'Database state'
+	lineageTag: 89b59759-8537-4d65-808b-3a6d2de0f59e
+
+	column Collation
+		dataType: string
+		lineageTag: 0a3897e3-ed9f-4900-a82d-72872f369746
+		summarizeBy: none
+		sourceColumn: Collation
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Comp. level'
+		dataType: int64
+		formatString: 0
+		lineageTag: 21e38c8d-bd01-42fe-bc4f-e0bcbdfa54bc
+		summarizeBy: none
+		sourceColumn: Comp. level
+
+		annotation SummarizationSetBy = User
+
+	column 'Delayed durability'
+		dataType: string
+		lineageTag: ccf1177a-31f2-4933-83d7-f7a0ecb43698
+		summarizeBy: none
+		sourceColumn: Delayed durability
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Auto close'
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 536fb947-2540-436f-841d-b09f6698c553
+		summarizeBy: none
+		sourceColumn: Auto close
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Auto shrink'
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 041433b4-4f5a-471c-94c9-6809351cf92a
+		summarizeBy: none
+		sourceColumn: Auto shrink
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Auto update stats. async.'
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: dc907573-5e1a-433c-bba4-d3e248120737
+		summarizeBy: none
+		sourceColumn: Auto update stats. async.
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Mixed page allocation'
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: b50b7730-ba77-4d61-b8e5-890def976209
+		summarizeBy: none
+		sourceColumn: Mixed page allocation
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Page verify'
+		dataType: string
+		lineageTag: 1f39b7f7-1745-4193-937d-3924b4fc9c3e
+		summarizeBy: none
+		sourceColumn: Page verify
+
+		annotation SummarizationSetBy = Automatic
+
+	column RCSI
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 8380541c-8bbb-42d1-a91e-c649508b5ec8
+		summarizeBy: none
+		sourceColumn: RCSI
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Recovery model'
+		dataType: string
+		lineageTag: fd75ad94-eca4-44e4-8567-058750a69613
+		summarizeBy: none
+		sourceColumn: Recovery model
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Target recovery time in sec.'
+		dataType: int64
+		formatString: 0
+		lineageTag: 072ccada-df10-4226-8347-f3094d6f1a53
+		summarizeBy: none
+		sourceColumn: Target recovery time in sec.
+
+		annotation SummarizationSetBy = User
+
+	column DatabaseKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: bbd45d93-61de-40fb-b6a3-89b95edbfed3
+		summarizeBy: none
+		sourceColumn: DatabaseKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Min. timestamp'
+		dataType: dateTime
+		formatString: dd-mmm-yyyy
+		lineageTag: cb32825c-b1f1-434f-8723-447b0b783ce4
+		summarizeBy: none
+		sourceColumn: Min. timestamp
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	column 'Max. timestamp'
+		dataType: dateTime
+		formatString: dd-mmm-yyyy
+		lineageTag: 675f62a8-85f1-4da4-9ca5-f5852595ff61
+		summarizeBy: none
+		sourceColumn: Max. timestamp
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	column Encrypted
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 698df864-93a4-4806-b6aa-9e38a4d735e3
+		summarizeBy: none
+		sourceColumn: Encrypted
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Database state' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Database configuration")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db = dbList{[Name = #"Database name"]}[Data], 
+				  table = db{[Schema = #"Schema name", Item = "Database state"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  SelectColumns = Table.SelectColumns(
+				    datasetToUse, 
+				    {
+				      "CollationName", 
+				      "CompatibilityLevel", 
+				      "DelayedDurability", 
+				      "IsAutoCloseOn", 
+				      "IsAutoShrinkOn", 
+				      "IsAutoUpdateStatsAsyncOn", 
+				      "IsEncrypted", 
+				      "IsMixedPageAllocationOn", 
+				      "PageVerifyOption", 
+				      "IsReadCommittedSnapshotOn", 
+				      "RecoveryModel", 
+				      "TargetRecoveryTimeInSeconds", 
+				      "MinTimestamp", 
+				      "MaxTimestamp", 
+				      "DatabaseKey"
+				    }
+				  ), 
+				  RenameColumns = Table.RenameColumns(
+				    SelectColumns, 
+				    {
+				      {"CollationName", "Collation"}, 
+				      {"CompatibilityLevel", "Comp. level"}, 
+				      {"RecoveryModel", "Recovery model"}, 
+				      {"IsReadCommittedSnapshotOn", "RCSI"}, 
+				      {"IsMixedPageAllocationOn", "Mixed page allocation"}, 
+				      {"PageVerifyOption", "Page verify"}, 
+				      {"IsAutoCloseOn", "Auto close"}, 
+				      {"IsAutoShrinkOn", "Auto shrink"}, 
+				      {"IsAutoUpdateStatsAsyncOn", "Auto update stats. async."}, 
+				      {"IsEncrypted", "Encrypted"}, 
+				      {"DelayedDurability", "Delayed durability"}, 
+				      {"TargetRecoveryTimeInSeconds", "Target recovery time in sec."}, 
+				      {"MinTimestamp", "Min. timestamp"}, 
+				      {"MaxTimestamp", "Max. timestamp"}
+				    }
+				  )
+				in
+				  RenameColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

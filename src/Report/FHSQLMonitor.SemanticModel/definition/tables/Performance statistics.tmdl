@@ -1,0 +1,80 @@
+table 'Performance statistics'
+	lineageTag: 50b75a63-c3a0-4972-82c3-9b392ded2924
+
+	column CounterValue
+		dataType: double
+		isHidden
+		lineageTag: a71838a2-661f-4490-a505-b9ed76db9ebd
+		summarizeBy: none
+		sourceColumn: CounterValue
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column Date
+		dataType: dateTime
+		isHidden
+		formatString: Long Date
+		lineageTag: d21456ef-932f-41ae-89be-8cd4af988a1a
+		summarizeBy: none
+		sourceColumn: Date
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column TimeKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: b5166f1c-a3ee-46e7-8690-370c7444f8e8
+		summarizeBy: none
+		sourceColumn: TimeKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column PerfmonKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 96bfd3fe-cbd7-4b15-94ac-0db2bfb55b59
+		summarizeBy: none
+		sourceColumn: PerfmonKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Performance statistics' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Performance statistics")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db = dbList{[Name = #"Database name"]}[Data], 
+				  table = db{[Schema = #"Schema name", Item = "Performance statistics"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  SelectColumns = Table.SelectColumns(
+				    datasetToUse, 
+				    {"CounterValue", "Date", "TimeKey", "PerfmonKey"}
+				  )
+				in
+				  SelectColumns
+				```
+
+	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navigation
+

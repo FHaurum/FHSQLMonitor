@@ -1,0 +1,48 @@
+table 'Junk dimensions'
+	lineageTag: 61401df7-7224-47cb-b1f6-911f62395f3a
+
+	column Category
+		dataType: int64
+		formatString: 0
+		lineageTag: 959084fb-06af-4b0c-85fa-b2fa3a67dc5d
+		summarizeBy: none
+		sourceColumn: Category
+
+		annotation SummarizationSetBy = Automatic
+
+	column Name
+		dataType: string
+		lineageTag: f8ff2671-d4a7-4c12-94c8-1c2dd56dcedc
+		summarizeBy: none
+		sourceColumn: Name
+
+		annotation SummarizationSetBy = Automatic
+
+	column Key
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 9202ca96-422d-4f3b-9e0a-be96af9a5366
+		summarizeBy: none
+		sourceColumn: Key
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Junk dimensions' = m
+		mode: import
+		queryGroup: Dimensions
+		source = ```
+				let
+				  dbList = Sql.Databases(#"Server name"), 
+				  db     = dbList{[Name = #"Database name"]}[Data], 
+				  table  = db{[Schema = #"Schema name", Item = "Junk dimensions"]}[Data]
+				in
+				  table
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

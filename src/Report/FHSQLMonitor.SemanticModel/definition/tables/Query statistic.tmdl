@@ -1,0 +1,53 @@
+table 'Query statistic'
+	lineageTag: 6fe9961f-44cb-48f9-bc83-a5fe04c25add
+
+	column Database
+		dataType: string
+		lineageTag: d4f7234e-28e4-439b-8321-5ff82a8a6c50
+		summarizeBy: none
+		sourceColumn: Database
+
+		annotation SummarizationSetBy = Automatic
+
+	column QueryStatisticKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: f9ef8e08-e7e8-4b6a-a83e-ead541d05135
+		summarizeBy: none
+		sourceColumn: QueryStatisticKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Query statistic' = m
+		mode: import
+		queryGroup: Dimensions
+		source = ```
+				let
+				  loadConfigFirstMatch = Table.First(
+				    Table.SelectRows(
+				      #"Data load", 
+				      each List.Contains({"Query statistics"}, [Service]) and List.Contains({"Yes"}, [DataLoad])
+				    )
+				  ), 
+				  loadConfig = 
+				    if (loadConfigFirstMatch = null) then
+				      "No"
+				    else
+				      Record.Field(loadConfigFirstMatch, "DataLoad"), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db = dbList{[Name = #"Database name"]}[Data], 
+				  table = db{[Schema = #"Schema name", Item = "Query statistic"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  SelectColumns = Table.SelectColumns(datasetToUse, {"Database", "QueryStatisticKey"})
+				in
+				  SelectColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

@@ -1,0 +1,152 @@
+table 'Statistics age incremental'
+	lineageTag: 4fdf87d4-22b7-4fcc-a3d0-9506344e894b
+
+	column Age
+		dataType: int64
+		formatString: #,0
+		lineageTag: 114029a6-00d8-4b2c-8923-8c8179bedfb8
+		summarizeBy: none
+		sourceColumn: Age
+
+		annotation SummarizationSetBy = User
+
+	column Rows
+		dataType: int64
+		formatString: #,0
+		lineageTag: 05919e62-3e8d-4895-b6bc-4c1be8a207b4
+		summarizeBy: none
+		sourceColumn: Rows
+
+		annotation SummarizationSetBy = User
+
+	column 'Rows sampled'
+		dataType: int64
+		formatString: #,0
+		lineageTag: 42e838bb-ff13-465b-9b4e-ec393f251926
+		summarizeBy: none
+		sourceColumn: Rows sampled
+
+		annotation SummarizationSetBy = User
+
+	column 'Modification counter'
+		dataType: int64
+		formatString: #,0
+		lineageTag: 6e290ba0-d649-4bf8-a339-5631d4692b5a
+		summarizeBy: none
+		sourceColumn: Modification counter
+
+		annotation SummarizationSetBy = User
+
+	column 'Is hypothetical'
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 27b45a83-5578-4626-b0df-22fd64a9a852
+		summarizeBy: none
+		sourceColumn: Is hypothetical
+
+		annotation SummarizationSetBy = Automatic
+
+	column IndexKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 1dba7432-aac1-4a9a-ab8c-ea8987f7abd3
+		summarizeBy: none
+		sourceColumn: IndexKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column ObjectPartitionKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: ea6e0c3d-0f22-4bb1-aabf-37e2c8d9d59e
+		summarizeBy: none
+		sourceColumn: ObjectPartitionKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column IndexPartitionKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 304bfb62-60a2-4347-933a-fdfa28a043be
+		summarizeBy: none
+		sourceColumn: IndexPartitionKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column PartitionNumber
+		dataType: int64
+		formatString: 0
+		lineageTag: d38aa56c-102f-4781-886d-2825b18342b0
+		summarizeBy: none
+		sourceColumn: PartitionNumber
+
+		annotation SummarizationSetBy = User
+
+	column Date
+		dataType: dateTime
+		isHidden
+		formatString: Long Date
+		lineageTag: f8012a70-1d32-4f33-b0c1-be9de23ecae5
+		summarizeBy: none
+		sourceColumn: Date
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	partition 'Statistics age incremental' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Statistics")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db = dbList{[Name = #"Database name"]}[Data], 
+				  table = db{[Schema = #"Schema name", Item = "Statistics age incremental"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  SelectColumns = Table.SelectColumns(
+				    datasetToUse, 
+				    {
+				      "Age", 
+				      "Rows", 
+				      "RowsSampled", 
+				      "ModificationCounter", 
+				      "IsHypothetical", 
+				      "PartitionNumber", 
+				      "Date", 
+				      "ObjectPartitionKey", 
+				      "IndexKey", 
+				      "IndexPartitionKey"
+				    }
+				  ), 
+				  RenameColumns = Table.RenameColumns(
+				    SelectColumns, 
+				    {
+				      {"RowsSampled", "Rows sampled"}, 
+				      {"ModificationCounter", "Modification counter"}, 
+				      {"IsHypothetical", "Is hypothetical"}
+				    }
+				  )
+				in
+				  RenameColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

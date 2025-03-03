@@ -1,0 +1,118 @@
+table 'Backup age'
+	lineageTag: 6d66ce7a-1926-4877-ad35-94c63b94954c
+
+	column RecoveryModel
+		dataType: string
+		lineageTag: f4029cc7-fc15-4330-8220-f100480018d0
+		summarizeBy: none
+		sourceColumn: RecoveryModel
+
+		annotation SummarizationSetBy = Automatic
+
+	column LatestFullBackupStartDate
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: 3b55239e-5516-4383-87ae-cb926f55c889
+		summarizeBy: none
+		sourceColumn: LatestFullBackupStartDate
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	column LatestDiffBackupStartDate
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: 2eb80908-721c-4e46-a095-a4dd4edc1767
+		summarizeBy: none
+		sourceColumn: LatestDiffBackupStartDate
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	column LatestLogBackupStartDate
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: 9883c0d0-6048-4d70-b3eb-d00ab699192d
+		summarizeBy: none
+		sourceColumn: LatestLogBackupStartDate
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	column DatabaseKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 3e4d7934-72d7-4967-a36e-5c1de1548461
+		summarizeBy: none
+		sourceColumn: DatabaseKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column LatestFullBackupAgeHours
+		dataType: int64
+		formatString: 0
+		lineageTag: 5d0aec4a-9419-43e1-8933-3044db21099c
+		summarizeBy: none
+		sourceColumn: LatestFullBackupAgeHours
+
+		annotation SummarizationSetBy = User
+
+	column LatestDiffBackupAgeHours
+		dataType: int64
+		formatString: 0
+		lineageTag: 36f67f62-d592-469a-a670-a59a9a46dccf
+		summarizeBy: none
+		sourceColumn: LatestDiffBackupAgeHours
+
+		annotation SummarizationSetBy = User
+
+	column LatestLogBackupAgeHours
+		dataType: int64
+		formatString: 0
+		lineageTag: e4890c7f-ea75-4200-b5aa-31359b949ed9
+		summarizeBy: none
+		sourceColumn: LatestLogBackupAgeHours
+
+		annotation SummarizationSetBy = User
+
+	partition 'Backup age' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Backup")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db = dbList{[Name = #"Database name"]}[Data], 
+				  table = db{[Schema = #"Schema name", Item = "Backup age"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  SelectColumns = Table.SelectColumns(
+				    datasetToUse, 
+				    {
+				      "RecoveryModel", 
+				      "LatestFullBackupStartDate", 
+				      "LatestFullBackupAgeHours", 
+				      "LatestDiffBackupStartDate", 
+				      "LatestDiffBackupAgeHours", 
+				      "LatestLogBackupStartDate", 
+				      "LatestLogBackupAgeHours", 
+				      "DatabaseKey"
+				    }
+				  )
+				in
+				  SelectColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

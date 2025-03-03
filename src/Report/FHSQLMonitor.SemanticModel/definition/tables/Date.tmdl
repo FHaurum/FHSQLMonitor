@@ -1,0 +1,97 @@
+table Date
+	lineageTag: 66406d91-b832-4567-b6e4-a3786a0597bb
+	dataCategory: Time
+
+	column Date
+		dataType: dateTime
+		isKey
+		formatString: dd-mmm-yyyy
+		lineageTag: 0a0e3f0a-f353-4ddc-ac78-34168df9c6a6
+		summarizeBy: none
+		sourceColumn: Date
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	column Day
+		dataType: int64
+		isNullable: false
+		formatString: 0
+		lineageTag: d271bfe2-6df0-4119-8599-fa2c6bb0cb84
+		summarizeBy: none
+		sourceColumn: Day
+
+		annotation SummarizationSetBy = User
+
+	column MonthNumber
+		dataType: int64
+		isHidden
+		isNullable: false
+		formatString: 0
+		lineageTag: 52029cd0-a059-4eb2-b36c-426bb304fbaa
+		summarizeBy: none
+		sourceColumn: MonthNumber
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column Month
+		dataType: string
+		isNullable: false
+		lineageTag: 07621bb8-95ee-403c-8348-d242049379b5
+		summarizeBy: none
+		sourceColumn: Month
+		sortByColumn: MonthNumber
+
+		changedProperty = SortByColumn
+
+		annotation SummarizationSetBy = Automatic
+
+	column Year
+		dataType: int64
+		isNullable: false
+		formatString: 0
+		lineageTag: d657a25e-4d24-490c-a9c1-c3f6bce12e96
+		summarizeBy: none
+		sourceColumn: Year
+
+		annotation SummarizationSetBy = User
+
+	column 'Day index'
+		dataType: int64
+		isNullable: false
+		formatString: 0
+		lineageTag: e011e3c4-2cd3-4158-826d-c0ac5fb97a42
+		summarizeBy: none
+		sourceColumn: Day index
+
+		annotation SummarizationSetBy = User
+
+	partition Date = m
+		mode: import
+		queryGroup: Dimensions
+		source = ```
+				let
+				  dbList = Sql.Databases(#"Server name"), 
+				  db = dbList{[Name = #"Database name"]}[Data], 
+				  table = db{[Schema = #"Schema name", Item = "Date"]}[Data], 
+				  SelectColumns = Table.SelectColumns(
+				    table, 
+				    {"Date", "DayNumberOfMonth", "MonthNumber", "MonthName", "Year", "DayIndex"}
+				  ), 
+				  RenameColumns = Table.RenameColumns(
+				    SelectColumns, 
+				    {{"MonthName", "Month"}, {"DayNumberOfMonth", "Day"}, {"DayIndex", "Day index"}}
+				  )
+				in
+				  RenameColumns
+				```
+
+	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navigation
+

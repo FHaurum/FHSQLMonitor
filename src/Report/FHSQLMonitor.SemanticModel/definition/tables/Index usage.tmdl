@@ -1,0 +1,163 @@
+table 'Index usage'
+	lineageTag: 05452a3b-7a55-445f-8504-528350454468
+
+	column UserSeeks
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 061f74d1-b329-4841-b981-6507b0a10be4
+		summarizeBy: none
+		sourceColumn: UserSeeks
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column LastUserSeek
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: c96e0c73-b3bd-42e9-aaa7-53a28bb04b06
+		summarizeBy: none
+		sourceColumn: LastUserSeek
+
+		annotation SummarizationSetBy = Automatic
+
+	column UserScans
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 01759c78-032a-4eb7-b767-97cfb14f1f11
+		summarizeBy: none
+		sourceColumn: UserScans
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column LastUserScan
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: 2d113ff7-3126-49d0-b9a1-9ea97984233b
+		summarizeBy: none
+		sourceColumn: LastUserScan
+
+		annotation SummarizationSetBy = Automatic
+
+	column UserLookups
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 64375287-fc16-4dbc-b074-8513fa898de0
+		summarizeBy: none
+		sourceColumn: UserLookups
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column LastUserLookup
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: 3e329446-1442-47e6-b5f6-e38afd787f13
+		summarizeBy: none
+		sourceColumn: LastUserLookup
+
+		annotation SummarizationSetBy = Automatic
+
+	column UserUpdates
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 8adc424c-097c-468d-a9c4-2f869668442f
+		summarizeBy: none
+		sourceColumn: UserUpdates
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column LastUserUpdate
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: 1c775ecc-28e0-48e4-ba27-b3b3bf877f34
+		summarizeBy: none
+		sourceColumn: LastUserUpdate
+
+		annotation SummarizationSetBy = Automatic
+
+	column Date
+		dataType: dateTime
+		isHidden
+		formatString: Long Date
+		lineageTag: 9d5e45cc-ee65-4ce9-aaea-68c2be53025a
+		summarizeBy: none
+		sourceColumn: Date
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column IndexKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: f7cfb4c2-8f40-42a1-a811-a19ff219bace
+		summarizeBy: none
+		sourceColumn: IndexKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column TimeKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: e872efb5-88b2-47de-acbc-d2aef8c037ca
+		summarizeBy: none
+		sourceColumn: TimeKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Index usage' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Index usage")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db = dbList{[Name = #"Database name"]}[Data], 
+				  table = db{[Schema = #"Schema name", Item = "Index usage"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  SelectColumns = Table.SelectColumns(
+				    datasetToUse, 
+				    {
+				      "UserSeeks", 
+				      "LastUserSeek", 
+				      "UserScans", 
+				      "LastUserScan", 
+				      "UserLookups", 
+				      "LastUserLookup", 
+				      "UserUpdates", 
+				      "LastUserUpdate", 
+				      "Date", 
+				      "TimeKey", 
+				      "IndexKey"
+				    }
+				  )
+				in
+				  SelectColumns
+				```
+
+	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navigation
+

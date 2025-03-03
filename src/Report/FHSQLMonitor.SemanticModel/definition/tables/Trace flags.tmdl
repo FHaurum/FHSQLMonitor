@@ -1,0 +1,92 @@
+table 'Trace flags'
+	excludeFromModelRefresh
+	lineageTag: f14dd563-3c1d-4fbf-821a-9715880510e2
+
+	column 'Trace flag'
+		dataType: int64
+		formatString: 0
+		lineageTag: e5fb51bc-97b8-4abc-9def-efd1013575d0
+		summarizeBy: none
+		sourceColumn: Trace flag
+
+		annotation SummarizationSetBy = User
+
+	column Description
+		dataType: string
+		lineageTag: cc25abe3-e5ff-4f0c-b6a7-b19b436bdd4a
+		summarizeBy: none
+		sourceColumn: Description
+
+		annotation SummarizationSetBy = Automatic
+
+	column Link
+		dataType: string
+		lineageTag: f6425af0-12d7-4058-858d-0f6f2bdf82bc
+		dataCategory: WebUrl
+		summarizeBy: none
+		sourceColumn: Link
+
+		annotation SummarizationSetBy = Automatic
+
+	column TraceFlagExists
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: b61646c8-842b-43be-83e3-c9784a9ffd35
+		summarizeBy: none
+		sourceColumn: TraceFlagExists
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column Indicator = ```
+			
+			IF (
+			    'Trace flags'[TraceFlagExists] = 0,
+			    UNICHAR ( 128993 ),
+			    UNICHAR ( 128994 )
+			)
+			
+			```
+		lineageTag: f012a9f5-4906-43c6-a3e3-542528b2a3ee
+		summarizeBy: none
+
+		annotation SummarizationSetBy = Automatic
+
+	column Timestamp
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: a4bd23d1-e549-4dca-bf9c-3e439d4a5a85
+		summarizeBy: none
+		sourceColumn: Timestamp
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	partition 'Trace flags' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Instance configuration")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db = dbList{[Name = #"Database name"]}[Data], 
+				  table = db{[Schema = #"Schema name", Item = "Trace flags"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  RenameColumns = Table.RenameColumns(datasetToUse, {{"URL", "Link"}, {"TraceFlag", "Trace flag"}})
+				in
+				  RenameColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

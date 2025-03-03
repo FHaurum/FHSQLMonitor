@@ -1,0 +1,39 @@
+table LastRefresh
+	lineageTag: f212aa45-e26b-4789-813e-7ab88f7f6c6c
+
+	measure 'Last refreshed' = ```
+			
+			MAX ( LastRefresh[LastRefresh] )
+			
+			```
+		formatString: General Date
+		isHidden
+		lineageTag: ba88a095-ed9c-4078-b031-8313cb369175
+
+		changedProperty = IsHidden
+
+	column LastRefresh
+		dataType: dateTime
+		isHidden
+		formatString: General Date
+		lineageTag: a4b55698-3d8d-4122-88dc-42be2675cbbb
+		summarizeBy: none
+		sourceColumn: LastRefresh
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition LastRefresh = m
+		mode: import
+		queryGroup: Framework
+		source =
+				let
+				  Source = #table(type table [LastRefresh = datetime], {{DateTime.LocalNow()}})
+				in
+				  Source
+
+	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navigation
+

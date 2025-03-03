@@ -1,0 +1,2895 @@
+{
+  "version": "1.1.0",
+  "diagrams": [
+    {
+      "ordinal": 0,
+      "scrollPosition": {
+        "x": 0,
+        "y": 0
+      },
+      "nodes": [
+        {
+          "location": {
+            "x": 0,
+            "y": 0
+          },
+          "nodeIndex": "Date",
+          "nodeLineageTag": "66406d91-b832-4567-b6e4-a3786a0597bb",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 67,
+          "expandedHeight": 232
+        },
+        {
+          "location": {
+            "x": 878,
+            "y": 225
+          },
+          "nodeIndex": "Database size",
+          "nodeLineageTag": "f4de3086-b090-41e3-970d-5ea1e6a01ef6",
+          "size": {
+            "height": 128,
+            "width": 234
+          },
+          "zIndex": 56,
+          "expandedHeight": 180
+        },
+        {
+          "location": {
+            "x": 877,
+            "y": 451
+          },
+          "nodeIndex": "Database file",
+          "nodeLineageTag": "afa6ba19-a2bd-43bf-b843-77efe912cb06",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 52,
+          "expandedHeight": 182
+        },
+        {
+          "location": {
+            "x": 0,
+            "y": 623
+          },
+          "nodeIndex": "_Measures",
+          "nodeLineageTag": "e13509a8-32ea-4355-9c93-883ee32b11bf",
+          "size": {
+            "height": 72,
+            "width": 234
+          },
+          "zIndex": 53,
+          "expandedHeight": 233
+        },
+        {
+          "location": {
+            "x": 295,
+            "y": 622
+          },
+          "nodeIndex": "LastRefresh",
+          "nodeLineageTag": "f212aa45-e26b-4789-813e-7ab88f7f6c6c",
+          "size": {
+            "height": 72,
+            "width": 234
+          },
+          "zIndex": 54,
+          "expandedHeight": 104
+        },
+        {
+          "location": {
+            "x": 2033.8310917707927,
+            "y": 427.0345712333517
+          },
+          "nodeIndex": "Object",
+          "nodeLineageTag": "0967b613-1669-445a-b063-2ed7d2c8f212",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 55,
+          "expandedHeight": 182
+        },
+        {
+          "location": {
+            "x": 2037.6075241727199,
+            "y": 224.42675004283808
+          },
+          "nodeIndex": "Table size",
+          "nodeLineageTag": "e1bfb39d-10d8-491f-9e8d-7b3e79b7cc82",
+          "size": {
+            "height": 152,
+            "width": 234
+          },
+          "zIndex": 59,
+          "expandedHeight": 285
+        },
+        {
+          "location": {
+            "x": 293,
+            "y": 742.5
+          },
+          "nodeIndex": "Log",
+          "nodeLineageTag": "bf1208e0-9ba5-435b-bbe1-7c267e454794",
+          "size": {
+            "height": 72,
+            "width": 234
+          },
+          "zIndex": 48,
+          "expandedHeight": 272
+        },
+        {
+          "location": {
+            "x": 0,
+            "y": 224
+          },
+          "nodeIndex": "Connections",
+          "nodeLineageTag": "216132ac-6fa1-4eb0-aa30-4b09dda2fb1a",
+          "size": {
+            "height": 152,
+            "width": 234
+          },
+          "zIndex": 49,
+          "expandedHeight": 210
+        },
+        {
+          "location": {
+            "x": 296,
+            "y": 0
+          },
+          "nodeIndex": "Time",
+          "nodeLineageTag": "544922c4-f043-457f-b0e4-e98e212a0454",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 68,
+          "expandedHeight": 176
+        },
+        {
+          "location": {
+            "x": 0,
+            "y": 446.25
+          },
+          "nodeIndex": "Connection info",
+          "nodeLineageTag": "27a7a02d-fedb-4f30-8e5c-fe57888bc236",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 50,
+          "expandedHeight": 176
+        },
+        {
+          "location": {
+            "x": 581,
+            "y": 223.25
+          },
+          "nodeIndex": "CPU utilization",
+          "nodeLineageTag": "6a84afda-4a71-4483-aef0-c746c83baf54",
+          "size": {
+            "height": 128,
+            "width": 234
+          },
+          "zIndex": 51,
+          "expandedHeight": 200
+        },
+        {
+          "location": {
+            "x": 292,
+            "y": 222.25
+          },
+          "nodeIndex": "CPU per database",
+          "nodeLineageTag": "1264ea96-e0d5-439f-80db-efab08dd0774",
+          "size": {
+            "height": 152,
+            "width": 234
+          },
+          "zIndex": 57,
+          "expandedHeight": 200
+        },
+        {
+          "location": {
+            "x": 289,
+            "y": 449.25
+          },
+          "nodeIndex": "Database",
+          "nodeLineageTag": "afa4b2f5-6362-4b41-9da5-56394d652976",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 79,
+          "expandedHeight": 128
+        },
+        {
+          "location": {
+            "x": 1171,
+            "y": 225.25
+          },
+          "nodeIndex": "Database IO",
+          "nodeLineageTag": "45165dee-8cd0-4f3e-a23e-da892a314ed0",
+          "size": {
+            "height": 152,
+            "width": 234
+          },
+          "zIndex": 58,
+          "expandedHeight": 248
+        },
+        {
+          "location": {
+            "x": 1750.5803643839381,
+            "y": 429.94661358871394
+          },
+          "nodeIndex": "Performance counter",
+          "nodeLineageTag": "3d386360-b0ec-4477-ad60-4af11a1fade3",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 60,
+          "expandedHeight": 176
+        },
+        {
+          "location": {
+            "x": 1747.6931906623115,
+            "y": 224.80875934185894
+          },
+          "nodeIndex": "Performance statistics",
+          "nodeLineageTag": "50b75a63-c3a0-4972-82c3-9b392ded2924",
+          "size": {
+            "height": 152,
+            "width": 241
+          },
+          "zIndex": 61,
+          "expandedHeight": 178
+        },
+        {
+          "location": {
+            "x": 1755.1473876096757,
+            "y": 592.35665090149791
+          },
+          "nodeIndex": "Index",
+          "nodeLineageTag": "35fe447e-23e3-463a-9e2f-27d415dffb56",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 70,
+          "expandedHeight": 204
+        },
+        {
+          "location": {
+            "x": 1450.8868569976005,
+            "y": 227.26616328605712
+          },
+          "nodeIndex": "Index optimize",
+          "nodeLineageTag": "cf9f2aae-00d9-42f1-b9d4-598f2f7668f0",
+          "size": {
+            "height": 128,
+            "width": 234
+          },
+          "zIndex": 62,
+          "expandedHeight": 176
+        },
+        {
+          "location": {
+            "x": 1453.1471021111261,
+            "y": 591.30384231232688
+          },
+          "nodeIndex": "Index usage",
+          "nodeLineageTag": "05452a3b-7a55-445f-8504-528350454468",
+          "size": {
+            "height": 152,
+            "width": 234
+          },
+          "zIndex": 63,
+          "expandedHeight": 300
+        },
+        {
+          "location": {
+            "x": 1450.6845811351407,
+            "y": 399.37397291173261
+          },
+          "nodeIndex": "Index operational",
+          "nodeLineageTag": "eb62dac2-075f-4d6d-832a-abb6aea8c2a2",
+          "size": {
+            "height": 152,
+            "width": 234
+          },
+          "zIndex": 64,
+          "expandedHeight": 296
+        },
+        {
+          "location": {
+            "x": 315.2450276551296,
+            "y": 953.20772065254187
+          },
+          "nodeIndex": "CPU per database - date boundaries",
+          "nodeLineageTag": "d70197a5-e49e-4333-8b89-b3abae37b5f9",
+          "size": {
+            "height": 72,
+            "width": 338.40590948063777
+          },
+          "zIndex": 36,
+          "expandedHeight": 200
+        },
+        {
+          "location": {
+            "x": 679.49654748165483,
+            "y": 953.38592545171014
+          },
+          "nodeIndex": "Database IO - date boundaries",
+          "nodeLineageTag": "5fdfc422-fdd8-48fc-a0d0-e097f0ca96b3",
+          "size": {
+            "height": 72,
+            "width": 294.818976396488
+          },
+          "zIndex": 37,
+          "expandedHeight": 200
+        },
+        {
+          "location": {
+            "x": 1432.7961735632166,
+            "y": 952.9545534413819
+          },
+          "nodeIndex": "Index optimize - date boundaries",
+          "nodeLineageTag": "4ac990a4-e715-4613-94a1-2dbda63aa370",
+          "size": {
+            "height": 72,
+            "width": 311.03737010221823
+          },
+          "zIndex": 38,
+          "expandedHeight": 200
+        },
+        {
+          "location": {
+            "x": 0,
+            "y": 954.27981625604252
+          },
+          "nodeIndex": "Connections - date boundaries",
+          "nodeLineageTag": "ebf6c89d-a596-4f16-9edb-c1eda3c4b178",
+          "size": {
+            "height": 72,
+            "width": 298.87357482292055
+          },
+          "zIndex": 39,
+          "expandedHeight": 200
+        },
+        {
+          "location": {
+            "x": 1775.2732445306845,
+            "y": 952.41514845015627
+          },
+          "nodeIndex": "Index usage - date boundaries",
+          "nodeLineageTag": "c3cdd9a0-4b67-482c-a0f6-c21c46791ad9",
+          "size": {
+            "height": 72,
+            "width": 293.80532678987993
+          },
+          "zIndex": 40,
+          "expandedHeight": 200
+        },
+        {
+          "location": {
+            "x": 1007.9575676557756,
+            "y": 954.13990812802126
+          },
+          "nodeIndex": "Index operational - date boundaries",
+          "nodeLineageTag": "70806b44-f95b-4833-993b-181581f8575c",
+          "size": {
+            "height": 72,
+            "width": 401
+          },
+          "zIndex": 41,
+          "expandedHeight": 200
+        },
+        {
+          "location": {
+            "x": 2317.9575676557756,
+            "y": 229.13990812802126
+          },
+          "nodeIndex": "Wait statistics",
+          "nodeLineageTag": "73c4b1ae-9f82-4040-92f0-54ca165fa41f",
+          "size": {
+            "height": 152,
+            "width": 234
+          },
+          "zIndex": 42,
+          "expandedHeight": 224
+        },
+        {
+          "location": {
+            "x": 2318.9575676557756,
+            "y": 430.13990812802126
+          },
+          "nodeIndex": "Wait type",
+          "nodeLineageTag": "e25f2a8e-ae59-485d-b1ec-9da30afc4de0",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 43,
+          "expandedHeight": 128
+        },
+        {
+          "location": {
+            "x": 2097.4636656605348,
+            "y": 954.47065373423152
+          },
+          "nodeIndex": "Wait statistics - date boundaries",
+          "nodeLineageTag": "0812e722-5ae2-4e60-9d9b-da083a18d277",
+          "size": {
+            "height": 72,
+            "width": 305.7404009381894
+          },
+          "zIndex": 44,
+          "expandedHeight": 200
+        },
+        {
+          "location": {
+            "x": 586.50045205467234,
+            "y": 428.77231162683722
+          },
+          "nodeIndex": "Plan cache usage",
+          "nodeLineageTag": "cd466f0f-8084-4d47-aa04-675a0f0d625a",
+          "size": {
+            "height": 128,
+            "width": 234
+          },
+          "zIndex": 65,
+          "expandedHeight": 176
+        },
+        {
+          "location": {
+            "x": 2595.2316783239708,
+            "y": 431.50381924697649
+          },
+          "nodeIndex": "Query statements",
+          "nodeLineageTag": "df58290f-5d69-42c9-883b-b4e56b9cb2d2",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 34,
+          "expandedHeight": 152
+        },
+        {
+          "location": {
+            "x": 2595.58116999913,
+            "y": 230.49001338435306
+          },
+          "nodeIndex": "Query statistic",
+          "nodeLineageTag": "6fe9961f-44cb-48f9-bc83-a5fe04c25add",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 66,
+          "expandedHeight": 128
+        },
+        {
+          "location": {
+            "x": 2589.0171894182868,
+            "y": 605.60347408098414
+          },
+          "nodeIndex": "Query statistics",
+          "nodeLineageTag": "f34bf419-b7f7-4e37-93d4-461f35fc3251",
+          "size": {
+            "height": 152,
+            "width": 234
+          },
+          "zIndex": 35,
+          "expandedHeight": 300
+        },
+        {
+          "location": {
+            "x": 311.46295611260814,
+            "y": 1066.6184128775219
+          },
+          "nodeIndex": "Schedules",
+          "nodeLineageTag": "2de1f86e-599c-4505-9f28-a284fcc8a1ae",
+          "size": {
+            "height": 72,
+            "width": 234
+          },
+          "zIndex": 69,
+          "expandedHeight": 300
+        },
+        {
+          "location": {
+            "x": 0,
+            "y": 1066.03900993796
+          },
+          "nodeIndex": "Retentions",
+          "nodeLineageTag": "43f18a8f-7646-427a-bc78-f6cd3a13d618",
+          "size": {
+            "height": 72,
+            "width": 234
+          },
+          "zIndex": 30,
+          "expandedHeight": 248
+        },
+        {
+          "location": {
+            "x": 586.19181590327037,
+            "y": 622.23758655710628
+          },
+          "nodeIndex": "Who is active",
+          "nodeLineageTag": "bae50cf7-5d19-4139-b0ca-8ea695d3672b",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 31,
+          "expandedHeight": 300
+        },
+        {
+          "location": {
+            "x": 2038.8745189295505,
+            "y": 590.15382031988156
+          },
+          "nodeIndex": "Statistics age",
+          "nodeLineageTag": "fea75ed7-f6a0-40c2-95cc-ed6a0ce6ca7a",
+          "size": {
+            "height": 128,
+            "width": 234
+          },
+          "zIndex": 32,
+          "expandedHeight": 224
+        },
+        {
+          "location": {
+            "x": 2039.3945534978652,
+            "y": 739.80203751461124
+          },
+          "nodeIndex": "Statistics age incremental",
+          "nodeLineageTag": "4fdf87d4-22b7-4fcc-a3d0-9506344e894b",
+          "size": {
+            "height": 152,
+            "width": 234
+          },
+          "zIndex": 33,
+          "expandedHeight": 224
+        },
+        {
+          "location": {
+            "x": 1759.0445192971297,
+            "y": 752.691648873317
+          },
+          "nodeIndex": "Index partition",
+          "nodeLineageTag": "da37ce30-4b45-4dda-ae4e-98cf9a14e7c7",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 72,
+          "expandedHeight": 224
+        },
+        {
+          "location": {
+            "x": 2324.0911618195464,
+            "y": 743.87654422498474
+          },
+          "nodeIndex": "Object partition",
+          "nodeLineageTag": "2a5e1c86-a0c1-4d1b-83a3-127f540604bb",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 71,
+          "expandedHeight": 200
+        },
+        {
+          "location": {
+            "x": 586.19181590327071,
+            "y": 747.25646700627237
+          },
+          "nodeIndex": "YesNo1",
+          "size": {
+            "height": 72,
+            "width": 234
+          },
+          "zIndex": 28,
+          "expandedHeight": 104
+        },
+        {
+          "location": {
+            "x": 862.37185901874727,
+            "y": 747.25646700627237
+          },
+          "nodeIndex": "YesNo2",
+          "nodeLineageTag": "00b6c00e-aefa-4214-8931-e8b850b516f0",
+          "size": {
+            "height": 72,
+            "width": 234
+          },
+          "zIndex": 29,
+          "expandedHeight": 104
+        },
+        {
+          "location": {
+            "x": 1154.3683803743172,
+            "y": 745.3719886191476
+          },
+          "nodeIndex": "Triggers",
+          "nodeLineageTag": "1033cd32-8333-48e1-b78c-2d1682e4cc23",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 73,
+          "expandedHeight": 300
+        },
+        {
+          "location": {
+            "x": 1153.1517282020025,
+            "y": 601.80703228599225
+          },
+          "nodeIndex": "Plan guides",
+          "nodeLineageTag": "8e966cbe-1ece-4b5c-8f2e-02400848f220",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 74,
+          "expandedHeight": 300
+        },
+        {
+          "location": {
+            "x": 1449.0857326612393,
+            "y": 763.5504803634808
+          },
+          "nodeIndex": "Missing indexes",
+          "nodeLineageTag": "4e2f9b8d-4655-459d-9e27-4fa6c5dd5b22",
+          "size": {
+            "height": 152,
+            "width": 234
+          },
+          "zIndex": 25,
+          "expandedHeight": 300
+        },
+        {
+          "location": {
+            "x": 1599.7942329679947,
+            "y": 0
+          },
+          "nodeIndex": "Values 0-90 (10 delta)",
+          "nodeLineageTag": "ce7536ca-1dc8-4bf3-84ed-e8d9216e27d8",
+          "size": {
+            "height": 72,
+            "width": 234
+          },
+          "zIndex": 26,
+          "expandedHeight": 104
+        },
+        {
+          "location": {
+            "x": 2853.0066058802372,
+            "y": 432.885454162286
+          },
+          "nodeIndex": "Index alloc type",
+          "nodeLineageTag": "8457b158-5c29-4d2d-a7cf-261b35244ae1",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 75,
+          "expandedHeight": 248
+        },
+        {
+          "location": {
+            "x": 2849.6772274024679,
+            "y": 233.39334806838244
+          },
+          "nodeIndex": "Index physical",
+          "nodeLineageTag": "3066c547-2b35-4fb0-ad40-506685bbaabb",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 27,
+          "expandedHeight": 296
+        },
+        {
+          "location": {
+            "x": 1597.1952237251808,
+            "y": 96.328069658626319
+          },
+          "nodeIndex": "Values 0-1000000 (log)",
+          "nodeLineageTag": "2f746a89-2517-43e0-a127-e06f19b5d74c",
+          "size": {
+            "height": 72,
+            "width": 259.87918289336221
+          },
+          "zIndex": 18,
+          "expandedHeight": 104
+        },
+        {
+          "location": {
+            "x": 2588.4734426528389,
+            "y": 783.80764282849361
+          },
+          "nodeIndex": "OH errors",
+          "nodeLineageTag": "24e1bfc3-a60e-436f-98d3-43078b1be9f8",
+          "size": {
+            "height": 72,
+            "width": 234
+          },
+          "zIndex": 19,
+          "expandedHeight": 272
+        },
+        {
+          "location": {
+            "x": 605.1557374125664,
+            "y": 1065.864445518522
+          },
+          "nodeIndex": "Resource governor configuration",
+          "nodeLineageTag": "4dbe7e82-3a8a-42e5-8ba2-37788d334f43",
+          "size": {
+            "height": 72,
+            "width": 322.55836773947613
+          },
+          "zIndex": 20,
+          "expandedHeight": 176
+        },
+        {
+          "location": {
+            "x": 604.49259147238035,
+            "y": 1157.1704464792465
+          },
+          "nodeIndex": "Resource governor external resource pool affinity",
+          "nodeLineageTag": "9b87492a-ffc5-47c9-b11d-afbf3e9ee091",
+          "size": {
+            "height": 72,
+            "width": 421.69086894038082
+          },
+          "zIndex": 21,
+          "expandedHeight": 152
+        },
+        {
+          "location": {
+            "x": 1055.219555463525,
+            "y": 1064.4385789799521
+          },
+          "nodeIndex": "Resource governor external resource pools",
+          "nodeLineageTag": "82a0d71b-c29e-494c-ab1b-1ea2af028da3",
+          "size": {
+            "height": 72,
+            "width": 384.68140182537672
+          },
+          "zIndex": 76,
+          "expandedHeight": 200
+        },
+        {
+          "location": {
+            "x": 1054.5518137356885,
+            "y": 1157.1704464792465
+          },
+          "nodeIndex": "Resource governor resource pool affinity",
+          "nodeLineageTag": "5e4fc5dd-1d15-447b-8289-98c2aaf42f80",
+          "size": {
+            "height": 72,
+            "width": 370.14196831591016
+          },
+          "zIndex": 22,
+          "expandedHeight": 152
+        },
+        {
+          "location": {
+            "x": 1478.8480398609092,
+            "y": 1062.8045127295993
+          },
+          "nodeIndex": "Resource governor resource pools",
+          "nodeLineageTag": "d6453e72-11dc-45c6-a987-88961d8af30e",
+          "size": {
+            "height": 72,
+            "width": 325.20190110483372
+          },
+          "zIndex": 23,
+          "expandedHeight": 272
+        },
+        {
+          "location": {
+            "x": 1482.1547191664527,
+            "y": 1156.5458473438987
+          },
+          "nodeIndex": "Resource governor workload groups",
+          "nodeLineageTag": "9640ced1-046d-4e6a-bcd6-38debec8803e",
+          "size": {
+            "height": 72,
+            "width": 330.48896783554756
+          },
+          "zIndex": 24,
+          "expandedHeight": 296
+        },
+        {
+          "location": {
+            "x": 1911.27462315346,
+            "y": 0
+          },
+          "nodeIndex": "Tally1",
+          "size": {
+            "height": 72,
+            "width": 234
+          },
+          "zIndex": 13,
+          "expandedHeight": 200
+        },
+        {
+          "location": {
+            "x": 1911.7288910370441,
+            "y": 96.488967835548124
+          },
+          "nodeIndex": "Tally2",
+          "nodeLineageTag": "226480fa-04bd-42ed-a2a8-9fb14fbe0316",
+          "size": {
+            "height": 72,
+            "width": 234
+          },
+          "zIndex": 14,
+          "expandedHeight": 200
+        },
+        {
+          "location": {
+            "x": 2455.9966800912862,
+            "y": 952.350244846015
+          },
+          "nodeIndex": "Backup age",
+          "nodeLineageTag": "6d66ce7a-1926-4877-ad35-94c63b94954c",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 15,
+          "expandedHeight": 296
+        },
+        {
+          "location": {
+            "x": 2729.9024676151848,
+            "y": 951.67201152869382
+          },
+          "nodeIndex": "Backup status",
+          "nodeLineageTag": "63c46383-684b-4fc0-975b-0bd36af8c503",
+          "size": {
+            "height": 152,
+            "width": 267.04416706696838
+          },
+          "zIndex": 16,
+          "expandedHeight": 300
+        },
+        {
+          "location": {
+            "x": 2745.1635094728103,
+            "y": 1163.1357465272829
+          },
+          "nodeIndex": "Junk dimensions",
+          "nodeLineageTag": "61401df7-7224-47cb-b1f6-911f62395f3a",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 17,
+          "expandedHeight": 152
+        },
+        {
+          "location": {
+            "x": 1861.5017570952518,
+            "y": 1067.987479604423
+          },
+          "nodeIndex": "Database state",
+          "nodeLineageTag": "89b59759-8537-4d65-808b-3a6d2de0f59e",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 78,
+          "expandedHeight": 300
+        },
+        {
+          "location": {
+            "x": 2132.463927044394,
+            "y": 1071.9527796524592
+          },
+          "nodeIndex": "Agent jobs - grid",
+          "nodeLineageTag": "c42b78fa-e150-4688-8f9b-c47e5eaca7b1",
+          "size": {
+            "height": 72,
+            "width": 234
+          },
+          "zIndex": 9,
+          "expandedHeight": 300
+        },
+        {
+          "location": {
+            "x": 2132.9639670752417,
+            "y": 1161.7098799887128
+          },
+          "nodeIndex": "Agent jobs - list",
+          "nodeLineageTag": "7b08474b-4299-4d9e-8dbf-84f60144c13f",
+          "size": {
+            "height": 72,
+            "width": 234
+          },
+          "zIndex": 10,
+          "expandedHeight": 176
+        },
+        {
+          "location": {
+            "x": 2432.5049740967479,
+            "y": 1095.7445799406767
+          },
+          "nodeIndex": "Agent jobs - jobs",
+          "nodeLineageTag": "92fd1fe1-4975-4708-af26-1f47feae4fa8",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 11,
+          "expandedHeight": 200
+        },
+        {
+          "location": {
+            "x": 605.3691406668637,
+            "y": 1244.6962220830753
+          },
+          "nodeIndex": "Instance hardware",
+          "nodeLineageTag": "152a4cdb-1bb4-4195-973c-94d8c19f0c01",
+          "size": {
+            "height": 72,
+            "width": 268.36593374964718
+          },
+          "zIndex": 12,
+          "expandedHeight": 128
+        },
+        {
+          "location": {
+            "x": 914.66254441368892,
+            "y": 1247.3752331006333
+          },
+          "nodeIndex": "Instance services",
+          "nodeLineageTag": "69f33caf-f6da-4278-9bc3-fb401fe8f7f1",
+          "size": {
+            "height": 72,
+            "width": 251.41357161412287
+          },
+          "zIndex": 77,
+          "expandedHeight": 200
+        },
+        {
+          "location": {
+            "x": 265.67510321842695,
+            "y": 1244.4006176553969
+          },
+          "nodeIndex": "Instance configurations",
+          "nodeLineageTag": "3b1a25fd-aa7c-4e98-98ae-8b18b054bb9a",
+          "size": {
+            "height": 72,
+            "width": 301.62296672981506
+          },
+          "zIndex": 1,
+          "expandedHeight": 176
+        },
+        {
+          "location": {
+            "x": 1205.1073835914297,
+            "y": 1250.5584829669585
+          },
+          "nodeIndex": "Trace flags",
+          "nodeLineageTag": "f14dd563-3c1d-4fbf-821a-9715880510e2",
+          "size": {
+            "height": 72,
+            "width": 234
+          },
+          "zIndex": 2,
+          "expandedHeight": 176
+        },
+        {
+          "location": {
+            "x": 0,
+            "y": 1243.7824484006956
+          },
+          "nodeIndex": "Agent alerts",
+          "nodeLineageTag": "a45af8f0-b171-4675-a1f0-03208145db24",
+          "size": {
+            "height": 72,
+            "width": 234
+          },
+          "zIndex": 3,
+          "expandedHeight": 200
+        },
+        {
+          "location": {
+            "x": 0,
+            "y": 1345.5584829669588
+          },
+          "nodeIndex": "Agent jobs",
+          "nodeLineageTag": "c241097b-2387-4915-8d2e-7980291cb53a",
+          "size": {
+            "height": 72,
+            "width": 234
+          },
+          "zIndex": 4,
+          "expandedHeight": 200
+        },
+        {
+          "location": {
+            "x": 265.76414561073716,
+            "y": 1345.9682589295742
+          },
+          "nodeIndex": "Instance configurations history",
+          "nodeLineageTag": "37da0d22-976e-4ae5-8fb4-b7455bc7b1ff",
+          "size": {
+            "height": 104,
+            "width": 304.16824610594244
+          },
+          "zIndex": 5,
+          "expandedHeight": 200
+        },
+        {
+          "location": {
+            "x": 607.14518531740589,
+            "y": 1344.23671628428
+          },
+          "nodeIndex": "Instance hardware history",
+          "nodeLineageTag": "708a7b6c-dea0-4bd3-b6a3-6520e33f6dfd",
+          "size": {
+            "height": 104,
+            "width": 265.7224003842897
+          },
+          "zIndex": 6,
+          "expandedHeight": 176
+        },
+        {
+          "location": {
+            "x": 1204.6647893765632,
+            "y": 1346.9875754318787
+          },
+          "nodeIndex": "Trace flags history",
+          "nodeLineageTag": "d29b3c0e-37bc-4fa5-ad42-f986b26146e9",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 7,
+          "expandedHeight": 176
+        },
+        {
+          "location": {
+            "x": 1858.1712530966329,
+            "y": 1200.0970893554954
+          },
+          "nodeIndex": "Database state history",
+          "nodeLineageTag": "aa21dca5-5903-4052-a50d-5f7273212638",
+          "size": {
+            "height": 104,
+            "width": 254.19748833597805
+          },
+          "zIndex": 8,
+          "expandedHeight": 200
+        },
+        {
+          "location": {
+            "x": 1482.0035752993319,
+            "y": 1253.1041513947694
+          },
+          "nodeIndex": "Instance dump files",
+          "nodeLineageTag": "d36c29b6-5636-4941-9201-911e797158a1",
+          "size": {
+            "height": 72,
+            "width": 246.76991326124448
+          },
+          "zIndex": 0,
+          "expandedHeight": 176
+        },
+        {
+          "location": {
+            "x": 1483.3028385490929,
+            "y": 1348.8220882189353
+          },
+          "nodeIndex": "Instance suspect pages",
+          "nodeLineageTag": "22b445cc-df34-4a23-a92a-fc9bf9e9fbbf",
+          "size": {
+            "height": 72,
+            "width": 246.76991326124426
+          },
+          "zIndex": 0,
+          "expandedHeight": 224
+        },
+        {
+          "location": {
+            "x": 2194.2332479439856,
+            "y": 0
+          },
+          "nodeIndex": "Data load",
+          "nodeLineageTag": "098c2657-f3b4-4735-9543-4d102944117c",
+          "size": {
+            "height": 72,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 162.72021247924556
+        },
+        {
+          "location": {
+            "x": 0,
+            "y": 849.5
+          },
+          "nodeIndex": "Server name",
+          "size": {
+            "height": 72,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 104
+        },
+        {
+          "location": {
+            "x": 290,
+            "y": 849.5
+          },
+          "nodeIndex": "Database name",
+          "size": {
+            "height": 72,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 104
+        },
+        {
+          "location": {
+            "x": 590,
+            "y": 852.5
+          },
+          "nodeIndex": "Schema name",
+          "size": {
+            "height": 72,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 104
+        }
+      ],
+      "name": "All tables",
+      "zoomValue": 51.843000703868746,
+      "pinKeyFieldsToTop": false,
+      "showExtraHeaderInfo": false,
+      "hideKeyFieldsWhenCollapsed": false,
+      "tablesLocked": false
+    },
+    {
+      "ordinal": 1,
+      "scrollPosition": {
+        "x": 0,
+        "y": 0
+      },
+      "nodes": [
+        {
+          "location": {
+            "x": 0,
+            "y": 293
+          },
+          "nodeIndex": "Statistics age",
+          "nodeLineageTag": "fea75ed7-f6a0-40c2-95cc-ed6a0ce6ca7a",
+          "size": {
+            "height": 128,
+            "width": 286
+          },
+          "zIndex": 0,
+          "expandedHeight": 224
+        },
+        {
+          "location": {
+            "x": 396,
+            "y": 294.9851107795979
+          },
+          "nodeIndex": "Statistics age incremental",
+          "nodeLineageTag": "4fdf87d4-22b7-4fcc-a3d0-9506344e894b",
+          "size": {
+            "height": 152,
+            "width": 270
+          },
+          "zIndex": 0,
+          "expandedHeight": 224
+        },
+        {
+          "location": {
+            "x": 0,
+            "y": 0
+          },
+          "nodeIndex": "Index",
+          "nodeLineageTag": "35fe447e-23e3-463a-9e2f-27d415dffb56",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 200
+        },
+        {
+          "location": {
+            "x": 570,
+            "y": 0
+          },
+          "nodeIndex": "Object",
+          "nodeLineageTag": "0967b613-1669-445a-b063-2ed7d2c8f212",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 176
+        },
+        {
+          "location": {
+            "x": 288,
+            "y": 0
+          },
+          "nodeIndex": "Index partition",
+          "nodeLineageTag": "da37ce30-4b45-4dda-ae4e-98cf9a14e7c7",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 224
+        },
+        {
+          "location": {
+            "x": 861,
+            "y": 0
+          },
+          "nodeIndex": "Object partition",
+          "nodeLineageTag": "2a5e1c86-a0c1-4d1b-83a3-127f540604bb",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 200
+        },
+        {
+          "location": {
+            "x": 843,
+            "y": 302
+          },
+          "nodeIndex": "Table size",
+          "nodeLineageTag": "e1bfb39d-10d8-491f-9e8d-7b3e79b7cc82",
+          "size": {
+            "height": 152,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 272
+        }
+      ],
+      "name": "Age of statistics",
+      "zoomValue": 100,
+      "pinKeyFieldsToTop": false,
+      "showExtraHeaderInfo": false,
+      "hideKeyFieldsWhenCollapsed": false,
+      "tablesLocked": false
+    },
+    {
+      "ordinal": 2,
+      "scrollPosition": {
+        "x": 0,
+        "y": 0
+      },
+      "nodes": [
+        {
+          "location": {
+            "x": 0,
+            "y": 181
+          },
+          "nodeIndex": "Agent jobs - grid",
+          "nodeLineageTag": "c42b78fa-e150-4688-8f9b-c47e5eaca7b1",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 300
+        },
+        {
+          "location": {
+            "x": 378,
+            "y": 181
+          },
+          "nodeIndex": "Agent jobs - list",
+          "nodeLineageTag": "7b08474b-4299-4d9e-8dbf-84f60144c13f",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 176
+        },
+        {
+          "location": {
+            "x": 193,
+            "y": 0
+          },
+          "nodeIndex": "Agent jobs - jobs",
+          "nodeLineageTag": "92fd1fe1-4975-4708-af26-1f47feae4fa8",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 200
+        }
+      ],
+      "name": "Agent jobs",
+      "zoomValue": 100,
+      "pinKeyFieldsToTop": false,
+      "showExtraHeaderInfo": false,
+      "hideKeyFieldsWhenCollapsed": false,
+      "tablesLocked": false
+    },
+    {
+      "ordinal": 3,
+      "scrollPosition": {
+        "x": 0,
+        "y": 0
+      },
+      "nodes": [
+        {
+          "location": {
+            "x": 141,
+            "y": 295
+          },
+          "nodeIndex": "Backup age",
+          "nodeLineageTag": "6d66ce7a-1926-4877-ad35-94c63b94954c",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 2,
+          "expandedHeight": 296
+        },
+        {
+          "location": {
+            "x": 507,
+            "y": 296
+          },
+          "nodeIndex": "Backup status",
+          "nodeLineageTag": "63c46383-684b-4fc0-975b-0bd36af8c503",
+          "size": {
+            "height": 152,
+            "width": 263
+          },
+          "zIndex": 1,
+          "expandedHeight": 300
+        },
+        {
+          "location": {
+            "x": 0,
+            "y": 0
+          },
+          "nodeIndex": "Date",
+          "nodeLineageTag": "66406d91-b832-4567-b6e4-a3786a0597bb",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 3,
+          "expandedHeight": 224
+        },
+        {
+          "location": {
+            "x": 344,
+            "y": 0
+          },
+          "nodeIndex": "Database",
+          "nodeLineageTag": "afa4b2f5-6362-4b41-9da5-56394d652976",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 4,
+          "expandedHeight": 128
+        },
+        {
+          "location": {
+            "x": 667,
+            "y": 0
+          },
+          "nodeIndex": "Junk dimensions",
+          "nodeLineageTag": "61401df7-7224-47cb-b1f6-911f62395f3a",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 5,
+          "expandedHeight": 152
+        }
+      ],
+      "name": "Backup status",
+      "zoomValue": 100,
+      "pinKeyFieldsToTop": false,
+      "showExtraHeaderInfo": false,
+      "hideKeyFieldsWhenCollapsed": false,
+      "tablesLocked": false
+    },
+    {
+      "ordinal": 4,
+      "scrollPosition": {
+        "x": 0,
+        "y": 0
+      },
+      "nodes": [
+        {
+          "location": {
+            "x": 286.16420851286546,
+            "y": 208.19779705671817
+          },
+          "nodeIndex": "Connections",
+          "nodeLineageTag": "216132ac-6fa1-4eb0-aa30-4b09dda2fb1a",
+          "size": {
+            "height": 152,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 272
+        },
+        {
+          "location": {
+            "x": 0,
+            "y": 0
+          },
+          "nodeIndex": "Date",
+          "nodeLineageTag": "66406d91-b832-4567-b6e4-a3786a0597bb",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 224
+        },
+        {
+          "location": {
+            "x": 288.81264232329443,
+            "y": 0
+          },
+          "nodeIndex": "Time",
+          "nodeLineageTag": "544922c4-f043-457f-b0e4-e98e212a0454",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 176
+        },
+        {
+          "location": {
+            "x": 577,
+            "y": 0
+          },
+          "nodeIndex": "Connection info",
+          "nodeLineageTag": "27a7a02d-fedb-4f30-8e5c-fe57888bc236",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 176
+        },
+        {
+          "location": {
+            "x": 0,
+            "y": 398
+          },
+          "nodeIndex": "Connections - date boundaries",
+          "nodeLineageTag": "ebf6c89d-a596-4f16-9edb-c1eda3c4b178",
+          "size": {
+            "height": 72,
+            "width": 298
+          },
+          "zIndex": 0,
+          "expandedHeight": 200
+        }
+      ],
+      "name": "Connections",
+      "zoomValue": 100,
+      "pinKeyFieldsToTop": false,
+      "showExtraHeaderInfo": false,
+      "hideKeyFieldsWhenCollapsed": false,
+      "tablesLocked": false
+    },
+    {
+      "ordinal": 5,
+      "scrollPosition": {
+        "x": 0,
+        "y": 0
+      },
+      "nodes": [
+        {
+          "location": {
+            "x": 439.08848517542788,
+            "y": 245.67192274297673
+          },
+          "nodeIndex": "CPU utilization",
+          "nodeLineageTag": "6a84afda-4a71-4483-aef0-c746c83baf54",
+          "size": {
+            "height": 128,
+            "width": 234
+          },
+          "zIndex": 1,
+          "expandedHeight": 200
+        },
+        {
+          "location": {
+            "x": 0,
+            "y": 0
+          },
+          "nodeIndex": "Date",
+          "nodeLineageTag": "66406d91-b832-4567-b6e4-a3786a0597bb",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 6,
+          "expandedHeight": 224
+        },
+        {
+          "location": {
+            "x": 288.07000511464071,
+            "y": 0
+          },
+          "nodeIndex": "Time",
+          "nodeLineageTag": "544922c4-f043-457f-b0e4-e98e212a0454",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 2,
+          "expandedHeight": 176
+        },
+        {
+          "location": {
+            "x": 129,
+            "y": 243.92477608323497
+          },
+          "nodeIndex": "CPU per database",
+          "nodeLineageTag": "1264ea96-e0d5-439f-80db-efab08dd0774",
+          "size": {
+            "height": 152,
+            "width": 234
+          },
+          "zIndex": 3,
+          "expandedHeight": 200
+        },
+        {
+          "location": {
+            "x": 578.33620011236314,
+            "y": 0
+          },
+          "nodeIndex": "Database",
+          "nodeLineageTag": "afa4b2f5-6362-4b41-9da5-56394d652976",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 4,
+          "expandedHeight": 128
+        },
+        {
+          "location": {
+            "x": 0,
+            "y": 445
+          },
+          "nodeIndex": "CPU per database - date boundaries",
+          "nodeLineageTag": "d70197a5-e49e-4333-8b89-b3abae37b5f9",
+          "size": {
+            "height": 72,
+            "width": 342
+          },
+          "zIndex": 5,
+          "expandedHeight": 200
+        }
+      ],
+      "name": "CPU utilization",
+      "zoomValue": 100,
+      "pinKeyFieldsToTop": false,
+      "showExtraHeaderInfo": false,
+      "hideKeyFieldsWhenCollapsed": false,
+      "tablesLocked": false
+    },
+    {
+      "ordinal": 6,
+      "scrollPosition": {
+        "x": 0,
+        "y": 0
+      },
+      "nodes": [
+        {
+          "location": {
+            "x": 289.20096594143797,
+            "y": 195.1541338265115
+          },
+          "nodeIndex": "Database IO",
+          "nodeLineageTag": "45165dee-8cd0-4f3e-a23e-da892a314ed0",
+          "size": {
+            "height": 152,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 248
+        },
+        {
+          "location": {
+            "x": 586.36096272335044,
+            "y": 0
+          },
+          "nodeIndex": "Database file",
+          "nodeLineageTag": "afa6ba19-a2bd-43bf-b843-77efe912cb06",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 176
+        },
+        {
+          "location": {
+            "x": 0,
+            "y": 0
+          },
+          "nodeIndex": "Date",
+          "nodeLineageTag": "66406d91-b832-4567-b6e4-a3786a0597bb",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 224
+        },
+        {
+          "location": {
+            "x": 293,
+            "y": 0
+          },
+          "nodeIndex": "Time",
+          "nodeLineageTag": "544922c4-f043-457f-b0e4-e98e212a0454",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 176
+        },
+        {
+          "location": {
+            "x": 0,
+            "y": 392
+          },
+          "nodeIndex": "Database IO - date boundaries",
+          "nodeLineageTag": "5fdfc422-fdd8-48fc-a0d0-e097f0ca96b3",
+          "size": {
+            "height": 72,
+            "width": 299
+          },
+          "zIndex": 0,
+          "expandedHeight": 200
+        }
+      ],
+      "name": "Database IO",
+      "zoomValue": 100,
+      "pinKeyFieldsToTop": false,
+      "showExtraHeaderInfo": false,
+      "hideKeyFieldsWhenCollapsed": false,
+      "tablesLocked": false
+    },
+    {
+      "ordinal": 7,
+      "scrollPosition": {
+        "x": 0,
+        "y": 0
+      },
+      "nodes": [
+        {
+          "location": {
+            "x": 0,
+            "y": 0
+          },
+          "nodeIndex": "Date",
+          "nodeLineageTag": "66406d91-b832-4567-b6e4-a3786a0597bb",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 230
+        },
+        {
+          "location": {
+            "x": 151,
+            "y": 177
+          },
+          "nodeIndex": "Database size",
+          "nodeLineageTag": "f4de3086-b090-41e3-970d-5ea1e6a01ef6",
+          "size": {
+            "height": 128,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 179
+        },
+        {
+          "location": {
+            "x": 305,
+            "y": 0
+          },
+          "nodeIndex": "Database file",
+          "nodeLineageTag": "afa6ba19-a2bd-43bf-b843-77efe912cb06",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 181
+        }
+      ],
+      "name": "Database size",
+      "zoomValue": 100,
+      "pinKeyFieldsToTop": false,
+      "showExtraHeaderInfo": false,
+      "hideKeyFieldsWhenCollapsed": false,
+      "tablesLocked": false
+    },
+    {
+      "ordinal": 8,
+      "scrollPosition": {
+        "x": 0,
+        "y": 0
+      },
+      "nodes": [
+        {
+          "location": {
+            "x": 0,
+            "y": 207
+          },
+          "nodeIndex": "Database state",
+          "nodeLineageTag": "89b59759-8537-4d65-808b-3a6d2de0f59e",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 300
+        },
+        {
+          "location": {
+            "x": 132,
+            "y": 0
+          },
+          "nodeIndex": "Database",
+          "nodeLineageTag": "afa4b2f5-6362-4b41-9da5-56394d652976",
+          "size": {
+            "height": 104,
+            "width": 283
+          },
+          "zIndex": 0,
+          "expandedHeight": 128
+        },
+        {
+          "location": {
+            "x": 263,
+            "y": 206
+          },
+          "nodeIndex": "Database state history",
+          "nodeLineageTag": "aa21dca5-5903-4052-a50d-5f7273212638",
+          "size": {
+            "height": 104,
+            "width": 257
+          },
+          "zIndex": 0,
+          "expandedHeight": 200
+        }
+      ],
+      "name": "Database state",
+      "zoomValue": 100,
+      "pinKeyFieldsToTop": false,
+      "showExtraHeaderInfo": false,
+      "hideKeyFieldsWhenCollapsed": false,
+      "tablesLocked": false
+    },
+    {
+      "ordinal": 9,
+      "scrollPosition": {
+        "x": 0,
+        "y": 0
+      },
+      "nodes": [
+        {
+          "location": {
+            "x": 284.54932295977943,
+            "y": 184.17255838359051
+          },
+          "nodeIndex": "Index operational",
+          "nodeLineageTag": "eb62dac2-075f-4d6d-832a-abb6aea8c2a2",
+          "size": {
+            "height": 152,
+            "width": 234
+          },
+          "zIndex": 4,
+          "expandedHeight": 314
+        },
+        {
+          "location": {
+            "x": 0,
+            "y": 0
+          },
+          "nodeIndex": "Date",
+          "nodeLineageTag": "66406d91-b832-4567-b6e4-a3786a0597bb",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 1,
+          "expandedHeight": 224
+        },
+        {
+          "location": {
+            "x": 566.77079315778451,
+            "y": 0
+          },
+          "nodeIndex": "Index",
+          "nodeLineageTag": "35fe447e-23e3-463a-9e2f-27d415dffb56",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 2,
+          "expandedHeight": 200
+        },
+        {
+          "location": {
+            "x": 287,
+            "y": 0
+          },
+          "nodeIndex": "Time",
+          "nodeLineageTag": "544922c4-f043-457f-b0e4-e98e212a0454",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 3,
+          "expandedHeight": 176
+        },
+        {
+          "location": {
+            "x": 0,
+            "y": 370
+          },
+          "nodeIndex": "Index operational - date boundaries",
+          "nodeLineageTag": "70806b44-f95b-4833-993b-181581f8575c",
+          "size": {
+            "height": 72,
+            "width": 330
+          },
+          "zIndex": 0,
+          "expandedHeight": 200
+        }
+      ],
+      "name": "Index operational",
+      "zoomValue": 100,
+      "pinKeyFieldsToTop": false,
+      "showExtraHeaderInfo": false,
+      "hideKeyFieldsWhenCollapsed": false,
+      "tablesLocked": false
+    },
+    {
+      "ordinal": 10,
+      "scrollPosition": {
+        "x": 0,
+        "y": 0
+      },
+      "nodes": [
+        {
+          "location": {
+            "x": 0,
+            "y": 161.93489082265751
+          },
+          "nodeIndex": "Index optimize",
+          "nodeLineageTag": "cf9f2aae-00d9-42f1-b9d4-598f2f7668f0",
+          "size": {
+            "height": 128,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 176
+        },
+        {
+          "location": {
+            "x": 0,
+            "y": 0
+          },
+          "nodeIndex": "Date",
+          "nodeLineageTag": "66406d91-b832-4567-b6e4-a3786a0597bb",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 224
+        },
+        {
+          "location": {
+            "x": 313,
+            "y": 0
+          },
+          "nodeIndex": "Index",
+          "nodeLineageTag": "35fe447e-23e3-463a-9e2f-27d415dffb56",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 200
+        },
+        {
+          "location": {
+            "x": 0,
+            "y": 322
+          },
+          "nodeIndex": "Index optimize - date boundaries",
+          "nodeLineageTag": "4ac990a4-e715-4613-94a1-2dbda63aa370",
+          "size": {
+            "height": 72,
+            "width": 313
+          },
+          "zIndex": 0,
+          "expandedHeight": 200
+        },
+        {
+          "location": {
+            "x": 311,
+            "y": 162
+          },
+          "nodeIndex": "OH errors",
+          "nodeLineageTag": "24e1bfc3-a60e-436f-98d3-43078b1be9f8",
+          "size": {
+            "height": 128,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 272
+        }
+      ],
+      "name": "Index optimize",
+      "zoomValue": 100,
+      "pinKeyFieldsToTop": false,
+      "showExtraHeaderInfo": false,
+      "hideKeyFieldsWhenCollapsed": false,
+      "tablesLocked": false
+    },
+    {
+      "ordinal": 11,
+      "scrollPosition": {
+        "x": 0,
+        "y": 0
+      },
+      "nodes": [
+        {
+          "location": {
+            "x": 0,
+            "y": 0
+          },
+          "nodeIndex": "Index alloc type",
+          "nodeLineageTag": "8457b158-5c29-4d2d-a7cf-261b35244ae1",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 248
+        },
+        {
+          "location": {
+            "x": 0,
+            "y": 185
+          },
+          "nodeIndex": "Index physical",
+          "nodeLineageTag": "3066c547-2b35-4fb0-ad40-506685bbaabb",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 296
+        }
+      ],
+      "name": "Index physical",
+      "zoomValue": 100,
+      "pinKeyFieldsToTop": false,
+      "showExtraHeaderInfo": false,
+      "hideKeyFieldsWhenCollapsed": false,
+      "tablesLocked": false
+    },
+    {
+      "ordinal": 12,
+      "scrollPosition": {
+        "x": 0,
+        "y": 0
+      },
+      "nodes": [
+        {
+          "location": {
+            "x": 261.15507000469921,
+            "y": 187.19779705671806
+          },
+          "nodeIndex": "Index usage",
+          "nodeLineageTag": "05452a3b-7a55-445f-8504-528350454468",
+          "size": {
+            "height": 152,
+            "width": 234
+          },
+          "zIndex": 5,
+          "expandedHeight": 361
+        },
+        {
+          "location": {
+            "x": 0,
+            "y": 0
+          },
+          "nodeIndex": "Date",
+          "nodeLineageTag": "66406d91-b832-4567-b6e4-a3786a0597bb",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 1,
+          "expandedHeight": 224
+        },
+        {
+          "location": {
+            "x": 519.40499328508622,
+            "y": 0
+          },
+          "nodeIndex": "Index",
+          "nodeLineageTag": "35fe447e-23e3-463a-9e2f-27d415dffb56",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 2,
+          "expandedHeight": 200
+        },
+        {
+          "location": {
+            "x": 262,
+            "y": 0
+          },
+          "nodeIndex": "Time",
+          "nodeLineageTag": "544922c4-f043-457f-b0e4-e98e212a0454",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 3,
+          "expandedHeight": 176
+        },
+        {
+          "location": {
+            "x": 0,
+            "y": 378
+          },
+          "nodeIndex": "Index usage - date boundaries",
+          "nodeLineageTag": "c3cdd9a0-4b67-482c-a0f6-c21c46791ad9",
+          "size": {
+            "height": 72,
+            "width": 297
+          },
+          "zIndex": 4,
+          "expandedHeight": 200
+        }
+      ],
+      "name": "Index usage",
+      "zoomValue": 100,
+      "pinKeyFieldsToTop": false,
+      "showExtraHeaderInfo": false,
+      "hideKeyFieldsWhenCollapsed": false,
+      "tablesLocked": false
+    },
+    {
+      "ordinal": 13,
+      "scrollPosition": {
+        "x": 0,
+        "y": 0
+      },
+      "nodes": [
+        {
+          "location": {
+            "x": 607,
+            "y": 0
+          },
+          "nodeIndex": "Instance hardware",
+          "nodeLineageTag": "152a4cdb-1bb4-4195-973c-94d8c19f0c01",
+          "size": {
+            "height": 104,
+            "width": 283
+          },
+          "zIndex": 1,
+          "expandedHeight": 128
+        },
+        {
+          "location": {
+            "x": 928,
+            "y": 0
+          },
+          "nodeIndex": "Instance services",
+          "nodeLineageTag": "69f33caf-f6da-4278-9bc3-fb401fe8f7f1",
+          "size": {
+            "height": 72,
+            "width": 254
+          },
+          "zIndex": 2,
+          "expandedHeight": 200
+        },
+        {
+          "location": {
+            "x": 266,
+            "y": 0
+          },
+          "nodeIndex": "Instance configurations",
+          "nodeLineageTag": "3b1a25fd-aa7c-4e98-98ae-8b18b054bb9a",
+          "size": {
+            "height": 104,
+            "width": 304
+          },
+          "zIndex": 3,
+          "expandedHeight": 176
+        },
+        {
+          "location": {
+            "x": 1212,
+            "y": 0
+          },
+          "nodeIndex": "Trace flags",
+          "nodeLineageTag": "f14dd563-3c1d-4fbf-821a-9715880510e2",
+          "size": {
+            "height": 104,
+            "width": 248
+          },
+          "zIndex": 9,
+          "expandedHeight": 176
+        },
+        {
+          "location": {
+            "x": 0,
+            "y": 0
+          },
+          "nodeIndex": "Agent alerts",
+          "nodeLineageTag": "a45af8f0-b171-4675-a1f0-03208145db24",
+          "size": {
+            "height": 72,
+            "width": 234
+          },
+          "zIndex": 4,
+          "expandedHeight": 200
+        },
+        {
+          "location": {
+            "x": 0,
+            "y": 162
+          },
+          "nodeIndex": "Agent jobs",
+          "nodeLineageTag": "c241097b-2387-4915-8d2e-7980291cb53a",
+          "size": {
+            "height": 72,
+            "width": 234
+          },
+          "zIndex": 5,
+          "expandedHeight": 200
+        },
+        {
+          "location": {
+            "x": 265,
+            "y": 162
+          },
+          "nodeIndex": "Instance configurations history",
+          "nodeLineageTag": "37da0d22-976e-4ae5-8fb4-b7455bc7b1ff",
+          "size": {
+            "height": 104,
+            "width": 301
+          },
+          "zIndex": 6,
+          "expandedHeight": 200
+        },
+        {
+          "location": {
+            "x": 607,
+            "y": 164
+          },
+          "nodeIndex": "Instance hardware history",
+          "nodeLineageTag": "708a7b6c-dea0-4bd3-b6a3-6520e33f6dfd",
+          "size": {
+            "height": 104,
+            "width": 282
+          },
+          "zIndex": 7,
+          "expandedHeight": 176
+        },
+        {
+          "location": {
+            "x": 1213,
+            "y": 159
+          },
+          "nodeIndex": "Trace flags history",
+          "nodeLineageTag": "d29b3c0e-37bc-4fa5-ad42-f986b26146e9",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 8,
+          "expandedHeight": 176
+        },
+        {
+          "location": {
+            "x": 0,
+            "y": 318
+          },
+          "nodeIndex": "Instance dump files",
+          "nodeLineageTag": "d36c29b6-5636-4941-9201-911e797158a1",
+          "size": {
+            "height": 72,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 176
+        },
+        {
+          "location": {
+            "x": 266,
+            "y": 319
+          },
+          "nodeIndex": "Instance suspect pages",
+          "nodeLineageTag": "22b445cc-df34-4a23-a92a-fc9bf9e9fbbf",
+          "size": {
+            "height": 72,
+            "width": 253
+          },
+          "zIndex": 0,
+          "expandedHeight": 224
+        },
+        {
+          "location": {
+            "x": 0,
+            "y": 431
+          },
+          "nodeIndex": "Resource governor configuration",
+          "nodeLineageTag": "4dbe7e82-3a8a-42e5-8ba2-37788d334f43",
+          "size": {
+            "height": 72,
+            "width": 362
+          },
+          "zIndex": 0,
+          "expandedHeight": 200
+        },
+        {
+          "location": {
+            "x": 0,
+            "y": 531
+          },
+          "nodeIndex": "Resource governor resource pool affinity",
+          "nodeLineageTag": "5e4fc5dd-1d15-447b-8289-98c2aaf42f80",
+          "size": {
+            "height": 72,
+            "width": 359
+          },
+          "zIndex": 0,
+          "expandedHeight": 176
+        },
+        {
+          "location": {
+            "x": 386,
+            "y": 433
+          },
+          "nodeIndex": "Resource governor external resource pool affinity",
+          "nodeLineageTag": "9b87492a-ffc5-47c9-b11d-afbf3e9ee091",
+          "size": {
+            "height": 72,
+            "width": 420
+          },
+          "zIndex": 0,
+          "expandedHeight": 176
+        },
+        {
+          "location": {
+            "x": 388,
+            "y": 532
+          },
+          "nodeIndex": "Resource governor resource pools",
+          "nodeLineageTag": "d6453e72-11dc-45c6-a987-88961d8af30e",
+          "size": {
+            "height": 72,
+            "width": 418
+          },
+          "zIndex": 0,
+          "expandedHeight": 296
+        },
+        {
+          "location": {
+            "x": 828,
+            "y": 435
+          },
+          "nodeIndex": "Resource governor external resource pools",
+          "nodeLineageTag": "82a0d71b-c29e-494c-ab1b-1ea2af028da3",
+          "size": {
+            "height": 72,
+            "width": 371
+          },
+          "zIndex": 0,
+          "expandedHeight": 224
+        },
+        {
+          "location": {
+            "x": 829,
+            "y": 532
+          },
+          "nodeIndex": "Resource governor workload groups",
+          "nodeLineageTag": "9640ced1-046d-4e6a-bcd6-38debec8803e",
+          "size": {
+            "height": 72,
+            "width": 368
+          },
+          "zIndex": 0,
+          "expandedHeight": 300
+        }
+      ],
+      "name": "Instance state",
+      "zoomValue": 100,
+      "pinKeyFieldsToTop": false,
+      "showExtraHeaderInfo": false,
+      "hideKeyFieldsWhenCollapsed": false,
+      "tablesLocked": false
+    },
+    {
+      "ordinal": 14,
+      "scrollPosition": {
+        "x": 0,
+        "y": 0
+      },
+      "nodes": [
+        {
+          "location": {
+            "x": 131,
+            "y": 231
+          },
+          "nodeIndex": "Missing indexes",
+          "nodeLineageTag": "4e2f9b8d-4655-459d-9e27-4fa6c5dd5b22",
+          "size": {
+            "height": 152,
+            "width": 234
+          },
+          "zIndex": 1,
+          "expandedHeight": 300
+        },
+        {
+          "location": {
+            "x": 0,
+            "y": 0
+          },
+          "nodeIndex": "Date",
+          "nodeLineageTag": "66406d91-b832-4567-b6e4-a3786a0597bb",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 2,
+          "expandedHeight": 224
+        },
+        {
+          "location": {
+            "x": 262,
+            "y": 0
+          },
+          "nodeIndex": "Object",
+          "nodeLineageTag": "0967b613-1669-445a-b063-2ed7d2c8f212",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 3,
+          "expandedHeight": 176
+        }
+      ],
+      "name": "Missing indexes",
+      "zoomValue": 100,
+      "pinKeyFieldsToTop": false,
+      "showExtraHeaderInfo": false,
+      "hideKeyFieldsWhenCollapsed": false,
+      "tablesLocked": false
+    },
+    {
+      "ordinal": 15,
+      "scrollPosition": {
+        "x": 0,
+        "y": 0
+      },
+      "nodes": [
+        {
+          "location": {
+            "x": 289.20327081209513,
+            "y": 188.16316283722938
+          },
+          "nodeIndex": "Performance statistics",
+          "nodeLineageTag": "50b75a63-c3a0-4972-82c3-9b392ded2924",
+          "size": {
+            "height": 152,
+            "width": 240
+          },
+          "zIndex": 0,
+          "expandedHeight": 176
+        },
+        {
+          "location": {
+            "x": 594.57607631882684,
+            "y": 0
+          },
+          "nodeIndex": "Performance counter",
+          "nodeLineageTag": "3d386360-b0ec-4477-ad60-4af11a1fade3",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 176
+        },
+        {
+          "location": {
+            "x": 0,
+            "y": 0
+          },
+          "nodeIndex": "Date",
+          "nodeLineageTag": "66406d91-b832-4567-b6e4-a3786a0597bb",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 224
+        },
+        {
+          "location": {
+            "x": 294,
+            "y": 0
+          },
+          "nodeIndex": "Time",
+          "nodeLineageTag": "544922c4-f043-457f-b0e4-e98e212a0454",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 176
+        }
+      ],
+      "name": "Performance statistics",
+      "zoomValue": 100,
+      "pinKeyFieldsToTop": false,
+      "showExtraHeaderInfo": false,
+      "hideKeyFieldsWhenCollapsed": false,
+      "tablesLocked": false
+    },
+    {
+      "ordinal": 16,
+      "scrollPosition": {
+        "x": 0,
+        "y": 0
+      },
+      "nodes": [
+        {
+          "location": {
+            "x": 143,
+            "y": 181
+          },
+          "nodeIndex": "Plan cache usage",
+          "nodeLineageTag": "cd466f0f-8084-4d47-aa04-675a0f0d625a",
+          "size": {
+            "height": 128,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 176
+        },
+        {
+          "location": {
+            "x": 0,
+            "y": 0
+          },
+          "nodeIndex": "Date",
+          "nodeLineageTag": "66406d91-b832-4567-b6e4-a3786a0597bb",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 224
+        },
+        {
+          "location": {
+            "x": 295,
+            "y": 0
+          },
+          "nodeIndex": "Time",
+          "nodeLineageTag": "544922c4-f043-457f-b0e4-e98e212a0454",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 176
+        }
+      ],
+      "name": "Plan cache usage",
+      "zoomValue": 100,
+      "pinKeyFieldsToTop": false,
+      "showExtraHeaderInfo": false,
+      "hideKeyFieldsWhenCollapsed": false,
+      "tablesLocked": false
+    },
+    {
+      "ordinal": 17,
+      "scrollPosition": {
+        "x": 0,
+        "y": 0
+      },
+      "nodes": [
+        {
+          "location": {
+            "x": 0,
+            "y": 192
+          },
+          "nodeIndex": "Plan guides",
+          "nodeLineageTag": "8e966cbe-1ece-4b5c-8f2e-02400848f220",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 300
+        },
+        {
+          "location": {
+            "x": 0,
+            "y": 0
+          },
+          "nodeIndex": "Database",
+          "nodeLineageTag": "afa4b2f5-6362-4b41-9da5-56394d652976",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 128
+        }
+      ],
+      "name": "Plan guides",
+      "zoomValue": 100,
+      "pinKeyFieldsToTop": false,
+      "showExtraHeaderInfo": false,
+      "hideKeyFieldsWhenCollapsed": false,
+      "tablesLocked": false
+    },
+    {
+      "ordinal": 18,
+      "scrollPosition": {
+        "x": 0,
+        "y": 0
+      },
+      "nodes": [
+        {
+          "location": {
+            "x": 778,
+            "y": 277
+          },
+          "nodeIndex": "Query statements",
+          "nodeLineageTag": "df58290f-5d69-42c9-883b-b4e56b9cb2d2",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 128
+        },
+        {
+          "location": {
+            "x": 580,
+            "y": 0
+          },
+          "nodeIndex": "Query statistic",
+          "nodeLineageTag": "6fe9961f-44cb-48f9-bc83-a5fe04c25add",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 128
+        },
+        {
+          "location": {
+            "x": 286,
+            "y": 272
+          },
+          "nodeIndex": "Query statistics",
+          "nodeLineageTag": "f34bf419-b7f7-4e37-93d4-461f35fc3251",
+          "size": {
+            "height": 152,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 300
+        },
+        {
+          "location": {
+            "x": 0,
+            "y": 0
+          },
+          "nodeIndex": "Date",
+          "nodeLineageTag": "66406d91-b832-4567-b6e4-a3786a0597bb",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 224
+        },
+        {
+          "location": {
+            "x": 287,
+            "y": 0
+          },
+          "nodeIndex": "Time",
+          "nodeLineageTag": "544922c4-f043-457f-b0e4-e98e212a0454",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 176
+        }
+      ],
+      "name": "Query statistics",
+      "zoomValue": 100,
+      "pinKeyFieldsToTop": false,
+      "showExtraHeaderInfo": false,
+      "hideKeyFieldsWhenCollapsed": false,
+      "tablesLocked": false
+    },
+    {
+      "ordinal": 19,
+      "scrollPosition": {
+        "x": 0,
+        "y": 0
+      },
+      "nodes": [
+        {
+          "location": {
+            "x": 171.18475118062969,
+            "y": 168
+          },
+          "nodeIndex": "Table size",
+          "nodeLineageTag": "e1bfb39d-10d8-491f-9e8d-7b3e79b7cc82",
+          "size": {
+            "height": 128,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 272
+        },
+        {
+          "location": {
+            "x": 339.36163941535972,
+            "y": 0
+          },
+          "nodeIndex": "Object",
+          "nodeLineageTag": "0967b613-1669-445a-b063-2ed7d2c8f212",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 176
+        },
+        {
+          "location": {
+            "x": 10,
+            "y": -4.9348908226579482
+          },
+          "nodeIndex": "Date",
+          "nodeLineageTag": "66406d91-b832-4567-b6e4-a3786a0597bb",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 224
+        }
+      ],
+      "name": "Table size",
+      "zoomValue": 100,
+      "pinKeyFieldsToTop": false,
+      "showExtraHeaderInfo": false,
+      "hideKeyFieldsWhenCollapsed": false,
+      "tablesLocked": false
+    },
+    {
+      "ordinal": 20,
+      "scrollPosition": {
+        "x": 0,
+        "y": 0
+      },
+      "nodes": [
+        {
+          "location": {
+            "x": 0,
+            "y": 173
+          },
+          "nodeIndex": "Triggers",
+          "nodeLineageTag": "1033cd32-8333-48e1-b78c-2d1682e4cc23",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 300
+        },
+        {
+          "location": {
+            "x": 0,
+            "y": 0
+          },
+          "nodeIndex": "Database",
+          "nodeLineageTag": "afa4b2f5-6362-4b41-9da5-56394d652976",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 128
+        }
+      ],
+      "name": "Triggers",
+      "zoomValue": 100,
+      "pinKeyFieldsToTop": false,
+      "showExtraHeaderInfo": false,
+      "hideKeyFieldsWhenCollapsed": false,
+      "tablesLocked": false
+    },
+    {
+      "ordinal": 21,
+      "scrollPosition": {
+        "x": 0,
+        "y": 0
+      },
+      "nodes": [
+        {
+          "location": {
+            "x": 280,
+            "y": 219
+          },
+          "nodeIndex": "Wait statistics",
+          "nodeLineageTag": "73c4b1ae-9f82-4040-92f0-54ca165fa41f",
+          "size": {
+            "height": 152,
+            "width": 234
+          },
+          "zIndex": 4,
+          "expandedHeight": 224
+        },
+        {
+          "location": {
+            "x": 557,
+            "y": 0
+          },
+          "nodeIndex": "Wait type",
+          "nodeLineageTag": "e25f2a8e-ae59-485d-b1ec-9da30afc4de0",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 3,
+          "expandedHeight": 128
+        },
+        {
+          "location": {
+            "x": 0,
+            "y": 0
+          },
+          "nodeIndex": "Date",
+          "nodeLineageTag": "66406d91-b832-4567-b6e4-a3786a0597bb",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 1,
+          "expandedHeight": 224
+        },
+        {
+          "location": {
+            "x": 281,
+            "y": 0
+          },
+          "nodeIndex": "Time",
+          "nodeLineageTag": "544922c4-f043-457f-b0e4-e98e212a0454",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 2,
+          "expandedHeight": 176
+        },
+        {
+          "location": {
+            "x": 0,
+            "y": 434
+          },
+          "nodeIndex": "Wait statistics - date boundaries",
+          "nodeLineageTag": "0812e722-5ae2-4e60-9d9b-da083a18d277",
+          "size": {
+            "height": 72,
+            "width": 305
+          },
+          "zIndex": 0,
+          "expandedHeight": 200
+        }
+      ],
+      "name": "Wait statistics",
+      "zoomValue": 100,
+      "pinKeyFieldsToTop": false,
+      "showExtraHeaderInfo": false,
+      "hideKeyFieldsWhenCollapsed": false,
+      "tablesLocked": false
+    },
+    {
+      "ordinal": 22,
+      "scrollPosition": {
+        "x": 0,
+        "y": 0
+      },
+      "nodes": [
+        {
+          "location": {
+            "x": 0,
+            "y": 197
+          },
+          "nodeIndex": "Who is active",
+          "nodeLineageTag": "bae50cf7-5d19-4139-b0ca-8ea695d3672b",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 300
+        },
+        {
+          "location": {
+            "x": 0,
+            "y": 0
+          },
+          "nodeIndex": "Database",
+          "nodeLineageTag": "afa4b2f5-6362-4b41-9da5-56394d652976",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 128
+        }
+      ],
+      "name": "Who is active",
+      "zoomValue": 100,
+      "pinKeyFieldsToTop": false,
+      "showExtraHeaderInfo": false,
+      "hideKeyFieldsWhenCollapsed": false,
+      "tablesLocked": false
+    }
+  ],
+  "selectedDiagram": "All tables",
+  "defaultDiagram": "All tables"
+}

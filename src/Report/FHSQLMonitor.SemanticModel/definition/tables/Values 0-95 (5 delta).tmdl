@@ -1,0 +1,22 @@
+table 'Values 0-95 (5 delta)'
+	lineageTag: 989189a7-68dc-47dc-99af-e87797a52aab
+
+	column Value
+		formatString: 0
+		lineageTag: 2660c8e2-c7bd-4552-94d8-f82f6f3274a5
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Value]
+
+		annotation SummarizationSetBy = User
+
+	partition 'Values 0-95 (5 delta)' = calculated
+		mode: import
+		source = ```
+				
+				GENERATESERIES ( 0, 95, 5 )
+				
+				```
+
+	annotation PBI_Id = 1b470bcec5fb4782a4c9bf6598dd608c
+

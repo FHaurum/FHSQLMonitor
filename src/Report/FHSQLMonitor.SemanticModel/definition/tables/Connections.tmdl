@@ -1,0 +1,91 @@
+table Connections
+	lineageTag: 216132ac-6fa1-4eb0-aa30-4b09dda2fb1a
+
+	column IsUserProcess
+		dataType: boolean
+		isHidden
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 15d19c35-86df-42c4-8c2c-af9a0990549d
+		summarizeBy: none
+		sourceColumn: IsUserProcess
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column ConnectionCount
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: b410ed99-b90d-434a-8f7a-8dd9b1d478ae
+		summarizeBy: none
+		sourceColumn: ConnectionCount
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column Date
+		dataType: dateTime
+		isHidden
+		formatString: Long Date
+		lineageTag: df0e6259-c740-4fa1-9c1d-46900e43f29b
+		summarizeBy: none
+		sourceColumn: Date
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column TimeKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: a9649101-fb34-4a0b-bead-95e7e4804f41
+		summarizeBy: none
+		sourceColumn: TimeKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column ConnectionInfoKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 0c76e511-e3f5-4634-9928-88855fceadee
+		summarizeBy: none
+		sourceColumn: ConnectionInfoKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Connections = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Connections")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db = dbList{[Name = #"Database name"]}[Data], 
+				  table = db{[Schema = #"Schema name", Item = "Connections"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  SelectColumns = Table.SelectColumns(
+				    datasetToUse, 
+				    {"IsUserProcess", "ConnectionCount", "Date", "TimeKey", "ConnectionInfoKey"}
+				  )
+				in
+				  SelectColumns
+				```
+
+	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navigation
+

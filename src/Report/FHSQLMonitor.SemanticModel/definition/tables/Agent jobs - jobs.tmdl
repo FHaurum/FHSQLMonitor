@@ -1,0 +1,25 @@
+table 'Agent jobs - jobs'
+	lineageTag: 92fd1fe1-4975-4708-af26-1f47feae4fa8
+
+	column Job
+		lineageTag: d0fc813e-9fab-4cd5-9b40-390ffd42ac94
+		summarizeBy: none
+		sourceColumn: Agent jobs - grid[Job]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Agent jobs - jobs' = calculated
+		mode: import
+		source = ```
+				
+				DISTINCT (
+				    UNION (
+				        SELECTCOLUMNS ( 'Agent jobs - grid', 'Agent jobs - grid'[Job] ),
+				        SELECTCOLUMNS ( 'Agent jobs - list', 'Agent jobs - list'[Job] )
+				    )
+				)
+				
+				```
+
+	annotation PBI_Id = c0e1aada1f694c88a0291f86f1a3b687
+

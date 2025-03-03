@@ -1,0 +1,77 @@
+table 'Instance configurations history'
+	lineageTag: 37da0d22-976e-4ae5-8fb4-b7455bc7b1ff
+
+	column Id
+		dataType: int64
+		formatString: 0
+		lineageTag: 9c362a82-ce1e-4b51-9116-d2bef5b501c1
+		summarizeBy: none
+		sourceColumn: Id
+
+		annotation SummarizationSetBy = User
+
+	column From
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: 40257d27-96cc-4b75-9056-e22611fc3a06
+		summarizeBy: none
+		sourceColumn: From
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	column To
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: dee76c54-eb0b-404c-b8e5-da3512dcf388
+		summarizeBy: none
+		sourceColumn: To
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	column Configuration
+		dataType: string
+		lineageTag: 9899c5b3-ed96-4bfc-83c0-31021d326a77
+		summarizeBy: none
+		sourceColumn: Configuration
+
+		annotation SummarizationSetBy = Automatic
+
+	column Value
+		dataType: int64
+		formatString: 0
+		lineageTag: e403b5e8-b313-46c2-b50d-75135125d33f
+		summarizeBy: none
+		sourceColumn: Value
+
+		annotation SummarizationSetBy = User
+
+	partition 'Instance configurations history' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Instance configuration")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db = dbList{[Name = #"Database name"]}[Data], 
+				  table = db{[Schema = #"Schema name", Item = "Instance configurations history"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  RenameColumns = Table.RenameColumns(
+				    datasetToUse, 
+				    {{"ConfigurationId", "Id"}, {"Name", "Configuration"}, {"ValidFrom", "From"}, {"ValidTo", "To"}}
+				  )
+				in
+				  RenameColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

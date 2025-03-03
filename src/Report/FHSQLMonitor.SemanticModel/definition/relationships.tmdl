@@ -1,0 +1,249 @@
+relationship fef89edd-463f-36d1-ab78-7362d247cd83
+	fromColumn: 'Database size'.Date
+	toColumn: Date.Date
+
+relationship 6c1baedd-8798-08ab-96e1-bcf82f1dc360
+	fromColumn: 'Database size'.DatabaseFileKey
+	toColumn: 'Database file'.DatabaseFileKey
+
+relationship 2c67a47d-b2f2-0528-fded-b7066d1003a9
+	fromColumn: 'Table size'.ObjectKey
+	toColumn: Object.ObjectKey
+
+relationship fb06ae7e-4b2b-1369-aab3-3e45f8e49ab1
+	fromColumn: 'Table size'.Date
+	toColumn: Date.Date
+
+relationship 64b1912c-46fe-1a50-2771-3ff3a618e3b2
+	fromColumn: Connections.Date
+	toColumn: Date.Date
+
+relationship 62985929-a0af-0cec-15a6-1d2dcb4a0eb4
+	fromColumn: Connections.TimeKey
+	toColumn: Time.TimeKey
+
+relationship 63aa51ee-2382-625a-71c1-fa85c4fb041f
+	fromColumn: Connections.ConnectionInfoKey
+	toColumn: 'Connection info'.ConnectionInfoKey
+
+relationship 6ebb2194-ce91-08fe-ee27-c501523d8c70
+	fromColumn: 'CPU utilization'.Date
+	toColumn: Date.Date
+
+relationship 726706f0-6379-d5c6-a3bc-1aee34d6b2ec
+	fromColumn: 'CPU utilization'.TimeKey
+	toColumn: Time.TimeKey
+
+relationship be22f263-c975-3003-fb54-2ca84c5d1a7b
+	fromColumn: 'CPU per database'.DatabaseKey
+	toColumn: Database.DatabaseKey
+
+relationship fcb694f9-a1bf-1726-9605-bec809aa49e2
+	fromColumn: 'CPU per database'.TimeKey
+	toColumn: Time.TimeKey
+
+relationship 55e71e49-14e2-4009-0280-583722db8610
+	fromColumn: 'CPU per database'.Date
+	toColumn: Date.Date
+
+relationship 8d8550f7-3a28-6990-14a3-c067a43e2877
+	fromColumn: 'Database IO'.DatabaseFileKey
+	toColumn: 'Database file'.DatabaseFileKey
+
+relationship f9e51180-2bb0-29f5-a94b-2059bda4b257
+	fromColumn: 'Database IO'.Date
+	toColumn: Date.Date
+
+relationship b4b0f924-ed14-493f-3bf4-c72979caef2d
+	fromColumn: 'Database IO'.TimeKey
+	toColumn: Time.TimeKey
+
+relationship 8231daab-bb9c-d817-7809-5b4f424c4bcd
+	fromColumn: 'Performance statistics'.PerfmonKey
+	toColumn: 'Performance counter'.PerfmonKey
+
+relationship 32e192f8-8e9a-f5bd-513c-8e3456088c3d
+	fromColumn: 'Performance statistics'.Date
+	toColumn: Date.Date
+
+relationship 098a5665-9ed3-a880-706f-8be7870cc16b
+	fromColumn: 'Performance statistics'.TimeKey
+	toColumn: Time.TimeKey
+
+relationship e411e958-ad6b-61fc-e56e-154294e175a7
+	fromColumn: 'Index optimize'.Date
+	toColumn: Date.Date
+
+relationship 3aa749a6-87e7-364a-0f3c-b99ac4c9c9b0
+	fromColumn: 'Index optimize'.IndexKey
+	toColumn: Index.IndexKey
+
+relationship 843da87a-1555-e8c7-0124-f5b7626beff6
+	fromColumn: 'Index usage'.Date
+	toColumn: Date.Date
+
+relationship 811edeeb-cc5f-8205-fb11-f48ad4943cd1
+	fromColumn: 'Index usage'.IndexKey
+	toColumn: Index.IndexKey
+
+relationship be2e0a35-3ebe-f297-278d-a00a72775e2f
+	fromColumn: 'Index usage'.TimeKey
+	toColumn: Time.TimeKey
+
+relationship caa82215-ab9d-41c9-51e5-96d1fb273690
+	fromColumn: 'Index operational'.Date
+	toColumn: Date.Date
+
+relationship 39eb9fd7-736f-4fe7-fb49-2d2405844b4f
+	fromColumn: 'Index operational'.IndexKey
+	toColumn: Index.IndexKey
+
+relationship e5645f7d-bb35-51dd-fc3e-125f7ca16baf
+	fromColumn: 'Index operational'.TimeKey
+	toColumn: Time.TimeKey
+
+relationship 53155ce2-5907-0f35-8cd7-e207bcb3c8d1
+	fromColumn: 'Wait statistics'.Date
+	toColumn: Date.Date
+
+relationship 8565975e-d392-edd2-9970-5412b2687e28
+	fromColumn: 'Wait statistics'.TimeKey
+	toColumn: Time.TimeKey
+
+relationship 9990ca5e-91b4-da11-11eb-bbfbf2b3aa07
+	fromColumn: 'Wait statistics'.WaitKey
+	toColumn: 'Wait type'.WaitKey
+
+relationship 16b30370-cc13-2257-934e-3899e9fb6105
+	fromColumn: 'Plan cache usage'.Date
+	toColumn: Date.Date
+
+relationship 19898425-41b0-e911-1a85-d6780c1a6c6a
+	fromColumn: 'Plan cache usage'.TimeKey
+	toColumn: Time.TimeKey
+
+relationship 742ed9d5-cf11-bb91-9592-964ee0a8b1ed
+	crossFilteringBehavior: bothDirections
+	fromCardinality: one
+	fromColumn: 'Query statistic'.QueryStatisticKey
+	toColumn: 'Query statements'.QueryStatisticKey
+
+relationship 6a5286c3-ef66-ab0e-46f1-1c4646851934
+	fromColumn: 'Query statistics'.QueryStatisticKey
+	toColumn: 'Query statistic'.QueryStatisticKey
+
+relationship 1e7953bd-93b6-a7fa-39fc-3050ce25426e
+	fromColumn: 'Query statistics'.Date
+	toColumn: Date.Date
+
+relationship 35aa2671-0e98-037a-cd1f-dba2da59931c
+	fromColumn: 'Query statistics'.TimeKey
+	toColumn: Time.TimeKey
+
+relationship 651e99a1-f4e3-66a3-bf34-2ec2fe489d3e
+	fromColumn: 'Who is active'.DatabaseKey
+	toColumn: Database.DatabaseKey
+
+relationship dcbc9d43-b45a-04e7-cb77-7c9e85b4f485
+	fromColumn: 'Statistics age incremental'.IndexKey
+	toColumn: Index.IndexKey
+
+relationship ae312934-c3aa-9fc8-0747-ca35d3db65df
+	fromColumn: 'Statistics age'.ObjectKey
+	toColumn: Object.ObjectKey
+
+relationship 1ab2a854-afcc-e65c-ff01-bb1371ed1c7f
+	fromColumn: 'Table size'.ObjectPartitionKey
+	toColumn: 'Object partition'.ObjectPartitionKey
+
+relationship 277508b0-5169-06b5-da0b-76f323bfbad1
+	fromColumn: 'Statistics age incremental'.ObjectPartitionKey
+	toColumn: 'Object partition'.ObjectPartitionKey
+
+relationship 193a4ba0-f455-e4a4-0a6d-c567371abed0
+	fromColumn: Triggers.DatabaseKey
+	toColumn: Database.DatabaseKey
+
+relationship 6ca13755-ea3b-6da3-38e2-aa13052cf71f
+	fromColumn: 'Plan guides'.DatabaseKey
+	toColumn: Database.DatabaseKey
+
+relationship 60a10081-5a71-d1cf-bf8e-b4530aae96b2
+	fromColumn: 'Missing indexes'.LastUserSeekDate
+	toColumn: Date.Date
+
+relationship d0ac855f-2353-4ff2-5c1e-6a25c6d6ef4f
+	isActive: false
+	fromColumn: 'Missing indexes'.Date
+	toColumn: Date.Date
+
+relationship 45a54dfe-54f2-a6a0-f237-c1ad7eeaed39
+	fromColumn: 'Missing indexes'.ObjectKey
+	toColumn: Object.ObjectKey
+
+relationship 8d0fd441-de91-617d-7c21-648695073ae9
+	fromColumn: 'Index physical'.IndexAllocTypeKey
+	toColumn: 'Index alloc type'.IndexAllocTypeKey
+
+relationship 6d7203b9-b310-5851-22a0-ff7dda09581c
+	fromColumn: 'OH errors'.Date
+	toColumn: Date.Date
+
+relationship 0c11c125-6b14-bf40-6baa-c72aa25dcb31
+	fromColumn: 'OH errors'.IndexKey
+	toColumn: Index.IndexKey
+
+relationship 94a8ee34-6824-8b49-0ed6-53743ff5870b
+	fromColumn: 'Backup age'.DatabaseKey
+	toColumn: Database.DatabaseKey
+
+relationship 58265d49-887e-d13a-ae68-2e6a5578efd0
+	fromColumn: 'Backup status'.Date
+	toColumn: Date.Date
+
+relationship f1ab0cc9-8e16-ced6-e4ec-7eeaf1b82d36
+	fromColumn: 'Backup status'.DatabaseKey
+	toColumn: Database.DatabaseKey
+
+relationship b5c6c703-a070-b934-f4bb-78b4514aad0d
+	fromColumn: 'Backup status'.BackupTypeJunkDimensionKey
+	toColumn: 'Junk dimensions'.Key
+
+relationship 02b5f20d-8c8d-8949-499a-b91cc4ba16c1
+	crossFilteringBehavior: bothDirections
+	fromCardinality: one
+	fromColumn: Database.DatabaseKey
+	toColumn: 'Database state'.DatabaseKey
+
+relationship b2c78fdb-4da1-7203-bfde-f490e4c84225
+	fromColumn: 'Agent jobs - grid'.Job
+	toColumn: 'Agent jobs - jobs'.Job
+
+relationship ba2d5542-45e2-06d6-7672-92f3822013fc
+	fromColumn: 'Agent jobs - list'.Job
+	toColumn: 'Agent jobs - jobs'.Job
+
+relationship 169c76f4-6985-4390-4815-47be054177e8
+	fromColumn: 'Instance configurations history'.Id
+	toColumn: 'Instance configurations'.Id
+
+relationship 8ad3538f-6793-c995-1544-5dc87dbb78a7
+	fromColumn: 'Instance hardware history'.Key
+	toColumn: 'Instance hardware'.Key
+
+relationship 721c4332-1f35-2106-9456-bf2d1d189c52
+	fromColumn: 'Trace flags history'.'Trace flag'
+	toColumn: 'Trace flags'.'Trace flag'
+
+relationship 371c9240-c6ec-a1ab-de3a-fae334c60865
+	fromColumn: 'Database state history'.DatabaseKey
+	toColumn: Database.DatabaseKey
+
+relationship 6ca7fd96-d087-77b7-fa3a-9064317ce7a8
+	fromColumn: 'Statistics age'.IndexKey
+	toColumn: Index.IndexKey
+
+relationship 61cae8ac-4716-a2b5-b500-68819e459a2a
+	fromColumn: 'Statistics age incremental'.IndexPartitionKey
+	toColumn: 'Index partition'.IndexPartitionKey
+

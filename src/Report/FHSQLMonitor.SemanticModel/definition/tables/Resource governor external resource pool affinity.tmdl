@@ -1,0 +1,64 @@
+table 'Resource governor external resource pool affinity'
+	lineageTag: 9b87492a-ffc5-47c9-b11d-afbf3e9ee091
+
+	column PoolName
+		dataType: string
+		lineageTag: acfeae9e-e52a-42ef-8856-70cb16fea8dd
+		summarizeBy: none
+		sourceColumn: PoolName
+
+		annotation SummarizationSetBy = Automatic
+
+	column ProcessorGroup
+		dataType: string
+		lineageTag: e63aa8f1-b40b-4072-83fe-90d38e0bbafb
+		summarizeBy: none
+		sourceColumn: ProcessorGroup
+
+		annotation SummarizationSetBy = Automatic
+
+	column CPUmask
+		dataType: string
+		lineageTag: 19f0a0b0-a9d3-4834-9cbf-6c7dc65e9c9d
+		summarizeBy: none
+		sourceColumn: CPUmask
+
+		annotation SummarizationSetBy = Automatic
+
+	column Timestamp
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: 634c93c9-0926-4c7f-a381-6ba89477af63
+		summarizeBy: none
+		sourceColumn: Timestamp
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	partition 'Resource governor external resource pool affinity' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Resource Governor configuration")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db = dbList{[Name = #"Database name"]}[Data], 
+				  table = db
+				    {[Schema = #"Schema name", Item = "Resource governor external resource pool affinity"]}
+				    [Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset
+				in
+				  datasetToUse
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

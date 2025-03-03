@@ -1,0 +1,96 @@
+table 'Index alloc type'
+	lineageTag: 8457b158-5c29-4d2d-a7cf-261b35244ae1
+
+	column Database
+		dataType: string
+		lineageTag: adb6f138-024f-48d7-bbd8-204d79590253
+		summarizeBy: none
+		sourceColumn: Database
+
+		annotation SummarizationSetBy = Automatic
+
+	column Schema
+		dataType: string
+		lineageTag: 492b1908-11fc-438d-8d8c-f5bbcbb81b2a
+		summarizeBy: none
+		sourceColumn: Schema
+
+		annotation SummarizationSetBy = Automatic
+
+	column Object
+		dataType: string
+		lineageTag: c3701476-b1ce-4c9e-aae1-16107dd6c096
+		summarizeBy: none
+		sourceColumn: Object
+
+		annotation SummarizationSetBy = Automatic
+
+	column Index
+		dataType: string
+		lineageTag: f7201dcd-95ed-4521-8c94-2b8b7f0f2af6
+		summarizeBy: none
+		sourceColumn: Index
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Index type'
+		dataType: string
+		lineageTag: 7cc26d81-46b9-40bb-ac1d-d9e9e8a74e57
+		summarizeBy: none
+		sourceColumn: Index type
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Alloc. unit type'
+		dataType: string
+		lineageTag: 695c47d0-c9cf-4d6d-9a97-9fd05f08cb90
+		summarizeBy: none
+		sourceColumn: Alloc. unit type
+
+		annotation SummarizationSetBy = Automatic
+
+	column IndexAllocTypeKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: f2791906-0cde-4fce-8f70-00daa0c384b7
+		summarizeBy: none
+		sourceColumn: IndexAllocTypeKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Index alloc type' = m
+		mode: import
+		queryGroup: Dimensions
+		source = ```
+				let
+				  loadConfigFirstMatch = Table.First(
+				    Table.SelectRows(
+				      #"Data load", 
+				      each List.Contains({"Index physical"}, [Service]) and List.Contains({"Yes"}, [DataLoad])
+				    )
+				  ), 
+				  loadConfig = 
+				    if (loadConfigFirstMatch = null) then
+				      "No"
+				    else
+				      Record.Field(loadConfigFirstMatch, "DataLoad"), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db = dbList{[Name = #"Database name"]}[Data], 
+				  table = db{[Schema = #"Schema name", Item = "Index alloc type"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  RenameColumns = Table.RenameColumns(
+				    datasetToUse, 
+				    {{"IndexAllocType", "Alloc. unit type"}, {"IndexType", "Index type"}}
+				  )
+				in
+				  RenameColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

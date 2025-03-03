@@ -1,0 +1,120 @@
+table 'OH errors'
+	lineageTag: 24e1bfc3-a60e-436f-98d3-43078b1be9f8
+
+	column StartTime
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: 19955da6-d601-486e-9311-f6212ee51b44
+		summarizeBy: none
+		sourceColumn: StartTime
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	column EndTime
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: 848313b9-7fb6-4343-af83-408e527f0f3d
+		summarizeBy: none
+		sourceColumn: EndTime
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	column Duration
+		dataType: int64
+		formatString: #,0
+		lineageTag: 01e1770f-fe97-46fd-bebc-0c7a1ebed46b
+		summarizeBy: none
+		sourceColumn: Duration
+
+		annotation SummarizationSetBy = User
+
+	column Command
+		dataType: string
+		lineageTag: 0928e46b-60f8-4655-a346-f98a0e04a715
+		summarizeBy: none
+		sourceColumn: Command
+
+		annotation SummarizationSetBy = Automatic
+
+	column ErrorNumber
+		dataType: int64
+		formatString: 0
+		lineageTag: 9081365e-166e-468b-bcec-ec1af5542cf6
+		summarizeBy: none
+		sourceColumn: ErrorNumber
+
+		annotation SummarizationSetBy = User
+
+	column ErrorMessage
+		dataType: string
+		lineageTag: d513d58c-35fd-4617-bb4d-1556295cc565
+		summarizeBy: none
+		sourceColumn: ErrorMessage
+
+		annotation SummarizationSetBy = Automatic
+
+	column Date
+		dataType: dateTime
+		isHidden
+		formatString: Long Date
+		lineageTag: 53116712-5017-48f9-a0d4-f83db1d67170
+		summarizeBy: none
+		sourceColumn: Date
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column IndexKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 5efa8bd0-fc05-4faa-9016-9566f811cd8e
+		summarizeBy: none
+		sourceColumn: IndexKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'OH errors' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "OH errors")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db = dbList{[Name = #"Database name"]}[Data], 
+				  table = db{[Schema = #"Schema name", Item = "OH errors"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  SelectColumns = Table.SelectColumns(
+				    datasetToUse, 
+				    {
+				      "StartTime", 
+				      "EndTime", 
+				      "Duration", 
+				      "Command", 
+				      "ErrorNumber", 
+				      "ErrorMessage", 
+				      "Date", 
+				      "IndexKey"
+				    }
+				  )
+				in
+				  SelectColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

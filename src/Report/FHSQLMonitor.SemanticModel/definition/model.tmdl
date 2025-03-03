@@ -1,0 +1,122 @@
+model Model
+	culture: en-US
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	sourceQueryCulture: en-DK
+	dataAccessOptions
+		legacyRedirects
+		returnErrorValuesAsNull
+
+queryGroup Dimensions
+
+	annotation PBI_QueryGroupOrder = 1
+
+queryGroup Facts
+
+	annotation PBI_QueryGroupOrder = 2
+
+queryGroup Aux
+
+	annotation PBI_QueryGroupOrder = 0
+
+queryGroup Framework
+
+	annotation PBI_QueryGroupOrder = 3
+
+queryGroup 'Connection parameters'
+
+	annotation PBI_QueryGroupOrder = 5
+
+annotation __PBI_TimeIntelligenceEnabled = 0
+
+annotation PBIDesktopVersion = 2.140.1205.0 (25.02)+2ab3defe107764e1cf486b42122d9362df7f34ea
+
+annotation PBI_ProTooling = ["DevMode"]
+
+annotation PBI_QueryOrder = ["Connection info","Database","Database file","Agent alerts","Agent jobs","Agent jobs - grid","Agent jobs - list","Backup age","Backup status","Connections","CPU per database","CPU utilization","Database IO","Database size","Database state","Database state history","Index operational","Index optimize","Index physical","Index usage","Instance configurations","Instance configurations history","Instance dump files","Instance hardware","Instance hardware history","Instance services","Instance suspect pages","Missing indexes","OH errors","Performance statistics","Plan cache usage","Plan guides","Query statements","Query statistics","Resource governor configuration","Resource governor external resource pool affinity","Resource governor external resource pools","Resource governor resource pool affinity","Resource governor resource pools","Resource governor workload groups","Statistics age","Statistics age incremental","Date","Index","Index alloc type","Index partition","Junk dimensions","_Measures","Server name","Database name","Schema name","Data load list","Data load","LastRefresh","Log","Retentions","Schedules","Table size","Trace flags","Trace flags history","Triggers","Object","Object partition","Performance counter","Query statistic","Time","Wait type","Wait statistics","Who is active"]
+
+annotation __TEdtr = 1
+
+ref table Date
+ref table 'Database size'
+ref table 'Database file'
+ref table _Measures
+ref table LastRefresh
+ref table Tally1
+ref table 'Table size'
+ref table Object
+ref table 'Server name'
+ref table 'Database name'
+ref table 'Schema name'
+ref table Log
+ref table Connections
+ref table Time
+ref table 'Connection info'
+ref table 'CPU utilization'
+ref table 'CPU per database'
+ref table Database
+ref table 'Database IO'
+ref table 'Performance statistics'
+ref table 'Performance counter'
+ref table 'Index optimize'
+ref table Index
+ref table 'Index usage'
+ref table 'Index operational'
+ref table 'CPU per database - date boundaries'
+ref table 'Database IO - date boundaries'
+ref table 'Index optimize - date boundaries'
+ref table 'Connections - date boundaries'
+ref table 'Index usage - date boundaries'
+ref table 'Index operational - date boundaries'
+ref table 'Wait type'
+ref table 'Wait statistics'
+ref table 'Wait statistics - date boundaries'
+ref table 'Plan cache usage'
+ref table 'Query statements'
+ref table 'Query statistics'
+ref table 'Query statistic'
+ref table Schedules
+ref table Retentions
+ref table 'Who is active'
+ref table 'Statistics age'
+ref table 'Statistics age incremental'
+ref table 'Index partition'
+ref table 'Object partition'
+ref table Triggers
+ref table 'Plan guides'
+ref table 'Missing indexes'
+ref table 'Index physical'
+ref table 'Index alloc type'
+ref table 'OH errors'
+ref table 'Resource governor configuration'
+ref table 'Resource governor external resource pool affinity'
+ref table 'Resource governor external resource pools'
+ref table 'Resource governor resource pool affinity'
+ref table 'Resource governor resource pools'
+ref table 'Resource governor workload groups'
+ref table Tally2
+ref table 'Backup age'
+ref table 'Backup status'
+ref table 'Junk dimensions'
+ref table 'Database state'
+ref table 'Agent jobs - grid'
+ref table 'Agent jobs - list'
+ref table 'Agent jobs - jobs'
+ref table 'Instance hardware'
+ref table 'Instance services'
+ref table 'Instance configurations'
+ref table 'Trace flags'
+ref table 'Agent alerts'
+ref table 'Agent jobs'
+ref table 'Instance configurations history'
+ref table 'Instance hardware history'
+ref table 'Trace flags history'
+ref table 'Database state history'
+ref table 'Instance dump files'
+ref table 'Instance suspect pages'
+ref table 'Data load'
+ref table 'Values 0-90 (10 delta)'
+ref table 'Values 0-1000000 (log)'
+ref table 'Values 0-95 (5 delta)'
+
+ref cultureInfo en-US
+

@@ -1,0 +1,77 @@
+table 'Index optimize'
+	lineageTag: cf9f2aae-00d9-42f1-b9d4-598f2f7668f0
+
+	column Type
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: f3f94768-7e79-4143-ad8d-a1afa07e3ce9
+		summarizeBy: none
+		sourceColumn: Type
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column Duration
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: b6629c73-5847-4a11-abd7-8642ba78b04d
+		summarizeBy: none
+		sourceColumn: Duration
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column Date
+		dataType: dateTime
+		isHidden
+		formatString: Long Date
+		lineageTag: c02ce7de-a4f8-4047-a94c-392e2eccc92a
+		summarizeBy: none
+		sourceColumn: Date
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column IndexKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: ca8bacfa-7bed-49d4-b188-ac6994a391f4
+		summarizeBy: none
+		sourceColumn: IndexKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Index optimize' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Index optimize")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db = dbList{[Name = #"Database name"]}[Data], 
+				  table = db{[Schema = #"Schema name", Item = "Index optimize"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  FilterRows = Table.SelectRows(datasetToUse, each [Type] = 1 or [Type] = 2 or [Type] = 3), 
+				  SelectColumns = Table.SelectColumns(FilterRows, {"Type", "Duration", "Date", "IndexKey"})
+				in
+				  SelectColumns
+				```
+
+	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navigation
+

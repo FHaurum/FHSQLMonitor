@@ -1,0 +1,32 @@
+table 'CPU per database - date boundaries'
+	isHidden
+	lineageTag: d70197a5-e49e-4333-8b89-b3abae37b5f9
+
+	column Date
+		isHidden
+		formatString: dd-mmm-yyyy
+		lineageTag: e1cd6955-6ddc-47bb-a4bd-cbf4af1a78cb
+		summarizeBy: none
+		sourceColumn: [Value]
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	partition 'CPU per database - date boundaries' = calculated
+		mode: import
+		source = ```
+				
+				DISTINCT (
+				    UNION (
+				        { MIN ( 'CPU per database'[Date] ) },
+				        { MAX ( 'CPU per database'[Date] ) }
+				    )
+				)
+				
+				```
+
+	annotation PBI_Id = 849c6539f6584564927b55ef7009f168
+

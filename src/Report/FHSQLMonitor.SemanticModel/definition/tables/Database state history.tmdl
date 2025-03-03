@@ -1,0 +1,80 @@
+table 'Database state history'
+	lineageTag: aa21dca5-5903-4052-a50d-5f7273212638
+
+	column Key
+		dataType: string
+		lineageTag: 096fcc3b-f667-453f-9195-c0b4816e3d71
+		summarizeBy: none
+		sourceColumn: Key
+
+		annotation SummarizationSetBy = Automatic
+
+	column From
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: f509b59c-151e-4f22-a3de-e8e4e0d95da6
+		summarizeBy: none
+		sourceColumn: From
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	column To
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: 3c2d4b98-2b7a-498b-a3bb-14eb9503bffd
+		summarizeBy: none
+		sourceColumn: To
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	column Value
+		dataType: string
+		lineageTag: 7867d5f5-f0ff-4c64-8f03-d69dbcb4f3b1
+		summarizeBy: none
+		sourceColumn: Value
+
+		annotation SummarizationSetBy = Automatic
+
+	column DatabaseKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: a896cea3-efac-441d-a71b-cf65c0cedf9a
+		summarizeBy: none
+		sourceColumn: DatabaseKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Database state history' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Database configuration")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db = dbList{[Name = #"Database name"]}[Data], 
+				  table = db{[Schema = #"Schema name", Item = "Database state history"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  SelectColumns = Table.SelectColumns(
+				    datasetToUse, 
+				    {"Key", "ValidFrom", "ValidTo", "Value", "DatabaseKey"}
+				  ), 
+				  RenameColumns = Table.RenameColumns(SelectColumns, {{"ValidFrom", "From"}, {"ValidTo", "To"}})
+				in
+				  RenameColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

@@ -1,0 +1,32 @@
+table 'Index optimize - date boundaries'
+	isHidden
+	lineageTag: 4ac990a4-e715-4613-94a1-2dbda63aa370
+
+	column Date
+		isHidden
+		formatString: dd-mmm-yyyy
+		lineageTag: 2bacc999-93b4-4f15-af4b-f68d6652070b
+		summarizeBy: none
+		sourceColumn: [Value]
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	partition 'Index optimize - date boundaries' = calculated
+		mode: import
+		source = ```
+				
+				DISTINCT (
+				    UNION (
+				        { MIN ( 'Index optimize'[Date] ) },
+				        { MAX ( 'Index optimize'[Date] ) }
+				    )
+				)
+				
+				```
+
+	annotation PBI_Id = 848766ec5e9e460da7be8f4a58ed14ff
+

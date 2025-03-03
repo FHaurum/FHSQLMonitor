@@ -1,0 +1,84 @@
+table Retentions
+	lineageTag: 43f18a8f-7646-427a-bc78-f6cd3a13d618
+
+	column Enabled
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: c5abcebb-151a-4eb5-ad28-b4bbc166df64
+		summarizeBy: none
+		sourceColumn: Enabled
+
+		annotation SummarizationSetBy = Automatic
+
+	column Table
+		dataType: string
+		lineageTag: 11a3beb7-1daf-4faa-be6d-885a494a35b8
+		summarizeBy: none
+		sourceColumn: Table
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Time column'
+		dataType: string
+		lineageTag: 1e871959-bfbb-46e6-b981-4b43e14072fd
+		summarizeBy: none
+		sourceColumn: Time column
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Is UTC'
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 7b835ad5-7f5f-4e53-8177-9fea84594d60
+		summarizeBy: none
+		sourceColumn: Is UTC
+
+		annotation SummarizationSetBy = Automatic
+
+	column Days
+		dataType: int64
+		formatString: 0
+		lineageTag: e3880d60-6f76-43cc-a7e8-c5b2b6ab80be
+		summarizeBy: none
+		sourceColumn: Days
+
+		annotation SummarizationSetBy = User
+
+	column 'Last started UTC'
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: 312d24d9-964f-4cbe-b3fd-428e3007ed34
+		summarizeBy: none
+		sourceColumn: Last started UTC
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	column 'Last executed UTC'
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: 1ac58348-dddd-44ea-9d7e-7bbc3c7b57fb
+		summarizeBy: none
+		sourceColumn: Last executed UTC
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	partition Retentions = m
+		mode: import
+		queryGroup: Framework
+		source = ```
+				let
+				  dbList = Sql.Databases(#"Server name"), 
+				  db     = dbList{[Name = #"Database name"]}[Data], 
+				  table  = db{[Schema = #"Schema name", Item = "Retentions"]}[Data]
+				in
+				  table
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

@@ -1,0 +1,103 @@
+table 'Wait statistics'
+	lineageTag: 73c4b1ae-9f82-4040-92f0-54ca165fa41f
+
+	column WaitTimeMS
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 2acd8c15-91cc-4c5e-b03e-c09b9013666b
+		summarizeBy: none
+		sourceColumn: WaitTimeMS
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column SignalWaitTimeMS
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 3910699f-98a7-462f-aada-4133503826fd
+		summarizeBy: none
+		sourceColumn: SignalWaitTimeMS
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column WaitingTasks
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 68f76141-8bed-49e1-97dc-de6dfe019b28
+		summarizeBy: none
+		sourceColumn: WaitingTasks
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column Date
+		dataType: dateTime
+		isHidden
+		formatString: Long Date
+		lineageTag: 5414cd89-d44d-4560-9a8a-04111d1676de
+		summarizeBy: none
+		sourceColumn: Date
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column TimeKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: af1c4fdb-28b4-4cd9-bde7-85e2853ce41b
+		summarizeBy: none
+		sourceColumn: TimeKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column WaitKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 65b9dbe2-e764-426a-b278-4ed0126eedaf
+		summarizeBy: none
+		sourceColumn: WaitKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Wait statistics' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Wait statistics")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db = dbList{[Name = #"Database name"]}[Data], 
+				  table = db{[Schema = #"Schema name", Item = "Wait statistics"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  SelectColumns = Table.SelectColumns(
+				    datasetToUse, 
+				    {"WaitTimeMS", "SignalWaitTimeMS", "WaitingTasks", "Date", "TimeKey", "WaitKey"}
+				  )
+				in
+				  SelectColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

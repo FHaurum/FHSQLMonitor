@@ -1,0 +1,32 @@
+table 'Wait statistics - date boundaries'
+	isHidden
+	lineageTag: 0812e722-5ae2-4e60-9d9b-da083a18d277
+
+	column Date
+		isHidden
+		formatString: dd-mmm-yyyy
+		lineageTag: f452a63d-5f95-498c-9f38-f4472159ccec
+		summarizeBy: none
+		sourceColumn: [Value]
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	partition 'Wait statistics - date boundaries' = calculated
+		mode: import
+		source = ```
+				
+				DISTINCT (
+				    UNION (
+				        { MIN ( 'Wait statistics'[Date] ) },
+				        { MAX ( 'Wait statistics'[Date] ) }
+				    )
+				)
+				
+				```
+
+	annotation PBI_Id = 5e86195971a64da38a0a6c576a5c25c1
+

@@ -1,0 +1,105 @@
+table 'Agent alerts'
+	lineageTag: a45af8f0-b171-4675-a1f0-03208145db24
+
+	column Description
+		dataType: string
+		lineageTag: f0952e54-f49f-4bb7-91db-f2497341a974
+		summarizeBy: none
+		sourceColumn: Description
+		sortByColumn: DescriptionSortOrder
+
+		changedProperty = SortByColumn
+
+		annotation SummarizationSetBy = Automatic
+
+	column MessageId
+		dataType: int64
+		formatString: 0
+		lineageTag: caa82194-cc9a-4f6d-8d8e-b70746a42aa7
+		summarizeBy: none
+		sourceColumn: MessageId
+
+		annotation SummarizationSetBy = User
+
+	column Severity
+		dataType: int64
+		formatString: 0
+		lineageTag: f47f767d-dc78-4c1e-be37-1eebe9eba7af
+		summarizeBy: none
+		sourceColumn: Severity
+
+		annotation SummarizationSetBy = User
+
+	column AlertExists
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 1bc7bab0-0372-484c-bc60-3e20aff8adfd
+		summarizeBy: none
+		sourceColumn: AlertExists
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column Indicator = ```
+			
+			IF ( 'Agent alerts'[AlertExists] = 0, UNICHAR ( 128993 ), UNICHAR ( 128994 ) )
+			
+			```
+		lineageTag: ee96faa9-7f18-4867-81c3-4c74bb1d0834
+		summarizeBy: none
+
+		annotation SummarizationSetBy = Automatic
+
+	column DescriptionSortOrder
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: c805dc4d-d4a7-4296-9b4f-19b78d4796b5
+		summarizeBy: none
+		sourceColumn: DescriptionSortOrder
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column Timestamp
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: 13f234ad-e31b-45a6-8b11-90e04e856cad
+		summarizeBy: none
+		sourceColumn: Timestamp
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	partition 'Agent alerts' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Instance configuration")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db = dbList{[Name = #"Database name"]}[Data], 
+				  table = db{[Schema = #"Schema name", Item = "Agent alerts"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  SelectColumns = Table.SelectColumns(
+				    datasetToUse, 
+				    {"Description", "MessageId", "Severity", "AlertExists", "DescriptionSortOrder", "Timestamp"}
+				  )
+				in
+				  SelectColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

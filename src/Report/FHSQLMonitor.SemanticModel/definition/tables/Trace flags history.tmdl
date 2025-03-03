@@ -1,0 +1,69 @@
+table 'Trace flags history'
+	excludeFromModelRefresh
+	lineageTag: d29b3c0e-37bc-4fa5-ad42-f986b26146e9
+
+	column 'Trace flag'
+		dataType: int64
+		formatString: 0
+		lineageTag: a8d4e717-06e3-46e9-a393-aff2b9e640a8
+		summarizeBy: none
+		sourceColumn: Trace flag
+
+		annotation SummarizationSetBy = User
+
+	column Description
+		dataType: string
+		lineageTag: c8afeb11-6d85-4a50-b440-9454cdf3fd24
+		summarizeBy: none
+		sourceColumn: Description
+
+		annotation SummarizationSetBy = Automatic
+
+	column From
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: 20afb1fa-6785-4134-97c1-3f766fcb02a9
+		summarizeBy: none
+		sourceColumn: From
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	column To
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: 6195dfbf-8f8a-4496-a44a-7c3b805a47ed
+		summarizeBy: none
+		sourceColumn: To
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	partition 'Trace flags history' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Instance configuration")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db = dbList{[Name = #"Database name"]}[Data], 
+				  table = db{[Schema = #"Schema name", Item = "Trace flags history"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  RenameColumns = Table.RenameColumns(
+				    datasetToUse, 
+				    {{"TraceFlag", "Trace flag"}, {"ValidFrom", "From"}, {"ValidTo", "To"}}
+				  )
+				in
+				  RenameColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

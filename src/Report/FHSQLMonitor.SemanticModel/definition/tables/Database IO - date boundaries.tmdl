@@ -1,0 +1,32 @@
+table 'Database IO - date boundaries'
+	isHidden
+	lineageTag: 5fdfc422-fdd8-48fc-a0d0-e097f0ca96b3
+
+	column Date
+		isHidden
+		formatString: dd-mmm-yyyy
+		lineageTag: 8dd33d4d-77eb-4d14-b531-4e2a8fb1c610
+		summarizeBy: none
+		sourceColumn: [Value]
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	partition 'Database IO - date boundaries' = calculated
+		mode: import
+		source = ```
+				
+				DISTINCT (
+				    UNION (
+				        { MIN ( 'Database IO'[Date] ) },
+				        { MAX ( 'Database IO'[Date] ) }
+				    )
+				)
+				
+				```
+
+	annotation PBI_Id = f5244b71b3ee43aabeb85b9f39d65ff6
+

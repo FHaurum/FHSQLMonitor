@@ -1,0 +1,182 @@
+table 'Plan guides'
+	lineageTag: 8e966cbe-1ece-4b5c-8f2e-02400848f220
+
+	column 'Plan guide id'
+		dataType: int64
+		formatString: 0
+		lineageTag: 426ceafb-acc5-4316-bbd3-bb52740b862a
+		summarizeBy: none
+		sourceColumn: Plan guide id
+
+		annotation SummarizationSetBy = User
+
+	column Name
+		dataType: string
+		lineageTag: fd27b3cf-7938-40ed-a9b5-19a0976ea46a
+		summarizeBy: none
+		sourceColumn: Name
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Created date'
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: 4eb7e93d-e3af-48ab-b0fd-744d616eecf6
+		summarizeBy: none
+		sourceColumn: Created date
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	column 'Modified date'
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: 8eda8e36-29aa-494a-b5f6-7fce450544a2
+		summarizeBy: none
+		sourceColumn: Modified date
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	column 'Is disabled'
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 413d5052-2fae-4e1d-a479-33e39fd10729
+		summarizeBy: none
+		sourceColumn: Is disabled
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Query text'
+		dataType: string
+		lineageTag: 81ca5d43-6e3f-408b-b779-d33a71e1665e
+		summarizeBy: none
+		sourceColumn: Query text
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Scope type'
+		dataType: string
+		lineageTag: 3bccab70-eb3d-47ea-a717-cf737b79fd80
+		summarizeBy: none
+		sourceColumn: Scope type
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Scoped object'
+		dataType: string
+		lineageTag: be10db20-d93b-462c-863e-c917c3170af9
+		summarizeBy: none
+		sourceColumn: Scoped object
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Scope batch'
+		dataType: string
+		lineageTag: c12cfdc6-aac7-4624-aefe-010b5455a63a
+		summarizeBy: none
+		sourceColumn: Scope batch
+
+		annotation SummarizationSetBy = Automatic
+
+	column Parameters
+		dataType: string
+		lineageTag: 451ee313-c840-4e02-ae95-b147b22c4d83
+		summarizeBy: none
+		sourceColumn: Parameters
+
+		annotation SummarizationSetBy = Automatic
+
+	column Hints
+		dataType: string
+		lineageTag: 60bd6e15-569f-412e-8eff-898dc62101e4
+		summarizeBy: none
+		sourceColumn: Hints
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Msg. no.'
+		dataType: int64
+		formatString: 0
+		lineageTag: 250db320-1479-4af6-91d6-b32c788adf6a
+		summarizeBy: none
+		sourceColumn: Msg. no.
+
+		annotation SummarizationSetBy = User
+
+	column Severity
+		dataType: int64
+		formatString: 0
+		lineageTag: 95b72389-3da8-41a3-9847-75cf6c08e8aa
+		summarizeBy: none
+		sourceColumn: Severity
+
+		annotation SummarizationSetBy = User
+
+	column State
+		dataType: int64
+		formatString: 0
+		lineageTag: c10b1539-f27c-423c-aa75-ca73ae90c9cc
+		summarizeBy: none
+		sourceColumn: State
+
+		annotation SummarizationSetBy = User
+
+	column Message
+		dataType: string
+		lineageTag: af496a72-5989-4aeb-a260-f091122b123c
+		summarizeBy: none
+		sourceColumn: Message
+
+		annotation SummarizationSetBy = Automatic
+
+	column DatabaseKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: e4c108eb-352e-475e-839c-309b35107125
+		summarizeBy: none
+		sourceColumn: DatabaseKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Plan guides' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Plan guides")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db = dbList{[Name = #"Database name"]}[Data], 
+				  table = db{[Schema = #"Schema name", Item = "Plan guides"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  RenameColumns = Table.RenameColumns(
+				    datasetToUse, 
+				    {
+				      {"PlanGuideId", "Plan guide id"}, 
+				      {"CreateDate", "Created date"}, 
+				      {"ModifyDate", "Modified date"}, 
+				      {"IsDisabled", "Is disabled"}, 
+				      {"QueryText", "Query text"}, 
+				      {"ScopeTypeDesc", "Scope type"}, 
+				      {"ScopedObject", "Scoped object"}, 
+				      {"ScopeBatch", "Scope batch"}, 
+				      {"MsgNum", "Msg. no."}
+				    }
+				  )
+				in
+				  RenameColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

@@ -1,0 +1,103 @@
+table 'Data load'
+	lineageTag: 098c2657-f3b4-4735-9543-4d102944117c
+
+	column Service
+		dataType: string
+		lineageTag: ab36902a-920c-4bdf-b126-fd5c85efb11d
+		summarizeBy: none
+		sourceColumn: Service
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column DataLoad
+		dataType: string
+		lineageTag: 2e7db343-a195-4175-92f1-2c9a0da73acb
+		summarizeBy: none
+		sourceColumn: DataLoad
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Sevices affected'
+		dataType: string
+		lineageTag: 758fa606-4583-48a2-9c1b-048f5691b95b
+		summarizeBy: none
+		sourceColumn: Sevices affected
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Data load' = m
+		mode: import
+		queryGroup: Framework
+		source = ```
+				let
+				  SystemServices = Table.FromRows(
+				    Json.Document(
+				      Binary.Decompress(
+				        Binary.FromText(
+				          "dZLBbsIwDIZfxeqZPQTbpA1pE7AxcWg5mOAGj+KgOGFjT79CR2jV7pZ8tv/fdpLn2diSBPh0awXjpGQbPQZ2ko2ybDXKs3s0u3i43h6cCJlzXBOafVyPjxhwjUrDSik6mfaQ8g9d4UQ29A3uQE05VnWgYRVhCRpqrIGNFvLizK4FOuWB9z3Rw/akbC6KLRoVbSux1hPzzwwpejaNaQevrMpigc96lPD0Gch75xOYkS+d3yeFv7ZH2bj6wpPCVCB4LEs2hQznFvJG6qKv4ZM7khfn4Q5auY1PhQIGzZa6w124jby59TiP5E/dZi68bzO4kPde4QLXVfdBF56tpdsWlshhwHG5dcAKWH+vY1O7+gU=", 
+				          BinaryEncoding.Base64
+				        ), 
+				        Compression.Deflate
+				      )
+				    ), 
+				    let
+				      _t = ((type nullable text) meta [Serialized.Text = true])
+				    in
+				      type table [Service = _t, #"Sevices affected" = _t]
+				  ), 
+				  DataLoadUsed = 
+				    if (#"Data load list" = null) then
+				      let
+				        AddLoadEnabledColumn = Table.AddColumn(SystemServices, "DataLoad", each "Yes"), 
+				        ChangedType = Table.TransformColumnTypes(AddLoadEnabledColumn, {{"DataLoad", type text}})
+				      in
+				        ChangedType
+				    else
+				      let
+				        DataLoadList = Text.Split(#"Data load list", ","), 
+				        DataLoadTable = Table.FromList(
+				          DataLoadList, 
+				          Splitter.SplitByNothing(), 
+				          null, 
+				          null, 
+				          ExtraValues.Error
+				        ), 
+				        RenamedColumns = Table.RenameColumns(DataLoadTable, {{"Column1", "DataLoadService"}}), 
+				        AddLoadEnabledColumn = Table.AddColumn(RenamedColumns, "DataLoad", each "Yes"), 
+				        ChangedType = Table.TransformColumnTypes(
+				          AddLoadEnabledColumn, 
+				          {{"DataLoadService", type text}, {"DataLoad", type text}}
+				        ), 
+				        JoinedTable = Table.FuzzyJoin(
+				          SystemServices, 
+				          {"Service"}, 
+				          ChangedType, 
+				          {"DataLoadService"}, 
+				          JoinKind.LeftOuter, 
+				          [IgnoreCase = true, IgnoreSpace = false]
+				        ), 
+				        RemovedColumns = Table.RemoveColumns(JoinedTable, "DataLoadService"), 
+				        ReplacedValue = Table.ReplaceValue(
+				          RemovedColumns, 
+				          null, 
+				          "No", 
+				          Replacer.ReplaceValue, 
+				          {"DataLoad"}
+				        )
+				      in
+				        ReplacedValue, 
+				  SortedRows = Table.Sort(DataLoadUsed, {{"Service", Order.Ascending}})
+				in
+				  SortedRows
+				```
+
+	changedProperty = IsHidden
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

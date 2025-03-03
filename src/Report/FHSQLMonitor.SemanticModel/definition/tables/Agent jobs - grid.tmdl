@@ -1,0 +1,297 @@
+table 'Agent jobs - grid'
+	lineageTag: c42b78fa-e150-4688-8f9b-c47e5eaca7b1
+
+	column Job
+		dataType: string
+		lineageTag: 711fbf5f-9f26-47ce-8b99-5fcde379e78e
+		summarizeBy: none
+		sourceColumn: Job
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Job enabled'
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 15eb3f77-10c1-4d49-83bf-74ed6d4644eb
+		summarizeBy: none
+		sourceColumn: Job enabled
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Schedule id'
+		dataType: int64
+		formatString: 0
+		lineageTag: 70933a01-6589-4665-96bf-424d7a26d031
+		summarizeBy: none
+		sourceColumn: Schedule id
+
+		annotation SummarizationSetBy = User
+
+	column 'Schedule enabled'
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 54f1e0bf-29ca-44cf-a263-963768b0994c
+		summarizeBy: none
+		sourceColumn: Schedule enabled
+
+		annotation SummarizationSetBy = Automatic
+
+	column 0
+		dataType: string
+		lineageTag: e65815a7-c261-4de8-886c-13c8af1b589e
+		summarizeBy: none
+		sourceColumn: 0
+
+		annotation SummarizationSetBy = Automatic
+
+	column 1
+		dataType: string
+		lineageTag: 46dc009a-f321-497c-ab0b-1f5d63bcea3a
+		summarizeBy: none
+		sourceColumn: 1
+
+		annotation SummarizationSetBy = Automatic
+
+	column 2
+		dataType: string
+		lineageTag: 593049e6-237c-4ce2-a7c4-941a9f729f97
+		summarizeBy: none
+		sourceColumn: 2
+
+		annotation SummarizationSetBy = Automatic
+
+	column 3
+		dataType: string
+		lineageTag: 20c9ccca-3811-4330-8811-2c41c80de421
+		summarizeBy: none
+		sourceColumn: 3
+
+		annotation SummarizationSetBy = Automatic
+
+	column 4
+		dataType: string
+		lineageTag: d21633af-696e-4506-a5b5-93207773368e
+		summarizeBy: none
+		sourceColumn: 4
+
+		annotation SummarizationSetBy = Automatic
+
+	column 5
+		dataType: string
+		lineageTag: 39bf27cd-b544-4db5-be33-6b2825cf529f
+		summarizeBy: none
+		sourceColumn: 5
+
+		annotation SummarizationSetBy = Automatic
+
+	column 6
+		dataType: string
+		lineageTag: b3eee986-9cc1-45e1-ab78-8c4e85b3edbe
+		summarizeBy: none
+		sourceColumn: 6
+
+		annotation SummarizationSetBy = Automatic
+
+	column 7
+		dataType: string
+		lineageTag: acf161e0-0fa1-437e-ac10-f2bab6b1b2e7
+		summarizeBy: none
+		sourceColumn: 7
+
+		annotation SummarizationSetBy = Automatic
+
+	column 8
+		dataType: string
+		lineageTag: 16f87ff5-95c0-4db4-ab2d-19cc466943bb
+		summarizeBy: none
+		sourceColumn: 8
+
+		annotation SummarizationSetBy = Automatic
+
+	column 9
+		dataType: string
+		lineageTag: 815fe4e7-83cf-46f1-bb22-fc70f331cfcb
+		summarizeBy: none
+		sourceColumn: 9
+
+		annotation SummarizationSetBy = Automatic
+
+	column 10
+		dataType: string
+		lineageTag: 6ed7dd4c-95ca-4a19-9a47-6da68cb5d9db
+		summarizeBy: none
+		sourceColumn: 10
+
+		annotation SummarizationSetBy = Automatic
+
+	column 11
+		dataType: string
+		lineageTag: f97f0380-dfac-472d-b08d-912857837279
+		summarizeBy: none
+		sourceColumn: 11
+
+		annotation SummarizationSetBy = Automatic
+
+	column 12
+		dataType: string
+		lineageTag: 7e7e82cd-aee9-46bb-9da4-e23264bb1dd2
+		summarizeBy: none
+		sourceColumn: 12
+
+		annotation SummarizationSetBy = Automatic
+
+	column 13
+		dataType: string
+		lineageTag: eb984563-d7ea-4a0f-af68-c30647a29614
+		summarizeBy: none
+		sourceColumn: 13
+
+		annotation SummarizationSetBy = Automatic
+
+	column 14
+		dataType: string
+		lineageTag: ba7b5d4a-7338-4700-8642-a2b247e79e0d
+		summarizeBy: none
+		sourceColumn: 14
+
+		annotation SummarizationSetBy = Automatic
+
+	column 15
+		dataType: string
+		lineageTag: b911d999-94f5-40b2-8cc0-41e62502f63d
+		summarizeBy: none
+		sourceColumn: 15
+
+		annotation SummarizationSetBy = Automatic
+
+	column 16
+		dataType: string
+		lineageTag: fee2558b-3b05-422e-b275-fc9b2517d3cc
+		summarizeBy: none
+		sourceColumn: 16
+
+		annotation SummarizationSetBy = Automatic
+
+	column 17
+		dataType: string
+		lineageTag: 831330ae-8ef6-4064-a64e-a1b7e20fc26e
+		summarizeBy: none
+		sourceColumn: 17
+
+		annotation SummarizationSetBy = Automatic
+
+	column 18
+		dataType: string
+		lineageTag: 662b2923-927d-421c-b96e-2324e5ee7da2
+		summarizeBy: none
+		sourceColumn: 18
+
+		annotation SummarizationSetBy = Automatic
+
+	column 19
+		dataType: string
+		lineageTag: f13fe5ed-eb4e-44d7-8e0a-05b36b08b368
+		summarizeBy: none
+		sourceColumn: 19
+
+		annotation SummarizationSetBy = Automatic
+
+	column 20
+		dataType: string
+		lineageTag: d6458732-ad12-4e8f-8594-b70033e36972
+		summarizeBy: none
+		sourceColumn: 20
+
+		annotation SummarizationSetBy = Automatic
+
+	column 21
+		dataType: string
+		lineageTag: 7879686a-d6d5-4be1-9a4b-70b3a79fbc83
+		summarizeBy: none
+		sourceColumn: 21
+
+		annotation SummarizationSetBy = Automatic
+
+	column 22
+		dataType: string
+		lineageTag: dc82c103-859b-49b1-aa97-469f6a5147a4
+		summarizeBy: none
+		sourceColumn: 22
+
+		annotation SummarizationSetBy = Automatic
+
+	column 23
+		dataType: string
+		lineageTag: 8a5097e6-0221-4613-86bd-754fc543dad1
+		summarizeBy: none
+		sourceColumn: 23
+
+		annotation SummarizationSetBy = Automatic
+
+	column When
+		dataType: string
+		lineageTag: 0e774f0a-b055-4b88-bf2c-e2a2c4ba806e
+		summarizeBy: none
+		sourceColumn: When
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'When details'
+		dataType: string
+		lineageTag: 0229e9be-c118-4e63-ac39-598212efb711
+		summarizeBy: none
+		sourceColumn: When details
+
+		annotation SummarizationSetBy = Automatic
+
+	column Active
+		dataType: string
+		lineageTag: 6a4fd630-e06e-471e-9c6a-ac1334863907
+		summarizeBy: none
+		sourceColumn: Active
+
+		annotation SummarizationSetBy = Automatic
+
+	column Timestamp
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: 324306bb-8e56-4c72-b0df-05bce5c1a869
+		summarizeBy: none
+		sourceColumn: Timestamp
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Agent jobs - grid' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Agent jobs configuration")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db = dbList{[Name = #"Database name"]}[Data], 
+				  table = db{[Schema = #"Schema name", Item = "Agent jobs - grid"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  RenamedColumns = Table.RenameColumns(
+				    datasetToUse, 
+				    {
+				      {"JobName", "Job"}, 
+				      {"JobEnabled", "Job enabled"}, 
+				      {"ScheduleEnabled", "Schedule enabled"}, 
+				      {"WhenDesc", "When"}, 
+				      {"WhenDetailsDesc", "When details"}, 
+				      {"ActiveDesc", "Active"}, 
+				      {"ScheduleId", "Schedule id"}
+				    }
+				  )
+				in
+				  RenamedColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

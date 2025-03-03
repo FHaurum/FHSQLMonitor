@@ -1,0 +1,8 @@
+expression 'Data load list' = null meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=false]
+	lineageTag: 138f92da-e0a3-496b-b21b-5836c9211f38
+	queryGroup: 'Connection parameters'
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Null
+

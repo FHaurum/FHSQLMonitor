@@ -1,0 +1,148 @@
+table 'Instance configurations'
+	lineageTag: 3b1a25fd-aa7c-4e98-98ae-8b18b054bb9a
+
+	column Id
+		dataType: int64
+		formatString: 0
+		lineageTag: 47b86c9c-1402-4e44-9701-b7855991805c
+		summarizeBy: none
+		sourceColumn: Id
+
+		annotation SummarizationSetBy = User
+
+	column Configuration
+		dataType: string
+		lineageTag: 81bc322f-4c81-40ad-a44e-9121248ee365
+		summarizeBy: none
+		sourceColumn: Configuration
+		sortByColumn: ConfigurationSortOrder
+
+		changedProperty = SortByColumn
+
+		annotation SummarizationSetBy = Automatic
+
+	column Value
+		dataType: int64
+		formatString: #,0
+		lineageTag: 63ce0d3b-1d57-4659-a558-cb33ea112d6e
+		summarizeBy: none
+		sourceColumn: Value
+
+		annotation SummarizationSetBy = User
+
+	column State
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 00d897a2-57c4-4d05-8d5a-efd7f7206058
+		summarizeBy: none
+		sourceColumn: State
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column Indicator = ```
+			
+			IF (
+			    'Instance configurations'[State] = 0,
+			    UNICHAR ( 128993 ),
+			    UNICHAR ( 128994 )
+			)
+			
+			```
+		lineageTag: 819dea8a-d030-4e39-a407-8ae3305c2cb3
+		summarizeBy: none
+
+		annotation SummarizationSetBy = Automatic
+
+	column DefaultValue
+		dataType: int64
+		formatString: #,0
+		lineageTag: f91758fb-3daa-4794-ab4c-ec2190efb28b
+		summarizeBy: none
+		sourceColumn: DefaultValue
+
+		annotation SummarizationSetBy = Automatic
+
+	column DefaultState
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 1e1266e4-33e3-4f2e-857d-5c8ca3fd6bff
+		summarizeBy: none
+		sourceColumn: DefaultState
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column ConfigurationSortOrder
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 7801625a-c4f4-4146-ab26-3a16b8133baa
+		summarizeBy: none
+		sourceColumn: ConfigurationSortOrder
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column DefaultIndicator = ```
+			
+			IF (
+			    'Instance configurations'[DefaultState] = 0,
+			    UNICHAR ( 128993 ),
+			    UNICHAR ( 128994 )
+			)
+			
+			```
+		lineageTag: 221e4bd4-7a06-4b53-b6be-e109725ec60b
+		summarizeBy: none
+
+		annotation SummarizationSetBy = Automatic
+
+	column Timestamp
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: 2283a826-4189-468e-b307-53bbb1bf1b2a
+		summarizeBy: none
+		sourceColumn: Timestamp
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	partition 'Instance configurations' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Instance configuration")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db = dbList{[Name = #"Database name"]}[Data], 
+				  table = db{[Schema = #"Schema name", Item = "Instance configurations"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  RenameColumns = Table.RenameColumns(
+				    datasetToUse, 
+				    {
+				      {"ConfigurationId", "Id"}, 
+				      {"Name", "Configuration"}, 
+				      {"NameSortOrder", "ConfigurationSortOrder"}
+				    }
+				  )
+				in
+				  RenameColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

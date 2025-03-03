@@ -1,0 +1,69 @@
+table 'Performance counter'
+	lineageTag: 3d386360-b0ec-4477-ad60-4af11a1fade3
+
+	column Object
+		dataType: string
+		lineageTag: 1539f1df-f8a6-4ef9-83ec-326a9cf46d11
+		summarizeBy: none
+		sourceColumn: Object
+
+		annotation SummarizationSetBy = Automatic
+
+	column Counter
+		dataType: string
+		lineageTag: 09dff1ca-1136-4a33-99ab-c0287492b448
+		summarizeBy: none
+		sourceColumn: Counter
+
+		annotation SummarizationSetBy = Automatic
+
+	column Instance
+		dataType: string
+		lineageTag: 655187b8-124d-49f3-b876-cf58f6340042
+		summarizeBy: none
+		sourceColumn: Instance
+
+		annotation SummarizationSetBy = Automatic
+
+	column PerfmonKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 2f1194be-2975-40dd-a280-495f4d6641db
+		summarizeBy: none
+		sourceColumn: PerfmonKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Performance counter' = m
+		mode: import
+		queryGroup: Dimensions
+		source = ```
+				let
+				  loadConfigFirstMatch = Table.First(
+				    Table.SelectRows(
+				      #"Data load", 
+				      each List.Contains({"Performance statistics"}, [Service])
+				        and List.Contains({"Yes"}, [DataLoad])
+				    )
+				  ), 
+				  loadConfig = 
+				    if (loadConfigFirstMatch = null) then
+				      "No"
+				    else
+				      Record.Field(loadConfigFirstMatch, "DataLoad"), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db = dbList{[Name = #"Database name"]}[Data], 
+				  table = db{[Schema = #"Schema name", Item = "Performance counter"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset
+				in
+				  datasetToUse
+				```
+
+	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navigation
+

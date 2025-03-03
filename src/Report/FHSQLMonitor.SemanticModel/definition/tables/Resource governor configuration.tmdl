@@ -1,0 +1,70 @@
+table 'Resource governor configuration'
+	lineageTag: 4dbe7e82-3a8a-42e5-8ba2-37788d334f43
+
+	column IsEnabled
+		dataType: string
+		lineageTag: 8b73152a-ee6a-44ea-b43c-2590dad4de5f
+		summarizeBy: none
+		sourceColumn: IsEnabled
+
+		annotation SummarizationSetBy = Automatic
+
+	column MaxOutstandingIOperVolume
+		dataType: string
+		lineageTag: e5d70e86-7cac-4105-8a82-b5bdb8aa5b6a
+		summarizeBy: none
+		sourceColumn: MaxOutstandingIOperVolume
+
+		annotation SummarizationSetBy = Automatic
+
+	column ClassifierFunction
+		dataType: string
+		lineageTag: 4bf7b467-5c78-4844-98d5-07e8716905b2
+		summarizeBy: none
+		sourceColumn: ClassifierFunction
+
+		annotation SummarizationSetBy = Automatic
+
+	column ClassifierFunctionDefinition
+		dataType: string
+		lineageTag: 418cbf44-02b5-4446-b854-9549df716f90
+		summarizeBy: none
+		sourceColumn: ClassifierFunctionDefinition
+
+		annotation SummarizationSetBy = Automatic
+
+	column Timestamp
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: 64963e49-e272-4ae3-b7f9-9666f8e88fe8
+		summarizeBy: none
+		sourceColumn: Timestamp
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	partition 'Resource governor configuration' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Resource Governor configuration")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db = dbList{[Name = #"Database name"]}[Data], 
+				  table = db{[Schema = #"Schema name", Item = "Resource governor configuration"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset
+				in
+				  datasetToUse
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

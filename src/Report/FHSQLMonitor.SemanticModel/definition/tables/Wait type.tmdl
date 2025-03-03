@@ -1,0 +1,52 @@
+table 'Wait type'
+	lineageTag: e25f2a8e-ae59-485d-b1ec-9da30afc4de0
+
+	column 'Wait type'
+		dataType: string
+		lineageTag: 96aa6ab6-11b2-49ce-bc44-5a8ff63bb7a4
+		summarizeBy: none
+		sourceColumn: Wait type
+
+		annotation SummarizationSetBy = Automatic
+
+	column WaitKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: ef928063-dab1-4e17-be72-788bded64ac6
+		summarizeBy: none
+		sourceColumn: WaitKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Wait type' = m
+		mode: import
+		queryGroup: Dimensions
+		source = ```
+				let
+				  loadConfigFirstMatch = Table.First(
+				    Table.SelectRows(
+				      #"Data load", 
+				      each List.Contains({"Wait statistics"}, [Service]) and List.Contains({"Yes"}, [DataLoad])
+				    )
+				  ), 
+				  loadConfig = 
+				    if (loadConfigFirstMatch = null) then
+				      "No"
+				    else
+				      Record.Field(loadConfigFirstMatch, "DataLoad"), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db = dbList{[Name = #"Database name"]}[Data], 
+				  table = db{[Schema = #"Schema name", Item = "Wait type"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset
+				in
+				  datasetToUse
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Report",
+    "displayName": "FHSQLMonitor"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "5aed2169-3eff-41ce-b22e-8224ccd9f287"
+  }
+}

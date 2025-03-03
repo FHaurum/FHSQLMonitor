@@ -1,0 +1,92 @@
+table 'CPU per database'
+	lineageTag: 1264ea96-e0d5-439f-80db-efab08dd0774
+
+	column CPUPercent
+		dataType: double
+		isHidden
+		lineageTag: 526fb671-8e96-4f64-a14c-ca604b45ba5b
+		summarizeBy: none
+		sourceColumn: CPUPercent
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column Date
+		dataType: dateTime
+		isHidden
+		formatString: Long Date
+		lineageTag: 5fb8e37b-f61a-4d4f-854f-8f20645dd1ca
+		summarizeBy: none
+		sourceColumn: Date
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column TimeKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 64c7a3ab-2f5a-49aa-a80a-3a9aea700d95
+		summarizeBy: none
+		sourceColumn: TimeKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column DatabaseKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: cc1e2714-926b-4c36-9627-a29d7a5ccc35
+		summarizeBy: none
+		sourceColumn: DatabaseKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column CPUTimeMs
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 41d94ec0-2128-4073-bdcd-c784b0d99048
+		summarizeBy: none
+		sourceColumn: CPUTimeMs
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	partition 'CPU per database' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "CPU")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db = dbList{[Name = #"Database name"]}[Data], 
+				  table = db{[Schema = #"Schema name", Item = "CPU per database"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  SelectColumns = Table.SelectColumns(
+				    datasetToUse, 
+				    {"CPUTimeMs", "CPUPercent", "Date", "TimeKey", "DatabaseKey"}
+				  )
+				in
+				  SelectColumns
+				```
+
+	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navigation
+

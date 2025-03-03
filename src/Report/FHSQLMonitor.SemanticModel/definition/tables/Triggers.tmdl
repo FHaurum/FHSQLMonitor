@@ -1,0 +1,131 @@
+table Triggers
+	lineageTag: 1033cd32-8333-48e1-b78c-2d1682e4cc23
+
+	column 'Parent class'
+		dataType: string
+		lineageTag: d4ddb83d-0485-49e7-91f4-5ee0e983e695
+		summarizeBy: none
+		sourceColumn: Parent class
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Parent object'
+		dataType: string
+		lineageTag: 2c40d87f-f27d-4886-8e78-c16a880cddb6
+		summarizeBy: none
+		sourceColumn: Parent object
+
+		annotation SummarizationSetBy = Automatic
+
+	column Type
+		dataType: string
+		lineageTag: 76c92df6-e673-4d27-b3d4-8df36badc023
+		summarizeBy: none
+		sourceColumn: Type
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Created date'
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: 14860fb7-7b7f-44d3-8305-6ecb38238cfb
+		summarizeBy: none
+		sourceColumn: Created date
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	column 'Modified date'
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: 7a191f0b-6d99-4728-b119-5c242d81ba41
+		summarizeBy: none
+		sourceColumn: Modified date
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	column 'Is ms shipped'
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 7b72f4d6-a002-4ac5-8d9b-ef3ef1e55106
+		summarizeBy: none
+		sourceColumn: Is ms shipped
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Is disabled'
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 7134b25d-12ce-4565-8448-b1fb41139015
+		summarizeBy: none
+		sourceColumn: Is disabled
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Is not for replication'
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 44358346-7b34-406e-9482-eaaa42d724e2
+		summarizeBy: none
+		sourceColumn: Is not for replication
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Trigger type'
+		dataType: string
+		lineageTag: a95feeb7-9062-4025-8639-c88227eeca44
+		summarizeBy: none
+		sourceColumn: Trigger type
+
+		annotation SummarizationSetBy = Automatic
+
+	column DatabaseKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: d1859d19-aeab-4893-bae6-cadc88418a94
+		summarizeBy: none
+		sourceColumn: DatabaseKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Triggers = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Triggers")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db = dbList{[Name = #"Database name"]}[Data], 
+				  table = db{[Schema = #"Schema name", Item = "Triggers"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  RenameColumns = Table.RenameColumns(
+				    datasetToUse, 
+				    {
+				      {"ParentClass", "Parent class"}, 
+				      {"ParentObject", "Parent object"}, 
+				      {"CreateDate", "Created date"}, 
+				      {"ModifyDate", "Modified date"}, 
+				      {"IsMsShipped", "Is ms shipped"}, 
+				      {"IsDisabled", "Is disabled"}, 
+				      {"IsNotForReplication", "Is not for replication"}, 
+				      {"TriggerType", "Trigger type"}
+				    }
+				  )
+				in
+				  RenameColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

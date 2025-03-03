@@ -1,0 +1,129 @@
+table 'Statistics age'
+	lineageTag: fea75ed7-f6a0-40c2-95cc-ed6a0ce6ca7a
+
+	column Age
+		dataType: int64
+		formatString: #,0
+		lineageTag: 62c275e5-1034-42ec-8994-624428fde96b
+		summarizeBy: none
+		sourceColumn: Age
+
+		annotation SummarizationSetBy = User
+
+	column Rows
+		dataType: int64
+		formatString: #,0
+		lineageTag: 15af72ea-fa85-4d66-ae79-cef97bacc8b1
+		summarizeBy: none
+		sourceColumn: Rows
+
+		annotation SummarizationSetBy = User
+
+	column 'Rows sampled'
+		dataType: int64
+		formatString: #,0
+		lineageTag: 37da5aa3-9cb4-457d-9983-9972b3fbec72
+		summarizeBy: none
+		sourceColumn: Rows sampled
+
+		annotation SummarizationSetBy = User
+
+	column 'Modification counter'
+		dataType: int64
+		formatString: #,0
+		lineageTag: dd3eaaf6-c953-4e04-aa6a-a59ac34b50f4
+		summarizeBy: none
+		sourceColumn: Modification counter
+
+		annotation SummarizationSetBy = User
+
+	column 'Is hypothetical'
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 158bd9d7-f8eb-4034-b438-05eec7513754
+		summarizeBy: none
+		sourceColumn: Is hypothetical
+
+		annotation SummarizationSetBy = Automatic
+
+	column IndexKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: db157a2d-7d9c-4156-8f47-db65f1ee9179
+		summarizeBy: none
+		sourceColumn: IndexKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column ObjectKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 50a2b369-971f-4cb6-ac57-ae4c19aa5841
+		summarizeBy: none
+		sourceColumn: ObjectKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column Date
+		dataType: dateTime
+		isHidden
+		formatString: Long Date
+		lineageTag: cb2a4336-dd11-4a73-bfd2-acef5ee32f55
+		summarizeBy: none
+		sourceColumn: Date
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	partition 'Statistics age' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Statistics")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db = dbList{[Name = #"Database name"]}[Data], 
+				  table = db{[Schema = #"Schema name", Item = "Statistics age"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  SelectColumns = Table.SelectColumns(
+				    datasetToUse, 
+				    {
+				      "Age", 
+				      "Rows", 
+				      "RowsSampled", 
+				      "ModificationCounter", 
+				      "IsHypothetical", 
+				      "Date", 
+				      "ObjectKey", 
+				      "IndexKey"
+				    }
+				  ), 
+				  RenameColumns = Table.RenameColumns(
+				    SelectColumns, 
+				    {
+				      {"RowsSampled", "Rows sampled"}, 
+				      {"ModificationCounter", "Modification counter"}, 
+				      {"IsHypothetical", "Is hypothetical"}
+				    }
+				  )
+				in
+				  RenameColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

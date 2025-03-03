@@ -1,0 +1,76 @@
+table 'Object partition'
+	lineageTag: 2a5e1c86-a0c1-4d1b-83a3-127f540604bb
+
+	column Database
+		dataType: string
+		lineageTag: ffb59026-6324-4d53-91e0-5cbd4661fcd0
+		summarizeBy: none
+		sourceColumn: Database
+
+		annotation SummarizationSetBy = Automatic
+
+	column Schema
+		dataType: string
+		lineageTag: 640a23f9-f615-40d4-bc7b-debd282bf843
+		summarizeBy: none
+		sourceColumn: Schema
+
+		annotation SummarizationSetBy = Automatic
+
+	column Object
+		dataType: string
+		lineageTag: 7b2d6959-ca61-4174-be46-466d7f35fbe7
+		summarizeBy: none
+		sourceColumn: Object
+
+		annotation SummarizationSetBy = Automatic
+
+	column Partition
+		dataType: string
+		lineageTag: 5846a6c6-21af-436d-bd33-1ab118cc549a
+		summarizeBy: none
+		sourceColumn: Partition
+
+		annotation SummarizationSetBy = Automatic
+
+	column ObjectPartitionKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 0b547b41-cc3b-46a5-b179-dbc1faa8dd56
+		summarizeBy: none
+		sourceColumn: ObjectPartitionKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Object partition' = m
+		mode: import
+		queryGroup: Dimensions
+		source = ```
+				let
+				  loadConfigFirstMatch = Table.First(
+				    Table.SelectRows(
+				      #"Data load", 
+				      each List.Contains({"Statistics"}, [Service]) and List.Contains({"Yes"}, [DataLoad])
+				    )
+				  ), 
+				  loadConfig = 
+				    if (loadConfigFirstMatch = null) then
+				      "No"
+				    else
+				      Record.Field(loadConfigFirstMatch, "DataLoad"), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db = dbList{[Name = #"Database name"]}[Data], 
+				  table = db{[Schema = #"Schema name", Item = "Object partition"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset
+				in
+				  datasetToUse
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

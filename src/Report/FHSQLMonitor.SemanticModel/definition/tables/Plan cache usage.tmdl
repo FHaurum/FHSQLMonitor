@@ -1,0 +1,76 @@
+table 'Plan cache usage'
+	lineageTag: cd466f0f-8084-4d47-aa04-675a0f0d625a
+
+	column ObjectType
+		dataType: string
+		lineageTag: e00c8c6b-ab30-4f10-bc9e-2aba375a8fe6
+		summarizeBy: none
+		sourceColumn: ObjectType
+
+		annotation SummarizationSetBy = Automatic
+
+	column CacheSize_MB
+		dataType: double
+		isHidden
+		lineageTag: 508e6817-4a40-4338-ab4f-d4daad20db5f
+		summarizeBy: none
+		sourceColumn: CacheSize_MB
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column Date
+		dataType: dateTime
+		isHidden
+		formatString: Long Date
+		lineageTag: 8e859095-b616-496c-a065-7059828b9a40
+		summarizeBy: none
+		sourceColumn: Date
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column TimeKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 724765d3-1365-4a47-9218-30da9d2962e9
+		summarizeBy: none
+		sourceColumn: TimeKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Plan cache usage' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Plan cache usage")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db = dbList{[Name = #"Database name"]}[Data], 
+				  table = db{[Schema = #"Schema name", Item = "Plan cache usage"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  SelectColumns = Table.SelectColumns(
+				    datasetToUse, 
+				    {"ObjectType", "CacheSize_MB", "Date", "TimeKey"}
+				  )
+				in
+				  SelectColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

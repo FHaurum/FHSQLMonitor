@@ -1,0 +1,138 @@
+table 'Index physical'
+	lineageTag: 3066c547-2b35-4fb0-ad40-506685bbaabb
+
+	column Mode
+		dataType: string
+		lineageTag: 2d01ffdd-96a2-40cb-a14e-9c553a732b7c
+		summarizeBy: none
+		sourceColumn: Mode
+
+		annotation SummarizationSetBy = Automatic
+
+	column PartitionNumber
+		dataType: int64
+		formatString: 0
+		lineageTag: 005df785-e2eb-4b98-9e98-b626869fe78e
+		summarizeBy: none
+		sourceColumn: PartitionNumber
+
+		annotation SummarizationSetBy = User
+
+	column 'Index depth'
+		dataType: int64
+		formatString: 0
+		lineageTag: 46ce0ba4-b189-48d6-9928-a007106380d3
+		summarizeBy: none
+		sourceColumn: Index depth
+
+		annotation SummarizationSetBy = User
+
+	column 'Index level'
+		dataType: int64
+		formatString: 0
+		lineageTag: 1b1213ce-439b-44b2-a674-75758fe1fbd1
+		summarizeBy: none
+		sourceColumn: Index level
+
+		annotation SummarizationSetBy = User
+
+	column AvgFragmentationInPercent
+		dataType: double
+		isHidden
+		lineageTag: d4f3b0c5-ac1e-4a4f-b713-0c2d8ebc8170
+		summarizeBy: none
+		sourceColumn: AvgFragmentationInPercent
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column FragmentCount
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 8a53aaa6-5019-4a32-8b5a-87f4cd37d7c0
+		summarizeBy: none
+		sourceColumn: FragmentCount
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column PageCount
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 4c896c5c-1982-4807-91c3-391bf6c4edf5
+		summarizeBy: none
+		sourceColumn: PageCount
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column IndexAllocTypeKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: d4227aba-cb63-4264-abcf-65adbb30febf
+		summarizeBy: none
+		sourceColumn: IndexAllocTypeKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column Date
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 37424916-0cc9-483e-b433-f6ae57b65092
+		summarizeBy: none
+		sourceColumn: Date
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	partition 'Index physical' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Index physical")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db = dbList{[Name = #"Database name"]}[Data], 
+				  table = db{[Schema = #"Schema name", Item = "Index physical"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  SelectColumns = Table.SelectColumns(
+				    datasetToUse, 
+				    {
+				      "Mode", 
+				      "PartitionNumber", 
+				      "IndexDepth", 
+				      "IndexLevel", 
+				      "AvgFragmentationInPercent", 
+				      "FragmentCount", 
+				      "PageCount", 
+				      "Date", 
+				      "IndexAllocTypeKey"
+				    }
+				  ), 
+				  RenameColumns = Table.RenameColumns(
+				    SelectColumns, 
+				    {{"IndexDepth", "Index depth"}, {"IndexLevel", "Index level"}}
+				  )
+				in
+				  RenameColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

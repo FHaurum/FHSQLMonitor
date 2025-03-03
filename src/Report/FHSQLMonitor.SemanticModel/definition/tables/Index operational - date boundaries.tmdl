@@ -1,0 +1,32 @@
+table 'Index operational - date boundaries'
+	isHidden
+	lineageTag: 70806b44-f95b-4833-993b-181581f8575c
+
+	column Date
+		isHidden
+		formatString: dd-mmm-yyyy
+		lineageTag: d3b80d9f-1132-4e3c-9726-f28881638374
+		summarizeBy: none
+		sourceColumn: [Value]
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	partition 'Index operational - date boundaries' = calculated
+		mode: import
+		source = ```
+				
+				DISTINCT (
+				    UNION (
+				        { MIN ( 'Index operational'[Date] ) },
+				        { MAX ( 'Index operational'[Date] ) }
+				    )
+				)
+				
+				```
+
+	annotation PBI_Id = a6b88c1d25a84b16afbe629d1c5e6867
+

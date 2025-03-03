@@ -1,0 +1,81 @@
+table 'Database size'
+	lineageTag: f4de3086-b090-41e3-970d-5ea1e6a01ef6
+
+	column CurrentSize
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: feaffa30-7111-495f-a606-fb2b89d81b66
+		summarizeBy: none
+		sourceColumn: CurrentSize
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column UsedSize
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: f6ed0658-dba8-4324-89aa-07734d326b58
+		summarizeBy: none
+		sourceColumn: UsedSize
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column Date
+		dataType: dateTime
+		isHidden
+		isNullable: false
+		formatString: Long Date
+		lineageTag: 7920bf2c-9c37-401c-bd2a-37bacab18ea4
+		summarizeBy: none
+		sourceColumn: Date
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column DatabaseFileKey
+		dataType: int64
+		isHidden
+		isNullable: false
+		formatString: 0
+		lineageTag: 2fce125f-91ae-4f36-b717-42de23be55e3
+		summarizeBy: none
+		sourceColumn: DatabaseFileKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	partition 'Database size' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Database size")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db = dbList{[Name = #"Database name"]}[Data], 
+				  table = db{[Schema = #"Schema name", Item = "Database size"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  SelectColumns = Table.SelectColumns(
+				    datasetToUse, 
+				    {"CurrentSize", "UsedSize", "Date", "DatabaseFileKey"}
+				  )
+				in
+				  SelectColumns
+				```
+
+	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navigation
+

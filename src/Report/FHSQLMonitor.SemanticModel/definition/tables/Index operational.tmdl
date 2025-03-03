@@ -1,0 +1,292 @@
+table 'Index operational'
+	lineageTag: eb62dac2-075f-4d6d-832a-abb6aea8c2a2
+
+	column RowLockCount
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 6486af5a-9e24-4fa9-999c-97dc0c15d0b6
+		summarizeBy: none
+		sourceColumn: RowLockCount
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column RowLockWaitCount
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: c1dc0da4-120d-43b1-a18c-9bcf721e8eb1
+		summarizeBy: none
+		sourceColumn: RowLockWaitCount
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column RowLockWaitInMS
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: c4fedac1-36f3-4cef-a6dd-c627c2995deb
+		summarizeBy: none
+		sourceColumn: RowLockWaitInMS
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column PageLockCount
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 4b2fc950-feaa-4658-90fb-dce5f6f2e90f
+		summarizeBy: none
+		sourceColumn: PageLockCount
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column PageLockWaitCount
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: fbd04227-35a3-416d-bbb3-be191a27ac2d
+		summarizeBy: none
+		sourceColumn: PageLockWaitCount
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column PageLockWaitInMS
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 15bba687-9679-4911-94e0-5384d0ba2136
+		summarizeBy: none
+		sourceColumn: PageLockWaitInMS
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column Date
+		dataType: dateTime
+		isHidden
+		formatString: Long Date
+		lineageTag: 734c6ff1-71a6-4176-b065-4d03d0f64223
+		summarizeBy: none
+		sourceColumn: Date
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column TimeKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 517aabb2-6210-49d9-8d9e-9928b5ac4946
+		summarizeBy: none
+		sourceColumn: TimeKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column IndexKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 9fb59b87-13c1-4312-8d91-6e64ee869a2b
+		summarizeBy: none
+		sourceColumn: IndexKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column LeafInsertCount
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: a0d571c8-2ae4-4005-ba35-bc4954d57ba2
+		summarizeBy: none
+		sourceColumn: LeafInsertCount
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column LeafDeleteCount
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 76303513-219e-49c1-9df2-bce2070f1aa2
+		summarizeBy: none
+		sourceColumn: LeafDeleteCount
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column LeafUpdateCount
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 42881bc1-daa9-498a-815e-53398ae61fbd
+		summarizeBy: none
+		sourceColumn: LeafUpdateCount
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column LeafGhostCount
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: c42374d8-5bd3-43e3-bf9c-379eeb8f569e
+		summarizeBy: none
+		sourceColumn: LeafGhostCount
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column NonleafInsertCount
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: b44c02b7-f73a-4e88-a364-9447060f185e
+		summarizeBy: none
+		sourceColumn: NonleafInsertCount
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column NonleafDeleteCount
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: f0dbfce7-f476-4286-aec6-b637142890bc
+		summarizeBy: none
+		sourceColumn: NonleafDeleteCount
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column NonleafUpdateCount
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 969b8b76-1a04-4bcf-a7b9-39343c5fa819
+		summarizeBy: none
+		sourceColumn: NonleafUpdateCount
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column LeafAllocationCount
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: fea91ee5-bf43-41e1-9f72-d0a0f756c457
+		summarizeBy: none
+		sourceColumn: LeafAllocationCount
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column NonleafAllocationCount
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: dc5736b7-e816-4154-93f5-573e8943e2bf
+		summarizeBy: none
+		sourceColumn: NonleafAllocationCount
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column LeafPageMergeCount
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 116f1fe3-0bfe-4281-be0f-c3574d8d1dea
+		summarizeBy: none
+		sourceColumn: LeafPageMergeCount
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column NonleafPageMergeCount
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 63c6c5cf-b3ff-4ea7-93c3-2ff1dbeb17d6
+		summarizeBy: none
+		sourceColumn: NonleafPageMergeCount
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	partition 'Index operational' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Index operational")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db = dbList{[Name = #"Database name"]}[Data], 
+				  table = db{[Schema = #"Schema name", Item = "Index operational"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  SelectColumns = Table.SelectColumns(
+				    datasetToUse, 
+				    {
+				      "LeafInsertCount", 
+				      "LeafDeleteCount", 
+				      "LeafUpdateCount", 
+				      "LeafGhostCount", 
+				      "NonleafInsertCount", 
+				      "NonleafDeleteCount", 
+				      "NonleafUpdateCount", 
+				      "LeafAllocationCount", 
+				      "NonleafAllocationCount", 
+				      "LeafPageMergeCount", 
+				      "NonleafPageMergeCount", 
+				      "RowLockCount", 
+				      "RowLockWaitCount", 
+				      "RowLockWaitInMS", 
+				      "PageLockCount", 
+				      "PageLockWaitCount", 
+				      "PageLockWaitInMS", 
+				      "Date", 
+				      "TimeKey", 
+				      "IndexKey"
+				    }
+				  )
+				in
+				  SelectColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

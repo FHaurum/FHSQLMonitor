@@ -1,0 +1,110 @@
+table 'Resource governor workload groups'
+	lineageTag: 9640ced1-046d-4e6a-bcd6-38debec8803e
+
+	column PoolName
+		dataType: string
+		lineageTag: e47606ef-0098-4120-b156-3d5480f654f9
+		summarizeBy: none
+		sourceColumn: PoolName
+
+		annotation SummarizationSetBy = Automatic
+
+	column WorkloadGroupName
+		dataType: string
+		lineageTag: 0714c9c4-8bc0-4ba7-8af2-54d88e960965
+		summarizeBy: none
+		sourceColumn: WorkloadGroupName
+
+		annotation SummarizationSetBy = Automatic
+
+	column Importance
+		dataType: string
+		lineageTag: b22dc8ed-e3b3-4c63-a839-362515a13dbf
+		summarizeBy: none
+		sourceColumn: Importance
+
+		annotation SummarizationSetBy = Automatic
+
+	column RequestMaxMemoryGrantPercent
+		dataType: string
+		lineageTag: b83c0a05-62f2-4f05-9261-02fc8a34e0dd
+		summarizeBy: none
+		sourceColumn: RequestMaxMemoryGrantPercent
+
+		annotation SummarizationSetBy = Automatic
+
+	column RequestMaxCPUtimeSec
+		dataType: string
+		lineageTag: c3c840a5-d91a-4b47-9644-d6c934b5a82b
+		summarizeBy: none
+		sourceColumn: RequestMaxCPUtimeSec
+
+		annotation SummarizationSetBy = Automatic
+
+	column RequestMemoryGrantTimeoutSec
+		dataType: string
+		lineageTag: 0004cd3d-1d6e-46b3-88a2-8b8ce96d84b8
+		summarizeBy: none
+		sourceColumn: RequestMemoryGrantTimeoutSec
+
+		annotation SummarizationSetBy = Automatic
+
+	column MaxDOP
+		dataType: string
+		lineageTag: 984bf051-c140-48d2-afa9-ac2685871676
+		summarizeBy: none
+		sourceColumn: MaxDOP
+
+		annotation SummarizationSetBy = Automatic
+
+	column GroupMaxRequests
+		dataType: string
+		lineageTag: 4080d1c2-08e2-4a69-8922-86533109e3c2
+		summarizeBy: none
+		sourceColumn: GroupMaxRequests
+
+		annotation SummarizationSetBy = Automatic
+
+	column RequestMaxMemoryGrantPercentNumeric
+		dataType: string
+		lineageTag: d54d362c-ad1b-4df9-bd89-632c493e4590
+		summarizeBy: none
+		sourceColumn: RequestMaxMemoryGrantPercentNumeric
+
+		annotation SummarizationSetBy = Automatic
+
+	column Timestamp
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: 58068ad7-edbc-4a67-b510-67cb2e29a88a
+		summarizeBy: none
+		sourceColumn: Timestamp
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	partition 'Resource governor workload groups' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Resource Governor configuration")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db = dbList{[Name = #"Database name"]}[Data], 
+				  table = db{[Schema = #"Schema name", Item = "Resource governor workload groups"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset
+				in
+				  datasetToUse
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

@@ -1,0 +1,91 @@
+table Log
+	lineageTag: bf1208e0-9ba5-435b-bbe1-7c267e454794
+
+	column Id
+		dataType: int64
+		formatString: #,0
+		lineageTag: aad57c52-5b90-46c6-8b46-f498657fc55f
+		summarizeBy: none
+		sourceColumn: Id
+
+		annotation SummarizationSetBy = User
+
+	column Name
+		dataType: string
+		lineageTag: 84f5b11b-8f67-46a9-a5c0-62ce21139aad
+		summarizeBy: none
+		sourceColumn: Name
+
+		annotation SummarizationSetBy = Automatic
+
+	column Task
+		dataType: string
+		lineageTag: 16474684-c3dc-431b-b178-298577a586b7
+		summarizeBy: none
+		sourceColumn: Task
+
+		annotation SummarizationSetBy = Automatic
+
+	column Type
+		dataType: string
+		lineageTag: c7c12de7-3a8a-485f-9e70-5d87cb6f8efb
+		summarizeBy: none
+		sourceColumn: Type
+
+		annotation SummarizationSetBy = Automatic
+
+	column Message
+		dataType: string
+		lineageTag: 894b95c5-dab8-4776-98d1-b4e442b299ab
+		summarizeBy: none
+		sourceColumn: Message
+
+		annotation SummarizationSetBy = Automatic
+
+	column Version
+		dataType: string
+		lineageTag: 8c75a78b-dda8-44ad-b2ea-fbcb5a5362cb
+		summarizeBy: none
+		sourceColumn: Version
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Timestamp UTC'
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: 0ef8da0b-d564-4bce-b9ee-ea3f6b445606
+		summarizeBy: none
+		sourceColumn: Timestamp UTC
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	column Timestamp
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: a35fd8c0-15bc-4862-a4cc-9ebf458bed14
+		summarizeBy: none
+		sourceColumn: Timestamp
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	partition Log = m
+		mode: import
+		queryGroup: Framework
+		source = ```
+				let
+				  dbList        = Sql.Databases(#"Server name"), 
+				  db            = dbList{[Name = #"Database name"]}[Data], 
+				  table         = db{[Schema = #"Schema name", Item = "Log"]}[Data], 
+				  RenameColumns = Table.RenameColumns(table, {{"TimestampUTC", "Timestamp UTC"}})
+				in
+				  RenameColumns
+				```
+
+	annotation PBI_ResultType = Table
+
+	annotation PBI_NavigationStepName = Navigation
+

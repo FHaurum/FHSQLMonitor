@@ -1,0 +1,32 @@
+table 'Connections - date boundaries'
+	isHidden
+	lineageTag: ebf6c89d-a596-4f16-9edb-c1eda3c4b178
+
+	column Date
+		isHidden
+		formatString: dd-mmm-yyyy
+		lineageTag: dbcc6da7-cfd8-4cba-8252-ce1eef9d3b64
+		summarizeBy: none
+		sourceColumn: [Value]
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	partition 'Connections - date boundaries' = calculated
+		mode: import
+		source = ```
+				
+				DISTINCT (
+				    UNION (
+				        { MIN ( 'Connections'[Date] ) },
+				        { MAX ( 'Connections'[Date] ) }
+				    )
+				)
+				
+				```
+
+	annotation PBI_Id = f7590d3329844be08d1a3e3357f6f94e
+
