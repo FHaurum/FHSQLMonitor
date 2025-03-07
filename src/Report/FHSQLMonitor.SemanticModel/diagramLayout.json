@@ -584,33 +584,6 @@
         },
         {
           "location": {
-            "x": 586.19181590327071,
-            "y": 747.25646700627237
-          },
-          "nodeIndex": "YesNo1",
-          "size": {
-            "height": 72,
-            "width": 234
-          },
-          "zIndex": 28,
-          "expandedHeight": 104
-        },
-        {
-          "location": {
-            "x": 862.37185901874727,
-            "y": 747.25646700627237
-          },
-          "nodeIndex": "YesNo2",
-          "nodeLineageTag": "00b6c00e-aefa-4214-8931-e8b850b516f0",
-          "size": {
-            "height": 72,
-            "width": 234
-          },
-          "zIndex": 29,
-          "expandedHeight": 104
-        },
-        {
-          "location": {
             "x": 1154.3683803743172,
             "y": 745.3719886191476
           },
@@ -1150,10 +1123,38 @@
           },
           "zIndex": 0,
           "expandedHeight": 104
+        },
+        {
+          "location": {
+            "x": 3133.7995174397274,
+            "y": 230.91036771669604
+          },
+          "nodeIndex": "Partitioned indexes",
+          "nodeLineageTag": "451ade23-fd30-4033-8314-c0b29da67bba",
+          "size": {
+            "height": 128,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 300
+        },
+        {
+          "location": {
+            "x": 2481.5335215953874,
+            "y": 0
+          },
+          "nodeIndex": "Values 0-95 (5 delta)",
+          "nodeLineageTag": "989189a7-68dc-47dc-99af-e87797a52aab",
+          "size": {
+            "height": 72,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 200
         }
       ],
       "name": "All tables",
-      "zoomValue": 51.843000703868746,
+      "zoomValue": 69.617384045307816,
       "pinKeyFieldsToTop": false,
       "showExtraHeaderInfo": false,
       "hideKeyFieldsWhenCollapsed": false,
@@ -2414,6 +2415,63 @@
       "nodes": [
         {
           "location": {
+            "x": 128,
+            "y": 215
+          },
+          "nodeIndex": "Partitioned indexes",
+          "nodeLineageTag": "451ade23-fd30-4033-8314-c0b29da67bba",
+          "size": {
+            "height": 128,
+            "width": 234
+          },
+          "zIndex": 1,
+          "expandedHeight": 300
+        },
+        {
+          "location": {
+            "x": 277,
+            "y": 0
+          },
+          "nodeIndex": "Index",
+          "nodeLineageTag": "35fe447e-23e3-463a-9e2f-27d415dffb56",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 3,
+          "expandedHeight": 200
+        },
+        {
+          "location": {
+            "x": 0,
+            "y": 0
+          },
+          "nodeIndex": "Date",
+          "nodeLineageTag": "66406d91-b832-4567-b6e4-a3786a0597bb",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 2,
+          "expandedHeight": 224
+        }
+      ],
+      "name": "Partitioned indexes",
+      "zoomValue": 100,
+      "pinKeyFieldsToTop": false,
+      "showExtraHeaderInfo": false,
+      "hideKeyFieldsWhenCollapsed": false,
+      "tablesLocked": false
+    },
+    {
+      "ordinal": 16,
+      "scrollPosition": {
+        "x": 0,
+        "y": 0
+      },
+      "nodes": [
+        {
+          "location": {
             "x": 289.20327081209513,
             "y": 188.16316283722938
           },
@@ -2477,7 +2535,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 16,
+      "ordinal": 17,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -2534,7 +2592,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 17,
+      "ordinal": 18,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -2577,7 +2635,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 18,
+      "ordinal": 19,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -2662,7 +2720,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 19,
+      "ordinal": 20,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -2719,7 +2777,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 20,
+      "ordinal": 21,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -2762,7 +2820,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 21,
+      "ordinal": 22,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -2847,7 +2905,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 22,
+      "ordinal": 23,
       "scrollPosition": {
         "x": 0,
         "y": 0

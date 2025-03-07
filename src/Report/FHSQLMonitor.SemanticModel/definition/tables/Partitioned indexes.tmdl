@@ -1,0 +1,94 @@
+table 'Partitioned indexes'
+	lineageTag: 451ade23-fd30-4033-8314-c0b29da67bba
+
+	column 'Partition no.'
+		dataType: int64
+		formatString: 0
+		lineageTag: 9ff4515e-0618-4da0-aac3-43a1531fdefb
+		summarizeBy: none
+		sourceColumn: Partition no.
+
+		annotation SummarizationSetBy = User
+
+	column PartitionRowCount
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 06df8928-5c89-4ffb-a54a-be155397f319
+		summarizeBy: none
+		sourceColumn: PartitionRowCount
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column Date
+		dataType: dateTime
+		isHidden
+		formatString: Long Date
+		lineageTag: a5228dbe-d9b8-45d0-86ed-cb2e525e022c
+		summarizeBy: none
+		sourceColumn: Date
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column IndexKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: ead35971-1275-4790-bfe3-6adc50421637
+		summarizeBy: none
+		sourceColumn: IndexKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Partition range'
+		dataType: string
+		lineageTag: 73c9c9c4-151d-4074-85fc-b28ea2bcd267
+		summarizeBy: none
+		sourceColumn: Partition range
+
+		annotation SummarizationSetBy = Automatic
+
+	column SortOrder
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 225791e9-fb9d-4020-99ab-0f290af6e61a
+		summarizeBy: none
+		sourceColumn: SortOrder
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	partition 'Partitioned indexes' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Partitioned indexes")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db = dbList{[Name = #"Database name"]}[Data], 
+				  table = db{[Schema = #"Schema name", Item = "Partitioned indexes"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  SelectColumns = Table.SelectColumns(datasetToUse,{"PartitionRange", "SortOrder", "PartitionNumber", "PartitionRowCount", "Date", "IndexKey"}),
+				  RenamedColumns = Table.RenameColumns(SelectColumns,{{"PartitionRange", "Partition range"}, {"PartitionNumber", "Partition no."}})
+				in
+				  RenamedColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

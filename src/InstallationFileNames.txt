@@ -16,6 +16,7 @@ IndexPhysical.sql
 IndexUsage.sql
 InstanceState.sql
 MissingIndexes.sql
+PartitionedIndexes.sql
 PerformanceStatistics.sql
 PlanCacheUsage.sql
 PlanGuides.sql

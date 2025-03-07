@@ -32,7 +32,7 @@ annotation PBIDesktopVersion = 2.140.1205.0 (25.02)+2ab3defe107764e1cf486b42122d
 
 annotation PBI_ProTooling = ["DevMode"]
 
-annotation PBI_QueryOrder = ["Connection info","Database","Database file","Agent alerts","Agent jobs","Agent jobs - grid","Agent jobs - list","Backup age","Backup status","Connections","CPU per database","CPU utilization","Database IO","Database size","Database state","Database state history","Index operational","Index optimize","Index physical","Index usage","Instance configurations","Instance configurations history","Instance dump files","Instance hardware","Instance hardware history","Instance services","Instance suspect pages","Missing indexes","OH errors","Performance statistics","Plan cache usage","Plan guides","Query statements","Query statistics","Resource governor configuration","Resource governor external resource pool affinity","Resource governor external resource pools","Resource governor resource pool affinity","Resource governor resource pools","Resource governor workload groups","Statistics age","Statistics age incremental","Date","Index","Index alloc type","Index partition","Junk dimensions","_Measures","Server name","Database name","Schema name","Data load list","Data load","LastRefresh","Log","Retentions","Schedules","Table size","Trace flags","Trace flags history","Triggers","Object","Object partition","Performance counter","Query statistic","Time","Wait type","Wait statistics","Who is active"]
+annotation PBI_QueryOrder = ["Connection info","Database","Database file","Agent alerts","Agent jobs","Agent jobs - grid","Agent jobs - list","Backup age","Backup status","Connections","CPU per database","CPU utilization","Database IO","Database size","Database state","Database state history","Index operational","Index optimize","Index physical","Index usage","Instance configurations","Instance configurations history","Instance dump files","Instance hardware","Instance hardware history","Instance services","Instance suspect pages","Missing indexes","OH errors","Partitioned indexes","Performance statistics","Plan cache usage","Plan guides","Query statements","Query statistics","Resource governor configuration","Resource governor external resource pool affinity","Resource governor external resource pools","Resource governor resource pool affinity","Resource governor resource pools","Resource governor workload groups","Statistics age","Statistics age incremental","Date","Index","Index alloc type","Index partition","Junk dimensions","_Measures","Server name","Database name","Schema name","Data load list","Data load","LastRefresh","Log","Retentions","Schedules","Table size","Trace flags","Trace flags history","Triggers","Object","Object partition","Performance counter","Query statistic","Time","Wait type","Wait statistics","Who is active"]
 
 annotation __TEdtr = 1
 
@@ -117,6 +117,7 @@ ref table 'Data load'
 ref table 'Values 0-90 (10 delta)'
 ref table 'Values 0-1000000 (log)'
 ref table 'Values 0-95 (5 delta)'
+ref table 'Partitioned indexes'
 
 ref cultureInfo en-US
 

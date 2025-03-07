@@ -66,7 +66,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.0';
+		SET @version = '2.1';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -78,6 +78,16 @@ ELSE BEGIN
 		SET @productStartPos = @productEndPos + 1;
 		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
 		SET @productVersion3 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+	END;
+
+	--
+	-- Variables used in view to control the statement output
+	BEGIN
+		DECLARE @maxStatementLength int;
+		DECLARE @maxStatementLineLength int;
+
+		SET @maxStatementLength = 1024;
+		SET @maxStatementLineLength = 140;
 	END;
 
 	--
@@ -372,7 +382,13 @@ ELSE BEGIN
 					CONVERT(nvarchar(18), qs.QueryHash, 1) AS [Query hash]
 					,qs.CreationTime
 					,qs.LastExecutionTime
-					,qs.Statement
+					,(dbo.fhsmSplitLines(
+						(CASE
+							WHEN LEN(qs.Statement) > ' + CAST(@maxStatementLength AS nvarchar) + ' THEN LEFT(qs.Statement, ' + CAST(@maxStatementLength AS nvarchar) + ') + CHAR(10) + ''...Statement truncated''
+							ELSE qs.Statement
+						END),
+						' + CAST(@maxStatementLineLength AS nvarchar) + '
+					)) AS Statement
 					,qs.Encrypted
 					,CAST(qs.Timestamp AS date) AS Date
 					,(DATEPART(HOUR, qs.Timestamp) * 60 * 60) + (DATEPART(MINUTE, qs.Timestamp) * 60) + (DATEPART(SECOND, qs.Timestamp)) AS TimeKey
@@ -935,7 +951,7 @@ ELSE BEGIN
 				,'@NumberOfRows=1000'
 		)
 		MERGE dbo.fhsmSchedules AS tgt
-		USING schedules AS src ON (src.Name = tgt.Name)
+		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
 		WHEN NOT MATCHED BY TARGET
 			THEN INSERT(Enabled, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters)
 			VALUES(src.Enabled, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameters);

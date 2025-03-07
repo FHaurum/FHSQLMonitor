@@ -40,7 +40,7 @@ BEGIN
 	SET @myUserName = SUSER_NAME();
 	SET @nowUTC = SYSUTCDATETIME();
 	SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
-	SET @version = '2.0';
+	SET @version = '2.1';
 END;
 
 --
@@ -1541,6 +1541,103 @@ ELSE BEGIN
 	END;
 
 	--
+	-- Create or alter function dbo.fhsmSplitLines
+	--
+	BEGIN
+		SET @stmt = '
+			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
+
+			DECLARE @stmt nvarchar(max);
+
+			IF OBJECT_ID(''dbo.fhsmSplitLines'', ''FN'') IS NULL
+			BEGIN
+				RAISERROR(''Creating stub function dbo.fhsmSplitLines'', 0, 1) WITH NOWAIT;
+
+				EXEC(''CREATE FUNCTION dbo.fhsmSplitLines() RETURNS bit AS BEGIN RETURN 0; END;'');
+			END;
+
+			--
+			-- Alter dbo.fhsmSplitLines
+			--
+			BEGIN
+				RAISERROR(''Alter function dbo.fhsmSplitLines'', 0, 1) WITH NOWAIT;
+
+				SET @stmt = ''
+					ALTER FUNCTION dbo.fhsmSplitLines(
+						@val nvarchar(max),
+						@lineLen int
+					)
+					RETURNS nvarchar(max)
+					AS
+					BEGIN
+						DECLARE @c nvarchar(1);
+						DECLARE @curLen int = 0;
+						DECLARE @i int = 0;
+						DECLARE @rv nvarchar(max) = '''''''';
+
+						WHILE (@i <= len(@val))
+						BEGIN
+							SET @c = SUBSTRING(@val, @i, 1);
+							SET @curlen = @curlen + 1;
+
+							SET @rv = @rv + @c;
+
+							IF (@c IN (CHAR(10), CHAR(13)))
+							BEGIN
+								SET @curLen = 0;
+							END
+							ELSE IF (@curlen >= @lineLen)
+							BEGIN
+								IF (@c IN (N'''' '''', N'''',''''))
+								BEGIN
+									SET @rv = @rv + char(10);
+									SET @curlen = 0;
+								END
+							END
+
+							SET @i = @i + 1;
+						END;
+
+						RETURN @rv;
+					END;
+				'';
+				EXEC(@stmt);
+			END;
+		';
+		EXEC(@stmt);
+	END;
+
+	--
+	-- Register extended properties on the function dbo.fhsmSplitLines
+	--
+	BEGIN
+		SET @objectName = 'dbo.fhsmSplitLines';
+
+		SET @stmt = '
+			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
+			
+			DECLARE @objName nvarchar(128);
+			DECLARE @schName nvarchar(128);
+
+			SET @objName = PARSENAME(@objectName, 1);
+			SET @schName = PARSENAME(@objectName, 2);
+
+			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+		';
+		EXEC sp_executesql
+			@stmt
+			,N'@objectName nvarchar(128), @version sql_variant, @nowUTCStr sql_variant, @myUserName sql_variant'
+			,@objectName = @objectName
+			,@version = @version
+			,@nowUTCStr = @nowUTCStr
+			,@myUserName = @myUserName;
+	END;
+
+	--
 	-- Create or alter stored procedure dbo.fhsmSPLog
 	--
 	BEGIN
@@ -1829,7 +1926,7 @@ ELSE BEGIN
 					,''''
 			)
 			MERGE dbo.fhsmSchedules AS tgt
-			USING schedules AS src ON (src.Name = tgt.Name)
+			USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
 			WHEN NOT MATCHED BY TARGET
 				THEN INSERT(Enabled, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters)
 				VALUES(src.Enabled, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameters);

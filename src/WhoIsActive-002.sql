@@ -66,7 +66,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.0';
+		SET @version = '2.1';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -78,6 +78,16 @@ ELSE BEGIN
 		SET @productStartPos = @productEndPos + 1;
 		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
 		SET @productVersion3 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+	END;
+
+	--
+	-- Variables used in view to control the statement output
+	BEGIN
+		DECLARE @maxSQLTextLength int;
+		DECLARE @maxSQLTextLineLength int;
+
+		SET @maxSQLTextLength = 1024;
+		SET @maxSQLTextLineLength = 70;
 	END;
 
 	--
@@ -178,7 +188,13 @@ ELSE BEGIN
 					,a.login_time AS LoginTime
 					,DATEDIFF(MILLISECOND, a.start_time, a.collection_time) AS ElapsedTimeMS
 					,a.session_id AS SessionId
-					,a.sql_text AS SQLText
+					,(dbo.fhsmSplitLines(
+						(CASE
+							WHEN LEN(a.sql_text) > ' + CAST(@maxSQLTextLength AS nvarchar) + ' THEN LEFT(a.sql_text, ' + CAST(@maxSQLTextLength AS nvarchar) + ') + CHAR(10) + ''...Statement truncated''
+							ELSE a.sql_text
+						END),
+						' + CAST(@maxSQLTextLineLength AS nvarchar) + '
+					)) AS SQLText
 					,a.sql_command AS SQLCommand
 					,a.login_name AS LoginName
 					,a.wait_info AS WaitInfo
@@ -345,7 +361,7 @@ ELSE BEGIN
 				,'@format_output = 0, @get_transaction_info = 1, @get_outer_command = 1, @get_plans = 1, @destination_table = ''' + QUOTENAME(DB_NAME()) + '.dbo.fhsmWhoIsActive'''
 		)
 		MERGE dbo.fhsmSchedules AS tgt
-		USING schedules AS src ON (src.Name = tgt.Name)
+		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
 		WHEN NOT MATCHED BY TARGET
 			THEN INSERT(Enabled, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters)
 			VALUES(src.Enabled, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameters);

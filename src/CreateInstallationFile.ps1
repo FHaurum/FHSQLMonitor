@@ -1,5 +1,9 @@
 ﻿$outputFile = "..\build\FHSQLMonitor.sql"
 
+$versionNumber = "v2.1"
+
+$timeStr = (Get-Date).ToString("yyyy:MM:dd HH:mm:ss")
+
 if (Test-Path $outputFile) {
     Clear-Content $outputFile
 }
@@ -7,7 +11,7 @@ if (Test-Path $outputFile) {
 Add-Content $outputFile "USE master;"
 Add-Content $outputFile ""
 Add-Content $outputFile "--"
-Add-Content $outputFile "-- FHSQLMonitor v2.0"
+Add-Content $outputFile ("-- FHSQLMonitor " + $versionNumber + " - " + $timeStr)
 Add-Content $outputFile "--"
 Add-Content $outputFile ""
 Add-Content $outputFile "--"
@@ -17,7 +21,6 @@ Add-Content $outputFile "DECLARE @createSQLAgentJob    bit           = 1;"
 Add-Content $outputFile "DECLARE @fhSQLMonitorDatabase nvarchar(128) = 'FHSQLMonitor';"
 Add-Content $outputFile "DECLARE @pbiSchema            nvarchar(128) = 'FHSM';"
 Add-Content $outputFile "DECLARE @olaDatabase          nvarchar(128) = NULL;"
-Add-Content $outputFile "DECLARE @olaSchema            nvarchar(128) = NULL;"
 Add-Content $outputFile ""
 Add-Content $outputFile "-- Service parameters - They are only used during a fresh installation and not during an update"
 Add-Content $outputFile "--   When updating the already configured values in the tables dbo.fhsmSchedules and dbo.fhsmRetentions remains unchanged"
@@ -35,6 +38,7 @@ Add-Content $outputFile "DECLARE @enableIndexPhysical            bit = 1;"
 Add-Content $outputFile "DECLARE @enableIndexUsage               bit = 1;"
 Add-Content $outputFile "DECLARE @enableInstanceState            bit = 1;"
 Add-Content $outputFile "DECLARE @enableMissingIndexes           bit = 1;"
+Add-Content $outputFile "DECLARE @enablePartitionedIndexes       bit = 1;"
 Add-Content $outputFile "DECLARE @enablePerformanceStatistics    bit = 1;"
 Add-Content $outputFile "DECLARE @enablePlanCacheUsage           bit = 1;"
 Add-Content $outputFile "DECLARE @enablePlanGuides               bit = 1;"
@@ -53,26 +57,116 @@ Add-Content $outputFile "-- No need to change more from here on"
 Add-Content $outputFile "--"
 Add-Content $outputFile ""
 Add-Content $outputFile "DECLARE @stmt nvarchar(max);"
+Add-Content $outputFile ""
+Add-Content $outputFile "DECLARE @installationJobStatus int;"
+Add-Content $outputFile "DECLARE @installationJobExecuting int;"
+Add-Content $outputFile "DECLARE @installationJobName nvarchar(128);"
+Add-Content $outputFile "DECLARE @installationMsg nvarchar(max);"
+Add-Content $outputFile "DECLARE @installationNow datetime;"
+Add-Content $outputFile "DECLARE @installationNowStr nvarchar(max);"
+Add-Content $outputFile "DECLARE @installationWaitCnt int;"
+Add-Content $outputFile ""
+Add-Content $outputFile "SET @installationJobName = 'FHSQLMonitor in ' + @fhSQLMonitorDatabase;"
+Add-Content $outputFile ""
+Add-Content $outputFile "--"
+Add-Content $outputFile "-- Get job enabled status"
+Add-Content $outputFile "--"
+Add-Content $outputFile "BEGIN"
+Add-Content $outputFile "	SET @installationJobStatus ="
+Add-Content $outputFile "		COALESCE("
+Add-Content $outputFile "			("
+Add-Content $outputFile "				SELECT sj.enabled"
+Add-Content $outputFile "				FROM msdb.dbo.sysjobs AS sj"
+Add-Content $outputFile "				WHERE (sj.name = @installationJobName)"
+Add-Content $outputFile "			),"
+Add-Content $outputFile "			-1"
+Add-Content $outputFile "		);"
+Add-Content $outputFile ""
+Add-Content $outputFile "	IF (@installationJobStatus IN (0, 1))"
+Add-Content $outputFile "	BEGIN"
+Add-Content $outputFile "		SET @installationMsg = 'Agent job ' + QUOTENAME(@installationJobName) + ' is ' + CASE @installationJobStatus WHEN 1 THEN 'enabled' WHEN 0 THEN 'disable' END;"
+Add-Content $outputFile "		RAISERROR(@installationMsg, 0, 1) WITH NOWAIT;"
+Add-Content $outputFile "	END;"
+Add-Content $outputFile "END;"
+Add-Content $outputFile ""
+Add-Content $outputFile "--"
+Add-Content $outputFile "-- Disable job if enabled"
+Add-Content $outputFile "--"
+Add-Content $outputFile "IF (@installationJobStatus = 1)"
+Add-Content $outputFile "BEGIN"
+Add-Content $outputFile "	SET @installationMsg = 'Disabling job ' + QUOTENAME(@installationJobName);"
+Add-Content $outputFile "	RAISERROR(@installationMsg, 0, 1) WITH NOWAIT;"
+Add-Content $outputFile ""
+Add-Content $outputFile "	EXEC msdb.dbo.sp_update_job"
+Add-Content $outputFile "		@job_name = @installationJobName,"
+Add-Content $outputFile "		@enabled = 0;"
+Add-Content $outputFile "END;"
+Add-Content $outputFile ""
+Add-Content $outputFile "--"
+Add-Content $outputFile "-- Wait until job has stopped executing"
+Add-Content $outputFile "--"
+Add-Content $outputFile "BEGIN"
+Add-Content $outputFile "	SET @installationWaitCnt = 0;"
+Add-Content $outputFile ""
+Add-Content $outputFile "	SET @installationJobExecuting = 1;"
+Add-Content $outputFile ""
+Add-Content $outputFile "	WHILE (@installationJobExecuting = 1)"
+Add-Content $outputFile "	BEGIN"
+Add-Content $outputFile "		SET @installationJobExecuting = ("
+Add-Content $outputFile "			COALESCE("
+Add-Content $outputFile "				("
+Add-Content $outputFile "					SELECT 1"
+Add-Content $outputFile "					FROM msdb.dbo.sysjobactivity AS sja"
+Add-Content $outputFile "					INNER JOIN msdb.dbo.sysjobs AS sj ON (sj.job_id = sja.job_id)"
+Add-Content $outputFile "					WHERE"
+Add-Content $outputFile "						(1 = 1)"
+Add-Content $outputFile "						AND (sj.name = @installationJobName)"
+Add-Content $outputFile "						AND (sja.stop_execution_date IS NULL)"
+Add-Content $outputFile "						AND (sja.start_execution_date IS NOT NULL)"
+Add-Content $outputFile "				),"
+Add-Content $outputFile "				0"
+Add-Content $outputFile "			)"
+Add-Content $outputFile "		);"
+Add-Content $outputFile ""
+Add-Content $outputFile "		IF (@installationJobExecuting = 1)"
+Add-Content $outputFile "		BEGIN"
+Add-Content $outputFile "			SET @installationWaitCnt = @installationWaitCnt + 1;"
+Add-Content $outputFile ""
+Add-Content $outputFile "			SET @installationNow = GETDATE();"
+Add-Content $outputFile "			SET @installationNowStr = CONVERT(nvarchar, @installationNow, 126);"
+Add-Content $outputFile "			SET @installationNowStr = REPLACE(LEFT(@installationNowStr, LEN(@installationNowStr) - 4), 'T', ' ');"
+Add-Content $outputFile ""
+Add-Content $outputFile "			SET @installationMsg = '  Waiting for job ' + QUOTENAME(@installationJobName) + ' to stop executing - #:' + CAST(@installationWaitCnt AS nvarchar) + ' - ' + @installationNowStr;"
+Add-Content $outputFile "			RAISERROR(@installationMsg, 0, 1) WITH NOWAIT;"
+Add-Content $outputFile ""
+Add-Content $outputFile "			WAITFOR DELAY '00:00:05';;"
+Add-Content $outputFile "		END;"
+Add-Content $outputFile "	END;"
+Add-Content $outputFile "END;"
+Add-Content $outputFile ""
 
 $filenames = Get-Content InstallationFileNames.txt
 foreach ($file in $filenames) {
     echo $file
 
+    $fileItem = Get-Item $file
+    $fileLastWriteTimeStr = ($fileItem.LastWriteTime).ToString("yyyy:MM:dd HH:mm:ss")
+
     $content = Get-Content $file -Raw
     $content = $content.Replace('''', '''''')
 
-    Add-Content $outputFile -Value "--"
-    Add-Content $outputFile -Value ("-- File part:" + $file)
-    Add-Content $outputFile -Value "--"
+    Add-Content $outputFile "--"
+    Add-Content $outputFile ("-- File part:" + $file + " modified: " + $fileLastWriteTimeStr)
+    Add-Content $outputFile "--"
 
-    Add-Content $outputFile -Value "SET @stmt = '"
+    Add-Content $outputFile "SET @stmt = '"
 
     if ($file -ne "_Install-FHSQLMonitor.sql") {
-        Add-Content $outputFile -Value "USE [' + @fhSQLMonitorDatabase + '];"
+        Add-Content $outputFile "USE [' + @fhSQLMonitorDatabase + '];"
     }
 
     Add-Content $outputFile $content
-    Add-Content $outputFile -Value "';"
+    Add-Content $outputFile "';"
 
     if ($file -eq "_Install-FHSQLMonitor.sql") {
         Add-Content $outputFile "SET @stmt = REPLACE(@stmt, 'SET @createSQLAgentJob = 1;',                   'SET @createSQLAgentJob = ' + CAST(@createSQLAgentJob AS nvarchar) + ';');"
@@ -80,7 +174,6 @@ foreach ($file in $filenames) {
         Add-Content $outputFile "SET @stmt = REPLACE(@stmt, 'SET @pbiSchema = ''FHSM'';',                    'SET @pbiSchema = ''' + @pbiSchema + ''';');"
     } else {
         Add-Content $outputFile "SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');"
-        Add-Content $outputFile "SET @stmt = REPLACE(@stmt, 'SET @olaSchema = NULL;',   'SET @olaSchema = '   + COALESCE('''' + CAST(@olaSchema AS nvarchar)   + '''', 'NULL') + ';');"
         Add-Content $outputFile ""
         Add-Content $outputFile "SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');"
         Add-Content $outputFile "SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');"
@@ -95,6 +188,7 @@ foreach ($file in $filenames) {
         Add-Content $outputFile "SET @stmt = REPLACE(@stmt, 'SET @enableIndexUsage = 0;',               'SET @enableIndexUsage = '               + CAST(@enableIndexUsage AS nvarchar) + ';');"
         Add-Content $outputFile "SET @stmt = REPLACE(@stmt, 'SET @enableInstanceState = 0;',            'SET @enableInstanceState = '            + CAST(@enableInstanceState AS nvarchar) + ';');"
         Add-Content $outputFile "SET @stmt = REPLACE(@stmt, 'SET @enableMissingIndexes = 0;',           'SET @enableMissingIndexes = '           + CAST(@enableMissingIndexes AS nvarchar) + ';');"
+        Add-Content $outputFile "SET @stmt = REPLACE(@stmt, 'SET @enablePartitionedIndexes = 0;',       'SET @enablePartitionedIndexes = '       + CAST(@enablePartitionedIndexes AS nvarchar) + ';');"
         Add-Content $outputFile "SET @stmt = REPLACE(@stmt, 'SET @enablePerformanceStatistics = 0;',    'SET @enablePerformanceStatistics = '    + CAST(@enablePerformanceStatistics AS nvarchar) + ';');"
         Add-Content $outputFile "SET @stmt = REPLACE(@stmt, 'SET @enablePlanCacheUsage = 0;',           'SET @enablePlanCacheUsage = '           + CAST(@enablePlanCacheUsage AS nvarchar) + ';');"
         Add-Content $outputFile "SET @stmt = REPLACE(@stmt, 'SET @enablePlanGuides = 0;',               'SET @enablePlanGuides = '               + CAST(@enablePlanGuides AS nvarchar) + ';');"
@@ -110,5 +204,25 @@ foreach ($file in $filenames) {
         Add-Content $outputFile "SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');"
     }
 
-    Add-Content $outputFile -Value "EXEC(@stmt);"
+    Add-Content $outputFile "EXEC(@stmt);"
 }
+
+Add-Content $outputFile ""
+Add-Content $outputFile "--"
+Add-Content $outputFile "-- Enable job again if it was enabled when we started"
+Add-Content $outputFile "--"
+Add-Content $outputFile "IF (@installationJobStatus = 1)"
+Add-Content $outputFile "BEGIN"
+Add-Content $outputFile "	RAISERROR('', 0, 1) WITH NOWAIT;"
+Add-Content $outputFile ""
+Add-Content $outputFile "	SET @installationMsg = 'Enabling job ' + QUOTENAME(@installationJobName);"
+Add-Content $outputFile "	RAISERROR(@installationMsg, 0, 1) WITH NOWAIT;"
+Add-Content $outputFile ""
+Add-Content $outputFile "	EXEC msdb.dbo.sp_update_job"
+Add-Content $outputFile "		@job_name = @installationJobName,"
+Add-Content $outputFile "		@enabled = 1;"
+Add-Content $outputFile "END;"
+Add-Content $outputFile ""
+Add-Content $outputFile "RAISERROR('', 0, 1) WITH NOWAIT;"
+Add-Content $outputFile ("SET @installationMsg = 'FHSQLMonitor in ' + @fhSQLMonitorDatabase + ' has been installed/upgraded to " + $versionNumber + "';")
+Add-Content $outputFile "RAISERROR(@installationMsg, 0, 1) WITH NOWAIT;"

@@ -1,7 +1,7 @@
 USE master;
 
 --
--- FHSQLMonitor v2.0
+-- FHSQLMonitor v2.1 - 2025.03.07 09.08.50
 --
 
 --
@@ -11,7 +11,6 @@ DECLARE @createSQLAgentJob    bit           = 1;
 DECLARE @fhSQLMonitorDatabase nvarchar(128) = 'FHSQLMonitor';
 DECLARE @pbiSchema            nvarchar(128) = 'FHSM';
 DECLARE @olaDatabase          nvarchar(128) = NULL;
-DECLARE @olaSchema            nvarchar(128) = NULL;
 
 -- Service parameters - They are only used during a fresh installation and not during an update
 --   When updating the already configured values in the tables dbo.fhsmSchedules and dbo.fhsmRetentions remains unchanged
@@ -29,6 +28,7 @@ DECLARE @enableIndexPhysical            bit = 1;
 DECLARE @enableIndexUsage               bit = 1;
 DECLARE @enableInstanceState            bit = 1;
 DECLARE @enableMissingIndexes           bit = 1;
+DECLARE @enablePartitionedIndexes       bit = 1;
 DECLARE @enablePerformanceStatistics    bit = 1;
 DECLARE @enablePlanCacheUsage           bit = 1;
 DECLARE @enablePlanGuides               bit = 1;
@@ -47,8 +47,95 @@ DECLARE @enableUpdateModifiedStatistics bit = 0;
 --
 
 DECLARE @stmt nvarchar(max);
+
+DECLARE @installationJobStatus int;
+DECLARE @installationJobExecuting int;
+DECLARE @installationJobName nvarchar(128);
+DECLARE @installationMsg nvarchar(max);
+DECLARE @installationNow datetime;
+DECLARE @installationNowStr nvarchar(max);
+DECLARE @installationWaitCnt int;
+
+SET @installationJobName = 'FHSQLMonitor in ' + @fhSQLMonitorDatabase;
+
 --
--- File part:_Install-FHSQLMonitor.sql
+-- Get job enabled status
+--
+BEGIN
+	SET @installationJobStatus =
+		COALESCE(
+			(
+				SELECT sj.enabled
+				FROM msdb.dbo.sysjobs AS sj
+				WHERE (sj.name = @installationJobName)
+			),
+			-1
+		);
+
+	IF (@installationJobStatus IN (0, 1))
+	BEGIN
+		SET @installationMsg = 'Agent job ' + QUOTENAME(@installationJobName) + ' is ' + CASE @installationJobStatus WHEN 1 THEN 'enabled' WHEN 0 THEN 'disable' END;
+		RAISERROR(@installationMsg, 0, 1) WITH NOWAIT;
+	END;
+END;
+
+--
+-- Disable job if enabled
+--
+IF (@installationJobStatus = 1)
+BEGIN
+	SET @installationMsg = 'Disabling job ' + QUOTENAME(@installationJobName);
+	RAISERROR(@installationMsg, 0, 1) WITH NOWAIT;
+
+	EXEC msdb.dbo.sp_update_job
+		@job_name = @installationJobName,
+		@enabled = 0;
+END;
+
+--
+-- Wait until job has stopped executing
+--
+BEGIN
+	SET @installationWaitCnt = 0;
+
+	SET @installationJobExecuting = 1;
+
+	WHILE (@installationJobExecuting = 1)
+	BEGIN
+		SET @installationJobExecuting = (
+			COALESCE(
+				(
+					SELECT 1
+					FROM msdb.dbo.sysjobactivity AS sja
+					INNER JOIN msdb.dbo.sysjobs AS sj ON (sj.job_id = sja.job_id)
+					WHERE
+						(1 = 1)
+						AND (sj.name = @installationJobName)
+						AND (sja.stop_execution_date IS NULL)
+						AND (sja.start_execution_date IS NOT NULL)
+				),
+				0
+			)
+		);
+
+		IF (@installationJobExecuting = 1)
+		BEGIN
+			SET @installationWaitCnt = @installationWaitCnt + 1;
+
+			SET @installationNow = GETDATE();
+			SET @installationNowStr = CONVERT(nvarchar, @installationNow, 126);
+			SET @installationNowStr = REPLACE(LEFT(@installationNowStr, LEN(@installationNowStr) - 4), 'T', ' ');
+
+			SET @installationMsg = '  Waiting for job ' + QUOTENAME(@installationJobName) + ' to stop executing - #:' + CAST(@installationWaitCnt AS nvarchar) + ' - ' + @installationNowStr;
+			RAISERROR(@installationMsg, 0, 1) WITH NOWAIT;
+
+			WAITFOR DELAY '00:00:05';;
+		END;
+	END;
+END;
+
+--
+-- File part:_Install-FHSQLMonitor.sql modified: 2025.03.06 23.19.05
 --
 SET @stmt = '
 SET NOCOUNT ON;
@@ -93,7 +180,7 @@ BEGIN
 	SET @myUserName = SUSER_NAME();
 	SET @nowUTC = SYSUTCDATETIME();
 	SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
-	SET @version = ''2.0'';
+	SET @version = ''2.1'';
 END;
 
 --
@@ -1594,6 +1681,103 @@ ELSE BEGIN
 	END;
 
 	--
+	-- Create or alter function dbo.fhsmSplitLines
+	--
+	BEGIN
+		SET @stmt = ''
+			USE '' + QUOTENAME(@fhSQLMonitorDatabase) + '';
+
+			DECLARE @stmt nvarchar(max);
+
+			IF OBJECT_ID(''''dbo.fhsmSplitLines'''', ''''FN'''') IS NULL
+			BEGIN
+				RAISERROR(''''Creating stub function dbo.fhsmSplitLines'''', 0, 1) WITH NOWAIT;
+
+				EXEC(''''CREATE FUNCTION dbo.fhsmSplitLines() RETURNS bit AS BEGIN RETURN 0; END;'''');
+			END;
+
+			--
+			-- Alter dbo.fhsmSplitLines
+			--
+			BEGIN
+				RAISERROR(''''Alter function dbo.fhsmSplitLines'''', 0, 1) WITH NOWAIT;
+
+				SET @stmt = ''''
+					ALTER FUNCTION dbo.fhsmSplitLines(
+						@val nvarchar(max),
+						@lineLen int
+					)
+					RETURNS nvarchar(max)
+					AS
+					BEGIN
+						DECLARE @c nvarchar(1);
+						DECLARE @curLen int = 0;
+						DECLARE @i int = 0;
+						DECLARE @rv nvarchar(max) = '''''''''''''''';
+
+						WHILE (@i <= len(@val))
+						BEGIN
+							SET @c = SUBSTRING(@val, @i, 1);
+							SET @curlen = @curlen + 1;
+
+							SET @rv = @rv + @c;
+
+							IF (@c IN (CHAR(10), CHAR(13)))
+							BEGIN
+								SET @curLen = 0;
+							END
+							ELSE IF (@curlen >= @lineLen)
+							BEGIN
+								IF (@c IN (N'''''''' '''''''', N'''''''',''''''''))
+								BEGIN
+									SET @rv = @rv + char(10);
+									SET @curlen = 0;
+								END
+							END
+
+							SET @i = @i + 1;
+						END;
+
+						RETURN @rv;
+					END;
+				'''';
+				EXEC(@stmt);
+			END;
+		'';
+		EXEC(@stmt);
+	END;
+
+	--
+	-- Register extended properties on the function dbo.fhsmSplitLines
+	--
+	BEGIN
+		SET @objectName = ''dbo.fhsmSplitLines'';
+
+		SET @stmt = ''
+			USE '' + QUOTENAME(@fhSQLMonitorDatabase) + '';
+			
+			DECLARE @objName nvarchar(128);
+			DECLARE @schName nvarchar(128);
+
+			SET @objName = PARSENAME(@objectName, 1);
+			SET @schName = PARSENAME(@objectName, 2);
+
+			EXEC dbo.fhsmSPExtendedProperties @objectType = ''''Function'''', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''''FHSMVersion'''', @propertyValue = @version;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = ''''Function'''', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''''FHSMCreated'''', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = ''''Function'''', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''''FHSMCreatedBy'''', @propertyValue = @myUserName;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = ''''Function'''', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''''FHSMModified'''', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = ''''Function'''', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''''FHSMModifiedBy'''', @propertyValue = @myUserName;
+		'';
+		EXEC sp_executesql
+			@stmt
+			,N''@objectName nvarchar(128), @version sql_variant, @nowUTCStr sql_variant, @myUserName sql_variant''
+			,@objectName = @objectName
+			,@version = @version
+			,@nowUTCStr = @nowUTCStr
+			,@myUserName = @myUserName;
+	END;
+
+	--
 	-- Create or alter stored procedure dbo.fhsmSPLog
 	--
 	BEGIN
@@ -1882,7 +2066,7 @@ ELSE BEGIN
 					,''''''''
 			)
 			MERGE dbo.fhsmSchedules AS tgt
-			USING schedules AS src ON (src.Name = tgt.Name)
+			USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
 			WHEN NOT MATCHED BY TARGET
 				THEN INSERT(Enabled, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters)
 				VALUES(src.Enabled, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameters);
@@ -2949,7 +3133,7 @@ SET @stmt = REPLACE(@stmt, 'SET @fhSQLMonitorDatabase = ''FHSQLMonitor'';', 'SET
 SET @stmt = REPLACE(@stmt, 'SET @pbiSchema = ''FHSM'';',                    'SET @pbiSchema = ''' + @pbiSchema + ''';');
 EXEC(@stmt);
 --
--- File part:IndexOptimize-001-OlaHallengren-CommandLog.sql
+-- File part:IndexOptimize-001-OlaHallengren-CommandLog.sql modified: 2025.02.22 17.12.56
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -3061,7 +3245,6 @@ END;
 
 ';
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
-SET @stmt = REPLACE(@stmt, 'SET @olaSchema = NULL;',   'SET @olaSchema = '   + COALESCE('''' + CAST(@olaSchema AS nvarchar)   + '''', 'NULL') + ';');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
@@ -3076,6 +3259,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableIndexPhysical = 0;',            'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableIndexUsage = 0;',               'SET @enableIndexUsage = '               + CAST(@enableIndexUsage AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableInstanceState = 0;',            'SET @enableInstanceState = '            + CAST(@enableInstanceState AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableMissingIndexes = 0;',           'SET @enableMissingIndexes = '           + CAST(@enableMissingIndexes AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enablePartitionedIndexes = 0;',       'SET @enablePartitionedIndexes = '       + CAST(@enablePartitionedIndexes AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePerformanceStatistics = 0;',    'SET @enablePerformanceStatistics = '    + CAST(@enablePerformanceStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePlanCacheUsage = 0;',           'SET @enablePlanCacheUsage = '           + CAST(@enablePlanCacheUsage AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePlanGuides = 0;',               'SET @enablePlanGuides = '               + CAST(@enablePlanGuides AS nvarchar) + ';');
@@ -3090,7 +3274,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:IndexOptimize-002-OlaHallengren-CommandExecute.sql
+-- File part:IndexOptimize-002-OlaHallengren-CommandExecute.sql modified: 2025.02.17 18.44.49
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -3423,7 +3607,6 @@ END;
 
 ';
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
-SET @stmt = REPLACE(@stmt, 'SET @olaSchema = NULL;',   'SET @olaSchema = '   + COALESCE('''' + CAST(@olaSchema AS nvarchar)   + '''', 'NULL') + ';');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
@@ -3438,6 +3621,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableIndexPhysical = 0;',            'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableIndexUsage = 0;',               'SET @enableIndexUsage = '               + CAST(@enableIndexUsage AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableInstanceState = 0;',            'SET @enableInstanceState = '            + CAST(@enableInstanceState AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableMissingIndexes = 0;',           'SET @enableMissingIndexes = '           + CAST(@enableMissingIndexes AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enablePartitionedIndexes = 0;',       'SET @enablePartitionedIndexes = '       + CAST(@enablePartitionedIndexes AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePerformanceStatistics = 0;',    'SET @enablePerformanceStatistics = '    + CAST(@enablePerformanceStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePlanCacheUsage = 0;',           'SET @enablePlanCacheUsage = '           + CAST(@enablePlanCacheUsage AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePlanGuides = 0;',               'SET @enablePlanGuides = '               + CAST(@enablePlanGuides AS nvarchar) + ';');
@@ -3452,7 +3636,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:IndexOptimize-003-OlaHallengren-IndexOptimize.sql
+-- File part:IndexOptimize-003-OlaHallengren-IndexOptimize.sql modified: 2025.02.17 18.45.22
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -5984,7 +6168,6 @@ END;
 
 ';
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
-SET @stmt = REPLACE(@stmt, 'SET @olaSchema = NULL;',   'SET @olaSchema = '   + COALESCE('''' + CAST(@olaSchema AS nvarchar)   + '''', 'NULL') + ';');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
@@ -5999,6 +6182,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableIndexPhysical = 0;',            'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableIndexUsage = 0;',               'SET @enableIndexUsage = '               + CAST(@enableIndexUsage AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableInstanceState = 0;',            'SET @enableInstanceState = '            + CAST(@enableInstanceState AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableMissingIndexes = 0;',           'SET @enableMissingIndexes = '           + CAST(@enableMissingIndexes AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enablePartitionedIndexes = 0;',       'SET @enablePartitionedIndexes = '       + CAST(@enablePartitionedIndexes AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePerformanceStatistics = 0;',    'SET @enablePerformanceStatistics = '    + CAST(@enablePerformanceStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePlanCacheUsage = 0;',           'SET @enablePlanCacheUsage = '           + CAST(@enablePlanCacheUsage AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePlanGuides = 0;',               'SET @enablePlanGuides = '               + CAST(@enablePlanGuides AS nvarchar) + ';');
@@ -6013,7 +6197,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:IndexOptimize-004.sql
+-- File part:IndexOptimize-004.sql modified: 2025.03.06 23.25.07
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -6039,10 +6223,8 @@ END;
 --
 BEGIN
 	DECLARE @olaDatabase nvarchar(128);
-	DECLARE @olaSchema nvarchar(128);
 
 	SET @olaDatabase = NULL;
-	SET @olaSchema = NULL;
 END;
 
 --
@@ -6061,7 +6243,9 @@ END;
 -- Declare variables
 --
 BEGIN
+	DECLARE @configuredOlaDatabase nvarchar(128);
 	DECLARE @edition nvarchar(128);
+	DECLARE @msg nvarchar(max);
 	DECLARE @myUserName nvarchar(128);
 	DECLARE @nowUTC datetime;
 	DECLARE @nowUTCStr nvarchar(128);
@@ -6103,32 +6287,54 @@ BEGIN
 END;
 
 --
--- Test if the Ola Hallengren table CommandLog exists, and if in an external database that both @olaDatabase and @olaSchema are defined
+-- If @olaDatabase is NULL try and lookup a previously configured value
+-- If @olaDatabase is the same as the current database, set it to NULL
 --
 IF (@returnValue <> 0)
 BEGIN
-	IF
-		((@olaDatabase IS NOT NULL) AND (@olaSchema IS NULL))
-		OR ((@olaDatabase IS NULL) AND (@olaSchema IS NOT NULL))
+	IF (@olaDatabase IS NULL)
 	BEGIN
-		SET @returnValue = 0;
-		RAISERROR(''When specifying external database for Ola Hallengren, both @olaDatabase and @olaSchema must be defined'', 0, 1) WITH NOWAIT;
-	END
-	ELSE BEGIN
-		SET @stmt = ''
-			USE '' + QUOTENAME(COALESCE(@olaDatabase, DB_NAME())) + ''
-			SET @returnValue = OBJECT_ID('''''' + COALESCE(@olaSchema, ''dbo'') + ''.CommandLog'''');
-			SET @returnValue = COALESCE(@returnValue, 0);
-		'';
-		EXEC sp_executesql
-			@stmt
-			,N''@returnValue int OUTPUT''
-			,@returnValue = @returnValue OUTPUT;
+		SET @configuredOlaDatabase = (
+			SELECT dsre.referenced_database_name
+			FROM sys.dm_sql_referenced_entities(''FHSM.Database'', ''OBJECT'') AS dsre
+			WHERE (1 = 1)
+				AND (dsre.referenced_minor_id = 0)
+				AND (dsre.referenced_schema_name = ''dbo'')
+				AND (dsre.referenced_entity_name = ''CommandLog'')
+		);
 
-		IF (@returnValue = 0)
+		IF (@configuredOlaDatabase IS NOT NULL)
 		BEGIN
-			RAISERROR(''Can not install as the Ola Hallengren table dbo.CommandLog does not exist'', 0, 1) WITH NOWAIT;
+			SET @msg = ''Installing IndexOptimize-004 using the already configured database '' + QUOTENAME(@configuredOlaDatabase) + '' as the Ola Hallengren database'';
+			RAISERROR(@msg, 0, 1) WITH NOWAIT;
+
+			SET @olaDatabase = @configuredOlaDatabase;
 		END;
+	END
+	ELSE IF (@olaDatabase = DB_NAME())
+	BEGIN
+		SET @olaDatabase = NULL;
+	END;
+END;
+
+--
+-- Test if the Ola Hallengren table CommandLog exists
+--
+IF (@returnValue <> 0)
+BEGIN
+	SET @stmt = ''
+		USE '' + QUOTENAME(COALESCE(@olaDatabase, DB_NAME())) + ''
+		SET @returnValue = OBJECT_ID(''''dbo.CommandLog'''');
+		SET @returnValue = COALESCE(@returnValue, 0);
+	'';
+	EXEC sp_executesql
+		@stmt
+		,N''@returnValue int OUTPUT''
+		,@returnValue = @returnValue OUTPUT;
+
+	IF (@returnValue = 0)
+	BEGIN
+		RAISERROR(''Can not install as the Ola Hallengren table dbo.CommandLog does not exist'', 0, 1) WITH NOWAIT;
 	END;
 END;
 
@@ -6142,7 +6348,7 @@ BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.0'';
+		SET @version = ''2.1'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -6154,6 +6360,16 @@ BEGIN
 		SET @productStartPos = @productEndPos + 1;
 		SET @productEndPos = CHARINDEX(''.'', @productVersion, @productStartPos);
 		SET @productVersion3 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+	END;
+
+	--
+	-- Variables used in view to control the statement output
+	BEGIN
+		DECLARE @maxCommandLineLength int;
+		DECLARE @maxErrorMessageLineLength int;
+
+		SET @maxCommandLineLength = 75;
+		SET @maxErrorMessageLineLength = 75;
 	END;
 
 	--
@@ -6259,7 +6475,7 @@ BEGIN
 					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(cl.DatabaseName, cl.SchemaName, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS SchemaKey
 					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(cl.DatabaseName, cl.SchemaName, cl.ObjectName, DEFAULT, DEFAULT, DEFAULT) AS k) AS ObjectKey
 					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(cl.DatabaseName, cl.SchemaName, cl.ObjectName, COALESCE(cl.IndexName, ''''N.A.''''), DEFAULT, DEFAULT) AS k) AS IndexKey
-				FROM '' + COALESCE(QUOTENAME(@olaDatabase) + ''.'', '''') + COALESCE(@olaSchema, ''dbo'') + ''.CommandLog AS cl;
+				FROM '' + COALESCE(QUOTENAME(@olaDatabase) + ''.'', '''') + ''dbo.CommandLog AS cl;
 			'';
 			EXEC(@stmt);
 		END;
@@ -6309,16 +6525,16 @@ BEGIN
 					,cl.StartTime
 					,cl.EndTime
 					,COALESCE(NULLIF(DATEDIFF(SECOND, cl.StartTime, cl.EndTime), 0), 1) AS Duration		-- Duration of 0 sec. will always be 1 sec.
-					,cl.Command
+					,(dbo.fhsmSplitLines(cl.Command, '' + CAST(@maxCommandLineLength AS nvarchar) + '')) AS Command
 					,cl.ErrorNumber
-					,cl.ErrorMessage
+					,(dbo.fhsmSplitLines(cl.ErrorMessage, '' + CAST(@maxErrorMessageLineLength AS nvarchar) + '')) AS ErrorMessage
 					,CAST(cl.StartTime AS date) AS Date
 					,(DATEPART(HOUR, cl.StartTime) * 60 * 60) + (DATEPART(MINUTE, cl.StartTime) * 60) + (DATEPART(SECOND, cl.StartTime)) AS TimeKey
 					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(cl.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
 					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(cl.DatabaseName, cl.SchemaName, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS SchemaKey
 					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(cl.DatabaseName, cl.SchemaName, cl.ObjectName, DEFAULT, DEFAULT, DEFAULT) AS k) AS ObjectKey
 					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(cl.DatabaseName, cl.SchemaName, cl.ObjectName, COALESCE(cl.IndexName, ''''N.A.''''), DEFAULT, DEFAULT) AS k) AS IndexKey
-				FROM '' + COALESCE(QUOTENAME(@olaDatabase) + ''.'', '''') + COALESCE(@olaSchema, ''dbo'') + ''.CommandLog AS cl
+				FROM '' + COALESCE(QUOTENAME(@olaDatabase) + ''.'', '''') + ''dbo.CommandLog AS cl
 				WHERE (cl.ErrorNumber <> 0) OR (cl.ErrorMessage IS NOT NULL);
 			'';
 			EXEC(@stmt);
@@ -6487,7 +6703,7 @@ BEGIN
 				,''@Databases = ''''USER_DATABASES, msdb'''', @TimeLimit = 1800, @FragmentationLow = NULL, @FragmentationMedium = NULL, @FragmentationHigh = NULL, @UpdateStatistics = ''''ALL'''', @OnlyModifiedStatistics = ''''Y'''', @LogToTable = ''''Y''''''
 		)
 		MERGE dbo.fhsmSchedules AS tgt
-		USING schedules AS src ON (src.Name = tgt.Name)
+		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
 		WHEN NOT MATCHED BY TARGET
 			THEN INSERT(Enabled, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters)
 			VALUES(src.Enabled, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameters);
@@ -6507,7 +6723,7 @@ BEGIN
 			SELECT
 				''Database'' AS DimensionName
 				,''DatabaseKey'' AS DimensionKey
-				,COALESCE(QUOTENAME(@olaDatabase) + ''.'', '''') + COALESCE(@olaSchema, ''dbo'') + ''.CommandLog'' AS SrcTable
+				,COALESCE(QUOTENAME(@olaDatabase) + ''.'', '''') + ''dbo.CommandLog'' AS SrcTable
 				,''src'' AS SrcAlias
 				,NULL AS SrcWhere
 				,''src.[StartTime]'' AS SrcDateColumn
@@ -6519,7 +6735,7 @@ BEGIN
 			SELECT
 				''Schema'' AS DimensionName
 				,''SchemaKey'' AS DimensionKey
-				,COALESCE(QUOTENAME(@olaDatabase) + ''.'', '''') + COALESCE(@olaSchema, ''dbo'') + ''.CommandLog'' AS SrcTable
+				,COALESCE(QUOTENAME(@olaDatabase) + ''.'', '''') + ''dbo.CommandLog'' AS SrcTable
 				,''src'' AS SrcAlias
 				,NULL AS SrcWhere
 				,''src.[StartTime]'' AS SrcDateColumn
@@ -6531,7 +6747,7 @@ BEGIN
 			SELECT
 				''Object'' AS DimensionName
 				,''ObjectKey'' AS DimensionKey
-				,COALESCE(QUOTENAME(@olaDatabase) + ''.'', '''') + COALESCE(@olaSchema, ''dbo'') + ''.CommandLog'' AS SrcTable
+				,COALESCE(QUOTENAME(@olaDatabase) + ''.'', '''') + ''dbo.CommandLog'' AS SrcTable
 				,''src'' AS SrcAlias
 				,NULL AS SrcWhere
 				,''src.[StartTime]'' AS SrcDateColumn
@@ -6543,7 +6759,7 @@ BEGIN
 			SELECT
 				''Index'' AS DimensionName
 				,''IndexKey'' AS DimensionKey
-				,COALESCE(QUOTENAME(@olaDatabase) + ''.'', '''') + COALESCE(@olaSchema, ''dbo'') + ''.CommandLog'' AS SrcTable
+				,COALESCE(QUOTENAME(@olaDatabase) + ''.'', '''') + ''dbo.CommandLog'' AS SrcTable
 				,''src'' AS SrcAlias
 				,NULL AS SrcWhere
 				,''src.[StartTime]'' AS SrcDateColumn
@@ -6586,14 +6802,13 @@ BEGIN
 	-- Update dimensions based upon the fact tables
 	--
 	BEGIN
-		SET @stmt = COALESCE(QUOTENAME(@olaDatabase) + ''.'', '''') + COALESCE(@olaSchema, ''dbo'') + ''.CommandLog'';
+		SET @stmt = COALESCE(QUOTENAME(@olaDatabase) + ''.'', '''') + ''dbo.CommandLog'';
 		EXEC dbo.fhsmSPUpdateDimensions @table = @stmt;
 	END;
 END;
 
 ';
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
-SET @stmt = REPLACE(@stmt, 'SET @olaSchema = NULL;',   'SET @olaSchema = '   + COALESCE('''' + CAST(@olaSchema AS nvarchar)   + '''', 'NULL') + ';');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
@@ -6608,6 +6823,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableIndexPhysical = 0;',            'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableIndexUsage = 0;',               'SET @enableIndexUsage = '               + CAST(@enableIndexUsage AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableInstanceState = 0;',            'SET @enableInstanceState = '            + CAST(@enableInstanceState AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableMissingIndexes = 0;',           'SET @enableMissingIndexes = '           + CAST(@enableMissingIndexes AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enablePartitionedIndexes = 0;',       'SET @enablePartitionedIndexes = '       + CAST(@enablePartitionedIndexes AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePerformanceStatistics = 0;',    'SET @enablePerformanceStatistics = '    + CAST(@enablePerformanceStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePlanCacheUsage = 0;',           'SET @enablePlanCacheUsage = '           + CAST(@enablePlanCacheUsage AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePlanGuides = 0;',               'SET @enablePlanGuides = '               + CAST(@enablePlanGuides AS nvarchar) + ';');
@@ -6622,7 +6838,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:DatabaseState.sql
+-- File part:DatabaseState.sql modified: 2025.03.06 23.23.55
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -6694,7 +6910,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.0'';
+		SET @version = ''2.1'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -7796,7 +8012,7 @@ ELSE BEGIN
 				,NULL
 		)
 		MERGE dbo.fhsmSchedules AS tgt
-		USING schedules AS src ON (src.Name = tgt.Name)
+		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
 		WHEN NOT MATCHED BY TARGET
 			THEN INSERT(Enabled, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters)
 			VALUES(src.Enabled, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameters);
@@ -7859,7 +8075,6 @@ END;
 
 ';
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
-SET @stmt = REPLACE(@stmt, 'SET @olaSchema = NULL;',   'SET @olaSchema = '   + COALESCE('''' + CAST(@olaSchema AS nvarchar)   + '''', 'NULL') + ';');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
@@ -7874,6 +8089,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableIndexPhysical = 0;',            'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableIndexUsage = 0;',               'SET @enableIndexUsage = '               + CAST(@enableIndexUsage AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableInstanceState = 0;',            'SET @enableInstanceState = '            + CAST(@enableInstanceState AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableMissingIndexes = 0;',           'SET @enableMissingIndexes = '           + CAST(@enableMissingIndexes AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enablePartitionedIndexes = 0;',       'SET @enablePartitionedIndexes = '       + CAST(@enablePartitionedIndexes AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePerformanceStatistics = 0;',    'SET @enablePerformanceStatistics = '    + CAST(@enablePerformanceStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePlanCacheUsage = 0;',           'SET @enablePlanCacheUsage = '           + CAST(@enablePlanCacheUsage AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePlanGuides = 0;',               'SET @enablePlanGuides = '               + CAST(@enablePlanGuides AS nvarchar) + ';');
@@ -7888,7 +8104,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:AgentJobs.sql
+-- File part:AgentJobs.sql modified: 2025.03.06 23.21.32
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -7960,7 +8176,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.0'';
+		SET @version = ''2.1'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -8558,7 +8774,7 @@ ELSE BEGIN
 				,NULL
 		)
 		MERGE dbo.fhsmSchedules AS tgt
-		USING schedules AS src ON (src.Name = tgt.Name)
+		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
 		WHEN NOT MATCHED BY TARGET
 			THEN INSERT(Enabled, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters)
 			VALUES(src.Enabled, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameters);
@@ -8578,7 +8794,6 @@ END;
 
 ';
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
-SET @stmt = REPLACE(@stmt, 'SET @olaSchema = NULL;',   'SET @olaSchema = '   + COALESCE('''' + CAST(@olaSchema AS nvarchar)   + '''', 'NULL') + ';');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
@@ -8593,6 +8808,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableIndexPhysical = 0;',            'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableIndexUsage = 0;',               'SET @enableIndexUsage = '               + CAST(@enableIndexUsage AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableInstanceState = 0;',            'SET @enableInstanceState = '            + CAST(@enableInstanceState AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableMissingIndexes = 0;',           'SET @enableMissingIndexes = '           + CAST(@enableMissingIndexes AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enablePartitionedIndexes = 0;',       'SET @enablePartitionedIndexes = '       + CAST(@enablePartitionedIndexes AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePerformanceStatistics = 0;',    'SET @enablePerformanceStatistics = '    + CAST(@enablePerformanceStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePlanCacheUsage = 0;',           'SET @enablePlanCacheUsage = '           + CAST(@enablePlanCacheUsage AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePlanGuides = 0;',               'SET @enablePlanGuides = '               + CAST(@enablePlanGuides AS nvarchar) + ';');
@@ -8607,7 +8823,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:AgeOfStatistics.sql
+-- File part:AgeOfStatistics.sql modified: 2025.03.06 23.21.20
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -8679,7 +8895,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.0'';
+		SET @version = ''2.1'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -9232,7 +9448,7 @@ ELSE BEGIN
 							END
 							ELSE BEGIN
 								SET @message = ''''Database '''''''''''' + @database + '''''''''''' is member of a replica but this server is not the primary node'''';
-								EXEC dbo.fhsmSPLog @name = @name, @task = @thisTask, @type = ''''Warning'''', @message = @message;
+								EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''''Warning'''', @message = @message;
 							END;
 						END;
 
@@ -9312,7 +9528,7 @@ ELSE BEGIN
 				,''@Databases = ''''USER_DATABASES, msdb''''''
 		)
 		MERGE dbo.fhsmSchedules AS tgt
-		USING schedules AS src ON (src.Name = tgt.Name)
+		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
 		WHEN NOT MATCHED BY TARGET
 			THEN INSERT(Enabled, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters)
 			VALUES(src.Enabled, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameters);
@@ -9444,7 +9660,6 @@ END;
 
 ';
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
-SET @stmt = REPLACE(@stmt, 'SET @olaSchema = NULL;',   'SET @olaSchema = '   + COALESCE('''' + CAST(@olaSchema AS nvarchar)   + '''', 'NULL') + ';');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
@@ -9459,6 +9674,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableIndexPhysical = 0;',            'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableIndexUsage = 0;',               'SET @enableIndexUsage = '               + CAST(@enableIndexUsage AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableInstanceState = 0;',            'SET @enableInstanceState = '            + CAST(@enableInstanceState AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableMissingIndexes = 0;',           'SET @enableMissingIndexes = '           + CAST(@enableMissingIndexes AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enablePartitionedIndexes = 0;',       'SET @enablePartitionedIndexes = '       + CAST(@enablePartitionedIndexes AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePerformanceStatistics = 0;',    'SET @enablePerformanceStatistics = '    + CAST(@enablePerformanceStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePlanCacheUsage = 0;',           'SET @enablePlanCacheUsage = '           + CAST(@enablePlanCacheUsage AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePlanGuides = 0;',               'SET @enablePlanGuides = '               + CAST(@enablePlanGuides AS nvarchar) + ';');
@@ -9473,7 +9689,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:BackupStatus.sql
+-- File part:BackupStatus.sql modified: 2025.03.06 23.22.04
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -9545,7 +9761,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.0'';
+		SET @version = ''2.1'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -9990,7 +10206,7 @@ ELSE BEGIN
 				,NULL
 		)
 		MERGE dbo.fhsmSchedules AS tgt
-		USING schedules AS src ON (src.Name = tgt.Name)
+		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
 		WHEN NOT MATCHED BY TARGET
 			THEN INSERT(Enabled, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters)
 			VALUES(src.Enabled, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameters);
@@ -10057,7 +10273,6 @@ END;
 
 ';
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
-SET @stmt = REPLACE(@stmt, 'SET @olaSchema = NULL;',   'SET @olaSchema = '   + COALESCE('''' + CAST(@olaSchema AS nvarchar)   + '''', 'NULL') + ';');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
@@ -10072,6 +10287,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableIndexPhysical = 0;',            'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableIndexUsage = 0;',               'SET @enableIndexUsage = '               + CAST(@enableIndexUsage AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableInstanceState = 0;',            'SET @enableInstanceState = '            + CAST(@enableInstanceState AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableMissingIndexes = 0;',           'SET @enableMissingIndexes = '           + CAST(@enableMissingIndexes AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enablePartitionedIndexes = 0;',       'SET @enablePartitionedIndexes = '       + CAST(@enablePartitionedIndexes AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePerformanceStatistics = 0;',    'SET @enablePerformanceStatistics = '    + CAST(@enablePerformanceStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePlanCacheUsage = 0;',           'SET @enablePlanCacheUsage = '           + CAST(@enablePlanCacheUsage AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePlanGuides = 0;',               'SET @enablePlanGuides = '               + CAST(@enablePlanGuides AS nvarchar) + ';');
@@ -10086,7 +10302,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:Connections.sql
+-- File part:Connections.sql modified: 2025.03.06 23.22.24
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -10158,7 +10374,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.0'';
+		SET @version = ''2.1'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -10460,7 +10676,7 @@ ELSE BEGIN
 				,NULL
 		)
 		MERGE dbo.fhsmSchedules AS tgt
-		USING schedules AS src ON (src.Name = tgt.Name)
+		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
 		WHEN NOT MATCHED BY TARGET
 			THEN INSERT(Enabled, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters)
 			VALUES(src.Enabled, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameters);
@@ -10541,7 +10757,6 @@ END;
 
 ';
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
-SET @stmt = REPLACE(@stmt, 'SET @olaSchema = NULL;',   'SET @olaSchema = '   + COALESCE('''' + CAST(@olaSchema AS nvarchar)   + '''', 'NULL') + ';');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
@@ -10556,6 +10771,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableIndexPhysical = 0;',            'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableIndexUsage = 0;',               'SET @enableIndexUsage = '               + CAST(@enableIndexUsage AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableInstanceState = 0;',            'SET @enableInstanceState = '            + CAST(@enableInstanceState AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableMissingIndexes = 0;',           'SET @enableMissingIndexes = '           + CAST(@enableMissingIndexes AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enablePartitionedIndexes = 0;',       'SET @enablePartitionedIndexes = '       + CAST(@enablePartitionedIndexes AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePerformanceStatistics = 0;',    'SET @enablePerformanceStatistics = '    + CAST(@enablePerformanceStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePlanCacheUsage = 0;',           'SET @enablePlanCacheUsage = '           + CAST(@enablePlanCacheUsage AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePlanGuides = 0;',               'SET @enablePlanGuides = '               + CAST(@enablePlanGuides AS nvarchar) + ';');
@@ -10570,7 +10786,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:CPUUtilization.sql
+-- File part:CPUUtilization.sql modified: 2025.03.06 23.22.48
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -10642,7 +10858,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.0'';
+		SET @version = ''2.1'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -11097,7 +11313,7 @@ ELSE BEGIN
 				,NULL
 		)
 		MERGE dbo.fhsmSchedules AS tgt
-		USING schedules AS src ON (src.Name = tgt.Name)
+		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
 		WHEN NOT MATCHED BY TARGET
 			THEN INSERT(Enabled, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters)
 			VALUES(src.Enabled, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameters);
@@ -11165,7 +11381,6 @@ END;
 
 ';
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
-SET @stmt = REPLACE(@stmt, 'SET @olaSchema = NULL;',   'SET @olaSchema = '   + COALESCE('''' + CAST(@olaSchema AS nvarchar)   + '''', 'NULL') + ';');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
@@ -11180,6 +11395,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableIndexPhysical = 0;',            'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableIndexUsage = 0;',               'SET @enableIndexUsage = '               + CAST(@enableIndexUsage AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableInstanceState = 0;',            'SET @enableInstanceState = '            + CAST(@enableInstanceState AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableMissingIndexes = 0;',           'SET @enableMissingIndexes = '           + CAST(@enableMissingIndexes AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enablePartitionedIndexes = 0;',       'SET @enablePartitionedIndexes = '       + CAST(@enablePartitionedIndexes AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePerformanceStatistics = 0;',    'SET @enablePerformanceStatistics = '    + CAST(@enablePerformanceStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePlanCacheUsage = 0;',           'SET @enablePlanCacheUsage = '           + CAST(@enablePlanCacheUsage AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePlanGuides = 0;',               'SET @enablePlanGuides = '               + CAST(@enablePlanGuides AS nvarchar) + ';');
@@ -11194,7 +11410,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:DatabaseIO.sql
+-- File part:DatabaseIO.sql modified: 2025.03.06 23.23.15
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -11266,7 +11482,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.0'';
+		SET @version = ''2.1'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -11778,7 +11994,7 @@ ELSE BEGIN
 							END
 							ELSE BEGIN
 								SET @message = ''''Database '''''''''''' + @database + '''''''''''' is member of a replica but this server is not the primary node'''';
-								EXEC dbo.fhsmSPLog @name = @name, @task = @thisTask, @type = ''''Warning'''', @message = @message;
+								EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''''Warning'''', @message = @message;
 							END;
 						END;
 
@@ -11847,7 +12063,7 @@ ELSE BEGIN
 				,''@Databases = ''''ALL_DATABASES''''''
 		)
 		MERGE dbo.fhsmSchedules AS tgt
-		USING schedules AS src ON (src.Name = tgt.Name)
+		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
 		WHEN NOT MATCHED BY TARGET
 			THEN INSERT(Enabled, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters)
 			VALUES(src.Enabled, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameters);
@@ -11926,7 +12142,6 @@ END;
 
 ';
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
-SET @stmt = REPLACE(@stmt, 'SET @olaSchema = NULL;',   'SET @olaSchema = '   + COALESCE('''' + CAST(@olaSchema AS nvarchar)   + '''', 'NULL') + ';');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
@@ -11941,6 +12156,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableIndexPhysical = 0;',            'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableIndexUsage = 0;',               'SET @enableIndexUsage = '               + CAST(@enableIndexUsage AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableInstanceState = 0;',            'SET @enableInstanceState = '            + CAST(@enableInstanceState AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableMissingIndexes = 0;',           'SET @enableMissingIndexes = '           + CAST(@enableMissingIndexes AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enablePartitionedIndexes = 0;',       'SET @enablePartitionedIndexes = '       + CAST(@enablePartitionedIndexes AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePerformanceStatistics = 0;',    'SET @enablePerformanceStatistics = '    + CAST(@enablePerformanceStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePlanCacheUsage = 0;',           'SET @enablePlanCacheUsage = '           + CAST(@enablePlanCacheUsage AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePlanGuides = 0;',               'SET @enablePlanGuides = '               + CAST(@enablePlanGuides AS nvarchar) + ';');
@@ -11955,7 +12171,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:DatabaseSize.sql
+-- File part:DatabaseSize.sql modified: 2025.03.06 23.23.33
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -12027,7 +12243,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.0'';
+		SET @version = ''2.1'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -12320,7 +12536,7 @@ ELSE BEGIN
 							END
 							ELSE BEGIN
 								SET @message = ''''Database '''''''''''' + @database + '''''''''''' is member of a replica but this server is not the primary node'''';
-								EXEC dbo.fhsmSPLog @name = @name, @task = @thisTask, @type = ''''Warning'''', @message = @message;
+								EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''''Warning'''', @message = @message;
 							END;
 						END;
 
@@ -12389,7 +12605,7 @@ ELSE BEGIN
 				,''@Databases = ''''USER_DATABASES, msdb''''''
 		)
 		MERGE dbo.fhsmSchedules AS tgt
-		USING schedules AS src ON (src.Name = tgt.Name)
+		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
 		WHEN NOT MATCHED BY TARGET
 			THEN INSERT(Enabled, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters)
 			VALUES(src.Enabled, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameters);
@@ -12468,7 +12684,6 @@ END;
 
 ';
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
-SET @stmt = REPLACE(@stmt, 'SET @olaSchema = NULL;',   'SET @olaSchema = '   + COALESCE('''' + CAST(@olaSchema AS nvarchar)   + '''', 'NULL') + ';');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
@@ -12483,6 +12698,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableIndexPhysical = 0;',            'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableIndexUsage = 0;',               'SET @enableIndexUsage = '               + CAST(@enableIndexUsage AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableInstanceState = 0;',            'SET @enableInstanceState = '            + CAST(@enableInstanceState AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableMissingIndexes = 0;',           'SET @enableMissingIndexes = '           + CAST(@enableMissingIndexes AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enablePartitionedIndexes = 0;',       'SET @enablePartitionedIndexes = '       + CAST(@enablePartitionedIndexes AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePerformanceStatistics = 0;',    'SET @enablePerformanceStatistics = '    + CAST(@enablePerformanceStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePlanCacheUsage = 0;',           'SET @enablePlanCacheUsage = '           + CAST(@enablePlanCacheUsage AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePlanGuides = 0;',               'SET @enablePlanGuides = '               + CAST(@enablePlanGuides AS nvarchar) + ';');
@@ -12497,7 +12713,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:IndexOperational.sql
+-- File part:IndexOperational.sql modified: 2025.03.06 23.24.36
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -12569,7 +12785,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.0'';
+		SET @version = ''2.1'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -13142,7 +13358,7 @@ ELSE BEGIN
 							END
 							ELSE BEGIN
 								SET @message = ''''Database '''''''''''' + @database + '''''''''''' is member of a replica but this server is not the primary node'''';
-								EXEC dbo.fhsmSPLog @name = @name, @task = @thisTask, @type = ''''Warning'''', @message = @message;
+								EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''''Warning'''', @message = @message;
 							END;
 						END;
 
@@ -13679,7 +13895,7 @@ ELSE BEGIN
 				,''@Databases = ''''USER_DATABASES, msdb''''''
 		)
 		MERGE dbo.fhsmSchedules AS tgt
-		USING schedules AS src ON (src.Name = tgt.Name)
+		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
 		WHEN NOT MATCHED BY TARGET
 			THEN INSERT(Enabled, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters)
 			VALUES(src.Enabled, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameters);
@@ -13784,7 +14000,6 @@ END;
 
 ';
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
-SET @stmt = REPLACE(@stmt, 'SET @olaSchema = NULL;',   'SET @olaSchema = '   + COALESCE('''' + CAST(@olaSchema AS nvarchar)   + '''', 'NULL') + ';');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
@@ -13799,6 +14014,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableIndexPhysical = 0;',            'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableIndexUsage = 0;',               'SET @enableIndexUsage = '               + CAST(@enableIndexUsage AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableInstanceState = 0;',            'SET @enableInstanceState = '            + CAST(@enableInstanceState AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableMissingIndexes = 0;',           'SET @enableMissingIndexes = '           + CAST(@enableMissingIndexes AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enablePartitionedIndexes = 0;',       'SET @enablePartitionedIndexes = '       + CAST(@enablePartitionedIndexes AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePerformanceStatistics = 0;',    'SET @enablePerformanceStatistics = '    + CAST(@enablePerformanceStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePlanCacheUsage = 0;',           'SET @enablePlanCacheUsage = '           + CAST(@enablePlanCacheUsage AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePlanGuides = 0;',               'SET @enablePlanGuides = '               + CAST(@enablePlanGuides AS nvarchar) + ';');
@@ -13813,7 +14029,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:IndexPhysical.sql
+-- File part:IndexPhysical.sql modified: 2025.03.06 23.25.27
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -13885,7 +14101,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.0'';
+		SET @version = ''2.1'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -14372,7 +14588,7 @@ ELSE BEGIN
 						IF (@mode IS NULL) OR (@mode NOT IN (''''LIMITED'''', ''''SAMPLED'''', ''''DETAILED''''))
 						BEGIN
 							SET @message = ''''Mode is invalied - '''' + COALESCE(@mode, ''''<NULL>'''');
-							EXEC dbo.fhsmSPLog @name = @name, @task = @thisTask, @type = ''''Error'''', @message = @message;
+							EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''''Error'''', @message = @message;
 
 							RETURN -1;
 						END;
@@ -14583,7 +14799,7 @@ ELSE BEGIN
 							END
 							ELSE BEGIN
 								SET @message = ''''Database '''''''''''' + @database + '''''''''''' is member of a replica but this server is not the primary node'''';
-								EXEC dbo.fhsmSPLog @name = @name, @task = @thisTask, @type = ''''Warning'''', @message = @message;
+								EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''''Warning'''', @message = @message;
 							END;
 						END;
 
@@ -14652,7 +14868,7 @@ ELSE BEGIN
 				,''@Databases = ''''USER_DATABASES, msdb'''' ; @Mode = LIMITED''
 		)
 		MERGE dbo.fhsmSchedules AS tgt
-		USING schedules AS src ON (src.Name = tgt.Name)
+		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
 		WHEN NOT MATCHED BY TARGET
 			THEN INSERT(Enabled, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters)
 			VALUES(src.Enabled, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameters);
@@ -14785,7 +15001,6 @@ END;
 
 ';
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
-SET @stmt = REPLACE(@stmt, 'SET @olaSchema = NULL;',   'SET @olaSchema = '   + COALESCE('''' + CAST(@olaSchema AS nvarchar)   + '''', 'NULL') + ';');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
@@ -14800,6 +15015,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableIndexPhysical = 0;',            'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableIndexUsage = 0;',               'SET @enableIndexUsage = '               + CAST(@enableIndexUsage AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableInstanceState = 0;',            'SET @enableInstanceState = '            + CAST(@enableInstanceState AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableMissingIndexes = 0;',           'SET @enableMissingIndexes = '           + CAST(@enableMissingIndexes AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enablePartitionedIndexes = 0;',       'SET @enablePartitionedIndexes = '       + CAST(@enablePartitionedIndexes AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePerformanceStatistics = 0;',    'SET @enablePerformanceStatistics = '    + CAST(@enablePerformanceStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePlanCacheUsage = 0;',           'SET @enablePlanCacheUsage = '           + CAST(@enablePlanCacheUsage AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePlanGuides = 0;',               'SET @enablePlanGuides = '               + CAST(@enablePlanGuides AS nvarchar) + ';');
@@ -14814,7 +15030,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:IndexUsage.sql
+-- File part:IndexUsage.sql modified: 2025.03.06 23.25.40
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -14886,7 +15102,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.0'';
+		SET @version = ''2.1'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -15416,7 +15632,7 @@ ELSE BEGIN
 							END
 							ELSE BEGIN
 								SET @message = ''''Database '''''''''''' + @database + '''''''''''' is member of a replica but this server is not the primary node'''';
-								EXEC dbo.fhsmSPLog @name = @name, @task = @thisTask, @type = ''''Warning'''', @message = @message;
+								EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''''Warning'''', @message = @message;
 							END;
 						END;
 
@@ -15485,7 +15701,7 @@ ELSE BEGIN
 				,''@Databases = ''''USER_DATABASES, msdb''''''
 		)
 		MERGE dbo.fhsmSchedules AS tgt
-		USING schedules AS src ON (src.Name = tgt.Name)
+		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
 		WHEN NOT MATCHED BY TARGET
 			THEN INSERT(Enabled, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters)
 			VALUES(src.Enabled, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameters);
@@ -15590,7 +15806,6 @@ END;
 
 ';
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
-SET @stmt = REPLACE(@stmt, 'SET @olaSchema = NULL;',   'SET @olaSchema = '   + COALESCE('''' + CAST(@olaSchema AS nvarchar)   + '''', 'NULL') + ';');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
@@ -15605,6 +15820,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableIndexPhysical = 0;',            'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableIndexUsage = 0;',               'SET @enableIndexUsage = '               + CAST(@enableIndexUsage AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableInstanceState = 0;',            'SET @enableInstanceState = '            + CAST(@enableInstanceState AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableMissingIndexes = 0;',           'SET @enableMissingIndexes = '           + CAST(@enableMissingIndexes AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enablePartitionedIndexes = 0;',       'SET @enablePartitionedIndexes = '       + CAST(@enablePartitionedIndexes AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePerformanceStatistics = 0;',    'SET @enablePerformanceStatistics = '    + CAST(@enablePerformanceStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePlanCacheUsage = 0;',           'SET @enablePlanCacheUsage = '           + CAST(@enablePlanCacheUsage AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePlanGuides = 0;',               'SET @enablePlanGuides = '               + CAST(@enablePlanGuides AS nvarchar) + ';');
@@ -15619,7 +15835,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:InstanceState.sql
+-- File part:InstanceState.sql modified: 2025.03.06 23.26.14
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -15691,7 +15907,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.0'';
+		SET @version = ''2.1'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -19219,7 +19435,7 @@ ELSE BEGIN
 				,NULL
 		)
 		MERGE dbo.fhsmSchedules AS tgt
-		USING schedules AS src ON (src.Name = tgt.Name)
+		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
 		WHEN NOT MATCHED BY TARGET
 			THEN INSERT(Enabled, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters)
 			VALUES(src.Enabled, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameters);
@@ -19236,7 +19452,6 @@ END;
 
 ';
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
-SET @stmt = REPLACE(@stmt, 'SET @olaSchema = NULL;',   'SET @olaSchema = '   + COALESCE('''' + CAST(@olaSchema AS nvarchar)   + '''', 'NULL') + ';');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
@@ -19251,6 +19466,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableIndexPhysical = 0;',            'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableIndexUsage = 0;',               'SET @enableIndexUsage = '               + CAST(@enableIndexUsage AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableInstanceState = 0;',            'SET @enableInstanceState = '            + CAST(@enableInstanceState AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableMissingIndexes = 0;',           'SET @enableMissingIndexes = '           + CAST(@enableMissingIndexes AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enablePartitionedIndexes = 0;',       'SET @enablePartitionedIndexes = '       + CAST(@enablePartitionedIndexes AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePerformanceStatistics = 0;',    'SET @enablePerformanceStatistics = '    + CAST(@enablePerformanceStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePlanCacheUsage = 0;',           'SET @enablePlanCacheUsage = '           + CAST(@enablePlanCacheUsage AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePlanGuides = 0;',               'SET @enablePlanGuides = '               + CAST(@enablePlanGuides AS nvarchar) + ';');
@@ -19265,7 +19481,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:MissingIndexes.sql
+-- File part:MissingIndexes.sql modified: 2025.03.06 23.26.35
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -19337,7 +19553,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.0'';
+		SET @version = ''2.1'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -19873,7 +20089,7 @@ ELSE BEGIN
 				,NULL
 		)
 		MERGE dbo.fhsmSchedules AS tgt
-		USING schedules AS src ON (src.Name = tgt.Name)
+		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
 		WHEN NOT MATCHED BY TARGET
 			THEN INSERT(Enabled, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters)
 			VALUES(src.Enabled, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameters);
@@ -19964,7 +20180,6 @@ END;
 
 ';
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
-SET @stmt = REPLACE(@stmt, 'SET @olaSchema = NULL;',   'SET @olaSchema = '   + COALESCE('''' + CAST(@olaSchema AS nvarchar)   + '''', 'NULL') + ';');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
@@ -19979,6 +20194,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableIndexPhysical = 0;',            'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableIndexUsage = 0;',               'SET @enableIndexUsage = '               + CAST(@enableIndexUsage AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableInstanceState = 0;',            'SET @enableInstanceState = '            + CAST(@enableInstanceState AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableMissingIndexes = 0;',           'SET @enableMissingIndexes = '           + CAST(@enableMissingIndexes AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enablePartitionedIndexes = 0;',       'SET @enablePartitionedIndexes = '       + CAST(@enablePartitionedIndexes AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePerformanceStatistics = 0;',    'SET @enablePerformanceStatistics = '    + CAST(@enablePerformanceStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePlanCacheUsage = 0;',           'SET @enablePlanCacheUsage = '           + CAST(@enablePlanCacheUsage AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePlanGuides = 0;',               'SET @enablePlanGuides = '               + CAST(@enablePlanGuides AS nvarchar) + ';');
@@ -19993,7 +20209,747 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:PerformanceStatistics.sql
+-- File part:PartitionedIndexes.sql modified: 2025.03.06 23.26.54
+--
+SET @stmt = '
+USE [' + @fhSQLMonitorDatabase + '];
+SET NOCOUNT ON;
+
+--
+-- Set service to be disabled by default
+--
+BEGIN
+	DECLARE @enablePartitionedIndexes bit;
+
+	SET @enablePartitionedIndexes = 0;
+END;
+
+--
+-- Print out start message
+--
+BEGIN
+	RAISERROR('''', 0, 1) WITH NOWAIT;
+	RAISERROR(''Installing PartitionedIndexes'', 0, 1) WITH NOWAIT;
+END;
+
+--
+-- Declare variables
+--
+BEGIN
+	DECLARE @edition nvarchar(128);
+	DECLARE @myUserName nvarchar(128);
+	DECLARE @nowUTC datetime;
+	DECLARE @nowUTCStr nvarchar(128);
+	DECLARE @objectName nvarchar(128);
+	DECLARE @objName nvarchar(128);
+	DECLARE @pbiSchema nvarchar(128);
+	DECLARE @productEndPos int;
+	DECLARE @productStartPos int;
+	DECLARE @productVersion nvarchar(128);
+	DECLARE @productVersion1 int;
+	DECLARE @productVersion2 int;
+	DECLARE @productVersion3 int;
+	DECLARE @returnValue int;
+	DECLARE @schName nvarchar(128);
+	DECLARE @stmt nvarchar(max);
+	DECLARE @tableCompressionStmt nvarchar(max);
+	DECLARE @version nvarchar(128);
+END;
+
+--
+-- Test if we are in a database with FHSM registered
+--
+BEGIN
+	SET @returnValue = 0;
+
+	IF OBJECT_ID(''dbo.fhsmFNIsValidInstallation'') IS NOT NULL
+	BEGIN
+		SET @returnValue = dbo.fhsmFNIsValidInstallation();
+	END;
+END;
+
+IF (@returnValue = 0)
+BEGIN
+	RAISERROR(''Can not install as it appears the database is not correct installed'', 0, 1) WITH NOWAIT;
+END
+ELSE BEGIN
+	--
+	-- Initialize variables
+	--
+	BEGIN
+		SET @myUserName = SUSER_NAME();
+		SET @nowUTC = SYSUTCDATETIME();
+		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
+		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
+		SET @version = ''2.1'';
+
+		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
+		SET @productStartPos = 1;
+		SET @productEndPos = CHARINDEX(''.'', @productVersion, @productStartPos);
+		SET @productVersion1 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+		SET @productStartPos = @productEndPos + 1;
+		SET @productEndPos = CHARINDEX(''.'', @productVersion, @productStartPos);
+		SET @productVersion2 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+		SET @productStartPos = @productEndPos + 1;
+		SET @productEndPos = CHARINDEX(''.'', @productVersion, @productStartPos);
+		SET @productVersion3 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+	END;
+
+	--
+	-- Check if SQL version allows to use data compression
+	--
+	BEGIN
+		SET @tableCompressionStmt = '''';
+
+		SET @edition = CAST(SERVERPROPERTY(''Edition'') AS nvarchar);
+
+		IF (@edition = ''SQL Azure'')
+			OR (SUBSTRING(@edition, 1, CHARINDEX('' '', @edition)) = ''Developer'')
+			OR (SUBSTRING(@edition, 1, CHARINDEX('' '', @edition)) = ''Enterprise'')
+			OR (@productVersion1 > 13)
+			OR ((@productVersion1 = 13) AND (@productVersion2 >= 1))
+			OR ((@productVersion1 = 13) AND (@productVersion2 = 0) AND (@productVersion3 >= 4001))
+		BEGIN
+			SET @tableCompressionStmt = '' WITH (DATA_COMPRESSION = PAGE)'';
+		END;
+	END;
+
+	--
+	-- Create tables
+	--
+	BEGIN
+		--
+		-- Create table dbo.fhsmPartitionedIndexes if it not already exists
+		--
+		IF OBJECT_ID(''dbo.fhsmPartitionedIndexes'', ''U'') IS NULL
+		BEGIN
+			RAISERROR(''Creating table dbo.fhsmPartitionedIndexes'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
+				CREATE TABLE dbo.fhsmPartitionedIndexes(
+					Id int identity(1,1) NOT NULL
+					,DatabaseName nvarchar(128) NOT NULL
+					,SchemaName nvarchar(128) NOT NULL
+					,ObjectName nvarchar(128) NOT NULL
+					,IndexName nvarchar(128) NULL
+					,IndexTypeDesc nvarchar(60) NOT NULL
+					,PartitionSchemeName nvarchar(128) NOT NULL
+					,PartitionFilegroupName nvarchar(128) NOT NULL
+					,PartitionFunctionName nvarchar(128) NOT NULL
+					,PartitionFunctionValueOnRight bit NOT NULL
+					,PartitionFunctionCreateDate datetime NOT NULL
+					,PartitionFunctionModifyDate datetime NOT NULL
+					,PartitionBoundaryValue sql_variant NULL
+					,PartitionColumn nvarchar(128) NOT NULL
+					,PartitionNumber int NOT NULL
+					,PartitionCompressionTypeDesc nvarchar(60) NOT NULL
+					,PartitionRowCount bigint NOT NULL
+					,TimestampUTC datetime NOT NULL
+					,Timestamp datetime NOT NULL
+					,CONSTRAINT PK_fhsmPartitionedIndexes PRIMARY KEY(Id)'' + @tableCompressionStmt + ''
+				);
+
+				CREATE NONCLUSTERED INDEX NC_fhsmPartitionedIndexes_TimestampUTC ON dbo.fhsmPartitionedIndexes(TimestampUTC)'' + @tableCompressionStmt + '';
+				CREATE NONCLUSTERED INDEX NC_fhsmPartitionedIndexes_Timestamp ON dbo.fhsmPartitionedIndexes(Timestamp)'' + @tableCompressionStmt + '';
+				CREATE NONCLUSTERED INDEX NC_fhsmPartitionedIndexes_DatabaseName ON dbo.fhsmPartitionedIndexes(DatabaseName)'' + @tableCompressionStmt + '';
+			'';
+			EXEC(@stmt);
+		END;
+
+		--
+		-- Register extended properties on the table dbo.fhsmPartitionedIndexes
+		--
+		BEGIN
+			SET @objectName = ''dbo.fhsmPartitionedIndexes'';
+			SET @objName = PARSENAME(@objectName, 1);
+			SET @schName = PARSENAME(@objectName, 2);
+
+			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+		END;
+	END;
+
+	--
+	-- Create functions
+	--
+
+	--
+	-- Create views
+	--
+	BEGIN
+		--
+		-- Create fact view @pbiSchema.[Partitioned indexes]
+		--
+		BEGIN
+			SET @stmt = ''
+				IF OBJECT_ID('''''' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Partitioned indexes'') + '''''', ''''V'''') IS NULL
+				BEGIN
+					EXEC(''''CREATE VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Partitioned indexes'') + '' AS SELECT ''''''''dummy'''''''' AS Txt'''');
+				END;
+			'';
+			EXEC(@stmt);
+
+			SET @stmt = ''
+				ALTER VIEW  '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Partitioned indexes'') + ''
+				AS
+			'';
+			IF (@productVersion1 <= 10)
+			BEGIN
+				-- SQL Versions SQL2008R2 or lower
+
+				SET @stmt += ''
+					WITH partitionedIndexes AS (
+						SELECT
+							pi.DatabaseName
+							,pi.SchemaName 
+							,pi.ObjectName
+							,pi.IndexName
+							,pi.IndexTypeDesc
+							,pi.PartitionSchemeName
+							,pi.PartitionFilegroupName
+							,pi.PartitionFunctionName
+							,pi.PartitionFunctionValueOnRight
+							,pi.PartitionFunctionCreateDate
+							,pi.PartitionFunctionModifyDate
+							,pi.PartitionBoundaryValue
+							,pi.PartitionColumn
+							,pi.PartitionNumber
+							,pi.PartitionCompressionTypeDesc
+							,pi.PartitionRowCount
+							,pi.Timestamp
+							,ROW_NUMBER() OVER(PARTITION BY pi.TimestampUTC, pi.DatabaseName, pi.SchemaName, pi.ObjectName, pi.IndexName ORDER BY pi.PartitionNumber) AS Idx
+						FROM dbo.fhsmPartitionedIndexes AS pi
+						WHERE (pi.Timestamp IN (
+							SELECT a.Timestamp
+							FROM (
+								SELECT
+									pi2.Timestamp
+									,ROW_NUMBER() OVER(PARTITION BY CAST(pi2.Timestamp AS date) ORDER BY pi2.Timestamp DESC) AS _Rnk_
+								FROM dbo.fhsmPartitionedIndexes AS pi2
+							) AS a
+							WHERE (a._Rnk_ = 1)
+						))
+					)
+				'';
+				SET @stmt += ''
+					SELECT
+						pi.IndexTypeDesc
+						,pi.PartitionSchemeName
+						,pi.PartitionFilegroupName
+						,pi.PartitionFunctionName
+						,pi.PartitionFunctionValueOnRight
+						,CASE 
+							WHEN pi.PartitionFunctionValueOnRight = 0 
+							THEN
+								pi.PartitionColumn
+								+ '''' > ''''
+								+ CAST(ISNULL(lagPI.PartitionBoundaryValue, ''''Infinity'''') AS nvarchar)
+								+ '''' and ''''
+								+ pi.PartitionColumn
+								+ '''' <= ''''
+								+ CAST(ISNULL(pi.PartitionBoundaryValue, ''''Infinity'''') AS nvarchar) 
+							ELSE
+								pi.PartitionColumn
+								+ '''' >= ''''
+								+ CAST(ISNULL(pi.PartitionBoundaryValue, ''''Infinity'''') AS nvarchar)
+								+ '''' and ''''
+								+ pi.PartitionColumn
+								+ '''' < ''''
+								+ CAST(ISNULL(leadPI.PartitionBoundaryValue, ''''Infinity'''') AS nvarchar)
+						END AS PartitionRange
+						,ROW_NUMBER() OVER(ORDER BY pi.Timestamp DESC, pi.DatabaseName, pi.SchemaName, pi.ObjectName, pi.IndexName, CASE WHEN pi.PartitionFunctionValueOnRight = 0 THEN CASE WHEN pi.PartitionBoundaryValue IS NULL THEN 2 ELSE 1 END ELSE CASE WHEN pi.PartitionBoundaryValue IS NULL THEN 1 ELSE 2 END END, pi.PartitionBoundaryValue) AS SortOrder
+						,pi.PartitionFunctionCreateDate
+						,pi.PartitionFunctionModifyDate
+						,pi.PartitionBoundaryValue
+						,pi.PartitionColumn
+						,pi.PartitionNumber
+						,pi.PartitionCompressionTypeDesc
+						,pi.PartitionRowCount
+						,CAST(pi.Timestamp AS date) AS Date
+						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(pi.DatabaseName, DEFAULT,       DEFAULT,       DEFAULT,                          DEFAULT, DEFAULT) AS k) AS DatabaseKey
+						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(pi.DatabaseName, pi.SchemaName, DEFAULT,       DEFAULT,                          DEFAULT, DEFAULT) AS k) AS SchemaKey
+						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(pi.DatabaseName, pi.SchemaName, pi.ObjectName, DEFAULT,                          DEFAULT, DEFAULT) AS k) AS ObjectKey
+						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(pi.DatabaseName, pi.SchemaName, pi.ObjectName, COALESCE(pi.IndexName, ''''N.A.''''), DEFAULT, DEFAULT) AS k) AS IndexKey
+					FROM partitionedIndexes AS pi
+					LEFT OUTER JOIN partitionedIndexes AS lagPI ON
+						(lagPI.Timestamp = pi.Timestamp)
+						AND (lagPI.DatabaseName = pi.DatabaseName)
+						AND (lagPI.SchemaName = pi.SchemaName)
+						AND (lagPI.ObjectName = pi.ObjectName)
+						AND ((lagPI.IndexName = pi.IndexName) OR ((lagPI.IndexName IS NULL) AND (pi.IndexName IS NULL)))
+						AND (lagPI.Idx = pi.Idx - 1)
+					LEFT OUTER JOIN partitionedIndexes AS leadPI ON
+						(leadPI.Timestamp = pi.Timestamp)
+						AND (leadPI.DatabaseName = pi.DatabaseName)
+						AND (leadPI.SchemaName = pi.SchemaName)
+						AND (leadPI.ObjectName = pi.ObjectName)
+						AND ((leadPI.IndexName = pi.IndexName) OR ((leadPI.IndexName IS NULL) AND (pi.IndexName IS NULL)))
+						AND (leadPI.Idx = pi.Idx + 1);
+				'';
+			END
+			ELSE BEGIN
+				-- SQL Versions SQL2012 or higher
+
+				SET @stmt += ''
+					SELECT
+						pi.IndexTypeDesc
+						,pi.PartitionSchemeName
+						,pi.PartitionFilegroupName
+						,pi.PartitionFunctionName
+						,pi.PartitionFunctionValueOnRight
+						,CASE 
+							WHEN pi.PartitionFunctionValueOnRight = 0 
+							THEN
+								pi.PartitionColumn
+								+ '''' > ''''
+								+ CAST(ISNULL(LAG(pi.PartitionBoundaryValue) OVER(PARTITION BY pi.Timestamp, pi.DatabaseName, pi.SchemaName, pi.ObjectName, pi.IndexName ORDER BY pi.PartitionNumber), ''''Infinity'''') AS nvarchar)
+								+ '''' and ''''
+								+ pi.PartitionColumn
+								+ '''' <= ''''
+								+ CAST(ISNULL(pi.PartitionBoundaryValue, ''''Infinity'''') AS nvarchar) 
+							ELSE
+								pi.PartitionColumn
+								+ '''' >= ''''
+								+ CAST(ISNULL(pi.PartitionBoundaryValue, ''''Infinity'''') AS nvarchar)
+								+ '''' and ''''
+								+ pi.PartitionColumn
+								+ '''' < ''''
+								+ CAST(ISNULL(LEAD(pi.PartitionBoundaryValue) OVER(PARTITION BY pi.Timestamp, pi.DatabaseName, pi.SchemaName, pi.ObjectName, pi.IndexName ORDER BY pi.PartitionNumber), ''''Infinity'''') AS nvarchar)
+						END AS PartitionRange
+						,ROW_NUMBER() OVER(ORDER BY pi.Timestamp DESC, pi.DatabaseName, pi.SchemaName, pi.ObjectName, pi.IndexName, CASE WHEN pi.PartitionFunctionValueOnRight = 0 THEN CASE WHEN pi.PartitionBoundaryValue IS NULL THEN 2 ELSE 1 END ELSE CASE WHEN pi.PartitionBoundaryValue IS NULL THEN 1 ELSE 2 END END, pi.PartitionBoundaryValue) AS SortOrder
+						,pi.PartitionFunctionCreateDate
+						,pi.PartitionFunctionModifyDate
+						,pi.PartitionBoundaryValue
+						,pi.PartitionColumn
+						,pi.PartitionNumber
+						,pi.PartitionCompressionTypeDesc
+						,pi.PartitionRowCount
+						,CAST(pi.Timestamp AS date) AS Date
+						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(pi.DatabaseName, DEFAULT,       DEFAULT,       DEFAULT,                          DEFAULT, DEFAULT) AS k) AS DatabaseKey
+						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(pi.DatabaseName, pi.SchemaName, DEFAULT,       DEFAULT,                          DEFAULT, DEFAULT) AS k) AS SchemaKey
+						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(pi.DatabaseName, pi.SchemaName, pi.ObjectName, DEFAULT,                          DEFAULT, DEFAULT) AS k) AS ObjectKey
+						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(pi.DatabaseName, pi.SchemaName, pi.ObjectName, COALESCE(pi.IndexName, ''''N.A.''''), DEFAULT, DEFAULT) AS k) AS IndexKey
+					FROM dbo.fhsmPartitionedIndexes AS pi
+					WHERE (pi.Timestamp IN (
+						SELECT a.Timestamp
+						FROM (
+							SELECT
+								pi2.Timestamp
+								,ROW_NUMBER() OVER(PARTITION BY CAST(pi2.Timestamp AS date) ORDER BY pi2.Timestamp DESC) AS _Rnk_
+							FROM dbo.fhsmPartitionedIndexes AS pi2
+						) AS a
+						WHERE (a._Rnk_ = 1)
+					));
+				'';
+			END;
+			SET @stmt += ''
+			'';
+			EXEC(@stmt);
+		END;
+
+		--
+		-- Register extended properties on fact view @pbiSchema.[Partitioned indexes]
+		--
+		BEGIN
+			SET @objectName = QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Partitioned indexes'');
+			SET @objName = PARSENAME(@objectName, 1);
+			SET @schName = PARSENAME(@objectName, 2);
+
+			EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+		END;
+	END;
+
+	--
+	-- Create stored procedures
+	--
+	BEGIN
+		--
+		-- Create stored procedure dbo.fhsmSPPartitionedIndexes
+		--
+		BEGIN
+			SET @stmt = ''
+				IF OBJECT_ID(''''dbo.fhsmSPPartitionedIndexes'''', ''''P'''') IS NULL
+				BEGIN
+					EXEC(''''CREATE PROC dbo.fhsmSPPartitionedIndexes AS SELECT ''''''''dummy'''''''' AS Txt'''');
+				END;
+			'';
+			EXEC(@stmt);
+
+			SET @stmt = ''
+				ALTER PROC dbo.fhsmSPPartitionedIndexes (
+					@name nvarchar(128)
+					,@version nvarchar(128) OUTPUT
+				)
+				AS
+				BEGIN
+					SET NOCOUNT ON;
+
+					DECLARE @database nvarchar(128);
+					DECLARE @databases nvarchar(max);
+					DECLARE @message nvarchar(max);
+					DECLARE @now datetime;
+					DECLARE @nowUTC datetime;
+					DECLARE @parameters nvarchar(max);
+					DECLARE @parametersTable TABLE([Key] nvarchar(128) NOT NULL, Value nvarchar(128) NULL);
+					DECLARE @replicaId uniqueidentifier;
+					DECLARE @stmt nvarchar(max);
+					DECLARE @thisTask nvarchar(128);
+
+					SET @thisTask = OBJECT_NAME(@@PROCID);
+					SET @version = '''''' + @version + '''''';
+
+					--
+					-- Get the parameters for the command
+					--
+					BEGIN
+						SET @parameters = dbo.fhsmFNGetTaskParameter(@thisTask, @name);
+
+						INSERT INTO @parametersTable([Key], Value)
+						SELECT
+							(SELECT s.Txt FROM dbo.fhsmFNSplitString(p.Txt, ''''='''') AS s WHERE (s.Part = 1)) AS [Key]
+							,(SELECT s.Txt FROM dbo.fhsmFNSplitString(p.Txt, ''''='''') AS s WHERE (s.Part = 2)) AS Value
+						FROM dbo.fhsmFNSplitString(@parameters, '''';'''') AS p;
+
+						SET @databases = (SELECT pt.Value FROM @parametersTable AS pt WHERE (pt.[Key] = ''''@Databases''''));
+
+						--
+						-- Trim @databases if Ola Hallengren style has been chosen
+						--
+						BEGIN
+							SET @databases = LTRIM(RTRIM(@databases));
+							WHILE (LEFT(@databases, 1) = '''''''''''''''') AND (LEFT(@databases, 1) = '''''''''''''''')
+							BEGIN
+								SET @databases = SUBSTRING(@databases, 2, LEN(@databases) - 2);
+							END;
+						END;
+					END;
+			'';
+			SET @stmt += ''
+
+					--
+					-- Get the list of databases to process
+					--
+					BEGIN
+						SELECT d.DatabaseName, d.[Order]
+						INTO #dbList
+						FROM dbo.fhsmFNParseDatabasesStr(@databases) AS d;
+					END;
+
+					--
+					-- Collect data
+					--
+					BEGIN
+						SELECT
+							@now = SYSDATETIME()
+							,@nowUTC = SYSUTCDATETIME();
+
+						DECLARE dCur CURSOR LOCAL READ_ONLY FAST_FORWARD FOR
+						SELECT dl.DatabaseName, '' + CASE WHEN (@productVersion1 <= 10) THEN ''NULL'' ELSE ''d.replica_id'' END + '' AS replica_id
+						FROM #dbList AS dl
+						INNER JOIN sys.databases AS d ON (d.name COLLATE DATABASE_DEFAULT = dl.DatabaseName)
+						ORDER BY dl.[Order];
+
+						OPEN dCur;
+			'';
+			SET @stmt += ''
+
+						WHILE (1 = 1)
+						BEGIN
+							FETCH NEXT FROM dCur
+							INTO @database, @replicaId;
+
+							IF (@@FETCH_STATUS <> 0)
+							BEGIN
+								BREAK;
+							END;
+
+							--
+							-- If is a member of a replica, we will only execute when running on the primary
+							--
+							IF (@replicaId IS NULL)
+			'';
+			IF (@productVersion1 >= 11)
+			BEGIN
+				-- SQL Versions SQL2012 or higher
+				SET @stmt += ''
+								OR (
+									(
+										SELECT
+										CASE
+											WHEN (dhags.primary_replica = ar.replica_server_name) THEN 1
+											ELSE 0
+										END AS IsPrimaryServer
+										FROM master.sys.availability_groups AS ag
+										INNER JOIN master.sys.availability_replicas AS ar ON ag.group_id = ar.group_id
+										INNER JOIN master.sys.dm_hadr_availability_group_states AS dhags ON ag.group_id = dhags.group_id
+										WHERE (ar.replica_server_name = @@SERVERNAME) AND (ar.replica_id = @replicaId)
+									) = 1
+								)
+				'';
+			END;
+			SET @stmt += ''
+							BEGIN
+								SET @stmt = ''''
+									USE '''' + QUOTENAME(@database) + '''';
+
+									SELECT
+										DB_NAME() AS DatabaseName
+										,sch.name AS SchemaName
+										,o.name AS ObjectName
+										,i.name AS IndexName
+										,i.type_desc AS IndexTypeDesc
+										,ps.name AS PartitionSchemeName
+										,ds.name AS PartitionFilegroupName
+										,pf.name AS PartitionFunctionName
+										,pf.boundary_value_on_right AS PartitionFunctionValueOnRight
+										,pf.create_date AS PartitionFunctionCreateDate
+										,pf.modify_date AS PartitionFunctionModifyDate
+										,prv.value AS PartitionBoundaryValue
+										,c.name AS PartitionColumn
+										,pstats.partition_number AS PartitionNumber
+										,p.data_compression_desc AS PartitionCompressionTypeDesc
+										,pstats.row_count AS PartitionRowCount
+										,@nowUTC, @now
+									FROM sys.dm_db_partition_stats AS pstats
+									INNER JOIN sys.objects AS o ON (o.object_id = pstats.object_id)
+									INNER JOIN sys.schemas AS sch ON (sch.schema_id = o.schema_id)
+									INNER JOIN sys.partitions AS p ON (p.partition_id = pstats.partition_id)
+									INNER JOIN sys.destination_data_spaces AS dds ON (dds.destination_id = pstats.partition_number)
+									INNER JOIN sys.data_spaces AS ds ON (ds.data_space_id = dds.data_space_id)
+									INNER JOIN sys.partition_schemes AS ps ON (ps.data_space_id = dds.partition_scheme_id)
+									INNER JOIN sys.partition_functions AS pf ON (pf.function_id = ps.function_id)
+									INNER JOIN sys.indexes AS i ON (i.object_id = pstats.object_id) AND (i.index_id = pstats.index_id) AND (i.data_space_id = dds.partition_scheme_id)
+									INNER JOIN sys.index_columns AS ic ON (ic.index_id = i.index_id) AND (ic.object_id = i.object_id) AND (ic.partition_ordinal > 0)
+									INNER JOIN sys.columns AS c ON (c.object_id = ic.object_id) AND (c.column_id = ic.column_id)
+									LEFT OUTER JOIN sys.partition_range_values AS prv ON (prv.function_id = pf.function_id) AND (pstats.partition_number = (CASE pf.boundary_value_on_right WHEN 0 THEN prv.boundary_id ELSE (prv.boundary_id + 1) END))
+								'''';
+								INSERT INTO dbo.fhsmPartitionedIndexes(
+									DatabaseName, SchemaName, ObjectName, IndexName, IndexTypeDesc
+									,PartitionSchemeName
+									,PartitionFilegroupName, PartitionFunctionName, PartitionFunctionValueOnRight, PartitionFunctionCreateDate, PartitionFunctionModifyDate, PartitionBoundaryValue, PartitionColumn
+									,PartitionNumber, PartitionCompressionTypeDesc, PartitionRowCount
+									,TimestampUTC, Timestamp
+								)
+								EXEC sp_executesql
+									@stmt
+									,N''''@now datetime, @nowUTC datetime''''
+									,@now = @now, @nowUTC = @nowUTC;
+							END
+							ELSE BEGIN
+								SET @message = ''''Database '''''''''''' + @database + '''''''''''' is member of a replica but this server is not the primary node'''';
+								EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''''Warning'''', @message = @message;
+							END;
+						END;
+
+						CLOSE dCur;
+						DEALLOCATE dCur;
+					END;
+
+					RETURN 0;
+				END;
+			'';
+			EXEC(@stmt);
+		END;
+
+		--
+		-- Register extended properties on the stored procedure dbo.fhsmSPPartitionedIndexes
+		--
+		BEGIN
+			SET @objectName = ''dbo.fhsmSPPartitionedIndexes'';
+			SET @objName = PARSENAME(@objectName, 1);
+			SET @schName = PARSENAME(@objectName, 2);
+
+			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+		END;
+	END;
+
+	--
+	-- Register retention
+	--
+	BEGIN
+		WITH
+		retention(Enabled, TableName, Sequence, TimeColumn, IsUtc, Days, Filter) AS(
+			SELECT
+				1
+				,''dbo.fhsmPartitionedIndexes''
+				,1
+				,''TimestampUTC''
+				,1
+				,730
+				,NULL
+		)
+		MERGE dbo.fhsmRetentions AS tgt
+		USING retention AS src ON (src.TableName = tgt.TableName) AND (src.Sequence = tgt.Sequence)
+		WHEN NOT MATCHED BY TARGET
+			THEN INSERT(Enabled, TableName, Sequence, TimeColumn, IsUtc, Days, Filter)
+			VALUES(src.Enabled, src.TableName, src.Sequence, src.TimeColumn, src.IsUtc, src.Days, src.Filter);
+	END;
+
+	--
+	-- Register schedules
+	--
+	BEGIN
+		WITH
+		schedules(Enabled, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters) AS(
+			SELECT
+				@enablePartitionedIndexes
+				,''Partitioned indexes''
+				,PARSENAME(''dbo.fhsmSPPartitionedIndexes'', 1)
+				,12 * 60 * 60
+				,CAST(''1900-1-1T23:00:00.0000'' AS datetime2(0))
+				,CAST(''1900-1-1T23:59:59.0000'' AS datetime2(0))
+				,1, 1, 1, 1, 1, 1, 1
+				,''@Databases = ''''USER_DATABASES, msdb''''''
+		)
+		MERGE dbo.fhsmSchedules AS tgt
+		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
+		WHEN NOT MATCHED BY TARGET
+			THEN INSERT(Enabled, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters)
+			VALUES(src.Enabled, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameters);
+	END;
+
+	--
+	-- Register dimensions
+	--
+	BEGIN
+		WITH
+		dimensions(
+			DimensionName, DimensionKey
+			,SrcTable, SrcAlias, SrcWhere, SrcDateColumn
+			,SrcColumn1, SrcColumn2, SrcColumn3, SrcColumn4, SrcColumn5
+			,OutputColumn1, OutputColumn2, OutputColumn3, OutputColumn4, OutputColumn5
+		) AS (
+			SELECT
+				''Database'' AS DimensionName
+				,''DatabaseKey'' AS DimensionKey
+				,''dbo.fhsmPartitionedIndexes'' AS SrcTable
+				,''src'' AS SrcAlias
+				,NULL AS SrcWhere
+				,''src.[Timestamp]'' AS SrcDateColumn
+				,''src.[DatabaseName]'', NULL, NULL, NULL, NULL
+				,''Database'', NULL, NULL, NULL, NULL
+
+			UNION ALL
+
+			SELECT
+				''Schema'' AS DimensionName
+				,''SchemaKey'' AS DimensionKey
+				,''dbo.fhsmPartitionedIndexes'' AS SrcTable
+				,''src'' AS SrcAlias
+				,NULL AS SrcWhere
+				,''src.[Timestamp]'' AS SrcDateColumn
+				,''src.[DatabaseName]'', ''src.[SchemaName]'', NULL, NULL, NULL
+				,''Database'', ''Schema'', NULL, NULL, NULL
+
+			UNION ALL
+
+			SELECT
+				''Object'' AS DimensionName
+				,''ObjectKey'' AS DimensionKey
+				,''dbo.fhsmPartitionedIndexes'' AS SrcTable
+				,''src'' AS SrcAlias
+				,NULL AS SrcWhere
+				,''src.[Timestamp]'' AS SrcDateColumn
+				,''src.[DatabaseName]'', ''src.[SchemaName]'', ''src.[ObjectName]'', NULL, NULL
+				,''Database'', ''Schema'', ''Object'', NULL, NULL
+
+			UNION ALL
+
+			SELECT
+				''Index'' AS DimensionName
+				,''IndexKey'' AS DimensionKey
+				,''dbo.fhsmPartitionedIndexes'' AS SrcTable
+				,''src'' AS SrcAlias
+				,NULL AS SrcWhere
+				,''src.[Timestamp]'' AS SrcDateColumn
+				,''src.[DatabaseName]'', ''src.[SchemaName]'', ''src.[ObjectName]'', ''COALESCE(src.[IndexName], ''''N.A.'''')'', NULL
+				,''Database'', ''Schema'', ''Object'', ''Index'', NULL
+		)
+		MERGE dbo.fhsmDimensions AS tgt
+		USING dimensions AS src ON (src.DimensionName = tgt.DimensionName) AND (src.SrcTable = tgt.SrcTable)
+		WHEN MATCHED
+			THEN UPDATE SET
+				tgt.DimensionKey = src.DimensionKey
+				,tgt.SrcTable = src.SrcTable
+				,tgt.SrcAlias = src.SrcAlias
+				,tgt.SrcWhere = src.SrcWhere
+				,tgt.SrcDateColumn = src.SrcDateColumn
+				,tgt.SrcColumn1 = src.SrcColumn1
+				,tgt.SrcColumn2 = src.SrcColumn2
+				,tgt.SrcColumn3 = src.SrcColumn3
+				,tgt.SrcColumn4 = src.SrcColumn4
+				,tgt.SrcColumn5 = src.SrcColumn5
+				,tgt.OutputColumn1 = src.OutputColumn1
+				,tgt.OutputColumn2 = src.OutputColumn2
+				,tgt.OutputColumn3 = src.OutputColumn3
+				,tgt.OutputColumn4 = src.OutputColumn4
+				,tgt.OutputColumn5 = src.OutputColumn5
+		WHEN NOT MATCHED BY TARGET
+			THEN INSERT(
+				DimensionName, DimensionKey
+				,SrcTable, SrcAlias, SrcWhere, SrcDateColumn
+				,SrcColumn1, SrcColumn2, SrcColumn3, SrcColumn4, SrcColumn5
+				,OutputColumn1, OutputColumn2, OutputColumn3, OutputColumn4, OutputColumn5
+			)
+			VALUES(
+				src.DimensionName, src.DimensionKey
+				,src.SrcTable, src.SrcAlias, src.SrcWhere, src.SrcDateColumn
+				,src.SrcColumn1, src.SrcColumn2, src.SrcColumn3, src.SrcColumn4, src.SrcColumn5
+				,src.OutputColumn1, src.OutputColumn2, src.OutputColumn3, src.OutputColumn4, src.OutputColumn5
+			);
+	END;
+
+	--
+	-- Update dimensions based upon the fact tables
+	--
+	BEGIN
+		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmPartitionedIndexes'';
+	END;
+END;
+
+';
+SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
+
+SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableBackupStatus = 0;',             'SET @enableBackupStatus = '             + CAST(@enableBackupStatus AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableConnections = 0;',              'SET @enableConnections = '              + CAST(@enableConnections AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableCPUUtilization = 0;',           'SET @enableCPUUtilization = '           + CAST(@enableCPUUtilization AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableDatabaseIO = 0;',               'SET @enableDatabaseIO = '               + CAST(@enableDatabaseIO AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableDatabaseSize = 0;',             'SET @enableDatabaseSize = '             + CAST(@enableDatabaseSize AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableDatabaseState = 0;',            'SET @enableDatabaseState = '            + CAST(@enableDatabaseState AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableIndexOperational = 0;',         'SET @enableIndexOperational = '         + CAST(@enableIndexOperational AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableIndexPhysical = 0;',            'SET @enableIndexPhysical = '            + CAST(@enableIndexPhysical AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableIndexUsage = 0;',               'SET @enableIndexUsage = '               + CAST(@enableIndexUsage AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableInstanceState = 0;',            'SET @enableInstanceState = '            + CAST(@enableInstanceState AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableMissingIndexes = 0;',           'SET @enableMissingIndexes = '           + CAST(@enableMissingIndexes AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enablePartitionedIndexes = 0;',       'SET @enablePartitionedIndexes = '       + CAST(@enablePartitionedIndexes AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enablePerformanceStatistics = 0;',    'SET @enablePerformanceStatistics = '    + CAST(@enablePerformanceStatistics AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enablePlanCacheUsage = 0;',           'SET @enablePlanCacheUsage = '           + CAST(@enablePlanCacheUsage AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enablePlanGuides = 0;',               'SET @enablePlanGuides = '               + CAST(@enablePlanGuides AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableQueryStatistics = 0;',          'SET @enableQueryStatistics = '          + CAST(@enableQueryStatistics AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableTableSize = 0;',                'SET @enableTableSize = '                + CAST(@enableTableSize AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableTriggers = 0;',                 'SET @enableTriggers = '                 + CAST(@enableTriggers AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableWaitStatistics = 0;',           'SET @enableWaitStatistics = '           + CAST(@enableWaitStatistics AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableWhoIsActive = 0;',              'SET @enableWhoIsActive = '              + CAST(@enableWhoIsActive AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableIndexRebuild = 0;',             'SET @enableIndexRebuild = '             + CAST(@enableIndexRebuild AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableIndexReorganize = 0;',          'SET @enableIndexReorganize = '          + CAST(@enableIndexReorganize AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @enableUpdateAllStatistics = '      + CAST(@enableUpdateAllStatistics AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
+EXEC(@stmt);
+--
+-- File part:PerformanceStatistics.sql modified: 2025.03.06 23.27.28
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -20071,7 +21027,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.0'';
+		SET @version = ''2.1'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -20777,7 +21733,7 @@ ELSE BEGIN
 				,NULL
 		)
 		MERGE dbo.fhsmSchedules AS tgt
-		USING schedules AS src ON (src.Name = tgt.Name)
+		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
 		WHEN NOT MATCHED BY TARGET
 			THEN INSERT(Enabled, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters)
 			VALUES(src.Enabled, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameters);
@@ -20844,7 +21800,6 @@ END;
 
 ';
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
-SET @stmt = REPLACE(@stmt, 'SET @olaSchema = NULL;',   'SET @olaSchema = '   + COALESCE('''' + CAST(@olaSchema AS nvarchar)   + '''', 'NULL') + ';');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
@@ -20859,6 +21814,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableIndexPhysical = 0;',            'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableIndexUsage = 0;',               'SET @enableIndexUsage = '               + CAST(@enableIndexUsage AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableInstanceState = 0;',            'SET @enableInstanceState = '            + CAST(@enableInstanceState AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableMissingIndexes = 0;',           'SET @enableMissingIndexes = '           + CAST(@enableMissingIndexes AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enablePartitionedIndexes = 0;',       'SET @enablePartitionedIndexes = '       + CAST(@enablePartitionedIndexes AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePerformanceStatistics = 0;',    'SET @enablePerformanceStatistics = '    + CAST(@enablePerformanceStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePlanCacheUsage = 0;',           'SET @enablePlanCacheUsage = '           + CAST(@enablePlanCacheUsage AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePlanGuides = 0;',               'SET @enablePlanGuides = '               + CAST(@enablePlanGuides AS nvarchar) + ';');
@@ -20873,7 +21829,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:PlanCacheUsage.sql
+-- File part:PlanCacheUsage.sql modified: 2025.03.06 23.27.44
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -20945,7 +21901,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.0'';
+		SET @version = ''2.1'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -21192,7 +22148,7 @@ ELSE BEGIN
 				,NULL
 		)
 		MERGE dbo.fhsmSchedules AS tgt
-		USING schedules AS src ON (src.Name = tgt.Name)
+		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
 		WHEN NOT MATCHED BY TARGET
 			THEN INSERT(Enabled, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters)
 			VALUES(src.Enabled, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameters);
@@ -21212,7 +22168,6 @@ END;
 
 ';
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
-SET @stmt = REPLACE(@stmt, 'SET @olaSchema = NULL;',   'SET @olaSchema = '   + COALESCE('''' + CAST(@olaSchema AS nvarchar)   + '''', 'NULL') + ';');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
@@ -21227,6 +22182,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableIndexPhysical = 0;',            'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableIndexUsage = 0;',               'SET @enableIndexUsage = '               + CAST(@enableIndexUsage AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableInstanceState = 0;',            'SET @enableInstanceState = '            + CAST(@enableInstanceState AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableMissingIndexes = 0;',           'SET @enableMissingIndexes = '           + CAST(@enableMissingIndexes AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enablePartitionedIndexes = 0;',       'SET @enablePartitionedIndexes = '       + CAST(@enablePartitionedIndexes AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePerformanceStatistics = 0;',    'SET @enablePerformanceStatistics = '    + CAST(@enablePerformanceStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePlanCacheUsage = 0;',           'SET @enablePlanCacheUsage = '           + CAST(@enablePlanCacheUsage AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePlanGuides = 0;',               'SET @enablePlanGuides = '               + CAST(@enablePlanGuides AS nvarchar) + ';');
@@ -21241,7 +22197,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:PlanGuides.sql
+-- File part:PlanGuides.sql modified: 2025.03.06 23.27.57
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -21313,7 +22269,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.0'';
+		SET @version = ''2.1'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -21645,7 +22601,7 @@ ELSE BEGIN
 							END
 							ELSE BEGIN
 								SET @message = ''''Database '''''''''''' + @database + '''''''''''' is member of a replica but this server is not the primary node'''';
-								EXEC dbo.fhsmSPLog @name = @name, @task = @thisTask, @type = ''''Warning'''', @message = @message;
+								EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''''Warning'''', @message = @message;
 							END;
 						END;
 
@@ -21714,7 +22670,7 @@ ELSE BEGIN
 				,''@Databases = ''''USER_DATABASES, msdb''''''
 		)
 		MERGE dbo.fhsmSchedules AS tgt
-		USING schedules AS src ON (src.Name = tgt.Name)
+		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
 		WHEN NOT MATCHED BY TARGET
 			THEN INSERT(Enabled, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters)
 			VALUES(src.Enabled, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameters);
@@ -21783,7 +22739,6 @@ END;
 
 ';
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
-SET @stmt = REPLACE(@stmt, 'SET @olaSchema = NULL;',   'SET @olaSchema = '   + COALESCE('''' + CAST(@olaSchema AS nvarchar)   + '''', 'NULL') + ';');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
@@ -21798,6 +22753,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableIndexPhysical = 0;',            'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableIndexUsage = 0;',               'SET @enableIndexUsage = '               + CAST(@enableIndexUsage AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableInstanceState = 0;',            'SET @enableInstanceState = '            + CAST(@enableInstanceState AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableMissingIndexes = 0;',           'SET @enableMissingIndexes = '           + CAST(@enableMissingIndexes AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enablePartitionedIndexes = 0;',       'SET @enablePartitionedIndexes = '       + CAST(@enablePartitionedIndexes AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePerformanceStatistics = 0;',    'SET @enablePerformanceStatistics = '    + CAST(@enablePerformanceStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePlanCacheUsage = 0;',           'SET @enablePlanCacheUsage = '           + CAST(@enablePlanCacheUsage AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePlanGuides = 0;',               'SET @enablePlanGuides = '               + CAST(@enablePlanGuides AS nvarchar) + ';');
@@ -21812,7 +22768,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:QueryStatistics.sql
+-- File part:QueryStatistics.sql modified: 2025.03.06 23.28.21
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -21884,7 +22840,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.0'';
+		SET @version = ''2.1'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -21896,6 +22852,16 @@ ELSE BEGIN
 		SET @productStartPos = @productEndPos + 1;
 		SET @productEndPos = CHARINDEX(''.'', @productVersion, @productStartPos);
 		SET @productVersion3 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+	END;
+
+	--
+	-- Variables used in view to control the statement output
+	BEGIN
+		DECLARE @maxStatementLength int;
+		DECLARE @maxStatementLineLength int;
+
+		SET @maxStatementLength = 1024;
+		SET @maxStatementLineLength = 140;
 	END;
 
 	--
@@ -22190,7 +23156,13 @@ ELSE BEGIN
 					CONVERT(nvarchar(18), qs.QueryHash, 1) AS [Query hash]
 					,qs.CreationTime
 					,qs.LastExecutionTime
-					,qs.Statement
+					,(dbo.fhsmSplitLines(
+						(CASE
+							WHEN LEN(qs.Statement) > '' + CAST(@maxStatementLength AS nvarchar) + '' THEN LEFT(qs.Statement, '' + CAST(@maxStatementLength AS nvarchar) + '') + CHAR(10) + ''''...Statement truncated''''
+							ELSE qs.Statement
+						END),
+						'' + CAST(@maxStatementLineLength AS nvarchar) + ''
+					)) AS Statement
 					,qs.Encrypted
 					,CAST(qs.Timestamp AS date) AS Date
 					,(DATEPART(HOUR, qs.Timestamp) * 60 * 60) + (DATEPART(MINUTE, qs.Timestamp) * 60) + (DATEPART(SECOND, qs.Timestamp)) AS TimeKey
@@ -22753,7 +23725,7 @@ ELSE BEGIN
 				,''@NumberOfRows=1000''
 		)
 		MERGE dbo.fhsmSchedules AS tgt
-		USING schedules AS src ON (src.Name = tgt.Name)
+		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
 		WHEN NOT MATCHED BY TARGET
 			THEN INSERT(Enabled, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters)
 			VALUES(src.Enabled, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameters);
@@ -22830,7 +23802,6 @@ END;
 
 ';
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
-SET @stmt = REPLACE(@stmt, 'SET @olaSchema = NULL;',   'SET @olaSchema = '   + COALESCE('''' + CAST(@olaSchema AS nvarchar)   + '''', 'NULL') + ';');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
@@ -22845,6 +23816,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableIndexPhysical = 0;',            'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableIndexUsage = 0;',               'SET @enableIndexUsage = '               + CAST(@enableIndexUsage AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableInstanceState = 0;',            'SET @enableInstanceState = '            + CAST(@enableInstanceState AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableMissingIndexes = 0;',           'SET @enableMissingIndexes = '           + CAST(@enableMissingIndexes AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enablePartitionedIndexes = 0;',       'SET @enablePartitionedIndexes = '       + CAST(@enablePartitionedIndexes AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePerformanceStatistics = 0;',    'SET @enablePerformanceStatistics = '    + CAST(@enablePerformanceStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePlanCacheUsage = 0;',           'SET @enablePlanCacheUsage = '           + CAST(@enablePlanCacheUsage AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePlanGuides = 0;',               'SET @enablePlanGuides = '               + CAST(@enablePlanGuides AS nvarchar) + ';');
@@ -22859,7 +23831,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:TableSize.sql
+-- File part:TableSize.sql modified: 2025.03.06 23.28.38
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -22931,7 +23903,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.0'';
+		SET @version = ''2.1'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -23413,7 +24385,7 @@ ELSE BEGIN
 							END
 							ELSE BEGIN
 								SET @message = ''''Database '''''''''''' + @database + '''''''''''' is member of a replica but this server is not the primary node'''';
-								EXEC dbo.fhsmSPLog @name = @name, @task = @thisTask, @type = ''''Warning'''', @message = @message;
+								EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''''Warning'''', @message = @message;
 							END;
 						END;
 
@@ -23482,7 +24454,7 @@ ELSE BEGIN
 				,''@Databases = ''''USER_DATABASES, msdb''''''
 		)
 		MERGE dbo.fhsmSchedules AS tgt
-		USING schedules AS src ON (src.Name = tgt.Name)
+		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
 		WHEN NOT MATCHED BY TARGET
 			THEN INSERT(Enabled, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters)
 			VALUES(src.Enabled, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameters);
@@ -23613,7 +24585,6 @@ END;
 
 ';
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
-SET @stmt = REPLACE(@stmt, 'SET @olaSchema = NULL;',   'SET @olaSchema = '   + COALESCE('''' + CAST(@olaSchema AS nvarchar)   + '''', 'NULL') + ';');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
@@ -23628,6 +24599,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableIndexPhysical = 0;',            'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableIndexUsage = 0;',               'SET @enableIndexUsage = '               + CAST(@enableIndexUsage AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableInstanceState = 0;',            'SET @enableInstanceState = '            + CAST(@enableInstanceState AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableMissingIndexes = 0;',           'SET @enableMissingIndexes = '           + CAST(@enableMissingIndexes AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enablePartitionedIndexes = 0;',       'SET @enablePartitionedIndexes = '       + CAST(@enablePartitionedIndexes AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePerformanceStatistics = 0;',    'SET @enablePerformanceStatistics = '    + CAST(@enablePerformanceStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePlanCacheUsage = 0;',           'SET @enablePlanCacheUsage = '           + CAST(@enablePlanCacheUsage AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePlanGuides = 0;',               'SET @enablePlanGuides = '               + CAST(@enablePlanGuides AS nvarchar) + ';');
@@ -23642,7 +24614,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:Triggers.sql
+-- File part:Triggers.sql modified: 2025.03.06 23.28.52
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -23714,7 +24686,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.0'';
+		SET @version = ''2.1'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -24035,7 +25007,7 @@ ELSE BEGIN
 							END
 							ELSE BEGIN
 								SET @message = ''''Database '''''''''''' + @database + '''''''''''' is member of a replica but this server is not the primary node'''';
-								EXEC dbo.fhsmSPLog @name = @name, @task = @thisTask, @type = ''''Warning'''', @message = @message;
+								EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''''Warning'''', @message = @message;
 							END;
 						END;
 
@@ -24104,7 +25076,7 @@ ELSE BEGIN
 				,''@Databases = ''''USER_DATABASES, msdb''''''
 		)
 		MERGE dbo.fhsmSchedules AS tgt
-		USING schedules AS src ON (src.Name = tgt.Name)
+		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
 		WHEN NOT MATCHED BY TARGET
 			THEN INSERT(Enabled, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters)
 			VALUES(src.Enabled, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameters);
@@ -24173,7 +25145,6 @@ END;
 
 ';
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
-SET @stmt = REPLACE(@stmt, 'SET @olaSchema = NULL;',   'SET @olaSchema = '   + COALESCE('''' + CAST(@olaSchema AS nvarchar)   + '''', 'NULL') + ';');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
@@ -24188,6 +25159,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableIndexPhysical = 0;',            'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableIndexUsage = 0;',               'SET @enableIndexUsage = '               + CAST(@enableIndexUsage AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableInstanceState = 0;',            'SET @enableInstanceState = '            + CAST(@enableInstanceState AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableMissingIndexes = 0;',           'SET @enableMissingIndexes = '           + CAST(@enableMissingIndexes AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enablePartitionedIndexes = 0;',       'SET @enablePartitionedIndexes = '       + CAST(@enablePartitionedIndexes AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePerformanceStatistics = 0;',    'SET @enablePerformanceStatistics = '    + CAST(@enablePerformanceStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePlanCacheUsage = 0;',           'SET @enablePlanCacheUsage = '           + CAST(@enablePlanCacheUsage AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePlanGuides = 0;',               'SET @enablePlanGuides = '               + CAST(@enablePlanGuides AS nvarchar) + ';');
@@ -24202,7 +25174,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:WaitStatistics.sql
+-- File part:WaitStatistics.sql modified: 2025.03.06 23.29.10
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -24274,7 +25246,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.0'';
+		SET @version = ''2.1'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -25231,7 +26203,7 @@ ELSE BEGIN
 				,NULL
 		)
 		MERGE dbo.fhsmSchedules AS tgt
-		USING schedules AS src ON (src.Name = tgt.Name)
+		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
 		WHEN NOT MATCHED BY TARGET
 			THEN INSERT(Enabled, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters)
 			VALUES(src.Enabled, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameters);
@@ -25294,7 +26266,6 @@ END;
 
 ';
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
-SET @stmt = REPLACE(@stmt, 'SET @olaSchema = NULL;',   'SET @olaSchema = '   + COALESCE('''' + CAST(@olaSchema AS nvarchar)   + '''', 'NULL') + ';');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
@@ -25309,6 +26280,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableIndexPhysical = 0;',            'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableIndexUsage = 0;',               'SET @enableIndexUsage = '               + CAST(@enableIndexUsage AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableInstanceState = 0;',            'SET @enableInstanceState = '            + CAST(@enableInstanceState AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableMissingIndexes = 0;',           'SET @enableMissingIndexes = '           + CAST(@enableMissingIndexes AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enablePartitionedIndexes = 0;',       'SET @enablePartitionedIndexes = '       + CAST(@enablePartitionedIndexes AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePerformanceStatistics = 0;',    'SET @enablePerformanceStatistics = '    + CAST(@enablePerformanceStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePlanCacheUsage = 0;',           'SET @enablePlanCacheUsage = '           + CAST(@enablePlanCacheUsage AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePlanGuides = 0;',               'SET @enablePlanGuides = '               + CAST(@enablePlanGuides AS nvarchar) + ';');
@@ -25323,7 +26295,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:WhoIsActive-001-AdamMachanic-12.00-sp_WhoIsActive.sql
+-- File part:WhoIsActive-001-AdamMachanic-12.00-sp_WhoIsActive.sql modified: 2025.02.17 18.45.42
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -30856,7 +31828,6 @@ END;
 
 ';
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
-SET @stmt = REPLACE(@stmt, 'SET @olaSchema = NULL;',   'SET @olaSchema = '   + COALESCE('''' + CAST(@olaSchema AS nvarchar)   + '''', 'NULL') + ';');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
@@ -30871,6 +31842,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableIndexPhysical = 0;',            'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableIndexUsage = 0;',               'SET @enableIndexUsage = '               + CAST(@enableIndexUsage AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableInstanceState = 0;',            'SET @enableInstanceState = '            + CAST(@enableInstanceState AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableMissingIndexes = 0;',           'SET @enableMissingIndexes = '           + CAST(@enableMissingIndexes AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enablePartitionedIndexes = 0;',       'SET @enablePartitionedIndexes = '       + CAST(@enablePartitionedIndexes AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePerformanceStatistics = 0;',    'SET @enablePerformanceStatistics = '    + CAST(@enablePerformanceStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePlanCacheUsage = 0;',           'SET @enablePlanCacheUsage = '           + CAST(@enablePlanCacheUsage AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePlanGuides = 0;',               'SET @enablePlanGuides = '               + CAST(@enablePlanGuides AS nvarchar) + ';');
@@ -30885,7 +31857,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:WhoIsActive-002.sql
+-- File part:WhoIsActive-002.sql modified: 2025.03.06 23.20.09
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -30957,7 +31929,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.0'';
+		SET @version = ''2.1'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -30969,6 +31941,16 @@ ELSE BEGIN
 		SET @productStartPos = @productEndPos + 1;
 		SET @productEndPos = CHARINDEX(''.'', @productVersion, @productStartPos);
 		SET @productVersion3 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+	END;
+
+	--
+	-- Variables used in view to control the statement output
+	BEGIN
+		DECLARE @maxSQLTextLength int;
+		DECLARE @maxSQLTextLineLength int;
+
+		SET @maxSQLTextLength = 1024;
+		SET @maxSQLTextLineLength = 70;
 	END;
 
 	--
@@ -31069,7 +32051,13 @@ ELSE BEGIN
 					,a.login_time AS LoginTime
 					,DATEDIFF(MILLISECOND, a.start_time, a.collection_time) AS ElapsedTimeMS
 					,a.session_id AS SessionId
-					,a.sql_text AS SQLText
+					,(dbo.fhsmSplitLines(
+						(CASE
+							WHEN LEN(a.sql_text) > '' + CAST(@maxSQLTextLength AS nvarchar) + '' THEN LEFT(a.sql_text, '' + CAST(@maxSQLTextLength AS nvarchar) + '') + CHAR(10) + ''''...Statement truncated''''
+							ELSE a.sql_text
+						END),
+						'' + CAST(@maxSQLTextLineLength AS nvarchar) + ''
+					)) AS SQLText
 					,a.sql_command AS SQLCommand
 					,a.login_name AS LoginName
 					,a.wait_info AS WaitInfo
@@ -31236,7 +32224,7 @@ ELSE BEGIN
 				,''@format_output = 0, @get_transaction_info = 1, @get_outer_command = 1, @get_plans = 1, @destination_table = '''''' + QUOTENAME(DB_NAME()) + ''.dbo.fhsmWhoIsActive''''''
 		)
 		MERGE dbo.fhsmSchedules AS tgt
-		USING schedules AS src ON (src.Name = tgt.Name)
+		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
 		WHEN NOT MATCHED BY TARGET
 			THEN INSERT(Enabled, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters)
 			VALUES(src.Enabled, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameters);
@@ -31299,7 +32287,6 @@ END;
 
 ';
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
-SET @stmt = REPLACE(@stmt, 'SET @olaSchema = NULL;',   'SET @olaSchema = '   + COALESCE('''' + CAST(@olaSchema AS nvarchar)   + '''', 'NULL') + ';');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
@@ -31314,6 +32301,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableIndexPhysical = 0;',            'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableIndexUsage = 0;',               'SET @enableIndexUsage = '               + CAST(@enableIndexUsage AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableInstanceState = 0;',            'SET @enableInstanceState = '            + CAST(@enableInstanceState AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableMissingIndexes = 0;',           'SET @enableMissingIndexes = '           + CAST(@enableMissingIndexes AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enablePartitionedIndexes = 0;',       'SET @enablePartitionedIndexes = '       + CAST(@enablePartitionedIndexes AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePerformanceStatistics = 0;',    'SET @enablePerformanceStatistics = '    + CAST(@enablePerformanceStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePlanCacheUsage = 0;',           'SET @enablePlanCacheUsage = '           + CAST(@enablePlanCacheUsage AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enablePlanGuides = 0;',               'SET @enablePlanGuides = '               + CAST(@enablePlanGuides AS nvarchar) + ';');
@@ -31327,3 +32315,22 @@ SET @stmt = REPLACE(@stmt, 'SET @enableIndexReorganize = 0;',          'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @enableUpdateAllStatistics = '      + CAST(@enableUpdateAllStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
+
+--
+-- Enable job again if it was enabled when we started
+--
+IF (@installationJobStatus = 1)
+BEGIN
+	RAISERROR('', 0, 1) WITH NOWAIT;
+
+	SET @installationMsg = 'Enabling job ' + QUOTENAME(@installationJobName);
+	RAISERROR(@installationMsg, 0, 1) WITH NOWAIT;
+
+	EXEC msdb.dbo.sp_update_job
+		@job_name = @installationJobName,
+		@enabled = 1;
+END;
+
+RAISERROR('', 0, 1) WITH NOWAIT;
+SET @installationMsg = 'FHSQLMonitor in ' + @fhSQLMonitorDatabase + ' has been installed/upgraded to v2.1';
+RAISERROR(@installationMsg, 0, 1) WITH NOWAIT;

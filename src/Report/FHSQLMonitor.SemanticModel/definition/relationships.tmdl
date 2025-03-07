@@ -247,3 +247,11 @@ relationship 61cae8ac-4716-a2b5-b500-68819e459a2a
 	fromColumn: 'Statistics age incremental'.IndexPartitionKey
 	toColumn: 'Index partition'.IndexPartitionKey
 
+relationship 482ecd9e-001a-34b7-89e7-baa5a19ea096
+	fromColumn: 'Partitioned indexes'.Date
+	toColumn: Date.Date
+
+relationship 5e6e7c5a-79b4-69a9-8fee-887bba0a6264
+	fromColumn: 'Partitioned indexes'.IndexKey
+	toColumn: Index.IndexKey
+

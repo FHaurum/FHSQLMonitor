@@ -3,6 +3,8 @@ To read more about the project go to my blog [SQL Server Monitoring](https://www
 
 Have fun :-)
 
+March 7, 2025: Version 2.1.0 with with the new service "Partioned indexes", as well as improved the installation script.
+
 March 3, 2025: Version 2.0.0 with a completely redesigned Power BI report and added ability to specify which of the collected data should be loaded into the report and presented.
 
 May 1, 2022: Version 1.10.0 of Power BI desktop report has been updated with Resource Governor reports.

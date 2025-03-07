@@ -2842,7 +2842,7 @@ table _Measures
 
 	measure 'Version number' =
 			
-			"2.0.0"
+			"2.1.0"
 		isHidden
 		displayFolder: Common
 		lineageTag: 39428edf-bb47-48d0-a60e-f025984fd1ba
@@ -13062,6 +13062,348 @@ table _Measures
 			    _result
 		displayFolder: Who is active
 		lineageTag: b14a734d-93f7-4aef-a8ce-76c835545c02
+
+	measure 'Service - Partitioned indexes' =
+			
+			"Partitioned indexes"
+		displayFolder: Partitioned indexes
+		lineageTag: ac64b1d5-05d9-4c2b-a2a7-fe533e6eaf36
+
+	measure 'Service display text - Partitioned indexes' =
+			
+			"Partitioned indexes"
+		displayFolder: Partitioned indexes
+		lineageTag: 0d4b5ec8-461e-4cbe-aa1e-b83e55856d56
+
+	measure 'Report page text - Partitioned indexes' =
+			
+			VAR _service = [Service - Partitioned indexes]
+			VAR _serviceDisplayText = [Service display text - Partitioned indexes]
+			VAR _load =
+			    SELECTCOLUMNS (
+			        FILTER ( 'Data load', 'Data load'[Service] = _service ),
+			        "DataLoad", 'Data load'[DataLoad]
+			    )
+			VAR _textToShow =
+			    IF ( _load = "No", "(", "" ) & _serviceDisplayText
+			        & IF ( _load = "No", ")", "" )
+			VAR _result = _textToShow
+			RETURN
+			    _result
+		displayFolder: Partitioned indexes
+		lineageTag: 995126e9-d87f-457c-b6a3-c3f46a7b221a
+
+	measure 'Report page card background color - Partitioned indexes' =
+			
+			VAR _serviceText = [Service - Partitioned indexes]
+			VAR _enabledColor = "#F2F7FF"
+			VAR _disabledColor = "#F3F2F1"
+			VAR _load =
+			    SELECTCOLUMNS (
+			        FILTER ( 'Data load', 'Data load'[Service] = _serviceText ),
+			        "DataLoad", 'Data load'[DataLoad]
+			    )
+			VAR _result =
+			    IF ( _load = "No", _disabledColor, _enabledColor )
+			RETURN
+			    _result
+		displayFolder: Partitioned indexes
+		lineageTag: 37ba5968-2902-48e7-ac6a-d9e3cde670fc
+
+	measure 'Front page button fill color - Partitioned indexes' =
+			
+			VAR _serviceText = [Service - Partitioned indexes]
+			VAR _enabledColor = "#E2EEFF"
+			VAR _disabledColor = "#F3F2F1"
+			VAR _load =
+			    SELECTCOLUMNS (
+			        FILTER ( 'Data load', 'Data load'[Service] = LOWER ( _serviceText ) ),
+			        "DataLoad", 'Data load'[DataLoad]
+			    )
+			VAR _result =
+			    IF ( _load = "no", _disabledColor, _enabledColor )
+			RETURN
+			    _result
+		displayFolder: Partitioned indexes
+		lineageTag: bf3bfe99-9f5d-458e-89bd-0e9f27c1ac95
+
+	measure 'Front page text - Partitioned indexes' =
+			
+			VAR _service = [Service - Partitioned indexes]
+			VAR _serviceDisplayText = [Service display text - Partitioned indexes]
+			VAR _load =
+			    SELECTCOLUMNS (
+			        FILTER ( 'Data load', 'Data load'[Service] = LOWER ( _service ) ),
+			        "DataLoad", 'Data load'[DataLoad]
+			    )
+			VAR _textToShow =
+			    IF ( _load = "no", "(", "" ) & _serviceDisplayText
+			        & IF ( _load = "no", ")", "" )
+			VAR _result = _textToShow
+			RETURN
+			    _result
+		displayFolder: Partitioned indexes
+		lineageTag: 80c903a3-0f8a-417e-8a20-2a5f58bb4a96
+
+	measure 'Is filters applied - Partitioned indexes' =
+			
+			IF (
+			    ISFILTERED ( 'Index'[Database] ) || ISFILTERED ( 'Index'[Schema] )
+			        || ISFILTERED ( 'Index'[Object] )
+			        || ISFILTERED ( 'Index'[Index] )
+			        || ISFILTERED ( 'Date'[Year] )
+			        || ISFILTERED ( 'Date'[Month] )
+			        || ISFILTERED ( 'Date'[Day] )
+			        || ISFILTERED ( 'Date'[Day index] ),
+			    1,
+			    0
+			)
+		formatString: 0
+		displayFolder: Partitioned indexes
+		lineageTag: d4ddf18c-92ff-4617-9b87-8c4285c62924
+
+	measure 'Open filter button tooltip - Partitioned indexes' =
+			
+			IF (
+			    [Is filters applied - Partitioned indexes] = 1,
+			    [Filters are applied text],
+			    [Filters are not applied]
+			)
+		displayFolder: Partitioned indexes
+		lineageTag: 94cfc06f-4c9e-4cb4-a9aa-11ca9d43d8ae
+
+	measure 'Show filters - Partitioned indexes' =
+			
+			IF (
+			    ISFILTERED ( 'Index'[Database] ),
+			    VAR _items =
+			        VALUES ( 'Index'[Database] )
+			    VAR _itemsCombined =
+			        CONCATENATEX ( _items, 'Index'[Database], UNICHAR ( 10 ) )
+			    RETURN
+			        _itemsCombined & UNICHAR ( 10 )
+			)
+			    & IF (
+			        ISFILTERED ( 'Index'[Schema] ),
+			        VAR _items =
+			            VALUES ( 'Index'[Schema] )
+			        VAR _itemsCombined =
+			            CONCATENATEX ( _items, 'Index'[Schema], UNICHAR ( 10 ) )
+			        RETURN
+			            _itemsCombined & UNICHAR ( 10 )
+			    )
+			    & IF (
+			        ISFILTERED ( 'Index'[Object] ),
+			        VAR _items =
+			            VALUES ( 'Index'[Object] )
+			        VAR _itemsCombined =
+			            CONCATENATEX ( _items, 'Index'[Object], UNICHAR ( 10 ) )
+			        RETURN
+			            _itemsCombined & UNICHAR ( 10 )
+			    )
+			    & IF (
+			        ISFILTERED ( 'Index'[Index] ),
+			        VAR _items =
+			            VALUES ( 'Index'[Index] )
+			        VAR _itemsCombined =
+			            CONCATENATEX ( _items, 'Index'[Index], UNICHAR ( 10 ) )
+			        RETURN
+			            _itemsCombined & UNICHAR ( 10 )
+			    )
+			    & IF (
+			        ISFILTERED ( 'Date'[Year] ),
+			        VAR _items =
+			            VALUES ( 'Date'[Year] )
+			        VAR _itemsCombined =
+			            CONCATENATEX ( _items, 'Date'[Year], UNICHAR ( 10 ) )
+			        RETURN
+			            _itemsCombined & UNICHAR ( 10 )
+			    )
+			    & IF (
+			        ISFILTERED ( 'Date'[Month] ),
+			        VAR _items =
+			            VALUES ( 'Date'[Month] )
+			        VAR _itemsCombined =
+			            CONCATENATEX ( _items, 'Date'[Month], UNICHAR ( 10 ) )
+			        RETURN
+			            _itemsCombined & UNICHAR ( 10 )
+			    )
+			    & IF (
+			        ISFILTERED ( 'Date'[Day] ),
+			        VAR _items =
+			            VALUES ( 'Date'[Day] )
+			        VAR _itemsCombined =
+			            CONCATENATEX ( _items, 'Date'[Day], UNICHAR ( 10 ) )
+			        RETURN
+			            _itemsCombined & UNICHAR ( 10 )
+			    )
+			    & IF (
+			        ISFILTERED ( 'Date'[Day index] ),
+			        VAR _items =
+			            VALUES ( 'Date'[Day index] )
+			        VAR _itemsCombined =
+			            CONCATENATEX ( _items, 'Date'[Day index], UNICHAR ( 10 ) )
+			        RETURN
+			            _itemsCombined & UNICHAR ( 10 )
+			    )
+		displayFolder: Partitioned indexes
+		lineageTag: ddb77875-4ed5-466b-b0e1-aca034e99358
+
+	measure 'Show filters Headers - Partitioned indexes' =
+			
+			IF (
+			    ISFILTERED ( 'Index'[Database] ),
+			    "Database:" & UNICHAR ( 127 )
+			        & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Index'[Database] ) ) )
+			)
+			    & IF (
+			        ISFILTERED ( 'Index'[Schema] ),
+			        "Schema:" & UNICHAR ( 127 )
+			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Index'[Schema] ) ) )
+			    )
+			    & IF (
+			        ISFILTERED ( 'Index'[Object] ),
+			        "Object:" & UNICHAR ( 127 )
+			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Index'[Object] ) ) )
+			    )
+			    & IF (
+			        ISFILTERED ( 'Index'[Index] ),
+			        "Index:" & UNICHAR ( 127 )
+			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Index'[Index] ) ) )
+			    )
+			    & IF (
+			        ISFILTERED ( 'Date'[Year] ),
+			        "Year:" & UNICHAR ( 127 )
+			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Year] ) ) )
+			    )
+			    & IF (
+			        ISFILTERED ( 'Date'[Month] ),
+			        "Month:" & UNICHAR ( 127 )
+			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Month] ) ) )
+			    )
+			    & IF (
+			        ISFILTERED ( 'Date'[Day] ),
+			        "Day:" & UNICHAR ( 127 )
+			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Day] ) ) )
+			    )
+			    & IF (
+			        ISFILTERED ( 'Date'[Day index] ),
+			        "Day index:" & UNICHAR ( 127 )
+			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Day index] ) ) )
+			    )
+		displayFolder: Partitioned indexes
+		lineageTag: 9187fdf7-f152-40aa-bc5d-f42ce554f3e0
+
+	measure 'Rows # - Partitioned indexes' =
+			
+			SUM ( 'Partitioned indexes'[PartitionRowCount] )
+		formatString: #,0
+		displayFolder: Partitioned indexes
+		lineageTag: d3b99fc0-89d4-4b53-9f49-d7a5d3165127
+
+	measure 'Latest rows # - Partitioned indexes' =
+			
+			VAR _maxDate =
+			    CALCULATE ( MAX ( 'Partitioned indexes'[Date] ), REMOVEFILTERS ( 'Index' ) )
+			VAR _latestValue =
+			    CALCULATE ( [Rows # - Partitioned indexes], 'Partitioned indexes'[Date] = _maxDate )
+			VAR _result = _latestValue
+			RETURN
+			    _result
+		formatString: #,0
+		displayFolder: Partitioned indexes
+		lineageTag: 068984df-d760-44cc-b2a4-9058adb43328
+
+	measure 'Sort order - Partitioned indexes' =
+			
+			VAR _maxDate =
+			    CALCULATE ( MAX ( 'Partitioned indexes'[Date] ), REMOVEFILTERS ( 'Index' ) )
+			VAR _latestValue =
+			    CALCULATE (
+			        MAX ( 'Partitioned indexes'[SortOrder] ),
+			        'Partitioned indexes'[Date] = _maxDate
+			    )
+			VAR _valueToReturn =
+			    IF ( ISINSCOPE ( 'Partitioned indexes'[Partition range] ), _latestValue )
+			VAR _result = _valueToReturn
+			RETURN
+			    _result
+		formatString: #,0
+		displayFolder: Partitioned indexes
+		lineageTag: 15282645-110e-4bfb-a60a-ee233fb6411d
+
+	measure 'Data range - Partitioned indexes' =
+			
+			VAR _minDataDate =
+			    CALCULATE ( MIN ( 'Partitioned indexes'[Date] ), ALL () )
+			VAR _maxDataDate =
+			    CALCULATE ( MAX ( 'Partitioned indexes'[Date] ), ALL () )
+			VAR _minDataDateTxt =
+			    FORMAT ( _minDataDate, [Date format string] )
+			VAR _maxDataDateTxt =
+			    FORMAT ( _maxDataDate, [Date format string] )
+			VAR _txt =
+			    IF (
+			        _minDataDate = BLANK (),
+			        "",
+			        "Data available between " & _minDataDateTxt & " and " & _maxDataDateTxt
+			    )
+			VAR _result = _txt
+			RETURN
+			    _result
+		displayFolder: Partitioned indexes
+		lineageTag: 38e60926-9ef9-4573-8a26-97c263b666cb
+
+	measure 'Details title - Partitioned indexes' =
+			
+			VAR _latestDate = [Latest date - Partitioned indexes]
+			VAR _latestDateTxt =
+			    FORMAT ( _latestDate, [Date format string] ) & " ("
+			        & FORMAT ( _latestDate, [Dayname format string] ) & ")"
+			VAR _txt =
+			    "Partitioned indexes"
+			        & IF (
+			            _latestDate <> BLANK (),
+			            " for " & _latestDateTxt
+			        )
+			VAR _result = _txt
+			RETURN
+			    _result
+		displayFolder: Partitioned indexes
+		lineageTag: 47beee6f-68c1-4fe7-a34e-a7c39b2aa01d
+
+	measure 'Latest date - Partitioned indexes' =
+			
+			VAR _maxDate =
+			    MAX ( 'Partitioned indexes'[Date] )
+			VAR _result = _maxDate
+			RETURN
+			    _result
+		formatString: General Date
+		displayFolder: Partitioned indexes
+		lineageTag: 47b66729-7db9-410a-8997-9cc98f10e7aa
+
+	measure 'Rows title - Partitioned indexes' =
+			
+			VAR _minDataDate =
+			    MIN ( 'Partitioned indexes'[Date] )
+			VAR _maxDataDate =
+			    MAX ( 'Partitioned indexes'[Date] )
+			VAR _minDataDateTxt =
+			    FORMAT ( _minDataDate, [Date format string] )
+			VAR _maxDataDateTxt =
+			    FORMAT ( _maxDataDate, [Date format string] )
+			VAR _txt =
+			    "Rows"
+			        & IF (
+			            _minDataDate <> BLANK (),
+			            " between " & _minDataDateTxt & " and " & _maxDataDateTxt
+			        )
+			VAR _result = _txt
+			RETURN
+			    _result
+		displayFolder: Partitioned indexes
+		lineageTag: af40b0aa-3d05-4fa0-ac36-3420a20e79fe
 
 	partition _Measures = m
 		mode: import
