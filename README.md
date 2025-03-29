@@ -3,6 +3,9 @@ To read more about the project go to my blog [SQL Server Monitoring](https://www
 
 Have fun :-)
 <p>
+<b>March 30, 2025: Version 2.2.1</b> fixing an error regarding calculating number of rows in tables.
+</p>
+<p>
 <b>March 29, 2025: Version 2.2.0</b> with:</br>
 <li>New report "Index configuration"</li>
 <li>Corrected minor issues in the "Index usage" service</li>
