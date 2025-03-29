@@ -4,9 +4,9 @@ To read more about the project go to my blog [SQL Server Monitoring](https://www
 Have fun :-)
 
 March 29, 2025: Version 2.2.0 with:
-    New report "Index configuration"
-    Corrected minor issues in the "Index usage" service
-    Update of the existing service and report "Missing indexes" to use a new SQL2019+ DMV.
+<li>New report "Index configuration"</li>
+<li>Corrected minor issues in the "Index usage" service</li>
+<li>Update of the existing service and report "Missing indexes" to use a new SQL2019+ DMV.</li>
 
 March 7, 2025: Version 2.1.0 with the new service "Partitioned indexes", as well as improved the installation script.
 
