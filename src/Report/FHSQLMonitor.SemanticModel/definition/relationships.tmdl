@@ -255,3 +255,28 @@ relationship 5e6e7c5a-79b4-69a9-8fee-887bba0a6264
 	fromColumn: 'Partitioned indexes'.IndexKey
 	toColumn: Index.IndexKey
 
+relationship 1ecd9990-bef6-ae38-e8db-bc6902b64653
+	fromColumn: 'Index configuration'.ObjectKey
+	toColumn: Object.ObjectKey
+
+relationship 2a9d294e-569d-b38e-f636-93a4167d0e51
+	fromColumn: 'Index configuration'.IndexKey
+	toColumn: Index.IndexKey
+
+relationship 68a508c1-c8c4-8da1-cd8d-e6e1a7cb3a9c
+	fromColumn: 'Index configuration'.TableIsHeap
+	toColumn: 'Table type'.TableIsHeap
+
+relationship 339cdc59-9483-4d4e-7b44-1a91f282974e
+	isActive: false
+	fromColumn: 'Table size'.IndexKey
+	toColumn: 'Index configuration'.IndexKey
+
+relationship 33812109-ab46-e5b8-0a93-b86a3c6fda28
+	fromColumn: 'Missing indexes'.MissingIndexStatementKey
+	toColumn: 'Missing index statement'.MissingIndexStatementKey
+
+relationship ebf2e4cb-93f7-4e9a-ebe0-84bf6dcdf895
+	fromColumn: 'Missing indexes - Index details'.MissingIndexStatementKey
+	toColumn: 'Missing index statement - Index details'.MissingIndexStatementKey
+

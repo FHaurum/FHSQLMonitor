@@ -3,7 +3,12 @@ To read more about the project go to my blog [SQL Server Monitoring](https://www
 
 Have fun :-)
 
-March 7, 2025: Version 2.1.0 with with the new service "Partioned indexes", as well as improved the installation script.
+March 29, 2025: Version 2.2.0 with:
+    New report "Index configuration"
+    Corrected minor issues in the "Index usage" service
+    Update of the existing service and report "Missing indexes" to use a new SQL2019+ DMV.
+
+March 7, 2025: Version 2.1.0 with the new service "Partitioned indexes", as well as improved the installation script.
 
 March 3, 2025: Version 2.0.0 with a completely redesigned Power BI report and added ability to specify which of the collected data should be loaded into the report and presented.
 

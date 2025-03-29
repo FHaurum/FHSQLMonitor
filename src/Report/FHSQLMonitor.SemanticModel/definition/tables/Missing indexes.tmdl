@@ -148,6 +148,18 @@ table 'Missing indexes'
 
 		annotation SummarizationSetBy = Automatic
 
+	column MissingIndexStatementKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 72608647-8d7c-4a41-a64c-f5ebdc869341
+		summarizeBy: none
+		sourceColumn: MissingIndexStatementKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
 	partition 'Missing indexes' = m
 		mode: import
 		queryGroup: Facts
@@ -177,7 +189,8 @@ table 'Missing indexes'
 				      "AvgUserImpact", 
 				      "LastUserSeekDate", 
 				      "Date", 
-				      "ObjectKey"
+				      "ObjectKey", 
+				      "MissingIndexStatementKey"
 				    }
 				  ), 
 				  RenameColumns = Table.RenameColumns(

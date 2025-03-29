@@ -123,6 +123,18 @@ table 'Index usage'
 
 		annotation SummarizationSetBy = Automatic
 
+	column ObjectKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: b079a446-a2ce-4c94-b0f0-7f15965dd49e
+		summarizeBy: none
+		sourceColumn: ObjectKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
 	partition 'Index usage' = m
 		mode: import
 		queryGroup: Facts
@@ -150,6 +162,7 @@ table 'Index usage'
 				      "LastUserUpdate", 
 				      "Date", 
 				      "TimeKey", 
+				      "ObjectKey", 
 				      "IndexKey"
 				    }
 				  )

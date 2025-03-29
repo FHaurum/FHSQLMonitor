@@ -66,7 +66,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.1';
+		SET @version = '2.2';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -78,6 +78,23 @@ ELSE BEGIN
 		SET @productStartPos = @productEndPos + 1;
 		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
 		SET @productVersion3 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+	END;
+
+	--
+	-- Variables used in view to control the statement output
+	--
+	BEGIN
+		DECLARE @maxEqualityColumnsLineLength int;
+		DECLARE @maxInequalityColumnsLineLength int;
+		DECLARE @maxIncludedColumnsLineLength int;
+		DECLARE @maxStatementLength int;
+		DECLARE @maxStatementLineLength int;
+
+		SET @maxEqualityColumnsLineLength = 35;
+		SET @maxInequalityColumnsLineLength = 35;
+		SET @maxIncludedColumnsLineLength = 35;
+		SET @maxStatementLength = 1024;
+		SET @maxStatementLineLength = 140;
 	END;
 
 	--
@@ -116,6 +133,7 @@ ELSE BEGIN
 					,DatabaseName nvarchar(128) NOT NULL
 					,SchemaName nvarchar(128) NOT NULL
 					,ObjectName nvarchar(128) NOT NULL
+					,QueryHash binary(8) NULL
 					,EqualityColumns nvarchar(4000) NULL
 					,InequalityColumns nvarchar(4000) NULL
 					,IncludedColumns nvarchar(4000) NULL
@@ -140,8 +158,35 @@ ELSE BEGIN
 
 				CREATE NONCLUSTERED INDEX NC_fhsmMissingIndexes_TimestampUTC ON dbo.fhsmMissingIndexes(TimestampUTC)' + @tableCompressionStmt + ';
 				CREATE NONCLUSTERED INDEX NC_fhsmMissingIndexes_Timestamp ON dbo.fhsmMissingIndexes(Timestamp)' + @tableCompressionStmt + ';
-				CREATE NONCLUSTERED INDEX NC_fhsmMissingIndexes_DatabaseName_SchemaName_ObjectName_IndexName ON dbo.fhsmMissingIndexes(DatabaseName, SchemaName, ObjectName)' + @tableCompressionStmt + ';
+				CREATE NONCLUSTERED INDEX NC_fhsmMissingIndexes_DatabaseName_SchemaName_ObjectName ON dbo.fhsmMissingIndexes(DatabaseName, SchemaName, ObjectName)' + @tableCompressionStmt + ';
 			';
+			EXEC(@stmt);
+		END;
+
+		--
+		-- Adding column QueryHash to table dbo.fhsmMissingIndexes if it not already exists
+		--
+		IF OBJECT_ID('dbo.fhsmMissingIndexes', 'U') IS NOT NULL
+			AND NOT EXISTS (SELECT * FROM sys.columns AS c WHERE (c.name = 'QueryHash') AND (c.object_id = OBJECT_ID('dbo.fhsmMissingIndexes')))
+		BEGIN
+			RAISERROR('Adding column [QueryHash] to table dbo.fhsmMissingIndexes', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
+				ALTER TABLE dbo.fhsmMissingIndexes
+					ADD QueryHash binary(8) NULL;
+			';
+			EXEC(@stmt);
+		END;
+
+		--
+		-- Adding index NC_fhsmMissingIndexes_DatabaseName_QueryHash to table dbo.fhsmMissingIndexes if it not already exists
+		--
+		IF OBJECT_ID('dbo.fhsmMissingIndexes', 'U') IS NOT NULL
+			AND NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.name = 'NC_fhsmMissingIndexes_DatabaseName_QueryHash') AND (i.object_id = OBJECT_ID('dbo.fhsmMissingIndexes')))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmMissingIndexes_DatabaseName_QueryHash] to table dbo.fhsmMissingIndexes', 0, 1) WITH NOWAIT;
+
+			SET @stmt = 'CREATE NONCLUSTERED INDEX NC_fhsmMissingIndexes_DatabaseName_QueryHash ON dbo.fhsmMissingIndexes(DatabaseName, QueryHash)' + @tableCompressionStmt + ';';
 			EXEC(@stmt);
 		END;
 
@@ -150,6 +195,103 @@ ELSE BEGIN
 		--
 		BEGIN
 			SET @objectName = 'dbo.fhsmMissingIndexes';
+			SET @objName = PARSENAME(@objectName, 1);
+			SET @schName = PARSENAME(@objectName, 2);
+
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+		END;
+
+		--
+		-- Create table dbo.fhsmMissingIndexesTemp if it not already exists
+		--
+		IF OBJECT_ID('dbo.fhsmMissingIndexesTemp', 'U') IS NULL
+		BEGIN
+			RAISERROR('Creating table dbo.fhsmMissingIndexesTemp', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
+				CREATE TABLE dbo.fhsmMissingIndexesTemp(
+					Id int identity(1,1) NOT NULL
+					,DatabaseName nvarchar(128) NOT NULL
+					,SchemaName nvarchar(128) NOT NULL
+					,ObjectName nvarchar(128) NOT NULL
+					,QueryHash binary(8) NULL
+					,Statement nvarchar(max) NULL
+					,EqualityColumns nvarchar(4000) NULL
+					,InequalityColumns nvarchar(4000) NULL
+					,IncludedColumns nvarchar(4000) NULL
+					,UniqueCompiles bigint NULL
+					,UserSeeks bigint NOT NULL
+					,UserScans bigint NOT NULL
+					,LastUserSeek datetime NULL
+					,LastUserScan datetime NULL
+					,AvgTotalUserCost float NOT NULL
+					,AvgUserImpact float NOT NULL
+					,SystemSeeks bigint NOT NULL
+					,SystemScans bigint NOT NULL
+					,LastSystemSeek datetime NULL
+					,LastSystemScan datetime NULL
+					,AvgTotalSystemCost float NOT NULL
+					,AvgSystemImpact float NOT NULL
+					,LastSQLServiceRestart datetime NOT NULL
+					,TimestampUTC datetime NOT NULL
+					,Timestamp datetime NOT NULL
+					,CONSTRAINT PK_fhsmMissingIndexesTemp PRIMARY KEY(Id)' + @tableCompressionStmt + '
+				);
+
+				CREATE NONCLUSTERED INDEX NC_fhsmMissingIndexesTemp_TimestampUTC ON dbo.fhsmMissingIndexesTemp(TimestampUTC)' + @tableCompressionStmt + ';
+				CREATE NONCLUSTERED INDEX NC_fhsmMissingIndexesTemp_Timestamp ON dbo.fhsmMissingIndexesTemp(Timestamp)' + @tableCompressionStmt + ';
+				CREATE NONCLUSTERED INDEX NC_fhsmMissingIndexesTemp_DatabaseName_SchemaName_ObjectName ON dbo.fhsmMissingIndexesTemp(DatabaseName, SchemaName, ObjectName)' + @tableCompressionStmt + ';
+			';
+			EXEC(@stmt);
+		END;
+
+		--
+		-- Register extended properties on the table dbo.fhsmMissingIndexesTemp
+		--
+		BEGIN
+			SET @objectName = 'dbo.fhsmMissingIndexesTemp';
+			SET @objName = PARSENAME(@objectName, 1);
+			SET @schName = PARSENAME(@objectName, 2);
+
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+		END;
+
+		--
+		-- Create table dbo.fhsmMissingIndexStatement if it not already exists
+		--
+		IF OBJECT_ID('dbo.fhsmMissingIndexStatement', 'U') IS NULL
+		BEGIN
+			RAISERROR('Creating table dbo.fhsmMissingIndexStatement', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
+				CREATE TABLE dbo.fhsmMissingIndexStatement(
+					Id int identity(1,1) NOT NULL
+					,DatabaseName nvarchar(128) NOT NULL
+					,QueryHash binary(8) NOT NULL
+					,Statement nvarchar(max) NOT NULL
+					,PrevStatement nvarchar(max) NULL
+					,UpdateCount int NOT NULL
+					,CONSTRAINT PK_fhsmMissingIndexStatement PRIMARY KEY(Id)' + @tableCompressionStmt + '
+				);
+
+				CREATE NONCLUSTERED INDEX NC_fhsmMissingIndexStatement_DatabaseName_QueryHash ON dbo.fhsmMissingIndexStatement(DatabaseName, QueryHash)' + @tableCompressionStmt + ';
+			';
+			EXEC(@stmt);
+		END;
+
+		--
+		-- Register extended properties on the table dbo.fhsmMissingIndexStatement
+		--
+		BEGIN
+			SET @objectName = 'dbo.fhsmMissingIndexStatement';
 			SET @objName = PARSENAME(@objectName, 1);
 			SET @schName = PARSENAME(@objectName, 2);
 
@@ -195,6 +337,7 @@ ELSE BEGIN
 						mi.DatabaseName
 						,mi.SchemaName
 						,mi.ObjectName
+						,mi.QueryHash
 						,mi.EqualityColumns
 						,mi.InequalityColumns
 						,mi.IncludedColumns
@@ -214,7 +357,7 @@ ELSE BEGIN
 						,mi.LastSQLServiceRestart
 						,CAST(mi.LastUserSeek AS date) AS LastUserSeekDate
 						,mi.Timestamp
-						,ROW_NUMBER() OVER(PARTITION BY mi.DatabaseName, mi.SchemaName, mi.ObjectName, mi.EqualityColumns, mi.InequalityColumns, mi.IncludedColumns ORDER BY mi.TimestampUTC) AS Idx
+						,ROW_NUMBER() OVER(PARTITION BY mi.DatabaseName, mi.SchemaName, mi.ObjectName, mi.QueryHash, mi.EqualityColumns, mi.InequalityColumns, mi.IncludedColumns ORDER BY mi.TimestampUTC) AS Idx
 					FROM dbo.fhsmMissingIndexes AS mi
 					WHERE (
 							(mi.DatabaseName <> ''<HeartBeat>'')
@@ -226,9 +369,9 @@ ELSE BEGIN
 			END;
 			SET @stmt += '
 				SELECT
-					b.EqualityColumns
-					,b.InequalityColumns
-					,b.IncludedColumns
+					(dbo.fhsmSplitLines(b.EqualityColumns, ' + CAST(@maxEqualityColumnsLineLength AS nvarchar) + ')) AS EqualityColumns
+					,(dbo.fhsmSplitLines(b.InequalityColumns, ' + CAST(@maxInequalityColumnsLineLength AS nvarchar) + ')) AS InequalityColumns
+					,(dbo.fhsmSplitLines(b.IncludedColumns, ' + CAST(@maxIncludedColumnsLineLength AS nvarchar) + ')) AS IncludedColumns
 					,b.DeltaUniqueCompiles AS UniqueCompiles
 					,b.DeltaUserSeeks AS UserSeeks
 					,b.LastUserSeek
@@ -249,6 +392,7 @@ ELSE BEGIN
 					,b.DatabaseKey
 					,b.SchemaKey
 					,b.ObjectKey
+					,b.MissingIndexStatementKey
 				FROM (
 			';
 			SET @stmt += '
@@ -296,6 +440,7 @@ ELSE BEGIN
 						,a.DatabaseKey
 						,a.SchemaKey
 						,a.ObjectKey
+						,a.MissingIndexStatementKey
 					FROM (
 			';
 			SET @stmt += '
@@ -337,11 +482,13 @@ ELSE BEGIN
 							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(mi.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
 							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(mi.DatabaseName, mi.SchemaName, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS SchemaKey
 							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(mi.DatabaseName, mi.SchemaName, mi.ObjectName, DEFAULT, DEFAULT, DEFAULT) AS k) AS ObjectKey
+							,(SELECT k.[Key] FROM FHSQLMonitor.dbo.fhsmFNGenerateKey(mi.DatabaseName, CONVERT(nvarchar(18), mi.QueryHash, 1), DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS MissingIndexStatementKey
 						FROM missingIndexes AS mi
 						LEFT OUTER JOIN missingIndexes AS prevMi ON
 							(prevMi.DatabaseName = mi.DatabaseName)
 							AND (prevMi.SchemaName = mi.SchemaName)
 							AND (prevMi.ObjectName = mi.ObjectName)
+							AND ((prevMi.QueryHash = mi.QueryHash) OR ((prevMi.QueryHash IS NULL) AND (mi.QueryHash IS NULL)))
 							AND ((prevMi.EqualityColumns = mi.EqualityColumns) OR ((prevMi.EqualityColumns IS NULL) AND (mi.EqualityColumns IS NULL)))
 							AND ((prevMi.InequalityColumns = mi.InequalityColumns) OR ((prevMi.InequalityColumns IS NULL) AND (mi.InequalityColumns IS NULL)))
 							AND ((prevMi.IncludedColumns = mi.IncludedColumns) OR ((prevMi.IncludedColumns IS NULL) AND (mi.IncludedColumns IS NULL)))
@@ -357,25 +504,25 @@ ELSE BEGIN
 							,mi.InequalityColumns
 							,mi.IncludedColumns
 							,mi.UniqueCompiles
-							,LAG(mi.UniqueCompiles) OVER(PARTITION BY mi.DatabaseName, mi.SchemaName, mi.ObjectName, mi.EqualityColumns, mi.InequalityColumns, mi.IncludedColumns ORDER BY mi.TimestampUTC) AS PreviousUniqueCompiles
+							,LAG(mi.UniqueCompiles) OVER(PARTITION BY mi.DatabaseName, mi.SchemaName, mi.ObjectName, mi.QueryHash, mi.EqualityColumns, mi.InequalityColumns, mi.IncludedColumns ORDER BY mi.TimestampUTC) AS PreviousUniqueCompiles
 							,mi.UserSeeks
-							,LAG(mi.UserSeeks) OVER(PARTITION BY mi.DatabaseName, mi.SchemaName, mi.ObjectName, mi.EqualityColumns, mi.InequalityColumns, mi.IncludedColumns ORDER BY mi.TimestampUTC) AS PreviousUserSeeks
+							,LAG(mi.UserSeeks) OVER(PARTITION BY mi.DatabaseName, mi.SchemaName, mi.ObjectName, mi.QueryHash, mi.EqualityColumns, mi.InequalityColumns, mi.IncludedColumns ORDER BY mi.TimestampUTC) AS PreviousUserSeeks
 							,mi.LastUserSeek
 							,mi.UserScans
-							,LAG(mi.UserScans) OVER(PARTITION BY mi.DatabaseName, mi.SchemaName, mi.ObjectName, mi.EqualityColumns, mi.InequalityColumns, mi.IncludedColumns ORDER BY mi.TimestampUTC) AS PreviousUserScans
+							,LAG(mi.UserScans) OVER(PARTITION BY mi.DatabaseName, mi.SchemaName, mi.ObjectName, mi.QueryHash, mi.EqualityColumns, mi.InequalityColumns, mi.IncludedColumns ORDER BY mi.TimestampUTC) AS PreviousUserScans
 							,mi.LastUserScan
 							,mi.AvgTotalUserCost
 							,mi.AvgUserImpact
 							,mi.SystemSeeks
-							,LAG(mi.SystemSeeks) OVER(PARTITION BY mi.DatabaseName, mi.SchemaName, mi.ObjectName, mi.EqualityColumns, mi.InequalityColumns, mi.IncludedColumns ORDER BY mi.TimestampUTC) AS PreviousSystemSeeks
+							,LAG(mi.SystemSeeks) OVER(PARTITION BY mi.DatabaseName, mi.SchemaName, mi.ObjectName, mi.QueryHash, mi.EqualityColumns, mi.InequalityColumns, mi.IncludedColumns ORDER BY mi.TimestampUTC) AS PreviousSystemSeeks
 							,mi.LastSystemSeek
 							,mi.SystemScans
-							,LAG(mi.SystemScans) OVER(PARTITION BY mi.DatabaseName, mi.SchemaName, mi.ObjectName, mi.EqualityColumns, mi.InequalityColumns, mi.IncludedColumns ORDER BY mi.TimestampUTC) AS PreviousSystemScans
+							,LAG(mi.SystemScans) OVER(PARTITION BY mi.DatabaseName, mi.SchemaName, mi.ObjectName, mi.QueryHash, mi.EqualityColumns, mi.InequalityColumns, mi.IncludedColumns ORDER BY mi.TimestampUTC) AS PreviousSystemScans
 							,mi.LastSystemScan
 							,mi.AvgTotalSystemCost
 							,mi.AvgSystemImpact
 							,mi.LastSQLServiceRestart
-							,LAG(mi.LastSQLServiceRestart) OVER(PARTITION BY mi.DatabaseName, mi.SchemaName, mi.ObjectName, mi.EqualityColumns, mi.InequalityColumns, mi.IncludedColumns ORDER BY mi.TimestampUTC) AS PreviousLastSQLServiceRestart
+							,LAG(mi.LastSQLServiceRestart) OVER(PARTITION BY mi.DatabaseName, mi.SchemaName, mi.ObjectName, mi.QueryHash, mi.EqualityColumns, mi.InequalityColumns, mi.IncludedColumns ORDER BY mi.TimestampUTC) AS PreviousLastSQLServiceRestart
 							,CAST(mi.LastUserSeek AS date) AS LastUserSeekDate
 							,(DATEPART(HOUR, mi.LastUserSeek) * 60 * 60) + (DATEPART(MINUTE, mi.LastUserSeek) * 60) + (DATEPART(SECOND, mi.LastUserSeek)) AS LastUserSeekTimeKey
 							,CAST(mi.Timestamp AS date) AS Date
@@ -383,6 +530,7 @@ ELSE BEGIN
 							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(mi.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
 							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(mi.DatabaseName, mi.SchemaName, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS SchemaKey
 							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(mi.DatabaseName, mi.SchemaName, mi.ObjectName, DEFAULT, DEFAULT, DEFAULT) AS k) AS ObjectKey
+							,(SELECT k.[Key] FROM FHSQLMonitor.dbo.fhsmFNGenerateKey(mi.DatabaseName, CONVERT(nvarchar(18), mi.QueryHash, 1), DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS MissingIndexStatementKey
 						FROM dbo.fhsmMissingIndexes AS mi
 						WHERE (
 								(mi.DatabaseName <> ''<HeartBeat>'')
@@ -410,6 +558,52 @@ ELSE BEGIN
 		--
 		BEGIN
 			SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Missing indexes');
+			SET @objName = PARSENAME(@objectName, 1);
+			SET @schName = PARSENAME(@objectName, 2);
+
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+		END;
+
+		--
+		-- Create fact view @pbiSchema.[Missing index statement]
+		--
+		BEGIN
+			SET @stmt = '
+				IF OBJECT_ID(''' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Missing index statement') + ''', ''V'') IS NULL
+				BEGIN
+					EXEC(''CREATE VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Missing index statement') + ' AS SELECT ''''dummy'''' AS Txt'');
+				END;
+			';
+			EXEC(@stmt);
+
+			SET @stmt = '
+				ALTER VIEW  ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Missing index statement') + '
+				AS
+			';
+			SET @stmt += '
+				SELECT
+					(dbo.fhsmSplitLines(
+						(CASE
+							WHEN LEN(mis.Statement) > ' + CAST(@maxStatementLength AS nvarchar) + ' THEN LEFT(mis.Statement, ' + CAST(@maxStatementLength AS nvarchar) + ') + CHAR(10) + ''...Statement truncated''
+							ELSE mis.Statement
+						END),
+						' + CAST(@maxStatementLineLength AS nvarchar) + '
+					)) AS Statement
+					,(SELECT k.[Key] FROM FHSQLMonitor.dbo.fhsmFNGenerateKey(mis.DatabaseName, CONVERT(nvarchar(18), mis.QueryHash, 1), DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS MissingIndexStatementKey
+				FROM dbo.fhsmMissingIndexStatement AS mis;
+				';
+			EXEC(@stmt);
+		END;
+
+		--
+		-- Register extended properties on fact view @pbiSchema.[Missing index statement]
+		--
+		BEGIN
+			SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Missing index statement');
 			SET @objName = PARSENAME(@objectName, 1);
 			SET @schName = PARSENAME(@objectName, 2);
 
@@ -469,40 +663,103 @@ ELSE BEGIN
 						SELECT
 							@now = SYSDATETIME()
 							,@nowUTC = SYSUTCDATETIME();
+			';
+			IF (@productVersion1 <= 14)
+			BEGIN
+				-- SQL Versions SQL2017 or lower
 
+				SET @stmt += '
 						SET @stmt = ''
 							SELECT
 								PARSENAME(mid.statement, 3) AS DatabaseName
 								,PARSENAME(mid.statement, 2) AS SchemaName
 								,PARSENAME(mid.statement, 1) AS ObjectName
+								,CAST(NULL AS binary(8)) AS QueryHash
+								,CAST(NULL AS nvarchar(max)) AS Statement
 								,mid.equality_columns AS EqualityColumns
 								,mid.inequality_columns AS InequalityColumns
 								,mid.included_columns AS IncludedColumns
-								,migs.unique_compiles AS UniqueCompiles
-								,migs.user_seeks AS UserSeeks
-								,migs.user_scans AS UserScans
-								,migs.last_user_seek AS LastUserSeek
-								,migs.last_user_scan AS LastUserScan
-								,migs.avg_total_user_cost AS AvgTotalUserCost
-								,migs.avg_user_impact AS AvgUserImpact
-								,migs.system_seeks AS SystemSeeks
-								,migs.system_scans AS SystemScans
-								,migs.last_system_seek AS LastSystemSeek
-								,migs.last_system_scan AS LastSystemScan
-								,migs.avg_total_system_cost AS AvgTotalSystemCost
-								,migs.avg_system_impact AS AvgSystemImpact
+								,SUM(migs.unique_compiles) AS UniqueCompiles
+								,SUM(migs.user_seeks) AS UserSeeks
+								,SUM(migs.user_scans) AS UserScans
+								,MAX(migs.last_user_seek) AS LastUserSeek
+								,MAX(migs.last_user_scan) AS LastUserScan
+								,AVG(migs.avg_total_user_cost) AS AvgTotalUserCost
+								,AVG(migs.avg_user_impact) AS AvgUserImpact
+								,SUM(migs.system_seeks) AS SystemSeeks
+								,SUM(migs.system_scans) AS SystemScans
+								,MAX(migs.last_system_seek) AS LastSystemSeek
+								,MAX(migs.last_system_scan) AS LastSystemScan
+								,AVG(migs.avg_total_system_cost) AS AvgTotalSystemCost
+								,AVG(migs.avg_system_impact) AS AvgSystemImpact
 								,(SELECT d.create_date FROM sys.databases AS d WITH (NOLOCK) WHERE (d.name = ''''tempdb'''')) AS LastSQLServiceRestart
 								,@nowUTC, @now
 							FROM sys.dm_db_missing_index_group_stats AS migs WITH (NOLOCK)
 							INNER JOIN sys.dm_db_missing_index_groups AS mig WITH (NOLOCK) ON (mig.index_group_handle = migs.group_handle)
 							INNER JOIN sys.dm_db_missing_index_details AS mid WITH (NOLOCK) ON (mid.index_handle = mig.index_handle)
+							GROUP BY
+								mid.statement
+								,mid.equality_columns
+								,mid.inequality_columns
+								,mid.included_columns
+				';
+			END
+			ELSE BEGIN
+				SET @stmt += '
+						SET @stmt = ''
+							SELECT
+								PARSENAME(mid.statement, 3) AS DatabaseName
+								,PARSENAME(mid.statement, 2) AS SchemaName
+								,PARSENAME(mid.statement, 1) AS ObjectName
+								,migsq.query_hash AS QueryHash
+								,MAX(SUBSTRING(
+									dest.text,
+									migsq.last_statement_start_offset / 2 + 1,
+									(CASE migsq.last_statement_start_offset
+										WHEN -1 THEN DATALENGTH(dest.text)
+										ELSE migsq.last_statement_end_offset
+									END - migsq.last_statement_start_offset) / 2 + 1
+								)) AS Statement
+								,mid.equality_columns AS EqualityColumns
+								,mid.inequality_columns AS InequalityColumns
+								,mid.included_columns AS IncludedColumns
+								,NULL AS UniqueCompiles
+								,SUM(migsq.user_seeks) AS UserSeeks
+								,SUM(migsq.user_scans) AS UserScans
+								,MAX(migsq.last_user_seek) AS LastUserSeek
+								,MAX(migsq.last_user_scan) AS LastUserScan
+								,AVG(migsq.avg_total_user_cost) AS AvgTotalUserCost
+								,AVG(migsq.avg_user_impact) AS AvgUserImpact
+								,SUM(migsq.system_seeks) AS SystemSeeks
+								,SUM(migsq.system_scans) AS SystemScans
+								,MAX(migsq.last_system_seek) AS LastSystemSeek
+								,MAX(migsq.last_system_scan) AS LastSystemScan
+								,AVG(migsq.avg_total_system_cost) AS AvgTotalSystemCost
+								,AVG(migsq.avg_system_impact) AS AvgSystemImpact
+								,(SELECT d.create_date FROM sys.databases AS d WITH (NOLOCK) WHERE (d.name = ''''tempdb'''')) AS LastSQLServiceRestart
+								,@nowUTC, @now
+							FROM sys.dm_db_missing_index_group_stats_query AS migsq WITH (NOLOCK)
+							INNER JOIN sys.dm_db_missing_index_groups AS mig WITH (NOLOCK) ON (mig.index_group_handle = migsq.group_handle)
+							INNER JOIN sys.dm_db_missing_index_details AS mid WITH (NOLOCK) ON (mid.index_handle = mig.index_handle)
+							OUTER APPLY sys.dm_exec_sql_text(migsq.last_sql_handle) AS dest
+							GROUP BY
+								mid.statement
+								,migsq.query_hash
+								,mid.equality_columns
+								,mid.inequality_columns
+								,mid.included_columns
+				';
+			END
 
+			SET @stmt += '
 							UNION ALL
 
 							SELECT
 								''''<HeartBeat>'''' AS DatabaseName
 								,''''<HeartBeat>'''' AS SchemaName
 								,''''<HeartBeat>'''' AS ObjectName
+								,NULL AS QueryHash
+								,NULL AS Statement
 								,NULL AS EqualityColumns
 								,NULL AS InequalityColumns
 								,NULL AS IncludedColumns
@@ -522,8 +779,13 @@ ELSE BEGIN
 								,(SELECT d.create_date FROM sys.databases AS d WITH (NOLOCK) WHERE (d.name = ''''tempdb'''')) AS LastSQLServiceRestart
 								,@nowUTC, @now
 						'';
-						INSERT INTO dbo.fhsmMissingIndexes(
+				';
+				SET @stmt += '
+						TRUNCATE TABLE dbo.fhsmMissingIndexesTemp;
+
+						INSERT INTO dbo.fhsmMissingIndexesTemp(
 							DatabaseName, SchemaName, ObjectName
+							,QueryHash, Statement
 							,EqualityColumns, InequalityColumns, IncludedColumns
 							,UniqueCompiles
 							,UserSeeks, UserScans
@@ -539,6 +801,79 @@ ELSE BEGIN
 							@stmt
 							,N''@now datetime, @nowUTC datetime''
 							,@now = @now, @nowUTC = @nowUTC;
+				';
+				SET @stmt += '
+						INSERT INTO dbo.fhsmMissingIndexes(
+							DatabaseName, SchemaName, ObjectName
+							,QueryHash
+							,EqualityColumns, InequalityColumns, IncludedColumns
+							,UniqueCompiles
+							,UserSeeks, UserScans
+							,LastUserSeek, LastUserScan
+							,AvgTotalUserCost, AvgUserImpact
+							,SystemSeeks, SystemScans
+							,LastSystemSeek, LastSystemScan
+							,AvgTotalSystemCost, AvgSystemImpact
+							,LastSQLServiceRestart
+							,TimestampUTC, Timestamp
+						)
+						SELECT
+							DatabaseName, SchemaName, ObjectName
+							,QueryHash
+							,EqualityColumns, InequalityColumns, IncludedColumns
+							,UniqueCompiles
+							,UserSeeks, UserScans
+							,LastUserSeek, LastUserScan
+							,AvgTotalUserCost, AvgUserImpact
+							,SystemSeeks, SystemScans
+							,LastSystemSeek, LastSystemScan
+							,AvgTotalSystemCost, AvgSystemImpact
+							,LastSQLServiceRestart
+							,TimestampUTC, Timestamp
+						FROM dbo.fhsmMissingIndexesTemp;
+				';
+				SET @stmt += '
+						--
+						-- Insert records into fhsmMissingIndexStatement
+						--
+						BEGIN
+							MERGE dbo.fhsmMissingIndexStatement AS tgt
+							USING (
+								SELECT
+									t.DatabaseName
+									,t.QueryHash
+									,MAX(t.Statement) AS Statement
+								FROM dbo.fhsmMissingIndexesTemp AS t
+								WHERE (t.QueryHash IS NOT NULL) AND (t.Statement IS NOT NULL)
+								GROUP BY
+									t.DatabaseName
+									,t.QueryHash
+							) AS src
+							ON (src.DatabaseName = tgt.DatabaseName) AND (src.QueryHash = tgt.QueryHash)
+							WHEN MATCHED AND (src.Statement <> tgt.Statement)
+								THEN UPDATE SET
+									tgt.UpdateCount = tgt.UpdateCount + 1
+									,tgt.PrevStatement = tgt.Statement
+									,tgt.Statement = src.Statement
+							WHEN NOT MATCHED BY TARGET
+								THEN INSERT(DatabaseName, QueryHash, Statement, UpdateCount)
+								VALUES(src.DatabaseName, src.QueryHash, src.Statement, 0)
+							;
+						END;
+				';
+				SET @stmt += '
+						--
+						-- Delete records from fhsmMissingIndexStatement where no owner in fhsmMissingIndexes exists
+						--
+						BEGIN
+							DELETE miStmt
+							FROM dbo.fhsmMissingIndexStatement AS miStmt
+							WHERE NOT EXISTS (
+								SELECT *
+								FROM dbo.fhsmMissingIndexes AS mi
+								WHERE (mi.DatabaseName = miStmt.DatabaseName) AND (mi.QueryHash = miStmt.QueryHash)
+							);
+						END;
 					END;
 
 					RETURN 0;

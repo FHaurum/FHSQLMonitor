@@ -1,0 +1,38 @@
+table 'Table type'
+	lineageTag: 71d5606e-a245-4f18-b1d8-61e17bb0b9ed
+
+	column Type
+		lineageTag: c52b1cfd-a623-4ea7-82f7-35a59c9f48ff
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Type]
+
+		annotation SummarizationSetBy = Automatic
+
+	column TableIsHeap
+		isHidden
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: b3fc0a80-e029-4682-84b5-f18a1bc10b23
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [TableIsHeap]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Table type' = calculated
+		mode: import
+		source = ```
+				
+				    DATATABLE (
+				        "TableIsHeap", BOOLEAN,
+				        "Type", STRING,
+				        {
+				            { FALSE, "Clustered" },
+				            { TRUE, "HEAP" }
+				        }
+				    )
+				
+				```
+
+	annotation PBI_Id = 9b200aff72094494bcafe07ed12cbbe9
+

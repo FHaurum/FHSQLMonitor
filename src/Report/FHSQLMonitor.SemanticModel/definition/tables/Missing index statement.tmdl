@@ -1,43 +1,27 @@
-table Object
-	lineageTag: 0967b613-1669-445a-b063-2ed7d2c8f212
+table 'Missing index statement'
+	lineageTag: d0325c89-0f9d-447b-9265-8c6e765609e4
 
-	column Database
+	column Statement
 		dataType: string
-		lineageTag: c790ac85-8ba8-430a-b04a-8648153fe5f1
+		lineageTag: 8029ae0c-2b7e-451e-a71b-9150070728e9
 		summarizeBy: none
-		sourceColumn: Database
+		sourceColumn: Statement
 
 		annotation SummarizationSetBy = Automatic
 
-	column Schema
-		dataType: string
-		lineageTag: cb5316fa-c2e4-455d-9cfa-ec4e8426f33f
-		summarizeBy: none
-		sourceColumn: Schema
-
-		annotation SummarizationSetBy = Automatic
-
-	column Object
-		dataType: string
-		lineageTag: b09c37dd-ee3c-4f3f-906f-69942d0a6eb5
-		summarizeBy: none
-		sourceColumn: Object
-
-		annotation SummarizationSetBy = Automatic
-
-	column ObjectKey
+	column MissingIndexStatementKey
 		dataType: int64
 		isHidden
 		formatString: 0
-		lineageTag: fdf8ca11-f78d-47d3-aa23-45904a600564
+		lineageTag: 152136ec-ac23-4aea-9a02-7135a25646f3
 		summarizeBy: none
-		sourceColumn: ObjectKey
+		sourceColumn: MissingIndexStatementKey
 
 		changedProperty = IsHidden
 
 		annotation SummarizationSetBy = Automatic
 
-	partition Object = m
+	partition 'Missing index statement' = m
 		mode: import
 		queryGroup: Dimensions
 		source = ```
@@ -45,7 +29,7 @@ table Object
 				  loadConfigFirstMatch = Table.First(
 				    Table.SelectRows(
 				      #"Data load", 
-				      each List.Contains({"Index usage", "Missing indexes", "Statistics", "Table size"}, [Service])
+				      each List.Contains({"Missing indexes"}, [Service])
 				        and List.Contains({"Yes"}, [DataLoad])
 				    )
 				  ), 
@@ -56,14 +40,14 @@ table Object
 				      Record.Field(loadConfigFirstMatch, "DataLoad"), 
 				  dbList = Sql.Databases(#"Server name"), 
 				  db = dbList{[Name = #"Database name"]}[Data], 
-				  table = db{[Schema = #"Schema name", Item = "Object"]}[Data], 
+				  table = db{[Schema = #"Schema name", Item = "Missing index statement"]}[Data], 
 				  emptyDataset = Table.FirstN(table, 0), 
 				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset
 				in
 				  datasetToUse
 				```
 
-	annotation PBI_ResultType = Table
-
 	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
 

@@ -1,6 +1,6 @@
 ﻿$outputFile = "..\build\FHSQLMonitor.sql"
 
-$versionNumber = "v2.1"
+$versionNumber = "v2.2"
 
 $timeStr = (Get-Date).ToString("yyyy:MM:dd HH:mm:ss")
 

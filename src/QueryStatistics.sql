@@ -82,6 +82,7 @@ ELSE BEGIN
 
 	--
 	-- Variables used in view to control the statement output
+	--
 	BEGIN
 		DECLARE @maxStatementLength int;
 		DECLARE @maxStatementLineLength int;

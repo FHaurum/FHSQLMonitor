@@ -23367,7 +23367,7 @@ cultureInfo en-US
 			      "State": "Generated",
 			      "Terms": [
 			        {
-			          "Avg. total user cost": {
+			          "Total user cost": {
 			            "State": "Suggested",
 			            "Source": {
 			              "Type": "External",
@@ -23388,7 +23388,7 @@ cultureInfo en-US
 			      "State": "Generated",
 			      "Terms": [
 			        {
-			          "Avg. user impact": {
+			          "User impact": {
 			            "State": "Suggested",
 			            "Source": {
 			              "Type": "External",
@@ -23431,27 +23431,6 @@ cultureInfo en-US
 			      "Terms": [
 			        {
 			          "Frag. count": {
-			            "State": "Suggested",
-			            "Source": {
-			              "Type": "External",
-			              "Agent": "PowerBI.VisualColumnRename"
-			            },
-			            "Weight": 0.9
-			          }
-			        }
-			      ]
-			    },
-			    "table_measures.last_user_scan__missing_indexes": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Last user scan - Missing indexes"
-			        }
-			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "Last user scan": {
 			            "State": "Suggested",
 			            "Source": {
 			              "Type": "External",
@@ -23635,48 +23614,6 @@ cultureInfo en-US
 			      "Terms": [
 			        {
 			          "Size in bytes": {
-			            "State": "Suggested",
-			            "Source": {
-			              "Type": "External",
-			              "Agent": "PowerBI.VisualColumnRename"
-			            },
-			            "Weight": 0.9
-			          }
-			        }
-			      ]
-			    },
-			    "table_measures.unique_compiles__missing_indexes": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Unique compiles - Missing indexes"
-			        }
-			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "Unique compiles": {
-			            "State": "Suggested",
-			            "Source": {
-			              "Type": "External",
-			              "Agent": "PowerBI.VisualColumnRename"
-			            },
-			            "Weight": 0.9
-			          }
-			        }
-			      ]
-			    },
-			    "table_measures.user_scans__missing_indexes": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "User scans - Missing indexes"
-			        }
-			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "User scans": {
 			            "State": "Suggested",
 			            "Source": {
 			              "Type": "External",
@@ -68387,6 +68324,582 @@ cultureInfo en-US
 			      "Terms": [
 			        {
 			          "Order": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.index_columns__index_definition": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Index columns - Index details - Index configuration"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Index columns": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.included_columns__index_definition": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Included columns - Index details - Index configuration"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Included columns": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.avg__user_impact__index_details__missing_indexes": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Avg. user impact - Index details - Missing indexes"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Avg. user impact": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.avg__total_user_cost__index_details__missing_indexes": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Avg. total user cost - Index details - Missing indexes"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Avg. total user cost": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.user_seeks__index_details__missing_indexes": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "User seeks - Index details - Missing indexes"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "User seeks": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.index_type_desc__index_details__index_definition": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Index type desc - Index details - Index configuration"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Type": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.is_primary_key__index_details__index_definition": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Is primary key - Index details - Index configuration"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Pri.": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.is_unique__index_details__index_definition": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Is unique - Index details - Index configuration"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Unq.": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.is_disabled__index_details__index_definition": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Is disabled - Index details - Index configuration"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Dis.": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.is_hypothetical__index_details__index_definition": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Is hypothetical - Index details - Index configuration"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Hyp.": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.has_filter__index_details__index_definition": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Has filter - Index details - Index configuration"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Fil.": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.filter_definition__index_details__index_definition": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Filter definition - Index details - Index configuration"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Filter definition": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.last_user_seeks__index_details__missing_indexes": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Last user seeks - Index details - Missing indexes"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Last user seeks": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "index_definition.indextypedesc": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Index configuration",
+			          "ConceptualProperty": "IndexTypeDesc"
+			        }
+			      },
+			      "State": "Generated"
+			    },
+			    "index_definition.isprimarykey": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Index configuration",
+			          "ConceptualProperty": "IsPrimaryKey"
+			        }
+			      },
+			      "State": "Generated"
+			    },
+			    "index_definition.isunique": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Index configuration",
+			          "ConceptualProperty": "IsUnique"
+			        }
+			      },
+			      "State": "Generated"
+			    },
+			    "index_definition.isdisabled": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Index configuration",
+			          "ConceptualProperty": "IsDisabled"
+			        }
+			      },
+			      "State": "Generated"
+			    },
+			    "index_definition.ishypothetical": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Index configuration",
+			          "ConceptualProperty": "IsHypothetical"
+			        }
+			      },
+			      "State": "Generated"
+			    },
+			    "index_definition.hasfilter": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Index configuration",
+			          "ConceptualProperty": "HasFilter"
+			        }
+			      },
+			      "State": "Generated"
+			    },
+			    "index_definition.filterdefinition": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Index configuration",
+			          "ConceptualProperty": "FilterDefinition"
+			        }
+			      },
+			      "State": "Generated"
+			    },
+			    "table_measures.index_ratio_of_data__index_configuration": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Index ratio of data - Index configuration"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Index/Data %": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.show_filters_headers__index_configuration": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Show filters Headers - Index configuration"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Filters": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.show_filters__index_configuration": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Show filters - Index configuration"
+			        }
+			      },
+			      "State": "Generated"
+			    },
+			    "table_measures.rows__index_configuration": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Rows - Index configuration"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Rows": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.index_columns__index_configuration": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Index columns - Index configuration"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Index columns": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.included_columns__index_configuration": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Included columns - Index configuration"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Included columns": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.index_type_description__index_configuration": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Index type description - Index configuration"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Type": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.is_primary_key__index_configuration": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Is primary key - Index configuration"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Pri.": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.is_unique__index_configuration": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Is unique - Index configuration"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Unq.": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.is_disabled__index_configuration": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Is disabled - Index configuration"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Dis.": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.is_hypothetical__index_configuration": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Is hypothetical - Index configuration"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Hyp.": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.filter_definition__index_configuration": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Filter definition - Index configuration"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Filter definition": {
 			            "State": "Suggested",
 			            "Source": {
 			              "Type": "External",

@@ -1,0 +1,232 @@
+table 'Index configuration'
+	lineageTag: 0afa5c34-57fa-4c90-b768-5dad6a411b69
+
+	column IsUnique
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: b6b1c969-bd03-4331-9da5-5cf6a3ef1677
+		summarizeBy: none
+		sourceColumn: IsUnique
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column IsPrimaryKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: f91e73a7-d6f0-4a34-baeb-a5630511f7ad
+		summarizeBy: none
+		sourceColumn: IsPrimaryKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column IsUniqueConstraint
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 41224b92-1aa0-4d56-9159-f10ee12c8a22
+		summarizeBy: none
+		sourceColumn: IsUniqueConstraint
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column FillFactor
+		dataType: int64
+		formatString: 0
+		lineageTag: c03f580d-1d43-4f8b-a9b6-2ebe4da4f3ad
+		summarizeBy: none
+		sourceColumn: FillFactor
+
+		annotation SummarizationSetBy = User
+
+	column IsDisabled
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: a43bfe13-c7c8-425f-b0da-ff1c7c78290f
+		summarizeBy: none
+		sourceColumn: IsDisabled
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column IsHypothetical
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: d987a37b-4620-4604-b91f-11bce0c76c1e
+		summarizeBy: none
+		sourceColumn: IsHypothetical
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column AllowRowLocks
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: a7890bc9-e4f0-45f0-be5c-4790b59cebfd
+		summarizeBy: none
+		sourceColumn: AllowRowLocks
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column AllowPageLocks
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 8eef1f1c-f156-44db-bacb-619fe2657fc8
+		summarizeBy: none
+		sourceColumn: AllowPageLocks
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column HasFilter
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 33d2c268-7655-4205-8b97-b5035054e04a
+		summarizeBy: none
+		sourceColumn: HasFilter
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column FilterDefinition
+		dataType: string
+		lineageTag: b4a58680-f3ea-47ee-8965-d2f3778ade03
+		summarizeBy: none
+		sourceColumn: FilterDefinition
+
+		annotation SummarizationSetBy = Automatic
+
+	column AutoCreated
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 651b6f74-edd2-4313-a167-6ed787869702
+		summarizeBy: none
+		sourceColumn: AutoCreated
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column IndexColumns
+		dataType: string
+		lineageTag: 31bffe7e-ff7c-48b6-824e-355e4db9d474
+		summarizeBy: none
+		sourceColumn: IndexColumns
+
+		annotation SummarizationSetBy = Automatic
+
+	column IncludedColumns
+		dataType: string
+		lineageTag: 35a52113-d0d6-41da-a2a1-086142add5be
+		summarizeBy: none
+		sourceColumn: IncludedColumns
+
+		annotation SummarizationSetBy = Automatic
+
+	column ObjectKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: e379ad75-a68f-41a5-928d-a064f0be140a
+		summarizeBy: none
+		sourceColumn: ObjectKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column IndexKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: c7f7f2c2-1864-4ea1-b18b-c02730eb23ea
+		summarizeBy: none
+		sourceColumn: IndexKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column IndexTypeDesc
+		dataType: string
+		lineageTag: 51fd6377-020d-4a7d-a9c4-4de6c792d979
+		summarizeBy: none
+		sourceColumn: IndexTypeDesc
+
+		annotation SummarizationSetBy = Automatic
+
+	column TableIsHeap
+		dataType: boolean
+		isHidden
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 10f93b8d-415e-42ad-be23-8cc4fce9c486
+		summarizeBy: none
+		sourceColumn: TableIsHeap
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Index configuration' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Index usage")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db = dbList{[Name = #"Database name"]}[Data], 
+				  table = db{[Schema = #"Schema name", Item = "Index configuration"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  SelectColumns = Table.SelectColumns(
+				    datasetToUse,
+				    {
+				      "TableIsHeap",
+				      "IndexTypeDesc",
+				      "IsUnique",
+				      "IsPrimaryKey",
+				      "IsUniqueConstraint",
+				      "FillFactor",
+				      "IsDisabled",
+				      "IsHypothetical",
+				      "AllowRowLocks",
+				      "AllowPageLocks",
+				      "HasFilter",
+				      "FilterDefinition",
+				      "AutoCreated",
+				      "IndexColumns",
+				      "IncludedColumns",
+				      "ObjectKey",
+				      "IndexKey"
+				    }
+				  )
+				in
+				  SelectColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

@@ -1,0 +1,27 @@
+table 'Missing index statement - Index details'
+	lineageTag: 0a91a0cd-c03d-4d4f-b61a-4a59ebb1240d
+
+	column Statement
+		lineageTag: 3702ea97-c05e-48fb-9664-3f379113e520
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: Missing index statement[Statement]
+
+		annotation SummarizationSetBy = Automatic
+
+	column MissingIndexStatementKey
+		isHidden
+		formatString: 0
+		lineageTag: b704cab8-1a1a-4240-a789-4324c148b37f
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: Missing index statement[MissingIndexStatementKey]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Missing index statement - Index details' = calculated
+		mode: import
+		source = 'Missing index statement'
+
+	annotation PBI_Id = 36005faee9544a93a09377807ca1c731
+

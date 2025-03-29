@@ -66,7 +66,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.1';
+		SET @version = '2.2';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -78,6 +78,17 @@ ELSE BEGIN
 		SET @productStartPos = @productEndPos + 1;
 		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
 		SET @productVersion3 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+	END;
+
+	--
+	-- Variables used in view to control the statement output
+	--
+	BEGIN
+		DECLARE @maxIndexColumnsLineLength int;
+		DECLARE @maxIncludedColumnsLineLength int;
+
+		SET @maxIndexColumnsLineLength = 40;
+		SET @maxIncludedColumnsLineLength = 40;
 	END;
 
 	--
@@ -177,6 +188,84 @@ ELSE BEGIN
 	--
 	BEGIN
 		--
+		-- Create fact view @pbiSchema.[Index configuration]
+		--
+		BEGIN
+			SET @stmt = '
+				IF OBJECT_ID(''' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Index configuration') + ''', ''V'') IS NULL
+				BEGIN
+					EXEC(''CREATE VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Index configuration') + ' AS SELECT ''''dummy'''' AS Txt'');
+				END;
+			';
+			EXEC(@stmt);
+
+			SET @stmt = '
+				ALTER VIEW  ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Index configuration') + '
+				AS
+			';
+			SET @stmt += '
+				SELECT
+					CAST(COALESCE((
+						SELECT 1
+						FROM dbo.fhsmIndexUsage AS iuIsHeap
+						WHERE (iuIsHeap.TimestampUTC = iu.TimestampUTC)
+							AND (iuIsHeap.DatabaseName = iu.DatabaseName)
+							AND (iuIsHeap.SchemaName = iu.SchemaName)
+							AND (iuIsHeap.ObjectName = iu.ObjectName)
+							AND (iuIsHeap.IndexType = 0)
+					), 0) AS bit) AS TableIsHeap
+					,CASE iu.IndexType
+						WHEN 0 THEN ''HEAP''
+						WHEN 1 THEN ''CL''
+						WHEN 2 THEN ''NCL''
+						WHEN 3 THEN ''XML''
+						WHEN 4 THEN ''Spatial''
+						WHEN 5 THEN ''CL-COL''
+						WHEN 6 THEN ''NCL-COL''
+						WHEN 7 THEN ''NCL-HASH''
+					END AS IndexTypeDesc
+					,iu.IsUnique			+ 0 AS IsUnique
+					,iu.IsPrimaryKey		+ 0 AS IsPrimaryKey
+					,iu.IsUniqueConstraint	+ 0 AS IsUniqueConstraint
+					,iu.[FillFactor]
+					,iu.IsDisabled			+ 0 AS IsDisabled
+					,iu.IsHypothetical		+ 0 AS IsHypothetical
+					,iu.AllowRowLocks		+ 0 AS AllowRowLocks
+					,iu.AllowPageLocks		+ 0 AS AllowPageLocks
+					,iu.HasFilter			+ 0 AS HasFilter
+					,iu.FilterDefinition
+					,iu.AutoCreated			+ 0 AS AutoCreated
+					,(dbo.fhsmSplitLines(iu.IndexColumns, ' + CAST(@maxIndexColumnsLineLength AS nvarchar) + ')) AS IndexColumns
+					,(dbo.fhsmSplitLines(iu.IncludedColumns, ' + CAST(@maxIncludedColumnsLineLength AS nvarchar) + ')) AS IncludedColumns
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iu.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iu.DatabaseName, iu.SchemaName, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS SchemaKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iu.DatabaseName, iu.SchemaName, iu.ObjectName, DEFAULT, DEFAULT, DEFAULT) AS k) AS ObjectKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iu.DatabaseName, iu.SchemaName, iu.ObjectName, COALESCE(iu.IndexName, ''N.A.''), DEFAULT, DEFAULT) AS k) AS IndexKey
+				FROM dbo.fhsmIndexUsage AS iu
+				WHERE (iu.TimestampUTC = (
+					SELECT MAX(iuLatest.TimestampUTC)
+					FROM dbo.fhsmIndexUsage AS iuLatest
+				));
+			';
+			EXEC(@stmt);
+		END;
+
+		--
+		-- Register extended properties on fact view @pbiSchema.[Index configuration]
+		--
+		BEGIN
+			SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Index configuration');
+			SET @objName = PARSENAME(@objectName, 1);
+			SET @schName = PARSENAME(@objectName, 2);
+
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+		END;
+
+		--
 		-- Create fact view @pbiSchema.[Index usage]
 		--
 		BEGIN
@@ -215,7 +304,23 @@ ELSE BEGIN
 						,iu.Timestamp
 						,CAST(iu.Timestamp AS date) AS Date
 						,ROW_NUMBER() OVER(PARTITION BY iu.DatabaseName, iu.SchemaName, iu.ObjectName, iu.IndexName ORDER BY iu.TimestampUTC) AS Idx
-					FROM dbo.fhsmIndexUsage AS iu
+					FROM (
+						SELECT
+							iu.DatabaseName
+							,iu.SchemaName
+							,iu.ObjectName
+							,iu.IndexName
+						FROM dbo.fhsmIndexUsage AS iu
+						WHERE (iu.TimestampUTC = (
+							SELECT MAX(iuLatest.TimestampUTC)
+							FROM dbo.fhsmIndexUsage AS iuLatest
+						))
+					) AS iuExists
+					INNER JOIN dbo.fhsmIndexUsage AS iu ON
+						(iu.DatabaseName = iuExists.DatabaseName)
+						AND (iu.SchemaName = iuExists.SchemaName)
+						AND (iu.ObjectName = iuExists.ObjectName)
+						AND ((iu.IndexName = iuExists.IndexName) OR ((iu.IndexName IS NULL) AND (iuExists.IndexName IS NULL)))
 				)
 				';
 			END;
@@ -335,7 +440,23 @@ ELSE BEGIN
 							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iu.DatabaseName, iu.SchemaName, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS SchemaKey
 							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iu.DatabaseName, iu.SchemaName, iu.ObjectName, DEFAULT, DEFAULT, DEFAULT) AS k) AS ObjectKey
 							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iu.DatabaseName, iu.SchemaName, iu.ObjectName, COALESCE(iu.IndexName, ''N.A.''), DEFAULT, DEFAULT) AS k) AS IndexKey
-						FROM dbo.fhsmIndexUsage AS iu
+						FROM (
+							SELECT
+								iu.DatabaseName
+								,iu.SchemaName
+								,iu.ObjectName
+								,iu.IndexName
+							FROM dbo.fhsmIndexUsage AS iu
+							WHERE (iu.TimestampUTC = (
+								SELECT MAX(iuLatest.TimestampUTC)
+								FROM dbo.fhsmIndexUsage AS iuLatest
+							))
+						) AS iuExists
+						INNER JOIN dbo.fhsmIndexUsage AS iu ON
+							(iu.DatabaseName = iuExists.DatabaseName)
+							AND (iu.SchemaName = iuExists.SchemaName)
+							AND (iu.ObjectName = iuExists.ObjectName)
+							AND ((iu.IndexName = iuExists.IndexName) OR ((iu.IndexName IS NULL) AND (iuExists.IndexName IS NULL)))
 				';
 			END;
 			SET @stmt += '
@@ -556,20 +677,22 @@ ELSE BEGIN
 									OUTER APPLY (
 										SELECT STUFF((
 											SELECT '''','''' + QUOTENAME(c.name) AS ColumnName
-											FROM sys.index_columns AS sc WITH (NOLOCK)
-											INNER JOIN sys.columns AS c WITH (NOLOCK) ON (c.object_id = sc.object_id) AND (c.column_id = sc.column_id)
-											WHERE (sc.object_id = i.object_id) AND (sc.index_id = i.index_id) AND (sc.is_included_column = 0)
-											ORDER BY sc.key_ordinal
+											FROM sys.index_columns AS ic WITH (NOLOCK)
+											INNER JOIN sys.columns AS c WITH (NOLOCK) ON (c.object_id = ic.object_id) AND (c.column_id = ic.column_id)
+											WHERE (ic.object_id = i.object_id) AND (ic.index_id = i.index_id)
+												AND (ic.is_included_column = 0) AND (ic.key_ordinal <> 0)
+											ORDER BY ic.key_ordinal
 											FOR XML PATH (''''''''), type
 										).value(''''.'''', ''''nvarchar(max)''''), 1, 1, '''''''') AS Columns
 									) AS indexColumns
 									OUTER APPLY (
 										SELECT STUFF((
 											SELECT '''','''' + QUOTENAME(c.name) AS ColumnName
-											FROM sys.index_columns AS sc WITH (NOLOCK)
-											INNER JOIN sys.columns AS c WITH (NOLOCK) ON (c.object_id = sc.object_id) AND (c.column_id = sc.column_id)
-											WHERE (sc.object_id = i.object_id) AND (sc.index_id = i.index_id) AND (sc.is_included_column = 1)
-											ORDER BY sc.key_ordinal
+											FROM sys.index_columns AS ic WITH (NOLOCK)
+											INNER JOIN sys.columns AS c WITH (NOLOCK) ON (c.object_id = ic.object_id) AND (c.column_id = ic.column_id)
+											WHERE (ic.object_id = i.object_id) AND (ic.index_id = i.index_id)
+												AND (ic.is_included_column = 1)
+											ORDER BY ic.key_ordinal
 											FOR XML PATH (''''''''), type
 										).value(''''.'''', ''''nvarchar(max)''''), 1, 1, '''''''') AS Columns
 									) AS includedColumns

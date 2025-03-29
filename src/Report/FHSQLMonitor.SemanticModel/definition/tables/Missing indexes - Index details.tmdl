@@ -1,0 +1,145 @@
+table 'Missing indexes - Index details'
+	lineageTag: 877c856b-7b36-4568-b7ad-dcddb3562e0c
+
+	column 'Equality columns'
+		lineageTag: 8662ce73-75ea-45b3-a825-8bf0a8a719b2
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: Missing indexes[Equality columns]
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Inequality columns'
+		lineageTag: ebdb6fcc-2ce7-49ca-9954-c521381ca09e
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: Missing indexes[Inequality columns]
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Included columns'
+		lineageTag: b4c9c38b-6c2f-40c4-b46f-e9cf9c6d9095
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: Missing indexes[Included columns]
+
+		annotation SummarizationSetBy = Automatic
+
+	column UniqueCompiles
+		isHidden
+		formatString: 0
+		lineageTag: 374365f3-5bc5-405a-8b9c-9a49732d3948
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: Missing indexes[UniqueCompiles]
+
+		annotation SummarizationSetBy = User
+
+	column UserSeeks
+		isHidden
+		formatString: 0
+		lineageTag: 5d3b3f0d-67da-46b7-9c26-ef5c64954500
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: Missing indexes[UserSeeks]
+
+		annotation SummarizationSetBy = User
+
+	column LastUserSeek
+		isHidden
+		formatString: General Date
+		lineageTag: 592b75f3-465a-4c36-8bc9-2ec6b6471c3f
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: Missing indexes[LastUserSeek]
+
+		annotation SummarizationSetBy = Automatic
+
+	column UserScans
+		isHidden
+		formatString: 0
+		lineageTag: 30d7edff-c84b-49f6-89ea-e4170725acfe
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: Missing indexes[UserScans]
+
+		annotation SummarizationSetBy = User
+
+	column LastUserScan
+		isHidden
+		formatString: General Date
+		lineageTag: a20cd9b5-7511-4673-85f0-4ba493bd24a3
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: Missing indexes[LastUserScan]
+
+		annotation SummarizationSetBy = Automatic
+
+	column AvgTotalUserCost
+		isHidden
+		lineageTag: 8a3fc2ae-3ead-40e2-81e7-e68bcccc468b
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: Missing indexes[AvgTotalUserCost]
+
+		annotation SummarizationSetBy = User
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column AvgUserImpact
+		isHidden
+		lineageTag: ddfb0635-9c8e-44cf-ae69-099d5831c77a
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: Missing indexes[AvgUserImpact]
+
+		annotation SummarizationSetBy = User
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column LastUserSeekDate
+		isHidden
+		formatString: General Date
+		lineageTag: ea428545-71cc-4905-8f53-d431aa7d2cf8
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: Missing indexes[LastUserSeekDate]
+
+		annotation SummarizationSetBy = Automatic
+
+	column Date
+		isHidden
+		formatString: General Date
+		lineageTag: 638870f6-5fb3-4693-85d5-42ea1e270cf8
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: Missing indexes[Date]
+
+		annotation SummarizationSetBy = Automatic
+
+	column ObjectKey
+		isHidden
+		formatString: 0
+		lineageTag: e653c077-71a0-465e-869a-e23307719d7f
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: Missing indexes[ObjectKey]
+
+		annotation SummarizationSetBy = User
+
+	column MissingIndexStatementKey
+		isHidden
+		formatString: 0
+		lineageTag: 0d946673-e7d9-46b9-bf2f-d255f1e31f8d
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: Missing indexes[MissingIndexStatementKey]
+
+		annotation SummarizationSetBy = User
+
+	partition 'Missing indexes - Index details' = calculated
+		mode: import
+		source = 'Missing indexes'
+
+	annotation PBI_Id = 6d4a97ec2a874d0d8bee8c2ae4588c2e
+

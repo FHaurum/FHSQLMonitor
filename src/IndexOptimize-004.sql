@@ -161,6 +161,7 @@ BEGIN
 
 	--
 	-- Variables used in view to control the statement output
+	--
 	BEGIN
 		DECLARE @maxCommandLineLength int;
 		DECLARE @maxErrorMessageLineLength int;

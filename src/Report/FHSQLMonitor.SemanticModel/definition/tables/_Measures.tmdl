@@ -1355,7 +1355,7 @@ table _Measures
 	measure 'Front page version text' =
 			
 			[Info text] & UNICHAR ( 10 ) & " "
-			    & UNICHAR ( 10 ) & "Developed using Power BI Desktop version: 2.140.1205.0 64-bit (February 2025)"
+			    & UNICHAR ( 10 ) & "Developed using Power BI Desktop version: 2.140.1577.0 64-bit (February 2025)"
 		displayFolder: Common
 		lineageTag: e74236c7-2bcf-4409-b8d2-ddb49a83e10b
 
@@ -2842,7 +2842,7 @@ table _Measures
 
 	measure 'Version number' =
 			
-			"2.1.0"
+			"2.2.0"
 		isHidden
 		displayFolder: Common
 		lineageTag: 39428edf-bb47-48d0-a60e-f025984fd1ba
@@ -9339,29 +9339,6 @@ table _Measures
 
 		annotation PBI_FormatHint = {"isCustom":true}
 
-	measure 'Unique compiles - Missing indexes' =
-			
-			SUM ( 'Missing indexes'[UniqueCompiles] )
-		formatString: #,0
-		displayFolder: Missing indexes
-		lineageTag: 3d07fc0f-8503-4122-828e-e70d0d01b59d
-
-	measure 'User scans - Missing indexes' =
-			
-			SUM ( 'Missing indexes'[UserScans] )
-		formatString: 0
-		displayFolder: Missing indexes
-		lineageTag: 624b065f-9b59-4fba-ae81-3533554fcf84
-
-	measure 'Last user scan - Missing indexes' =
-			
-			MAX ( 'Missing indexes'[LastUserScan] )
-		formatString: dd-mmm-yyyy hh:nn
-		displayFolder: Missing indexes
-		lineageTag: 17ce2f1a-4fcf-4c4f-960d-c02239f25680
-
-		annotation PBI_FormatHint = {"isCustom":true}
-
 	measure 'VLF - Missing indexes' =
 			
 			VAR _userImpactLimit =
@@ -13301,15 +13278,24 @@ table _Measures
 		displayFolder: Partitioned indexes
 		lineageTag: d3b99fc0-89d4-4b53-9f49-d7a5d3165127
 
-	measure 'Latest rows # - Partitioned indexes' =
+	measure 'Latest rows # - Partitioned indexes' = ```
 			
 			VAR _maxDate =
-			    CALCULATE ( MAX ( 'Partitioned indexes'[Date] ), REMOVEFILTERS ( 'Index' ) )
+			    CALCULATE (
+			        MAX ( 'Partitioned indexes'[Date] ),
+			        REMOVEFILTERS ( 'Index' ),
+			        REMOVEFILTERS ( 'Partitioned indexes'[Partition range] )
+			    )
 			VAR _latestValue =
-			    CALCULATE ( [Rows # - Partitioned indexes], 'Partitioned indexes'[Date] = _maxDate )
+			    CALCULATE (
+			        [Rows # - Partitioned indexes],
+			        'Partitioned indexes'[Date] = _maxDate
+			    )
 			VAR _result = _latestValue
 			RETURN
 			    _result
+			
+			```
 		formatString: #,0
 		displayFolder: Partitioned indexes
 		lineageTag: 068984df-d760-44cc-b2a4-9058adb43328
@@ -13404,6 +13390,605 @@ table _Measures
 			    _result
 		displayFolder: Partitioned indexes
 		lineageTag: af40b0aa-3d05-4fa0-ac36-3420a20e79fe
+
+	measure 'Report page text - Index details' =
+			
+			VAR _service = [Service - Index usage]
+			VAR _serviceDisplayText = [Service display text - Index details]
+			VAR _load =
+			    SELECTCOLUMNS (
+			        FILTER ( 'Data load', 'Data load'[Service] = _service ),
+			        "DataLoad", 'Data load'[DataLoad]
+			    )
+			VAR _textToShow =
+			    IF ( _load = "No", "(", "" ) & _serviceDisplayText
+			        & IF ( _load = "No", ")", "" )
+			VAR _result = _textToShow
+			RETURN
+			    _result
+		displayFolder: Index details
+		lineageTag: c59086cb-bc6c-4a9d-b333-bb914beea821
+
+	measure 'Service display text - Index details' =
+			
+			"Index details"
+		displayFolder: Index details
+		lineageTag: 7e272df1-c8da-4269-87b7-2296955ef629
+
+	measure 'VLF - Index details - Missing indexes' =
+			
+			VAR _userImpactLimit =
+			    SELECTEDVALUE ( 'Values 0-90 (10 delta)'[Value] )
+			VAR _userImpact = [Avg. user impact - Index details - Missing indexes]
+			VAR _result =
+			    IF ( ( _userImpact >= _userImpactLimit ), 1 )
+			RETURN
+			    _result
+		formatString: 0
+		displayFolder: Index details
+		lineageTag: d6415c2e-eeb8-4cc3-96e5-060b86253f3b
+
+	measure 'Index columns - Index details - Index configuration' =
+			
+			IF ( ISINSCOPE ( 'Index'[Index] ), MAX ( 'Index configuration'[IndexColumns] ) )
+		displayFolder: Index details
+		lineageTag: ae6f4305-30b9-4271-beef-9b041744ceef
+
+	measure 'Included columns - Index details - Index configuration' =
+			
+			IF ( ISINSCOPE ( 'Index'[Index] ), MAX ( 'Index configuration'[IncludedColumns] ) )
+		displayFolder: Index details
+		lineageTag: acc94efe-afb4-4234-ac23-90a3e7ee024f
+
+	measure 'VLF - Index details - Index configuration' =
+			
+			VAR _objectKey =
+			    MAX ( Object[ObjectKey] )
+			VAR _value =
+			    SUMX (
+			        FILTER ( 'Index usage', 'Index usage'[ObjectKey] = _objectKey ),
+			        CALCULATE (
+			            [User seeks - Index usage] + [User updates - Index usage] + [User lookups - Index usage] + [User scans - Index usage]
+			        )
+			    )
+			VAR _result = _value
+			RETURN
+			    _result
+		formatString: 0
+		displayFolder: Index details
+		lineageTag: 0b0bc496-44e8-4356-9dd1-a000f3212285
+
+	measure 'Avg. user impact - Index details - Missing indexes' =
+			
+			VAR _objectKey =
+			    MAX ( Object[ObjectKey] )
+			VAR _value =
+			    CALCULATE (
+			        AVERAGE ( 'Missing indexes - Index details'[AvgUserImpact] ),
+			        'Missing indexes - Index details'[ObjectKey] = _objectKey
+			    )
+			VAR _result = _value
+			RETURN
+			    _result
+		formatString: #,0.00
+		displayFolder: Index details
+		lineageTag: bc3b14a5-6264-4e10-8dd4-f675485564b7
+
+	measure 'Avg. total user cost - Index details - Missing indexes' =
+			
+			VAR _objectKey =
+			    MAX ( Object[ObjectKey] )
+			VAR _value =
+			    CALCULATE (
+			        AVERAGE ( 'Missing indexes - Index details'[AvgTotalUserCost] ),
+			        'Missing indexes - Index details'[ObjectKey] = _objectKey
+			    )
+			VAR _result = _value
+			RETURN
+			    _result
+		formatString: #,0.00
+		displayFolder: Index details
+		lineageTag: b60afc6c-c639-46ef-963a-dce375b8f1c5
+
+	measure 'User seeks - Index details - Missing indexes' =
+			
+			VAR _objectKey =
+			    MAX ( Object[ObjectKey] )
+			VAR _value =
+			    CALCULATE (
+			        SUM ( 'Missing indexes - Index details'[UserSeeks] ),
+			        'Missing indexes - Index details'[ObjectKey] = _objectKey
+			    )
+			VAR _result = _value
+			RETURN
+			    _result
+		formatString: #,0
+		displayFolder: Index details
+		lineageTag: 114379f7-1076-40c1-9778-d09117a0d53e
+
+	measure 'Index type desc - Index details - Index configuration' =
+			
+			IF ( ISINSCOPE ( 'Index'[Index] ), MAX ( 'Index configuration'[IndexTypeDesc] ) )
+		displayFolder: Index details
+		lineageTag: d96382ab-a198-4ee8-9859-0415ba86590b
+
+	measure 'Is primary key - Index details - Index configuration' =
+			
+			IF (
+			    ISINSCOPE ( 'Index'[Index] ),
+			    SELECTEDVALUE ( 'Index configuration'[IsPrimaryKey] ) + 0
+			)
+		formatString: 0
+		displayFolder: Index details
+		lineageTag: dbdff829-c9fd-4395-ba7a-985e822ed867
+
+	measure 'Is unique - Index details - Index configuration' =
+			
+			IF (
+			    ISINSCOPE ( 'Index'[Index] ),
+			    SELECTEDVALUE ( 'Index configuration'[IsUnique] ) + 0
+			)
+		formatString: 0
+		displayFolder: Index details
+		lineageTag: 6f3cfee1-e944-496c-898b-985c47ef2fad
+
+	measure 'Is disabled - Index details - Index configuration' =
+			
+			IF (
+			    ISINSCOPE ( 'Index'[Index] ),
+			    SELECTEDVALUE ( 'Index configuration'[IsDisabled] ) + 0
+			)
+		formatString: 0
+		displayFolder: Index details
+		lineageTag: a736cea5-7f24-496b-98ff-38d4e0fb0d97
+
+	measure 'Is hypothetical - Index details - Index configuration' =
+			
+			IF (
+			    ISINSCOPE ( 'Index'[Index] ),
+			    SELECTEDVALUE ( 'Index configuration'[IsHypothetical] ) + 0
+			)
+		formatString: 0
+		displayFolder: Index details
+		lineageTag: 6cb88300-ac62-42f3-b579-fd7c62fe37d0
+
+	measure 'Has filter - Index details - Index configuration' =
+			
+			IF (
+			    ISINSCOPE ( 'Index'[Index] ),
+			    SELECTEDVALUE ( 'Index configuration'[HasFilter] ) + 0
+			)
+		formatString: 0
+		displayFolder: Index details
+		lineageTag: 65e878af-3e96-4507-b9ef-fbda9a674be3
+
+	measure 'Filter definition - Index details - Index configuration' =
+			
+			IF (
+			    ISINSCOPE ( 'Index'[Index] ),
+			    MAX ( 'Index configuration'[FilterDefinition] )
+			)
+		displayFolder: Index details
+		lineageTag: 4e03d819-6186-4be8-b2b7-0d4cc44ccb84
+
+	measure 'Last user seeks - Index details - Missing indexes' =
+			
+			VAR _objectKey =
+			    MAX ( Object[ObjectKey] )
+			VAR _value =
+			    CALCULATE (
+			        MAX ( 'Missing indexes - Index details'[LastUserSeek] ),
+			        'Missing indexes - Index details'[ObjectKey] = _objectKey
+			    )
+			VAR _result = _value
+			RETURN
+			    _result
+		formatString: dd-mmm-yyyy hh:nn
+		displayFolder: Index details
+		lineageTag: eb335084-71dc-4409-a2b9-12160cd8a2fc
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	measure 'Rows - Index details' =
+			
+			CALCULATE (
+			    MAX ( 'Table size'[Rows] ),
+			    FILTER ( 'Table size', 'Table size'[Date] = MAX ( 'Table size'[Date] ) )
+			)
+		formatString: #,0
+		displayFolder: Index details
+		lineageTag: 80363a7f-cc23-4c75-8c84-7c222b949daa
+
+	measure 'Data KB - Index details' =
+			
+			CALCULATE (
+			    MAX ( 'Table size'[Data] ),
+			    FILTER ( 'Table size', 'Table size'[Date] = MAX ( 'Table size'[Date] ) )
+			)
+		formatString: #,0
+		displayFolder: Index details
+		lineageTag: a7dc6df5-77b1-4bb2-b4d1-f01468d8e7d4
+
+	measure 'Index KB - Index details' =
+			
+			CALCULATE (
+			    MAX ( 'Table size'[IndexSize] ),
+			    FILTER ( 'Table size', 'Table size'[Date] = MAX ( 'Table size'[Date] ) )
+			)
+		formatString: #,0
+		displayFolder: Index details
+		lineageTag: 71e904f4-3efb-4af2-9e16-0a65c3e0c040
+
+	measure 'Title - Index details - Missing indexes' = ```
+			
+			VAR _minDataDate =
+			    MIN ( 'Missing indexes'[Date] )
+			VAR _maxDataDate =
+			    MAX ( 'Missing indexes'[Date] )
+			VAR _minDataDateTxt =
+			    FORMAT ( _minDataDate, [Date format string] )
+			VAR _maxDataDateTxt =
+			    FORMAT ( _maxDataDate, [Date format string] )
+			VAR _userImpactLimit =
+			    SELECTEDVALUE ( 'Values 0-90 (10 delta)'[Value] )
+			VAR _txt =
+			    "Missing index data"
+			        & IF (
+			            _minDataDate <> BLANK (),
+			            " between " & _minDataDateTxt & " and " & _maxDataDateTxt & " and impact greater or equal to " & _userImpactLimit
+			        )
+			VAR _result = _txt
+			RETURN
+			    _result
+			
+			```
+		displayFolder: Index details
+		lineageTag: ebd14b61-2427-4c16-8d6e-62e9efc03caf
+
+	measure 'Title - Index details - Index usage' =
+			
+			VAR _latestDate = [Latest date - Index usage]
+			VAR _pastDate = [Past date - Index usage]
+			VAR _realDatesBackInTime =
+			    DATEDIFF ( _pastDate, _latestDate, DAY )
+			VAR _realDatesBackInTimeTxt =
+			    FORMAT ( _realDatesBackInTime, "#,##0" )
+			VAR _latestDateTxt =
+			    FORMAT ( _latestDate, [Date format string] ) & " ("
+			        & FORMAT ( _latestDate, [Dayname format string] ) & ")"
+			VAR _pastDateTxt =
+			    FORMAT ( _pastDate, [Date format string] ) & " ("
+			        & FORMAT ( _pastDate, [Dayname format string] ) & ")"
+			VAR _txt =
+			    "Index usage"
+			        & IF (
+			            _latestDate <> BLANK (),
+			            " for " & _latestDateTxt & " with total including from " & _pastDateTxt & " - " & _realDatesBackInTimeTxt & " days"
+			        )
+			VAR _result = _txt
+			RETURN
+			    _result
+		displayFolder: Index details
+		lineageTag: d3fb18c3-9419-406c-8963-39ee87f92939
+
+	measure 'Index ratio of data - Index details' =
+			
+			VAR _data = [Data KB - Index details]
+			VAR _Index = [Index KB - Index details]
+			VAR _ratio =
+			    DIVIDE ( _index, _data )
+			VAR _result = _ratio
+			RETURN
+			    _result
+		formatString: #,0.00\ %;-#,0.00\ %;#,0.00\ %
+		displayFolder: Index details
+		lineageTag: a8ee779f-6c28-4237-9132-66534a1b5ed1
+
+	measure 'Home button tooltip text' =
+			
+			"Go to the Front page"
+		displayFolder: Common
+		lineageTag: 5297c305-1323-4846-bfeb-8da29050d28e
+
+	measure 'Back button tooltip text' =
+			
+			"Go back to the previous page"
+		displayFolder: Common
+		lineageTag: 965b0b03-a9b8-4ae5-b33c-b41f0f36713a
+
+	measure 'Front page text - Index configuration' =
+			
+			VAR _service = [Service - Index usage]
+			VAR _serviceDisplayText = [Service display text - Index configuration]
+			VAR _load =
+			    SELECTCOLUMNS (
+			        FILTER ( 'Data load', 'Data load'[Service] = LOWER ( _service ) ),
+			        "DataLoad", 'Data load'[DataLoad]
+			    )
+			VAR _textToShow =
+			    IF ( _load = "no", "(", "" ) & _serviceDisplayText
+			        & IF ( _load = "no", ")", "" )
+			VAR _result = _textToShow
+			RETURN
+			    _result
+		displayFolder: Index configuration
+		lineageTag: 4551a2ab-9bc5-41c3-9796-d9720ed421d5
+
+	measure 'Service display text - Index configuration' =
+			
+			"Index"
+		displayFolder: Index configuration
+		lineageTag: cae015db-1503-4194-a524-bcd4f335fe36
+
+	measure 'Data KB - Index configuration' =
+			
+			VAR _maxTableSizeDate =
+			    MAX ( 'Table size'[Date] )
+			VAR _value =
+			    CALCULATE (
+			        SUM ( 'Table size'[Data] ),
+			        FILTER ( 'Table size', 'Table size'[Date] = _maxTableSizeDate ),
+			        USERELATIONSHIP ( 'Index configuration'[IndexKey], 'Table size'[IndexKey] )
+			    )
+			VAR _result = _value
+			RETURN
+			    _result
+		formatString: #,0
+		displayFolder: Index configuration
+		lineageTag: 85ee12b4-ff4c-4bb1-aa22-a89c476d0fbf
+
+	measure 'Index KB - Index configuration' =
+			
+			VAR _maxTableSizeDate =
+			    MAX ( 'Table size'[Date] )
+			VAR _value =
+			    CALCULATE (
+			        SUM ( 'Table size'[IndexSize] ),
+			        FILTER ( 'Table size', 'Table size'[Date] = _maxTableSizeDate ),
+			        USERELATIONSHIP ( 'Index configuration'[IndexKey], 'Table size'[IndexKey] )
+			    )
+			VAR _result = _value
+			RETURN
+			    _result
+		formatString: #,0
+		displayFolder: Index configuration
+		lineageTag: ea99d92c-8678-4eed-b76f-ada0a8c08c6e
+
+	measure 'Index ratio of data - Index configuration' =
+			
+			VAR _data = [Data KB - Index configuration]
+			VAR _Index = [Index KB - Index configuration]
+			VAR _ratio =
+			    DIVIDE ( _index, _data )
+			VAR _result = _ratio
+			RETURN
+			    _result
+		formatString: #,0.00\ %;-#,0.00\ %;#,0.00\ %
+		displayFolder: Index configuration
+		lineageTag: bb2659da-0810-47a1-a132-522f539324e3
+
+	measure 'Report page text - Index configuration' =
+			
+			VAR _service = [Service - Index usage]
+			VAR _serviceDisplayText = [Service display text - Index configuration] & " configuration"
+			VAR _load =
+			    SELECTCOLUMNS (
+			        FILTER ( 'Data load', 'Data load'[Service] = _service ),
+			        "DataLoad", 'Data load'[DataLoad]
+			    )
+			VAR _textToShow =
+			    IF ( _load = "No", "(", "" ) & _serviceDisplayText
+			        & IF ( _load = "No", ")", "" )
+			VAR _result = _textToShow
+			RETURN
+			    _result
+		displayFolder: Index configuration
+		lineageTag: 04da2c39-69f8-4c94-b3c2-c0347010981f
+
+	measure 'Title - Index configuration' =
+			
+			"Index configuration"
+		displayFolder: Index configuration
+		lineageTag: 7fa71433-a92b-4f8d-8088-8477ef864545
+
+	measure 'Data range - Index configuration' =
+			
+			VAR _maxDataDate =
+			    CALCULATE ( MAX ( 'Index usage'[Date] ), ALL () )
+			VAR _maxDataDateTxt =
+			    FORMAT ( _maxDataDate, [Date format string] )
+			VAR _txt =
+			    IF (
+			        _maxDataDate = BLANK (),
+			        "",
+			        "Data available at " & _maxDataDateTxt
+			    )
+			VAR _result = _txt
+			RETURN
+			    _result
+		displayFolder: Index configuration
+		lineageTag: 1617801e-1b3e-41bf-9eed-1cff84ea10e1
+
+	measure 'Show filters - Index configuration' =
+			
+			IF (
+			    ISFILTERED ( 'Index'[Database] ),
+			    VAR _items =
+			        VALUES ( 'Index'[Database] )
+			    VAR _itemsCombined =
+			        CONCATENATEX ( _items, 'Index'[Database], UNICHAR ( 10 ) )
+			    RETURN
+			        _itemsCombined & UNICHAR ( 10 )
+			)
+			    & IF (
+			        ISFILTERED ( 'Index'[Schema] ),
+			        VAR _items =
+			            VALUES ( 'Index'[Schema] )
+			        VAR _itemsCombined =
+			            CONCATENATEX ( _items, 'Index'[Schema], UNICHAR ( 10 ) )
+			        RETURN
+			            _itemsCombined & UNICHAR ( 10 )
+			    )
+			    & IF (
+			        ISFILTERED ( 'Index'[Object] ),
+			        VAR _items =
+			            VALUES ( 'Index'[Object] )
+			        VAR _itemsCombined =
+			            CONCATENATEX ( _items, 'Index'[Object], UNICHAR ( 10 ) )
+			        RETURN
+			            _itemsCombined & UNICHAR ( 10 )
+			    )
+			    & IF (
+			        ISFILTERED ( 'Index'[Index] ),
+			        VAR _items =
+			            VALUES ( 'Index'[Index] )
+			        VAR _itemsCombined =
+			            CONCATENATEX ( _items, 'Index'[Index], UNICHAR ( 10 ) )
+			        RETURN
+			            _itemsCombined & UNICHAR ( 10 )
+			    )
+		displayFolder: Index configuration
+		lineageTag: f81459ec-cdab-44ae-aa5e-9c5755be5c71
+
+	measure 'Show filters Headers - Index configuration' =
+			
+			IF (
+			    ISFILTERED ( 'Index'[Database] ),
+			    "Database:" & UNICHAR ( 127 )
+			        & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Index'[Database] ) ) )
+			)
+			    & IF (
+			        ISFILTERED ( 'Index'[Schema] ),
+			        "Schema:" & UNICHAR ( 127 )
+			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Index'[Schema] ) ) )
+			    )
+			    & IF (
+			        ISFILTERED ( 'Index'[Object] ),
+			        "Object:" & UNICHAR ( 127 )
+			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Index'[Object] ) ) )
+			    )
+			    & IF (
+			        ISFILTERED ( 'Index'[Index] ),
+			        "Index:" & UNICHAR ( 127 )
+			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Index'[Index] ) ) )
+			    )
+		displayFolder: Index configuration
+		lineageTag: 841fd212-02ec-4305-abc7-c84ca682432e
+
+	measure 'Is filters applied - Index configuration' =
+			
+			IF (
+			    ISFILTERED ( 'Index'[Database] ) || ISFILTERED ( 'Index'[Schema] )
+			        || ISFILTERED ( 'Index'[Object] )
+			        || ISFILTERED ( 'Index'[Index] ),
+			    1,
+			    0
+			)
+		formatString: 0
+		displayFolder: Index configuration
+		lineageTag: e8e4c495-07b2-47f6-95ff-b6535fba80c3
+
+	measure 'Open filter button tooltip - Index configuration' =
+			
+			IF (
+			    [Is filters applied - Index configuration] = 1,
+			    [Filters are applied text],
+			    [Filters are not applied]
+			)
+		displayFolder: Index configuration
+		lineageTag: db4460c5-1449-43a8-bd6a-86694b85656d
+
+	measure 'Rows - Index configuration' =
+			
+			VAR _maxTableSizeDate =
+			    MAX ( 'Table size'[Date] )
+			VAR _indexRows =
+			    CALCULATE (
+			        SUM ( 'Table size'[Rows] ),
+			        FILTER ( 'Table size', 'Table size'[Date] = _maxTableSizeDate ),
+			        USERELATIONSHIP ( 'Index configuration'[IndexKey], 'Table size'[IndexKey] )
+			    )
+			VAR _objectRows =
+			    CALCULATE (
+			        SUM ( 'Table size'[Rows] ),
+			        FILTER ( 'Table size', 'Table size'[Date] = _maxTableSizeDate ),
+			        'Index configuration'[IndexTypeDesc] IN { "CL", "HEAP" },
+			        USERELATIONSHIP ( 'Index configuration'[IndexKey], 'Table size'[IndexKey] )
+			    )
+			VAR _value =
+			    IF ( ISINSCOPE ( 'Index'[Index] ), _indexRows, _objectRows )
+			VAR _result = _value
+			RETURN
+			    _result
+		formatString: #,0
+		displayFolder: Index configuration
+		lineageTag: 9a46f836-1626-49c1-9dc6-8e44b9873107
+
+	measure 'VLF - Index configuration' =
+			
+			[Rows - Index configuration]
+		formatString: 0
+		displayFolder: Index configuration
+		lineageTag: f95d7c03-388a-4cc0-864b-b12147a7fbf1
+
+	measure 'Index columns - Index configuration' =
+			
+			IF ( ISINSCOPE ( 'Index'[Index] ), MAX ( 'Index configuration'[IndexColumns] ) )
+		displayFolder: Index configuration
+		lineageTag: d9e51b19-5c6a-4d6d-8e9f-18efd25d9935
+
+	measure 'Included columns - Index configuration' =
+			
+			IF ( ISINSCOPE ( 'Index'[Index] ), MAX ( 'Index configuration'[IncludedColumns] ) )
+		displayFolder: Index configuration
+		lineageTag: 1ab912d8-ce7a-451d-bc6b-279447de51fa
+
+	measure 'Index type description - Index configuration' =
+			
+			IF ( ISINSCOPE ( 'Index'[Index] ), MAX ( 'Index configuration'[IndexTypeDesc] ) )
+		displayFolder: Index configuration
+		lineageTag: c534e5e4-99d4-4de3-a7ff-6ac9d2749b85
+
+	measure 'Is primary key - Index configuration' =
+			
+			IF ( ISINSCOPE ( 'Index'[Index] ), MAX ( 'Index configuration'[IsPrimaryKey] ) )
+		formatString: 0
+		displayFolder: Index configuration
+		lineageTag: edf9327c-8c5b-46d3-8465-f4262d1fec31
+
+	measure 'Is unique - Index configuration' =
+			
+			IF ( ISINSCOPE ( 'Index'[Index] ), MAX ( 'Index configuration'[IsUnique] ) )
+		formatString: 0
+		displayFolder: Index configuration
+		lineageTag: 3e4f3210-9146-4237-9b67-ed83e6ff12c8
+
+	measure 'Is disabled - Index configuration' =
+			
+			IF ( ISINSCOPE ( 'Index'[Index] ), MAX ( 'Index configuration'[IsDisabled] ) )
+		formatString: 0
+		displayFolder: Index configuration
+		lineageTag: a682c655-c16d-416b-80f8-410c2654e91e
+
+	measure 'Is hypothetical - Index configuration' =
+			
+			IF ( ISINSCOPE ( 'Index'[Index] ), MAX ( 'Index configuration'[IsHypothetical] ) )
+		formatString: 0
+		displayFolder: Index configuration
+		lineageTag: 9fa9b861-cb73-41dd-aad5-4c7e1e1ae7b6
+
+	measure 'Has filter - Index configuration' =
+			
+			IF ( ISINSCOPE ( 'Index'[Index] ), MAX ( 'Index configuration'[HasFilter] ) )
+		formatString: 0
+		displayFolder: Index configuration
+		lineageTag: 3afab108-f2c1-43d9-83b6-175c466fd8b9
+
+	measure 'Filter definition - Index configuration' =
+			
+			IF ( ISINSCOPE ( 'Index'[Index] ), MAX ( 'Index configuration'[FilterDefinition] ) )
+		displayFolder: Index configuration
+		lineageTag: 8cad6d83-bd3a-41a0-a911-1f352d478805
 
 	partition _Measures = m
 		mode: import
