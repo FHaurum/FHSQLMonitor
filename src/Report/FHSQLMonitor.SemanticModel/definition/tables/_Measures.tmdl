@@ -707,9 +707,15 @@ table _Measures
 		displayFolder: Table size
 		lineageTag: b132ea20-6a0b-4921-a9c3-5ff457785570
 
-	measure 'Rows # - Table size' =
+	measure 'Rows # - Table size' = ```
 			
-			SUM ( 'Table size'[Rows] )
+			CALCULATE (
+			    SUM ( 'Table size'[Rows] ),
+			    'Index configuration'[IndexTypeDesc] IN { "CL", "HEAP" },
+			    USERELATIONSHIP ( 'Index configuration'[IndexKey], 'Table size'[IndexKey] )
+			)
+			
+			```
 		formatString: #,0
 		displayFolder: Table size
 		lineageTag: 99648901-4e44-4756-88c8-8f0ae10012fa
@@ -2842,7 +2848,7 @@ table _Measures
 
 	measure 'Version number' =
 			
-			"2.2.0"
+			"2.2.2"
 		isHidden
 		displayFolder: Common
 		lineageTag: 39428edf-bb47-48d0-a60e-f025984fd1ba

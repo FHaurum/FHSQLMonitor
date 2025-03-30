@@ -113,12 +113,15 @@ table 'Table size'
 
 	column IndexPartitionKey
 		dataType: int64
+		isHidden
 		formatString: 0
 		lineageTag: b02d3adf-43b1-42ca-926f-d1854de56692
-		summarizeBy: count
+		summarizeBy: none
 		sourceColumn: IndexPartitionKey
 
-		annotation SummarizationSetBy = Automatic
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
 
 	partition 'Table size' = m
 		mode: import

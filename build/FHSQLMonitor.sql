@@ -1,7 +1,7 @@
 USE master;
 
 --
--- FHSQLMonitor v2.2 - 2025.03.28 09.50.55
+-- FHSQLMonitor v2.2.2 - 2025.03.30 11.39.44
 --
 
 --
@@ -24291,7 +24291,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:TableSize.sql modified: 2025.03.12 22.29.57
+-- File part:TableSize.sql modified: 2025.03.30 11.31.56
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -24363,7 +24363,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.2'';
+		SET @version = ''2.2.2'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -24652,7 +24652,10 @@ ELSE BEGIN
 										,ddps.partition_number AS PartitionNumber
 										,ddps.reserved_page_count AS ReservedPageCount
 										,ddps.used_page_count AS UsedPageCount
-										,(ddps.in_row_data_page_count + ddps.lob_used_page_count + ddps.row_overflow_used_page_count) AS Pages
+										,CASE
+											WHEN (ddps.index_id < 2) THEN (ddps.in_row_data_page_count + ddps.lob_used_page_count + ddps.row_overflow_used_page_count)
+											ELSE (ddps.lob_used_page_count + ddps.row_overflow_used_page_count)
+										END AS Pages
 										,ddps.row_count AS [RowCount]
 										,COALESCE(XMLFull.ReservedPageCount, 0) AS XMLFullReservedPageCount
 										,COALESCE(XMLFull.UsedPageCount, 0) AS XMLFullUsedPageCount
@@ -32793,5 +32796,5 @@ BEGIN
 END;
 
 RAISERROR('', 0, 1) WITH NOWAIT;
-SET @installationMsg = 'FHSQLMonitor in ' + @fhSQLMonitorDatabase + ' has been installed/upgraded to v2.2';
+SET @installationMsg = 'FHSQLMonitor in ' + @fhSQLMonitorDatabase + ' has been installed/upgraded to v2.2.2';
 RAISERROR(@installationMsg, 0, 1) WITH NOWAIT;

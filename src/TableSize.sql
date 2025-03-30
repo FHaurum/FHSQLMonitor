@@ -66,7 +66,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.2';
+		SET @version = '2.2.2';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -355,7 +355,10 @@ ELSE BEGIN
 										,ddps.partition_number AS PartitionNumber
 										,ddps.reserved_page_count AS ReservedPageCount
 										,ddps.used_page_count AS UsedPageCount
-										,(ddps.in_row_data_page_count + ddps.lob_used_page_count + ddps.row_overflow_used_page_count) AS Pages
+										,CASE
+											WHEN (ddps.index_id < 2) THEN (ddps.in_row_data_page_count + ddps.lob_used_page_count + ddps.row_overflow_used_page_count)
+											ELSE (ddps.lob_used_page_count + ddps.row_overflow_used_page_count)
+										END AS Pages
 										,ddps.row_count AS [RowCount]
 										,COALESCE(XMLFull.ReservedPageCount, 0) AS XMLFullReservedPageCount
 										,COALESCE(XMLFull.UsedPageCount, 0) AS XMLFullUsedPageCount

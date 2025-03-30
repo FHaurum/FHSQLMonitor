@@ -2929,7 +2929,7 @@
           "nodeIndex": "Table size",
           "nodeLineageTag": "e1bfb39d-10d8-491f-9e8d-7b3e79b7cc82",
           "size": {
-            "height": 128,
+            "height": 176,
             "width": 234
           },
           "zIndex": 0,
@@ -2962,6 +2962,20 @@
           },
           "zIndex": 0,
           "expandedHeight": 224
+        },
+        {
+          "location": {
+            "x": 630,
+            "y": 166
+          },
+          "nodeIndex": "Index configuration",
+          "nodeLineageTag": "0afa5c34-57fa-4c90-b768-5dad6a411b69",
+          "size": {
+            "height": 152,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 300
         }
       ],
       "name": "Table size",
