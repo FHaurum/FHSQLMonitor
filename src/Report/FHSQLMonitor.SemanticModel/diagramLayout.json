@@ -1220,10 +1220,92 @@
           },
           "zIndex": 0,
           "expandedHeight": 128
+        },
+        {
+          "location": {
+            "x": 3140.1648036923907,
+            "y": 932.74358417856877
+          },
+          "nodeIndex": "Agent job",
+          "nodeLineageTag": "86cd0341-3af0-49ac-a9e4-7c1729c9a04c",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 128
+        },
+        {
+          "location": {
+            "x": 3139.7768719599208,
+            "y": 754.11567298753175
+          },
+          "nodeIndex": "Agent jobs performance",
+          "nodeLineageTag": "497b6a0d-cc53-47ad-be6f-cc3a1de03174",
+          "size": {
+            "height": 128,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 272
+        },
+        {
+          "location": {
+            "x": 2861.0384724615642,
+            "y": 757.70847646358015
+          },
+          "nodeIndex": "Agent job status",
+          "nodeLineageTag": "5f7fe3e0-7f3c-45a7-b019-f43c676d9231",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 152
+        },
+        {
+          "location": {
+            "x": 3142.4356827375486,
+            "y": 1101.1485764149616
+          },
+          "nodeIndex": "Agent jobs performance errors",
+          "nodeLineageTag": "1ccb8a78-3016-439d-bee7-36c5cff17b1f",
+          "size": {
+            "height": 152,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 300
+        },
+        {
+          "location": {
+            "x": 2133.9031481652078,
+            "y": 1256.3875179235758
+          },
+          "nodeIndex": "Instance SQL agent properties",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 152
+        },
+        {
+          "location": {
+            "x": 2108.5108169973078,
+            "y": 1411.1776948947886
+          },
+          "nodeIndex": "Instance SQL agent properties history",
+          "size": {
+            "height": 104,
+            "width": 288.69986472592427
+          },
+          "zIndex": 0,
+          "expandedHeight": 176
         }
       ],
       "name": "All tables",
-      "zoomValue": 69.515443389715429,
+      "zoomValue": 69.4468925660047,
       "pinKeyFieldsToTop": false,
       "showExtraHeaderInfo": false,
       "hideKeyFieldsWhenCollapsed": false,
@@ -1408,6 +1490,105 @@
       "nodes": [
         {
           "location": {
+            "x": 310,
+            "y": 262
+          },
+          "nodeIndex": "Agent jobs performance",
+          "nodeLineageTag": "497b6a0d-cc53-47ad-be6f-cc3a1de03174",
+          "size": {
+            "height": 176,
+            "width": 263
+          },
+          "zIndex": 4,
+          "expandedHeight": 272
+        },
+        {
+          "location": {
+            "x": 0,
+            "y": 0
+          },
+          "nodeIndex": "Date",
+          "nodeLineageTag": "66406d91-b832-4567-b6e4-a3786a0597bb",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 2,
+          "expandedHeight": 224
+        },
+        {
+          "location": {
+            "x": 785,
+            "y": 0
+          },
+          "nodeIndex": "Agent job",
+          "nodeLineageTag": "86cd0341-3af0-49ac-a9e4-7c1729c9a04c",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 1,
+          "expandedHeight": 128
+        },
+        {
+          "location": {
+            "x": 326,
+            "y": 0
+          },
+          "nodeIndex": "Time",
+          "nodeLineageTag": "544922c4-f043-457f-b0e4-e98e212a0454",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 6,
+          "expandedHeight": 176
+        },
+        {
+          "location": {
+            "x": 1214,
+            "y": 0
+          },
+          "nodeIndex": "Agent job status",
+          "nodeLineageTag": "5f7fe3e0-7f3c-45a7-b019-f43c676d9231",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 3,
+          "expandedHeight": 152
+        },
+        {
+          "location": {
+            "x": 752,
+            "y": 270
+          },
+          "nodeIndex": "Agent jobs performance errors",
+          "nodeLineageTag": "1ccb8a78-3016-439d-bee7-36c5cff17b1f",
+          "size": {
+            "height": 152,
+            "width": 300
+          },
+          "zIndex": 5,
+          "expandedHeight": 300
+        }
+      ],
+      "name": "Agent jobs performance",
+      "zoomValue": 100,
+      "pinKeyFieldsToTop": false,
+      "showExtraHeaderInfo": false,
+      "hideKeyFieldsWhenCollapsed": false,
+      "tablesLocked": false
+    },
+    {
+      "ordinal": 4,
+      "scrollPosition": {
+        "x": 0,
+        "y": 0
+      },
+      "nodes": [
+        {
+          "location": {
             "x": 141,
             "y": 295
           },
@@ -1485,7 +1666,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 4,
+      "ordinal": 5,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -1570,7 +1751,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 5,
+      "ordinal": 6,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -1669,7 +1850,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 6,
+      "ordinal": 7,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -1754,7 +1935,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 7,
+      "ordinal": 8,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -1811,7 +1992,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 8,
+      "ordinal": 9,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -1847,8 +2028,8 @@
         },
         {
           "location": {
-            "x": 263,
-            "y": 206
+            "x": 281,
+            "y": 208
           },
           "nodeIndex": "Database state history",
           "nodeLineageTag": "aa21dca5-5903-4052-a50d-5f7273212638",
@@ -1868,7 +2049,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 9,
+      "ordinal": 10,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -1952,7 +2133,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 10,
+      "ordinal": 11,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -2037,7 +2218,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 11,
+      "ordinal": 12,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -2122,7 +2303,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 12,
+      "ordinal": 13,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -2165,7 +2346,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 13,
+      "ordinal": 14,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -2250,7 +2431,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 14,
+      "ordinal": 15,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -2267,7 +2448,7 @@
             "height": 104,
             "width": 283
           },
-          "zIndex": 1,
+          "zIndex": 10,
           "expandedHeight": 128
         },
         {
@@ -2281,7 +2462,7 @@
             "height": 72,
             "width": 254
           },
-          "zIndex": 2,
+          "zIndex": 11,
           "expandedHeight": 200
         },
         {
@@ -2295,12 +2476,12 @@
             "height": 104,
             "width": 304
           },
-          "zIndex": 3,
+          "zIndex": 12,
           "expandedHeight": 176
         },
         {
           "location": {
-            "x": 1212,
+            "x": 1500,
             "y": 0
           },
           "nodeIndex": "Trace flags",
@@ -2309,7 +2490,7 @@
             "height": 104,
             "width": 248
           },
-          "zIndex": 9,
+          "zIndex": 18,
           "expandedHeight": 176
         },
         {
@@ -2323,7 +2504,7 @@
             "height": 72,
             "width": 234
           },
-          "zIndex": 4,
+          "zIndex": 13,
           "expandedHeight": 200
         },
         {
@@ -2337,7 +2518,7 @@
             "height": 72,
             "width": 234
           },
-          "zIndex": 5,
+          "zIndex": 14,
           "expandedHeight": 200
         },
         {
@@ -2351,7 +2532,7 @@
             "height": 104,
             "width": 301
           },
-          "zIndex": 6,
+          "zIndex": 15,
           "expandedHeight": 200
         },
         {
@@ -2365,13 +2546,13 @@
             "height": 104,
             "width": 282
           },
-          "zIndex": 7,
+          "zIndex": 16,
           "expandedHeight": 176
         },
         {
           "location": {
-            "x": 1213,
-            "y": 159
+            "x": 1506,
+            "y": 168
           },
           "nodeIndex": "Trace flags history",
           "nodeLineageTag": "d29b3c0e-37bc-4fa5-ad42-f986b26146e9",
@@ -2379,7 +2560,7 @@
             "height": 104,
             "width": 234
           },
-          "zIndex": 8,
+          "zIndex": 17,
           "expandedHeight": 176
         },
         {
@@ -2393,7 +2574,7 @@
             "height": 72,
             "width": 234
           },
-          "zIndex": 0,
+          "zIndex": 1,
           "expandedHeight": 176
         },
         {
@@ -2407,7 +2588,7 @@
             "height": 72,
             "width": 253
           },
-          "zIndex": 0,
+          "zIndex": 2,
           "expandedHeight": 224
         },
         {
@@ -2421,7 +2602,7 @@
             "height": 72,
             "width": 362
           },
-          "zIndex": 0,
+          "zIndex": 3,
           "expandedHeight": 200
         },
         {
@@ -2435,7 +2616,7 @@
             "height": 72,
             "width": 359
           },
-          "zIndex": 0,
+          "zIndex": 4,
           "expandedHeight": 176
         },
         {
@@ -2449,7 +2630,7 @@
             "height": 72,
             "width": 420
           },
-          "zIndex": 0,
+          "zIndex": 5,
           "expandedHeight": 176
         },
         {
@@ -2463,7 +2644,7 @@
             "height": 72,
             "width": 418
           },
-          "zIndex": 0,
+          "zIndex": 6,
           "expandedHeight": 296
         },
         {
@@ -2477,7 +2658,7 @@
             "height": 72,
             "width": 371
           },
-          "zIndex": 0,
+          "zIndex": 7,
           "expandedHeight": 224
         },
         {
@@ -2491,8 +2672,34 @@
             "height": 72,
             "width": 368
           },
-          "zIndex": 0,
+          "zIndex": 8,
           "expandedHeight": 300
+        },
+        {
+          "location": {
+            "x": 1210,
+            "y": 0
+          },
+          "nodeIndex": "Instance SQL agent properties",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 152
+        },
+        {
+          "location": {
+            "x": 1183,
+            "y": 167
+          },
+          "nodeIndex": "Instance SQL agent properties history",
+          "size": {
+            "height": 104,
+            "width": 283
+          },
+          "zIndex": 0,
+          "expandedHeight": 176
         }
       ],
       "name": "Instance state",
@@ -2503,7 +2710,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 15,
+      "ordinal": 16,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -2602,7 +2809,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 16,
+      "ordinal": 17,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -2659,7 +2866,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 17,
+      "ordinal": 18,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -2730,7 +2937,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 18,
+      "ordinal": 19,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -2787,7 +2994,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 19,
+      "ordinal": 20,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -2830,7 +3037,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 20,
+      "ordinal": 21,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -2915,7 +3122,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 21,
+      "ordinal": 22,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -2986,7 +3193,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 22,
+      "ordinal": 23,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -3029,7 +3236,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 23,
+      "ordinal": 24,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -3114,7 +3321,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 24,
+      "ordinal": 25,
       "scrollPosition": {
         "x": 0,
         "y": 0

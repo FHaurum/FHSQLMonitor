@@ -5942,7 +5942,7 @@ cultureInfo en-US
 			      "State": "Generated",
 			      "Terms": [
 			        {
-			          "To (TC)": {
+			          "To (UTC)": {
 			            "State": "Suggested",
 			            "Source": {
 			              "Type": "External",
@@ -68900,6 +68900,381 @@ cultureInfo en-US
 			      "Terms": [
 			        {
 			          "Filter definition": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "agent_job.job_name": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Agent job",
+			          "ConceptualProperty": "Job name"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Job": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.show_filters_headers__agent_jobs_performance": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Show filters Headers - Agent jobs performance"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Filters": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.show_filters__agent_jobs_performance": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Show filters - Agent jobs performance"
+			        }
+			      },
+			      "State": "Generated"
+			    },
+			    "table_measures.executions__agent_jobs_performance": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Executions - Agent jobs performance"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Executions": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.latest_executions_succeeded__agent_jobs_performance": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Latest executions (Succeeded) - Agent jobs performance"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Succeeded": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.latest_executions_failed__agent_jobs_performance": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Latest executions (Failed) - Agent jobs performance"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Failed": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.latest_executions_missing_data__agent_jobs_performance": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Latest executions (Missing data) - Agent jobs performance"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Missing data": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.latest_execution_sec__succeeded__agent_jobs_performance": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Latest execution sec. (Succeeded) - Agent jobs performance"
+			        }
+			      },
+			      "State": "Generated"
+			    },
+			    "table_measures.latest_execution_sec__failed__agent_jobs_performance": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Latest execution sec. (Failed) - Agent jobs performance"
+			        }
+			      },
+			      "State": "Generated"
+			    },
+			    "table_measures.duration_in_sec___agent_jobs_performance": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Duration in sec. - Agent jobs performance"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Duration in sec.": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.latest_failed_rate": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Latest success rate"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Success rate": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "agent_jobs_performance_errors.startdatetime": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Agent jobs performance errors",
+			          "ConceptualProperty": "StartDateTime"
+			        }
+			      },
+			      "State": "Generated"
+			    },
+			    "agent_jobs_performance_errors.stepid": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Agent jobs performance errors",
+			          "ConceptualProperty": "StepId"
+			        }
+			      },
+			      "State": "Generated"
+			    },
+			    "table_measures.latest_executions_ended_with_errors__agent_jobs_performance": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Latest executions (Ended with errors) - Agent jobs performance"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Ended with errors": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.latest_execution_sec__ended_with_errors__agent_jobs_performance": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Latest execution sec. (Ended with errors) - Agent jobs performance"
+			        }
+			      },
+			      "State": "Generated"
+			    },
+			    "table_measures.sort_order__agent_jobs_performance": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Sort order - Agent jobs performance"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Sort order": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.execution_sec___agent_jobs_performance": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Execution sec. - Agent jobs performance"
+			        }
+			      },
+			      "State": "Generated"
+			    },
+			    "table_measures.executions_tooltip__agent_jobs_performance": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Executions (Succeeded - tooltip) - Agent jobs performance"
+			        }
+			      },
+			      "State": "Generated"
+			    },
+			    "sql_agent_properties.timestamp": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Instance SQL agent properties",
+			          "ConceptualProperty": "Timestamp"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Time": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.timestamp__configurations__instance_configuration": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Timestamp - configurations - Instance configuration"
+			        }
+			      },
+			      "State": "Generated"
+			    },
+			    "sql_agent_properties_history.from": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Instance SQL agent properties history",
+			          "ConceptualProperty": "From"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "From (UTC)": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "sql_agent_properties_history.to": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Instance SQL agent properties history",
+			          "ConceptualProperty": "To"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "To (UTC)": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.latest_executions_others__agent_jobs_performance": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Latest executions (Other errors) - Agent jobs performance"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Other errors": {
 			            "State": "Suggested",
 			            "Source": {
 			              "Type": "External",

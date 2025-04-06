@@ -66,7 +66,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.2';
+		SET @version = '2.3';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -235,8 +235,8 @@ ELSE BEGIN
 					,iu.HasFilter			+ 0 AS HasFilter
 					,iu.FilterDefinition
 					,iu.AutoCreated			+ 0 AS AutoCreated
-					,(dbo.fhsmSplitLines(iu.IndexColumns, ' + CAST(@maxIndexColumnsLineLength AS nvarchar) + ')) AS IndexColumns
-					,(dbo.fhsmSplitLines(iu.IncludedColumns, ' + CAST(@maxIncludedColumnsLineLength AS nvarchar) + ')) AS IncludedColumns
+					,(dbo.fhsmFNSplitLines(iu.IndexColumns, ' + CAST(@maxIndexColumnsLineLength AS nvarchar) + ')) AS IndexColumns
+					,(dbo.fhsmFNSplitLines(iu.IncludedColumns, ' + CAST(@maxIncludedColumnsLineLength AS nvarchar) + ')) AS IncludedColumns
 					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iu.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
 					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iu.DatabaseName, iu.SchemaName, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS SchemaKey
 					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iu.DatabaseName, iu.SchemaName, iu.ObjectName, DEFAULT, DEFAULT, DEFAULT) AS k) AS ObjectKey

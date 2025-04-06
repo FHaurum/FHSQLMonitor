@@ -63,7 +63,7 @@ table 'Instance configurations'
 		summarizeBy: none
 		sourceColumn: DefaultValue
 
-		annotation SummarizationSetBy = Automatic
+		annotation SummarizationSetBy = User
 
 	column DefaultState
 		dataType: int64
@@ -75,7 +75,7 @@ table 'Instance configurations'
 
 		changedProperty = IsHidden
 
-		annotation SummarizationSetBy = Automatic
+		annotation SummarizationSetBy = User
 
 	column ConfigurationSortOrder
 		dataType: int64
@@ -87,7 +87,7 @@ table 'Instance configurations'
 
 		changedProperty = IsHidden
 
-		annotation SummarizationSetBy = Automatic
+		annotation SummarizationSetBy = User
 
 	column DefaultIndicator = ```
 			

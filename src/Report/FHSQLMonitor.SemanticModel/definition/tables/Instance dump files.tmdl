@@ -1,5 +1,4 @@
 table 'Instance dump files'
-	excludeFromModelRefresh
 	lineageTag: d36c29b6-5636-4941-9201-911e797158a1
 
 	column Sequence

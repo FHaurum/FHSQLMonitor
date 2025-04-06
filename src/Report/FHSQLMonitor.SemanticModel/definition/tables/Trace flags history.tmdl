@@ -1,5 +1,4 @@
 table 'Trace flags history'
-	excludeFromModelRefresh
 	lineageTag: d29b3c0e-37bc-4fa5-ad42-f986b26146e9
 
 	column 'Trace flag'
@@ -41,6 +40,14 @@ table 'Trace flags history'
 
 		annotation PBI_FormatHint = {"isCustom":true}
 
+	column 'Trace flag text'
+		dataType: string
+		lineageTag: 0c50e14a-72c3-4c6c-aa6e-06a21508ca68
+		summarizeBy: none
+		sourceColumn: Trace flag text
+
+		annotation SummarizationSetBy = Automatic
+
 	partition 'Trace flags history' = m
 		mode: import
 		queryGroup: Facts
@@ -57,7 +64,7 @@ table 'Trace flags history'
 				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
 				  RenameColumns = Table.RenameColumns(
 				    datasetToUse, 
-				    {{"TraceFlag", "Trace flag"}, {"ValidFrom", "From"}, {"ValidTo", "To"}}
+				    {{"TraceFlag", "Trace flag"}, {"TraceFlagTxt", "Trace flag text"}, {"ValidFrom", "From"}, {"ValidTo", "To"}}
 				  )
 				in
 				  RenameColumns

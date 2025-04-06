@@ -145,7 +145,7 @@ BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.1';
+		SET @version = '2.3';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -323,9 +323,9 @@ BEGIN
 					,cl.StartTime
 					,cl.EndTime
 					,COALESCE(NULLIF(DATEDIFF(SECOND, cl.StartTime, cl.EndTime), 0), 1) AS Duration		-- Duration of 0 sec. will always be 1 sec.
-					,(dbo.fhsmSplitLines(cl.Command, ' + CAST(@maxCommandLineLength AS nvarchar) + ')) AS Command
+					,(dbo.fhsmFNSplitLines(cl.Command, ' + CAST(@maxCommandLineLength AS nvarchar) + ')) AS Command
 					,cl.ErrorNumber
-					,(dbo.fhsmSplitLines(cl.ErrorMessage, ' + CAST(@maxErrorMessageLineLength AS nvarchar) + ')) AS ErrorMessage
+					,(dbo.fhsmFNSplitLines(cl.ErrorMessage, ' + CAST(@maxErrorMessageLineLength AS nvarchar) + ')) AS ErrorMessage
 					,CAST(cl.StartTime AS date) AS Date
 					,(DATEPART(HOUR, cl.StartTime) * 60 * 60) + (DATEPART(MINUTE, cl.StartTime) * 60) + (DATEPART(SECOND, cl.StartTime)) AS TimeKey
 					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(cl.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey

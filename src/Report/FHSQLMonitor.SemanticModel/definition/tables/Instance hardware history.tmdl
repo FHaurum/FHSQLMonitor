@@ -1,5 +1,4 @@
 table 'Instance hardware history'
-	excludeFromModelRefresh
 	lineageTag: 708a7b6c-dea0-4bd3-b6a3-6520e33f6dfd
 
 	column Key

@@ -1,5 +1,4 @@
 table 'Trace flags'
-	excludeFromModelRefresh
 	lineageTag: f14dd563-3c1d-4fbf-821a-9715880510e2
 
 	column 'Trace flag'

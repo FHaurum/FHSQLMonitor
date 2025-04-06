@@ -40,7 +40,7 @@ BEGIN
 	SET @myUserName = SUSER_NAME();
 	SET @nowUTC = SYSUTCDATETIME();
 	SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
-	SET @version = '2.1';
+	SET @version = '2.3';
 END;
 
 --
@@ -496,6 +496,21 @@ ELSE BEGIN
 			WHEN NOT MATCHED BY TARGET
 				THEN INSERT([Key], Value)
 				VALUES(src.[Key], src.Value);
+
+			WITH
+			cfg([Key], Value) AS(
+				SELECT
+					''Version''
+					,''' + CAST(@version AS nvarchar) + '''
+			)
+			MERGE dbo.fhsmConfigurations AS tgt
+			USING cfg AS src ON (src.[Key] = tgt.[Key])
+			WHEN MATCHED
+				THEN UPDATE
+					SET tgt.Value = src.Value
+			WHEN NOT MATCHED BY TARGET
+				THEN INSERT([Key], Value)
+				VALUES(src.[Key], src.Value);
 		';
 		EXEC(@stmt);
 	END;
@@ -780,6 +795,93 @@ ELSE BEGIN
 			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
 			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
 			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+		';
+		EXEC sp_executesql
+			@stmt
+			,N'@objectName nvarchar(128), @version sql_variant, @nowUTCStr sql_variant, @myUserName sql_variant'
+			,@objectName = @objectName
+			,@version = @version
+			,@nowUTCStr = @nowUTCStr
+			,@myUserName = @myUserName;
+	END;
+
+	--
+	-- Create or alter function dbo.fhsmFNAgentJobTime
+	--
+	BEGIN
+		SET @stmt = '
+			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
+
+			DECLARE @stmt nvarchar(max);
+
+			IF OBJECT_ID(''dbo.fhsmFNAgentJobTime'', ''IF'') IS NULL
+			BEGIN
+				RAISERROR(''Creating stub function dbo.fhsmFNAgentJobTime'', 0, 1) WITH NOWAIT;
+
+				EXEC(''CREATE FUNCTION dbo.fhsmFNAgentJobTime() RETURNS TABLE AS RETURN (SELECT ''''dummy'''' AS Txt);'');
+			END;
+
+			--
+			-- Alter dbo.fhsmFNAgentJobTime
+			--
+			BEGIN
+				RAISERROR(''Alter function dbo.fhsmFNAgentJobTime'', 0, 1) WITH NOWAIT;
+
+				SET @stmt = ''
+					ALTER FUNCTION dbo.fhsmFNAgentJobTime(
+						@date int
+						,@time int
+						,@duration int
+					)
+					RETURNS TABLE AS RETURN
+					(
+						SELECT
+							CONVERT(
+								datetime,
+								(CAST((@date / 10000) AS nvarchar)							-- years
+								+ ''''-''''
+								+ RIGHT(''''0'''' + CAST((@date % 10000 / 100) AS nvarchar), 2)	-- months
+								+ ''''-''''
+								+ RIGHT(''''0'''' + CAST((@date % 100) AS nvarchar), 2)			-- days
+								+ ''''T''''
+								+ RIGHT(''''0'''' + CAST((@time / 10000) AS nvarchar), 2)			-- hours
+								+ '''':''''
+								+ RIGHT(''''0'''' + CAST((@time % 10000 / 100) AS nvarchar), 2)	-- minutes
+								+ '''':''''
+								+ RIGHT(''''0'''' + CAST((@time % 100) AS nvarchar), 2))			-- seconds
+								,126
+							) AS StartDateTime
+							,(@duration / 10000) * 3600			-- convert hours to seconds, can be greater than 24
+								+ ((@duration % 10000) / 100) * 60	-- convert minutes to seconds
+								+ (@duration % 100) AS DurationSeconds
+					);
+				'';
+				EXEC(@stmt);
+			END;
+		';
+		EXEC(@stmt);
+	END;
+
+	--
+	-- Register extended properties on the function dbo.fhsmFNAgentJobTime
+	--
+	BEGIN
+		SET @objectName = 'dbo.fhsmFNAgentJobTime';
+
+		SET @stmt = '
+			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
+			
+			DECLARE @objName nvarchar(128);
+			DECLARE @schName nvarchar(128);
+
+			SET @objName = PARSENAME(@objectName, 1);
+			SET @schName = PARSENAME(@objectName, 2);
+
+			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
 		';
 		EXEC sp_executesql
 			@stmt
@@ -1206,12 +1308,13 @@ ELSE BEGIN
 									AND (Object.name IN (
 										''''fhsmConfigurations'''', ''''fhsmDimensions'''', ''''fhsmLog'''', ''''fhsmRetentions'''', ''''fhsmSchedules''''
 										,''''fhsmSPCleanup'''', ''''fhsmSPExtendedProperties'''', ''''fhsmSPLog'''', ''''fhsmSPSchedules'''', ''''fhsmSPUpdateDimensions''''
-										,''''fhsmFNGenerateKey'''', ''''fhsmFNGetConfiguration'''', ''''fhsmFNGetExecutionDelaySec'''', ''''fhsmFNGetTaskParameter'''', ''''fhsmFNParseDatabasesStr'''', ''''fhsmFNSplitString'''', ''''fhsmFNTryParseAsInt''''
+										,''''fhsmFNAgentJobTime'''', ''''fhsmFNGenerateKey'''', ''''fhsmFNGetConfiguration'''', ''''fhsmFNGetExecutionDelaySec'''', ''''fhsmFNGetTaskParameter''''
+										,''''fhsmFNParseDatabasesStr'''', ''''fhsmFNSplitLines'''', ''''fhsmFNSplitString'''', ''''fhsmFNTryParseAsInt''''
 									))
 							) AS a
 						);
 
-						SET @retVal = CASE WHEN (@checkCount <> 17) THEN 0 ELSE 1 END;
+						SET @retVal = CASE WHEN (@checkCount <> 19) THEN 0 ELSE 1 END;
 
 						RETURN @retVal;
 					END;
@@ -1490,7 +1593,7 @@ ELSE BEGIN
 
 				SET @stmt = ''
 					ALTER FUNCTION dbo.fhsmFNSplitString(
-						@string    nvarchar(max)
+						@string nvarchar(max)
 						,@delimiter nvarchar(max)
 					)
 					RETURNS TABLE AS RETURN
@@ -1541,7 +1644,7 @@ ELSE BEGIN
 	END;
 
 	--
-	-- Create or alter function dbo.fhsmSplitLines
+	-- Create or alter function dbo.fhsmFNSplitLines
 	--
 	BEGIN
 		SET @stmt = '
@@ -1549,21 +1652,21 @@ ELSE BEGIN
 
 			DECLARE @stmt nvarchar(max);
 
-			IF OBJECT_ID(''dbo.fhsmSplitLines'', ''FN'') IS NULL
+			IF OBJECT_ID(''dbo.fhsmFNSplitLines'', ''FN'') IS NULL
 			BEGIN
-				RAISERROR(''Creating stub function dbo.fhsmSplitLines'', 0, 1) WITH NOWAIT;
+				RAISERROR(''Creating stub function dbo.fhsmFNSplitLines'', 0, 1) WITH NOWAIT;
 
-				EXEC(''CREATE FUNCTION dbo.fhsmSplitLines() RETURNS bit AS BEGIN RETURN 0; END;'');
+				EXEC(''CREATE FUNCTION dbo.fhsmFNSplitLines() RETURNS bit AS BEGIN RETURN 0; END;'');
 			END;
 
 			--
-			-- Alter dbo.fhsmSplitLines
+			-- Alter dbo.fhsmFNSplitLines
 			--
 			BEGIN
-				RAISERROR(''Alter function dbo.fhsmSplitLines'', 0, 1) WITH NOWAIT;
+				RAISERROR(''Alter function dbo.fhsmFNSplitLines'', 0, 1) WITH NOWAIT;
 
 				SET @stmt = ''
-					ALTER FUNCTION dbo.fhsmSplitLines(
+					ALTER FUNCTION dbo.fhsmFNSplitLines(
 						@val nvarchar(max),
 						@lineLen int
 					)
@@ -1608,10 +1711,10 @@ ELSE BEGIN
 	END;
 
 	--
-	-- Register extended properties on the function dbo.fhsmSplitLines
+	-- Register extended properties on the function dbo.fhsmFNSplitLines
 	--
 	BEGIN
-		SET @objectName = 'dbo.fhsmSplitLines';
+		SET @objectName = 'dbo.fhsmFNSplitLines';
 
 		SET @stmt = '
 			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
@@ -1751,11 +1854,13 @@ ELSE BEGIN
 						SET NOCOUNT ON;
 
 						DECLARE @bulkSize int;
+						DECLARE @bulkSizeStr nvarchar(128);
 						DECLARE @days int;
 						DECLARE @filter nvarchar(max);
 						DECLARE @id int;
 						DECLARE @message nvarchar(max);
 						DECLARE @parameters nvarchar(max);
+						DECLARE @parametersTable TABLE([Key] nvarchar(128) NOT NULL, Value nvarchar(128) NULL);
 						DECLARE @rowsDeleted int;
 						DECLARE @rowsDeletedTotal int;
 						DECLARE @sequence tinyint;
@@ -1768,7 +1873,21 @@ ELSE BEGIN
 						SET @thisTask = OBJECT_NAME(@@PROCID);
 						SET @version = ''''' + @version + ''''';
 
-						SET @parameters = dbo.fhsmFNGetTaskParameter(@thisTask, @name);
+						--
+						-- Get the parameters for the command
+						--
+						BEGIN
+							SET @parameters = dbo.fhsmFNGetTaskParameter(@thisTask, @name);
+
+							INSERT INTO @parametersTable([Key], Value)
+							SELECT
+								(SELECT s.Txt FROM dbo.fhsmFNSplitString(p.Txt, ''''='''') AS s WHERE (s.Part = 1)) AS [Key]
+								,(SELECT s.Txt FROM dbo.fhsmFNSplitString(p.Txt, ''''='''') AS s WHERE (s.Part = 2)) AS Value
+							FROM dbo.fhsmFNSplitString(@parameters, '''';'''') AS p;
+
+							SET @bulkSizeStr = (SELECT pt.Value FROM @parametersTable AS pt WHERE (pt.[Key] = ''''@BulkSize''''));
+							SET @bulkSize = dbo.fhsmFNTryParseAsInt(@bulkSizeStr);
+						END;
 
 						DECLARE tCur CURSOR LOCAL READ_ONLY FAST_FORWARD FOR
 						SELECT r.Id, r.TableName, r.Sequence, r.TimeColumn, r.Days, NULLIF(RTRIM(LTRIM(r.Filter)), '''''''')
@@ -1793,6 +1912,11 @@ ELSE BEGIN
 							IF (OBJECT_ID(@tableName) IS NULL)
 							BEGIN
 								SET @message = ''''Table '''''''''''' + @tableName + '''''''''''' does not exist'''';
+								EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''''Warning'''', @message = @message;
+							END
+							ELSE IF NOT EXISTS(SELECT * FROM sys.columns AS c WHERE (c.object_id = OBJECT_ID(@tableName)) AND (c.name = '''''''' + @timeColumn + ''''''''))
+							BEGIN
+								SET @message = ''''Column '''''''''''' + @timeColumn + '''''''''''' in Table '''''''''''' + @tableName + '''''''''''' does not exist'''';
 								EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''''Warning'''', @message = @message;
 							END
 							ELSE BEGIN
@@ -1859,7 +1983,11 @@ ELSE BEGIN
 										+ CAST(@rowsDeletedTotal AS nvarchar) + '''' records in table '''' + @tableName + '''' sequence '''' + CAST(@sequence AS nvarchar)
 										+ '''' older than '''' + CAST(@days AS nvarchar) + '''' days'''';
 									EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''''Info'''', @message = @message;
-								END;
+								END
+								ELSE BEGIN
+									SET @message = ''''No records deleted in table '''' + @tableName + '''' older than '''' + CAST(@days AS nvarchar) + '''' days'''';
+									EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''''Debug'''', @message = @message;
+								END
 							END;
 						END;
 
@@ -1923,7 +2051,7 @@ ELSE BEGIN
 					,CAST(''1900-1-1T23:00:00.0000'' AS datetime2(0))
 					,CAST(''1900-1-1T23:59:59.0000'' AS datetime2(0))
 					,1, 1, 1, 1, 1, 1, 1
-					,''''
+					,''@BulkSize = 5000''
 			)
 			MERGE dbo.fhsmSchedules AS tgt
 			USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)

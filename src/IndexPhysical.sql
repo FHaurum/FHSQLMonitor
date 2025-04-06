@@ -232,7 +232,7 @@ ELSE BEGIN
 					,rankedData.TotalInrowVersionPayloadSizeInBytes
 					,rankedData.OffrowRegularVersionRecordCount
 					,rankedData.OffrowLongTermVersionRecordCount
-					,rankedData.TimestampDate Date
+					,rankedData.TimestampDate AS Date
 					,rankedData.TimeKey
 					,rankedData.DatabaseKey
 					,rankedData.SchemaKey

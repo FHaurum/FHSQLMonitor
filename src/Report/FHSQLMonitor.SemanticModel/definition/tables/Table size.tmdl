@@ -137,7 +137,10 @@ table 'Table size'
 				  table = db{[Schema = #"Schema name", Item = "Table size"]}[Data], 
 				  emptyDataset = Table.FirstN(table, 0), 
 				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
-				  SelectColumns = Table.SelectColumns(datasetToUse,{"Rows", "Reserved", "Data", "IndexSize", "Unused", "Date", "ObjectKey", "IndexKey", "ObjectPartitionKey", "IndexPartitionKey"})
+				  SelectColumns = Table.SelectColumns(
+				    datasetToUse,
+				    {"Rows", "Reserved", "Data", "IndexSize", "Unused", "Date", "ObjectKey", "IndexKey", "ObjectPartitionKey", "IndexPartitionKey"}
+				  )
 				in
 				  SelectColumns
 				```

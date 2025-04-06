@@ -1,5 +1,4 @@
 table 'Instance suspect pages'
-	excludeFromModelRefresh
 	lineageTag: 22b445cc-df34-4a23-a92a-fc9bf9e9fbbf
 
 	column Database

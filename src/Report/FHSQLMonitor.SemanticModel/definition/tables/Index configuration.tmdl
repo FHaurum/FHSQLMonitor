@@ -191,10 +191,21 @@ table 'Index configuration'
 		queryGroup: Facts
 		source = ```
 				let
-				  loadConfig = Record.Field(
-				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Index usage")), 
-				    "DataLoad"
+				  loadConfigFirstMatch = Table.First(
+				    Table.SelectRows(
+				      #"Data load", 
+				      each List.Contains(
+				        {"Index usage", "Table size"}, 
+				        [Service]
+				      )
+				        and List.Contains({"Yes"}, [DataLoad])
+				    )
 				  ), 
+				  loadConfig = 
+				    if (loadConfigFirstMatch = null) then
+				      "No"
+				    else
+				      Record.Field(loadConfigFirstMatch, "DataLoad"), 
 				  dbList = Sql.Databases(#"Server name"), 
 				  db = dbList{[Name = #"Database name"]}[Data], 
 				  table = db{[Schema = #"Schema name", Item = "Index configuration"]}[Data], 

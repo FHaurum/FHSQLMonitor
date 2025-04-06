@@ -1361,7 +1361,7 @@ table _Measures
 	measure 'Front page version text' =
 			
 			[Info text] & UNICHAR ( 10 ) & " "
-			    & UNICHAR ( 10 ) & "Developed using Power BI Desktop version: 2.140.1577.0 64-bit (February 2025)"
+			    & UNICHAR ( 10 ) & "Developed using Power BI Desktop version: 2.141.1451.0 64-bit (March 2025)"
 		displayFolder: Common
 		lineageTag: e74236c7-2bcf-4409-b8d2-ddb49a83e10b
 
@@ -2848,7 +2848,7 @@ table _Measures
 
 	measure 'Version number' =
 			
-			"2.2.2"
+			"2.3.0"
 		isHidden
 		displayFolder: Common
 		lineageTag: 39428edf-bb47-48d0-a60e-f025984fd1ba
@@ -9432,7 +9432,7 @@ table _Measures
 		displayFolder: Missing indexes
 		lineageTag: 404b5f55-39aa-4024-88d3-a8e1af06600c
 
-	measure 'Title - Missing indexes' =
+	measure 'Title - Missing indexes' = ```
 			
 			VAR _minDataDate =
 			    MIN ( 'Missing indexes'[Date] )
@@ -9446,11 +9446,13 @@ table _Measures
 			    "Missing index data"
 			        & IF (
 			            _minDataDate <> BLANK (),
-			            " between " & _minDataDateTxt & " and " & _maxDataDateTxt
+			            " between " & _minDataDateTxt & " and " & _maxDataDateTxt & " " & [Drill-through symbol]
 			        )
 			VAR _result = _txt
 			RETURN
 			    _result
+			
+			```
 		displayFolder: Missing indexes
 		lineageTag: 9e6a0d02-731c-4d86-a2fc-f768c2b015da
 
@@ -13995,6 +13997,956 @@ table _Measures
 			IF ( ISINSCOPE ( 'Index'[Index] ), MAX ( 'Index configuration'[FilterDefinition] ) )
 		displayFolder: Index configuration
 		lineageTag: 8cad6d83-bd3a-41a0-a911-1f352d478805
+
+	measure 'Front page fill color - Version' = ```
+			
+			VAR _version = [Version number]
+			VAR _prodColor = "#F2F7FF"
+			VAR _nonProdColor = "#FAE99F"
+			VAR _color =
+			    IF (
+			        ISERROR ( VALUE ( SUBSTITUTE ( _version, ".", "" ) ) ),
+			        _nonProdColor,
+			        _prodColor
+			    )
+			VAR _result = _color
+			RETURN
+			    _result
+			
+			```
+		displayFolder: Common
+		lineageTag: 9d0a5270-53b6-4719-9ca9-3c26b9267efd
+
+	measure 'Report pages fill color - Info' = ```
+			
+			VAR _version = [Version number]
+			VAR _prodColor = "#F2F7FF"
+			VAR _nonProdColor = "#FAE99F"
+			VAR _color =
+			    IF (
+			        ISERROR ( VALUE ( SUBSTITUTE ( _version, ".", "" ) ) ),
+			        _nonProdColor,
+			        _prodColor
+			    )
+			VAR _result = _color
+			RETURN
+			    _result
+			
+			```
+		displayFolder: Common
+		lineageTag: e1e544dc-5db0-45f4-ad63-697c0507f069
+
+	measure 'Front page button fill color - Agent jobs performance' =
+			
+			VAR _service = [Service - Agent jobs performance]
+			VAR _enabledColor = "#E2EEFF"
+			VAR _disabledColor = "#F3F2F1"
+			VAR _load =
+			    SELECTCOLUMNS (
+			        FILTER ( 'Data load', 'Data load'[Service] = LOWER ( _service ) ),
+			        "DataLoad", 'Data load'[DataLoad]
+			    )
+			VAR _result =
+			    IF ( _load = "no", _disabledColor, _enabledColor )
+			RETURN
+			    _result
+		displayFolder: Agent jobs performance
+		lineageTag: 84579551-c082-4192-afa8-c0f386693b48
+
+	measure 'Service - Agent jobs performance' =
+			
+			"Agent jobs performance"
+		displayFolder: Agent jobs performance
+		lineageTag: 129183fc-8da5-46f8-8307-38df972089e1
+
+	measure 'Service display text - Agent jobs performance' =
+			
+			"Agent jobs"
+		displayFolder: Agent jobs performance
+		lineageTag: ce87deb2-ede5-4a02-bdad-ab76d97cd6b2
+
+	measure 'Front page text - Agent jobs performance' =
+			
+			VAR _service = [Service - Agent jobs performance]
+			VAR _serviceDisplayText = [Service display text - Agent jobs performance]
+			VAR _load =
+			    SELECTCOLUMNS (
+			        FILTER ( 'Data load', 'Data load'[Service] = LOWER ( _service ) ),
+			        "DataLoad", 'Data load'[DataLoad]
+			    )
+			VAR _textToShow =
+			    IF ( _load = "no", "(", "" ) & _serviceDisplayText
+			        & IF ( _load = "no", ")", "" )
+			VAR _result = _textToShow
+			RETURN
+			    _result
+		displayFolder: Agent jobs performance
+		lineageTag: 05c3b590-2532-4196-bc50-8c8f94977cf0
+
+	measure 'Report page card background color - Agent jobs performance' =
+			
+			VAR _service = [Service - Agent jobs performance]
+			VAR _enabledColor = "#F2F7FF"
+			VAR _disabledColor = "#F3F2F1"
+			VAR _load =
+			    SELECTCOLUMNS (
+			        FILTER ( 'Data load', 'Data load'[Service] = _service ),
+			        "DataLoad", 'Data load'[DataLoad]
+			    )
+			VAR _result =
+			    IF ( _load = "No", _disabledColor, _enabledColor )
+			RETURN
+			    _result
+		displayFolder: Agent jobs performance
+		lineageTag: 33eab373-72ea-4d44-a561-eb7e53301c5b
+
+	measure 'Report page text - Agent jobs performance' =
+			
+			VAR _service = [Service - Agent jobs performance]
+			VAR _serviceDisplayText = [Service display text - Agent jobs performance] & " performance"
+			VAR _load =
+			    SELECTCOLUMNS (
+			        FILTER ( 'Data load', 'Data load'[Service] = _service ),
+			        "DataLoad", 'Data load'[DataLoad]
+			    )
+			VAR _textToShow =
+			    IF ( _load = "No", "(", "" ) & _serviceDisplayText
+			        & IF ( _load = "No", ")", "" )
+			VAR _result = _textToShow
+			RETURN
+			    _result
+		displayFolder: Agent jobs performance
+		lineageTag: cba779b0-71eb-4c86-b5e8-5bd1e59dfb03
+
+	measure 'Show filters Headers - Agent jobs performance' =
+			
+			IF (
+			    ISFILTERED ( 'Agent job'[Job name] ),
+			    "Job:" & UNICHAR ( 127 )
+			        & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Agent job'[Job name] ) ) )
+			)
+			    & IF (
+			        ISFILTERED ( 'Date'[Year] ),
+			        "Year:" & UNICHAR ( 127 )
+			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Year] ) ) )
+			    )
+			    & IF (
+			        ISFILTERED ( 'Date'[Month] ),
+			        "Month:" & UNICHAR ( 127 )
+			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Month] ) ) )
+			    )
+			    & IF (
+			        ISFILTERED ( 'Date'[Day] ),
+			        "Day:" & UNICHAR ( 127 )
+			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Day] ) ) )
+			    )
+			    & IF (
+			        ISFILTERED ( 'Date'[Day index] ),
+			        "Day index:" & UNICHAR ( 127 )
+			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Day index] ) ) )
+			    )
+		displayFolder: Agent jobs performance
+		lineageTag: b71d87f4-1711-4153-b135-96f5c92d389e
+
+	measure 'Show filters - Agent jobs performance' =
+			
+			IF (
+			    ISFILTERED ( 'Agent job'[Job name] ),
+			    VAR _items =
+			        VALUES ( 'Agent job'[Job name] )
+			    VAR _itemsCombined =
+			        CONCATENATEX ( _items, 'Agent job'[Job name], UNICHAR ( 10 ) )
+			    RETURN
+			        _itemsCombined & UNICHAR ( 10 )
+			)
+			    & IF (
+			        ISFILTERED ( 'Date'[Year] ),
+			        VAR _items =
+			            VALUES ( 'Date'[Year] )
+			        VAR _itemsCombined =
+			            CONCATENATEX ( _items, 'Date'[Year], UNICHAR ( 10 ) )
+			        RETURN
+			            _itemsCombined & UNICHAR ( 10 )
+			    )
+			    & IF (
+			        ISFILTERED ( 'Date'[Month] ),
+			        VAR _items =
+			            VALUES ( 'Date'[Month] )
+			        VAR _itemsCombined =
+			            CONCATENATEX ( _items, 'Date'[Month], UNICHAR ( 10 ) )
+			        RETURN
+			            _itemsCombined & UNICHAR ( 10 )
+			    )
+			    & IF (
+			        ISFILTERED ( 'Date'[Day] ),
+			        VAR _items =
+			            VALUES ( 'Date'[Day] )
+			        VAR _itemsCombined =
+			            CONCATENATEX ( _items, 'Date'[Day], UNICHAR ( 10 ) )
+			        RETURN
+			            _itemsCombined & UNICHAR ( 10 )
+			    )
+			    & IF (
+			        ISFILTERED ( 'Date'[Day index] ),
+			        VAR _items =
+			            VALUES ( 'Date'[Day index] )
+			        VAR _itemsCombined =
+			            CONCATENATEX ( _items, 'Date'[Day index], UNICHAR ( 10 ) )
+			        RETURN
+			            _itemsCombined & UNICHAR ( 10 )
+			    )
+		displayFolder: Agent jobs performance
+		lineageTag: ec8d059b-116e-4f02-98b6-0a4c996ac777
+
+	measure 'Is filters applied - Agent jobs performance' =
+			
+			IF (
+			    ISFILTERED ( 'Agent job'[Job name] ) || ISFILTERED ( 'Date'[Year] )
+			        || ISFILTERED ( 'Date'[Month] )
+			        || ISFILTERED ( 'Date'[Day] )
+			        || ISFILTERED ( 'Date'[Day index] ),
+			    1,
+			    0
+			)
+		formatString: 0
+		displayFolder: Agent jobs performance
+		lineageTag: 386d86c9-c86b-446c-9b8b-35c0c60c8870
+
+	measure 'Open filter button tooltip - Agent jobs performance' =
+			
+			IF (
+			    [Is filters applied - Agent jobs performance] = 1,
+			    [Filters are applied text],
+			    [Filters are not applied]
+			)
+		displayFolder: Agent jobs performance
+		lineageTag: 07fc4c58-2425-4f6c-a324-3619b57cb9e6
+
+	measure 'Data range - Agent jobs performance' =
+			
+			VAR _minDataDate =
+			    CALCULATE ( MIN ( 'Agent jobs performance'[Date] ), ALL () )
+			VAR _maxDataDate =
+			    CALCULATE ( MAX ( 'Agent jobs performance'[Date] ), ALL () )
+			VAR _minDataDateTxt =
+			    FORMAT ( _minDataDate, [Date format string] )
+			VAR _maxDataDateTxt =
+			    FORMAT ( _maxDataDate, [Date format string] )
+			VAR _txt =
+			    IF (
+			        _minDataDate = BLANK (),
+			        "",
+			        "Data available between " & _minDataDateTxt & " and " & _maxDataDateTxt
+			    )
+			VAR _result = _txt
+			RETURN
+			    _result
+		displayFolder: Agent jobs performance
+		lineageTag: 1209ed38-5d31-4dc0-b496-cf76d305318b
+
+	measure 'Executions - Agent jobs performance' =
+			
+			SUM ( 'Agent jobs performance'[Cnt] )
+		formatString: #,0
+		displayFolder: Agent jobs performance
+		lineageTag: d463a3d0-52cf-4cbf-899d-da6c174fd80b
+
+	measure 'Duration in sec. - Agent jobs performance' =
+			
+			SUM ( 'Agent jobs performance'[SumDurationSeconds] )
+		formatString: #,0
+		displayFolder: Agent jobs performance
+		lineageTag: a895a2fd-db37-4a9f-b04b-ea373f9a7baa
+
+	measure 'Latest executions (Succeeded) - Agent jobs performance' = ```
+			
+			VAR _maxDate =
+			    CALCULATE (
+			        MAX ( 'Agent jobs performance'[Date] ),
+			        REMOVEFILTERS ( 'Agent job'[Job name] )
+			    )
+			VAR _latestValue =
+			    CALCULATE (
+			        [Executions - Agent jobs performance],
+			        'Agent jobs performance'[Date] = _maxDate,
+			        'Agent job status'[Status] = "Succeeded",
+			        REMOVEFILTERS ( 'Agent job status' )
+			    )
+			VAR _result = _latestValue
+			RETURN
+			    _result
+			
+			```
+		formatString: #,0
+		displayFolder: Agent jobs performance
+		lineageTag: aa42a425-6d3c-43dc-9e43-e4608cc4ca81
+
+	measure 'Latest executions (Failed) - Agent jobs performance' = ```
+			
+			VAR _maxDate =
+			    CALCULATE (
+			        MAX ( 'Agent jobs performance'[Date] ),
+			        REMOVEFILTERS ( 'Agent job'[Job name] )
+			    )
+			VAR _latestValue =
+			    CALCULATE (
+			        [Executions - Agent jobs performance],
+			        'Agent jobs performance'[Date] = _maxDate,
+			        'Agent job status'[Status] = "Failed",
+			        REMOVEFILTERS ( 'Agent job status' )
+			    )
+			VAR _result = _latestValue
+			RETURN
+			    _result
+			
+			```
+		formatString: #,0
+		displayFolder: Agent jobs performance
+		lineageTag: f88119da-ca81-497c-a6db-83ecb87503b8
+
+	measure 'Latest executions (Missing data) - Agent jobs performance' = ```
+			
+			VAR _maxDate =
+			    CALCULATE (
+			        MAX ( 'Agent jobs performance'[Date] ),
+			        REMOVEFILTERS ( 'Agent job status' )
+			    )
+			VAR _latestValue =
+			    CALCULATE (
+			        [Executions - Agent jobs performance],
+			        'Agent jobs performance'[Date] = _maxDate,
+			        'Agent job status'[Status] = "Missing data",
+			        REMOVEFILTERS ( 'Agent job status' )
+			    )
+			VAR _result = _latestValue
+			RETURN
+			    _result
+			
+			```
+		formatString: #,0
+		displayFolder: Agent jobs performance
+		lineageTag: 3ce98bfb-23ed-4d2f-aa16-733d0f4e7443
+
+	measure 'Execution sec. - Agent jobs performance' =
+			
+			SUM ( 'Agent jobs performance'[SumDurationSeconds] )
+		formatString: #,0
+		displayFolder: Agent jobs performance
+		lineageTag: 49a668a9-d365-4f22-8606-9f83a620d455
+
+	measure 'Latest execution sec. (Failed) - Agent jobs performance' = ```
+			
+			VAR _maxDate =
+			    CALCULATE (
+			        MAX ( 'Agent jobs performance'[Date] ),
+			        REMOVEFILTERS ( 'Agent job'[Job name] )
+			    )
+			VAR _latestValue =
+			    CALCULATE (
+			        [Execution sec. - Agent jobs performance],
+			        'Agent jobs performance'[Date] = _maxDate,
+			        'Agent job status'[Status] = "Failed",
+			        REMOVEFILTERS ( 'Agent job status' )
+			    )
+			VAR _result = _latestValue
+			RETURN
+			    _result
+			
+			```
+		formatString: #,0
+		displayFolder: Agent jobs performance
+		lineageTag: fcc58a0c-a6b0-4654-b60d-3c095600e16d
+
+	measure 'Latest execution sec. (Succeeded) - Agent jobs performance' = ```
+			
+			VAR _maxDate =
+			    CALCULATE (
+			        MAX ( 'Agent jobs performance'[Date] ),
+			        REMOVEFILTERS ( 'Agent job'[Job name] )
+			    )
+			VAR _latestValue =
+			    CALCULATE (
+			        [Execution sec. - Agent jobs performance],
+			        'Agent jobs performance'[Date] = _maxDate,
+			        'Agent job status'[Status] = "Succeeded",
+			        REMOVEFILTERS ( 'Agent job status' )
+			    )
+			VAR _result = _latestValue
+			RETURN
+			    _result
+			
+			```
+		formatString: #,0
+		displayFolder: Agent jobs performance
+		lineageTag: 7d554ce4-943e-4aae-b520-229037f97000
+
+	measure 'Latest success rate' =
+			
+			VAR _all = [Latest executions (Succeeded) - Agent jobs performance] + [Latest executions (Failed) - Agent jobs performance] + [Latest executions (Ended with errors) - Agent jobs performance] + [Latest executions (Other errors) - Agent jobs performance]
+			VAR _success = [Latest executions (Succeeded) - Agent jobs performance]
+			VAR _value =
+			    IF (
+			        _all = BLANK ()
+			            && _success = BLANK (),
+			        BLANK (),
+			        IF ( _success = BLANK (), 0, DIVIDE ( _success, _all ) )
+			    )
+			VAR _result = _value
+			RETURN
+			    _result
+		formatString: #,0.00\ %;-#,0.00\ %;#,0.00\ %
+		displayFolder: Agent jobs performance
+		lineageTag: 0213a761-4ba6-4392-a5b2-684b8737ae0d
+
+	measure 'Details title - Agent jobs performance' =
+			
+			VAR _latestDate = [Latest date - Agent jobs performance]
+			VAR _latestDateTxt =
+			    FORMAT ( _latestDate, [Date format string] ) & " ("
+			        & FORMAT ( _latestDate, [Dayname format string] ) & ")"
+			VAR _txt =
+			    "Agent jobs performance"
+			        & IF (
+			            _latestDate <> BLANK (),
+			            " for " & _latestDateTxt
+			        )
+			VAR _result = _txt
+			RETURN
+			    _result
+		displayFolder: Agent jobs performance
+		lineageTag: ecfd980a-999d-4ae6-986e-d9b68792b4ae
+
+	measure 'Latest date - Agent jobs performance' =
+			
+			VAR _maxDate =
+			    MAX ( 'Agent jobs performance'[Date] )
+			VAR _result = _maxDate
+			RETURN
+			    _result
+		formatString: General Date
+		displayFolder: Agent jobs performance
+		lineageTag: 0181e72a-2ede-4c6b-bc79-578ae6fa7c55
+
+	measure 'Details title (errors) - Agent jobs performance' =
+			
+			VAR _latestDate = [Latest date - Agent jobs performance]
+			VAR _latestDateTxt =
+			    FORMAT ( _latestDate, [Date format string] ) & " ("
+			        & FORMAT ( _latestDate, [Dayname format string] ) & ")"
+			VAR _txt =
+			    "Agent jobs errors"
+			        & IF (
+			            _latestDate <> BLANK (),
+			            " for " & _latestDateTxt
+			        )
+			VAR _result = _txt
+			RETURN
+			    _result
+		displayFolder: Agent jobs performance
+		lineageTag: 8bffa79d-d8c6-4385-b787-35b8a83f1417
+
+	measure 'Job executions title - Agent jobs performance' =
+			
+			VAR _minDataDate =
+			    MIN ( 'Agent jobs performance'[Date] )
+			VAR _maxDataDate =
+			    MAX ( 'Agent jobs performance'[Date] )
+			VAR _minDataDateTxt =
+			    FORMAT ( _minDataDate, [Date format string] )
+			VAR _maxDataDateTxt =
+			    FORMAT ( _maxDataDate, [Date format string] )
+			VAR _txt =
+			    "Job executions"
+			        & IF (
+			            _minDataDate <> BLANK (),
+			            " between " & _minDataDateTxt & " and " & _maxDataDateTxt
+			        )
+			VAR _result = _txt
+			RETURN
+			    _result
+		displayFolder: Agent jobs performance
+		lineageTag: b736715a-764a-4057-b8cc-d31b38c2b4b7
+
+	measure 'Latest executions (Ended with errors) - Agent jobs performance' = ```
+			
+			VAR _maxDate =
+			    CALCULATE (
+			        MAX ( 'Agent jobs performance'[Date] ),
+			        REMOVEFILTERS ( 'Agent job'[Job name] )
+			    )
+			VAR _latestValue =
+			    CALCULATE (
+			        [Executions - Agent jobs performance],
+			        'Agent jobs performance'[Date] = _maxDate,
+			        'Agent job status'[Status] = "Ended with errors",
+			        REMOVEFILTERS ( 'Agent job status' )
+			    )
+			VAR _result = _latestValue
+			RETURN
+			    _result
+			
+			```
+		formatString: #,0
+		displayFolder: Agent jobs performance
+		lineageTag: 1d39d6c1-0c59-45be-b63f-eff96950bdee
+
+	measure 'Latest execution sec. (Ended with errors) - Agent jobs performance' = ```
+			
+			VAR _maxDate =
+			    CALCULATE (
+			        MAX ( 'Agent jobs performance'[Date] ),
+			        REMOVEFILTERS ( 'Agent job'[Job name] )
+			    )
+			VAR _latestValue =
+			    CALCULATE (
+			        [Execution sec. - Agent jobs performance],
+			        'Agent jobs performance'[Date] = _maxDate,
+			        'Agent job status'[Status] = "Ended with errors",
+			        REMOVEFILTERS ( 'Agent job status' )
+			    )
+			VAR _result = _latestValue
+			RETURN
+			    _result
+			
+			```
+		formatString: #,0
+		displayFolder: Agent jobs performance
+		lineageTag: f3815e5d-7b22-4f29-8748-8bc44a151a9f
+
+	measure 'Sort order - Agent jobs performance' = ```
+			
+			VAR _maxDate =
+			    CALCULATE (
+			        MAX ( 'Agent jobs performance'[Date] ),
+			        REMOVEFILTERS ( 'Agent job'[Job name] )
+			    )
+			VAR _latestValue =
+			    CALCULATE (
+			        MAX ( 'Agent jobs performance errors'[SortOrder] ),
+			        'Agent jobs performance errors'[Date] = _maxDate
+			    )
+			VAR _result = _latestValue
+			RETURN
+			    _result
+			
+			```
+		formatString: #,0
+		displayFolder: Agent jobs performance
+		lineageTag: 9e88c7e9-f184-4a3a-8e83-f7d19ec95a91
+
+	measure 'Executions (Succeeded - tooltip) - Agent jobs performance' =
+			
+			VAR _cnt =
+			    CALCULATE (
+			        [Executions - Agent jobs performance],
+			        'Agent job status'[Status] = "Succeeded",
+			        ALL ( 'Agent job status' )
+			    )
+			VAR _sec =
+			    CALCULATE (
+			        [Execution sec. - Agent jobs performance],
+			        'Agent job status'[Status] = "Succeeded",
+			        ALL ( 'Agent job status' )
+			    )
+			VAR _cntZeroed =
+			    IF ( _cnt = BLANK (), 0, _cnt )
+			VAR _secZeroed =
+			    IF ( _sec = BLANK (), 0, _sec )
+			VAR _text =
+			    FORMAT ( _cntZeroed, "#,##0" ) & ": "
+			        & FORMAT ( _secZeroed, "#,##0" ) & " seconds"
+			VAR _return = _text
+			RETURN
+			    _return
+		displayFolder: Agent jobs performance
+		lineageTag: 2b4237ff-cdc0-4e30-9900-1365dd1e79f8
+
+	measure 'Executions (Failed - tooltip) - Agent jobs performance' =
+			
+			VAR _cnt =
+			    CALCULATE (
+			        [Executions - Agent jobs performance],
+			        'Agent job status'[Status] = "Failed",
+			        ALL ( 'Agent job status' )
+			    )
+			VAR _sec =
+			    CALCULATE (
+			        [Execution sec. - Agent jobs performance],
+			        'Agent job status'[Status] = "Failed",
+			        ALL ( 'Agent job status' )
+			    )
+			VAR _cntZeroed =
+			    IF ( _cnt = BLANK (), 0, _cnt )
+			VAR _secZeroed =
+			    IF ( _sec = BLANK (), 0, _sec )
+			VAR _text =
+			    FORMAT ( _cntZeroed, "#,##0" ) & ": "
+			        & FORMAT ( _secZeroed, "#,##0" ) & " seconds"
+			VAR _return = _text
+			RETURN
+			    _return
+		displayFolder: Agent jobs performance
+		lineageTag: 1a2203e1-4541-47e2-8e1a-194648389d25
+
+	measure 'Executions (Ended with errors - tooltip) - Agent jobs performance' =
+			
+			VAR _cnt =
+			    CALCULATE (
+			        [Executions - Agent jobs performance],
+			        'Agent job status'[Status] = "Ended with errors",
+			        ALL ( 'Agent job status' )
+			    )
+			VAR _sec =
+			    CALCULATE (
+			        [Execution sec. - Agent jobs performance],
+			        'Agent job status'[Status] = "Ended with errors",
+			        ALL ( 'Agent job status' )
+			    )
+			VAR _cntZeroed =
+			    IF ( _cnt = BLANK (), 0, _cnt )
+			VAR _secZeroed =
+			    IF ( _sec = BLANK (), 0, _sec )
+			VAR _text =
+			    FORMAT ( _cntZeroed, "#,##0" ) & ": "
+			        & FORMAT ( _secZeroed, "#,##0" ) & " seconds"
+			VAR _return = _text
+			RETURN
+			    _return
+		displayFolder: Agent jobs performance
+		lineageTag: 8cd533c7-93a1-42ac-bb54-263456ae1808
+
+	measure 'Executions (Total - tooltip) - Agent jobs performance' =
+			
+			VAR _cnt =
+			    CALCULATE (
+			        [Executions - Agent jobs performance],
+			        'Agent job status'[Status] <> "Missing data",
+			        ALL ( 'Agent job status' )
+			    )
+			VAR _sec =
+			    CALCULATE (
+			        [Execution sec. - Agent jobs performance],
+			        'Agent job status'[Status] <> "Missing data",
+			        ALL ( 'Agent job status' )
+			    )
+			VAR _cntZeroed =
+			    IF ( _cnt = BLANK (), 0, _cnt )
+			VAR _secZeroed =
+			    IF ( _sec = BLANK (), 0, _sec )
+			VAR _text =
+			    FORMAT ( _cntZeroed, "#,##0" ) & ": "
+			        & FORMAT ( _secZeroed, "#,##0" ) & " seconds"
+			VAR _return = _text
+			RETURN
+			    _return
+		displayFolder: Agent jobs performance
+		lineageTag: 12368882-17cf-46be-b5da-7cf8927baef7
+
+	measure 'Report page text - Database configuration history' =
+			
+			VAR _service = [Service - Database configuration]
+			VAR _serviceDisplayText = [Service display text - Database configuration] & " configuration history"
+			VAR _load =
+			    SELECTCOLUMNS (
+			        FILTER ( 'Data load', 'Data load'[Service] = _service ),
+			        "DataLoad", 'Data load'[DataLoad]
+			    )
+			VAR _textToShow =
+			    IF ( _load = "No", "(", "" ) & _serviceDisplayText
+			        & IF ( _load = "No", ")", "" )
+			VAR _result = _textToShow
+			RETURN
+			    _result
+		displayFolder: Database configuration history
+		lineageTag: bfea966a-9ee8-4431-9acf-05ab871753b2
+
+	measure 'Report page text - Instance configuration hardware history' =
+			
+			VAR _service = [Service - Instance configuration]
+			VAR _serviceDisplayText = [Service display text - Instance configuration] & " hardware history"
+			VAR _load =
+			    SELECTCOLUMNS (
+			        FILTER ( 'Data load', 'Data load'[Service] = _service ),
+			        "DataLoad", 'Data load'[DataLoad]
+			    )
+			VAR _textToShow =
+			    IF ( _load = "No", "(", "" ) & _serviceDisplayText
+			        & IF ( _load = "No", ")", "" )
+			VAR _result = _textToShow
+			RETURN
+			    _result
+		displayFolder: Instance configuration hardware history
+		lineageTag: 24fa2b35-5ed2-410f-b1bc-328c5428d59c
+
+	measure 'Data range - Database configuration history' =
+			
+			VAR _minDataDate =
+			    CALCULATE ( MIN ( 'Database state history'[From] ) )
+			VAR _minDataDateTxt =
+			    FORMAT ( _minDataDate, [Date format string] )
+			VAR _txt =
+			    IF (
+			        _minDataDate = BLANK (),
+			        "",
+			        "Data from " & _minDataDateTxt
+			    )
+			VAR _result = _txt
+			RETURN
+			    _result
+		displayFolder: Database configuration history
+		lineageTag: b03c0777-4cb2-4a0b-8a1a-6cf080dfaf3b
+
+	measure 'Data range - Instance configuration hardware history' =
+			
+			VAR _minDataDate =
+			    CALCULATE ( MIN ( 'Instance hardware history'[From] ) )
+			VAR _minDataDateTxt =
+			    FORMAT ( _minDataDate, [Date format string] )
+			VAR _txt =
+			    IF (
+			        _minDataDate = BLANK (),
+			        "",
+			        "Data from " & _minDataDateTxt
+			    )
+			VAR _result = _txt
+			RETURN
+			    _result
+		displayFolder: Instance configuration hardware history
+		lineageTag: 73f82cb8-88a2-48d1-89f4-68e8d34cbbbf
+
+	measure 'Report page text - Instance configuration configurations history' =
+			
+			VAR _service = [Service - Instance configuration]
+			VAR _serviceDisplayText = [Service display text - Instance configuration] & " configurations history"
+			VAR _load =
+			    SELECTCOLUMNS (
+			        FILTER ( 'Data load', 'Data load'[Service] = _service ),
+			        "DataLoad", 'Data load'[DataLoad]
+			    )
+			VAR _textToShow =
+			    IF ( _load = "No", "(", "" ) & _serviceDisplayText
+			        & IF ( _load = "No", ")", "" )
+			VAR _result = _textToShow
+			RETURN
+			    _result
+		displayFolder: Instance configuration configurations history
+		lineageTag: ece4dcd6-1870-426c-8ca4-e591a78fba53
+
+	measure 'Data range - Instance configuration configurations history' =
+			
+			VAR _minDataDate =
+			    CALCULATE ( MIN ( 'Instance configurations history'[From] ) )
+			VAR _minDataDateTxt =
+			    FORMAT ( _minDataDate, [Date format string] )
+			VAR _txt =
+			    IF (
+			        _minDataDate = BLANK (),
+			        "",
+			        "Data from " & _minDataDateTxt
+			    )
+			VAR _result = _txt
+			RETURN
+			    _result
+		displayFolder: Instance configuration configurations history
+		lineageTag: d7d4df06-dc6f-4898-a4c4-80134b04d49e
+
+	measure 'Report page text - Instance trace flags history' =
+			
+			VAR _service = [Service - Instance configuration]
+			VAR _serviceDisplayText = [Service display text - Instance configuration] & " trace flags history"
+			VAR _load =
+			    SELECTCOLUMNS (
+			        FILTER ( 'Data load', 'Data load'[Service] = _service ),
+			        "DataLoad", 'Data load'[DataLoad]
+			    )
+			VAR _textToShow =
+			    IF ( _load = "No", "(", "" ) & _serviceDisplayText
+			        & IF ( _load = "No", ")", "" )
+			VAR _result = _textToShow
+			RETURN
+			    _result
+		displayFolder: Trace flags history
+		lineageTag: 85556adc-506b-4087-a181-48098149a9bc
+
+	measure 'Data range - Trace flags history' =
+			
+			VAR _minDataDate =
+			    CALCULATE ( MIN ( 'Trace flags history'[From] ) )
+			VAR _minDataDateTxt =
+			    FORMAT ( _minDataDate, [Date format string] )
+			VAR _txt =
+			    IF (
+			        _minDataDate = BLANK (),
+			        "",
+			        "Data from " & _minDataDateTxt
+			    )
+			VAR _result = _txt
+			RETURN
+			    _result
+		displayFolder: Trace flags history
+		lineageTag: 46807fa4-f283-4d9f-a2bd-f610ad13b6a2
+
+	measure 'Report page text - Instance SQL agent properties history' =
+			
+			VAR _service = [Service - Instance configuration]
+			VAR _serviceDisplayText = [Service display text - Instance configuration] & " SQL agent properties history"
+			VAR _load =
+			    SELECTCOLUMNS (
+			        FILTER ( 'Data load', 'Data load'[Service] = _service ),
+			        "DataLoad", 'Data load'[DataLoad]
+			    )
+			VAR _textToShow =
+			    IF ( _load = "No", "(", "" ) & _serviceDisplayText
+			        & IF ( _load = "No", ")", "" )
+			VAR _result = _textToShow
+			RETURN
+			    _result
+		displayFolder: Instance SQL agent properties history
+		lineageTag: 8e0fd870-95f3-44a9-832a-0903452e251a
+
+	measure 'Data range - Instance SQL agent properties history' =
+			
+			VAR _minDataDate =
+			    CALCULATE ( MIN ( 'Instance SQL agent properties history'[From] ) )
+			VAR _minDataDateTxt =
+			    FORMAT ( _minDataDate, [Date format string] )
+			VAR _txt =
+			    IF (
+			        _minDataDate = BLANK (),
+			        "",
+			        "Data from " & _minDataDateTxt
+			    )
+			VAR _result = _txt
+			RETURN
+			    _result
+		displayFolder: Instance SQL agent properties history
+		lineageTag: 39def929-17f5-4679-8029-99afc23d0a73
+
+	measure 'Title - Database configuration' =
+			
+			"Database configuration " & [Drill-through symbol]
+		displayFolder: Database configuration
+		lineageTag: 99d90fcb-2cce-4181-b26e-db0d45ae2793
+
+	measure 'Title - Hardware - Instance configuration' =
+			
+			"Hardware " & [Drill-through symbol]
+		displayFolder: Instance configuration
+		lineageTag: b065a896-6907-413d-af6b-d6318d5c5a51
+
+	measure 'Title - Configurations - Instance configuration' =
+			
+			"Configurations " & [Drill-through symbol]
+		displayFolder: Instance configuration
+		lineageTag: 082aaa8b-b2a4-4906-96b6-853b0ed3bb05
+
+	measure 'Title - SQL agent properties - Instance configuration' =
+			
+			"SQL agent properties " & [Drill-through symbol]
+		displayFolder: Instance configuration
+		lineageTag: e2c08eca-4797-4ba2-8fca-53c7add4c818
+
+	measure 'Title - Trace flags - Instance configuration' =
+			
+			"Trace flags " & [Drill-through symbol]
+		displayFolder: Instance configuration
+		lineageTag: b3146b0b-54df-4176-b1c8-e49a25a03690
+
+	measure 'Drill-through symbol' =
+			
+			"(" & UNICHAR ( 10140 ) & UNICHAR ( 10140 ) & UNICHAR ( 10140 ) & ")"
+		displayFolder: Common
+		lineageTag: 970c9077-31f5-4793-9e4b-ab3ee5f8ddcd
+
+	measure 'Date - Hour text' =
+			
+			VAR _date =
+			    MAX ( 'Date'[Date] )
+			VAR _dateTxt =
+			    FORMAT ( _date, [Date format string] )
+			VAR _hour =
+			    MAX ( 'Time'[Hour] )
+			VAR _hourTxt =
+			    FORMAT ( _hour, "#0" )
+			VAR _txt =
+			    _dateTxt
+			        & IF ( ISFILTERED ( 'Time' ), " Hour: " & _hourTxt, "" )
+			VAR _result = _txt
+			RETURN
+			    _result
+		displayFolder: Common
+		lineageTag: 6802e0e5-271d-4731-bab8-92b827c7d771
+
+	measure 'Latest executions (Other errors) - Agent jobs performance' =
+			
+			VAR _maxDate =
+			    CALCULATE (
+			        MAX ( 'Agent jobs performance'[Date] ),
+			        REMOVEFILTERS ( 'Agent job'[Job name] )
+			    )
+			VAR _latestValue =
+			    CALCULATE (
+			        [Executions - Agent jobs performance],
+			        'Agent jobs performance'[Date] = _maxDate,
+			        NOT 'Agent job status'[Status] IN { "Succeeded", "Ended with errors", "Failed", "Missing data" },
+			        REMOVEFILTERS ( 'Agent job status' )
+			    )
+			VAR _result = _latestValue
+			RETURN
+			    _result
+		formatString: #,0
+		displayFolder: Agent jobs performance
+		lineageTag: 12e9cc20-ec72-456a-96d0-1cf2be5ca89f
+
+	measure 'Executions (Other errors - tooltip) - Agent jobs performance' =
+			
+			VAR _cnt =
+			    CALCULATE (
+			        [Executions - Agent jobs performance],
+			        NOT 'Agent job status'[Status] IN { "Succeeded", "Ended with errors", "Failed", "Missing data" },
+			        ALL ( 'Agent job status' )
+			    )
+			VAR _sec =
+			    CALCULATE (
+			        [Execution sec. - Agent jobs performance],
+			        NOT 'Agent job status'[Status] IN { "Succeeded", "Ended with errors", "Failed", "Missing data" },
+			        ALL ( 'Agent job status' )
+			    )
+			VAR _cntZeroed =
+			    IF ( _cnt = BLANK (), 0, _cnt )
+			VAR _secZeroed =
+			    IF ( _sec = BLANK (), 0, _sec )
+			VAR _text =
+			    FORMAT ( _cntZeroed, "#,##0" ) & ": "
+			        & FORMAT ( _secZeroed, "#,##0" ) & " seconds"
+			VAR _return = _text
+			RETURN
+			    _return
+		displayFolder: Agent jobs performance
+		lineageTag: 26601c25-714b-42d3-a153-d60663bed3f1
+
+	measure 'Latest execution sec. (Other errors) - Agent jobs performance' = ```
+			
+			VAR _maxDate =
+			    CALCULATE (
+			        MAX ( 'Agent jobs performance'[Date] ),
+			        REMOVEFILTERS ( 'Agent job'[Job name] )
+			    )
+			VAR _latestValue =
+			    CALCULATE (
+			        [Execution sec. - Agent jobs performance],
+			        'Agent jobs performance'[Date] = _maxDate,
+			        NOT 'Agent job status'[Status] IN { "Succeeded", "Ended with errors", "Failed", "Missing data" },
+			        REMOVEFILTERS ( 'Agent job status' )
+			    )
+			VAR _result = _latestValue
+			RETURN
+			    _result
+			
+			```
+		formatString: #,0
+		displayFolder: Agent jobs performance
+		lineageTag: 617bf9ac-2547-4706-b62f-0bb78e75604f
 
 	partition _Measures = m
 		mode: import

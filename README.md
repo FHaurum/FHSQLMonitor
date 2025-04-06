@@ -3,6 +3,11 @@ To read more about the project go to my blog [SQL Server Monitoring](https://www
 
 Have fun :-)
 <p>
+<b>April 6, 2025: Version 2.3.0</b> with:</br>
+<li>New report "Agent jobs performance"</li>
+<li>Changed history tooltips on "Database configuration" and "Instance configuration" to be drill-through pages.</li>
+</p>
+<p>
 <b>March 30, 2025: Version 2.2.2</b> fixing an error introduced in version 2.2.0 regarding calculating data and index space used by tables.
 </p>
 <p>

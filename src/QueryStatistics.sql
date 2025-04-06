@@ -66,7 +66,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.1';
+		SET @version = '2.3';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -383,7 +383,7 @@ ELSE BEGIN
 					CONVERT(nvarchar(18), qs.QueryHash, 1) AS [Query hash]
 					,qs.CreationTime
 					,qs.LastExecutionTime
-					,(dbo.fhsmSplitLines(
+					,(dbo.fhsmFNSplitLines(
 						(CASE
 							WHEN LEN(qs.Statement) > ' + CAST(@maxStatementLength AS nvarchar) + ' THEN LEFT(qs.Statement, ' + CAST(@maxStatementLength AS nvarchar) + ') + CHAR(10) + ''...Statement truncated''
 							ELSE qs.Statement

@@ -66,7 +66,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.2';
+		SET @version = '2.3';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -369,9 +369,9 @@ ELSE BEGIN
 			END;
 			SET @stmt += '
 				SELECT
-					(dbo.fhsmSplitLines(b.EqualityColumns, ' + CAST(@maxEqualityColumnsLineLength AS nvarchar) + ')) AS EqualityColumns
-					,(dbo.fhsmSplitLines(b.InequalityColumns, ' + CAST(@maxInequalityColumnsLineLength AS nvarchar) + ')) AS InequalityColumns
-					,(dbo.fhsmSplitLines(b.IncludedColumns, ' + CAST(@maxIncludedColumnsLineLength AS nvarchar) + ')) AS IncludedColumns
+					(dbo.fhsmFNSplitLines(b.EqualityColumns, ' + CAST(@maxEqualityColumnsLineLength AS nvarchar) + ')) AS EqualityColumns
+					,(dbo.fhsmFNSplitLines(b.InequalityColumns, ' + CAST(@maxInequalityColumnsLineLength AS nvarchar) + ')) AS InequalityColumns
+					,(dbo.fhsmFNSplitLines(b.IncludedColumns, ' + CAST(@maxIncludedColumnsLineLength AS nvarchar) + ')) AS IncludedColumns
 					,b.DeltaUniqueCompiles AS UniqueCompiles
 					,b.DeltaUserSeeks AS UserSeeks
 					,b.LastUserSeek
@@ -586,7 +586,7 @@ ELSE BEGIN
 			';
 			SET @stmt += '
 				SELECT
-					(dbo.fhsmSplitLines(
+					(dbo.fhsmFNSplitLines(
 						(CASE
 							WHEN LEN(mis.Statement) > ' + CAST(@maxStatementLength AS nvarchar) + ' THEN LEFT(mis.Statement, ' + CAST(@maxStatementLength AS nvarchar) + ') + CHAR(10) + ''...Statement truncated''
 							ELSE mis.Statement

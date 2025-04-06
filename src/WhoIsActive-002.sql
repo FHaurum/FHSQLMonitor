@@ -66,7 +66,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.1';
+		SET @version = '2.3';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -184,12 +184,12 @@ ELSE BEGIN
 				ALTER VIEW  ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Who is active') + '
 				AS
 				SELECT
-					DATEDIFF(SECOND, a.collection_time, SYSDATETIME()) AS SecondsSinceLastSeen
+					DATEDIFF(SECOND, a.collection_time, lastExecuted.Timestamp) AS SecondsSinceLastSeen
 					,a.collection_time AS CollectionTime
 					,a.login_time AS LoginTime
 					,DATEDIFF(MILLISECOND, a.start_time, a.collection_time) AS ElapsedTimeMS
 					,a.session_id AS SessionId
-					,(dbo.fhsmSplitLines(
+					,(dbo.fhsmFNSplitLines(
 						(CASE
 							WHEN LEN(a.sql_text) > ' + CAST(@maxSQLTextLength AS nvarchar) + ' THEN LEFT(a.sql_text, ' + CAST(@maxSQLTextLength AS nvarchar) + ') + CHAR(10) + ''...Statement truncated''
 							ELSE a.sql_text
@@ -243,6 +243,12 @@ ELSE BEGIN
 						AND (wia.sql_text <> ''sp_server_diagnostics'')
 						AND (wia.sql_text NOT LIKE ''WAITFOR DELAY %'')
 				) AS a
+				CROSS APPLY (
+					SELECT TOP 1 l.Timestamp
+					FROM dbo.fhsmLog AS l
+					WHERE (l.Name = ''Who is active'')
+					ORDER BY l.TimestampUTC DESC
+				) AS lastExecuted
 				WHERE (a._Rnk_ = 1);
 			';
 			EXEC(@stmt);

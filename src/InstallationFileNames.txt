@@ -5,6 +5,7 @@ IndexOptimize-003-OlaHallengren-IndexOptimize.sql
 IndexOptimize-004.sql
 DatabaseState.sql
 AgentJobs.sql
+AgentJobsPerformance.sql
 AgeOfStatistics.sql
 BackupStatus.sql
 Connections.sql
@@ -26,3 +27,4 @@ Triggers.sql
 WaitStatistics.sql
 WhoIsActive-001-AdamMachanic-12.00-sp_WhoIsActive.sql
 WhoIsActive-002.sql
+CleanupAfterInstallationAndUpgrade.sql

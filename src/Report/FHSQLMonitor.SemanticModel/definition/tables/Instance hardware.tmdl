@@ -7,6 +7,8 @@ table 'Instance hardware'
 		summarizeBy: none
 		sourceColumn: Key
 
+		changedProperty = IsHidden
+
 		annotation SummarizationSetBy = Automatic
 
 	column Value

@@ -379,6 +379,81 @@
         ]
       }
     },
+    "lineStackedColumnComboChart": {
+      "*": {
+        "background": [
+          {
+            "color": {
+              "solid": {
+                "color": "#BCD9FF"
+              }
+            },
+            "transparency": 70
+          }
+        ],
+        "border": [
+          {
+            "color": {
+              "solid": {
+                "color": "#BCD9FF"
+              }
+            },
+            "radius": 10,
+            "show": true
+          }
+        ],
+        "categoryAxis": [
+          {
+            "fontFamily": "Segoe UI",
+            "fontSize": 8,
+            "gridlineShow": false,
+            "showAxisTitle": false
+          }
+        ],
+        "legend": [
+          {
+            "fontFamily": "Segoe UI",
+            "fontSize": 8
+          }
+        ],
+        "lineStyles": [
+          {
+            "strokeWidth": 1
+          }
+        ],
+        "subTitle": [
+          {
+            "fontFamily": "Segoe UI",
+            "fontSize": 8,
+            "show": true
+          }
+        ],
+        "title": [
+          {
+            "bold": true,
+            "fontFamily": "Segoe UI",
+            "fontSize": 8
+          }
+        ],
+        "valueAxis": [
+          {
+            "fontFamily": "Segoe UI",
+            "fontSize": 8,
+            "gridlineColor": {
+              "solid": {
+                "color": "#BCD9FF"
+              }
+            },
+            "gridlineShow": true,
+            "gridlineStyle": "solid",
+            "gridlineThickness": 1,
+            "gridlineTransparency": 40,
+            "showAxisTitle": false,
+            "start": 0
+          }
+        ]
+      }
+    },
     "page": {
       "*": {
         "background": [

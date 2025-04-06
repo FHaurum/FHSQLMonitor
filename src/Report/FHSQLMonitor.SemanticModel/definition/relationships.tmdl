@@ -223,18 +223,6 @@ relationship ba2d5542-45e2-06d6-7672-92f3822013fc
 	fromColumn: 'Agent jobs - list'.Job
 	toColumn: 'Agent jobs - jobs'.Job
 
-relationship 169c76f4-6985-4390-4815-47be054177e8
-	fromColumn: 'Instance configurations history'.Id
-	toColumn: 'Instance configurations'.Id
-
-relationship 8ad3538f-6793-c995-1544-5dc87dbb78a7
-	fromColumn: 'Instance hardware history'.Key
-	toColumn: 'Instance hardware'.Key
-
-relationship 721c4332-1f35-2106-9456-bf2d1d189c52
-	fromColumn: 'Trace flags history'.'Trace flag'
-	toColumn: 'Trace flags'.'Trace flag'
-
 relationship 371c9240-c6ec-a1ab-de3a-fae334c60865
 	fromColumn: 'Database state history'.DatabaseKey
 	toColumn: Database.DatabaseKey
@@ -279,4 +267,32 @@ relationship 33812109-ab46-e5b8-0a93-b86a3c6fda28
 relationship ebf2e4cb-93f7-4e9a-ebe0-84bf6dcdf895
 	fromColumn: 'Missing indexes - Index details'.MissingIndexStatementKey
 	toColumn: 'Missing index statement - Index details'.MissingIndexStatementKey
+
+relationship 547b03be-c396-6ea5-aa65-99dc1d1a685a
+	fromColumn: 'Agent jobs performance'.AgentJobKey
+	toColumn: 'Agent job'.AgentJobKey
+
+relationship d8e13275-fe94-007c-6491-0eb8cea6e090
+	fromColumn: 'Agent jobs performance'.Date
+	toColumn: Date.Date
+
+relationship 3fe44f2a-fd04-c1d3-2058-f8317cff7cc0
+	fromColumn: 'Agent jobs performance'.TimeKey
+	toColumn: Time.TimeKey
+
+relationship 66ab7ede-6857-501b-d845-8ee30f24ad31
+	fromColumn: 'Agent jobs performance'.AgentJobStatsusKey
+	toColumn: 'Agent job status'.AgentJobStatsusKey
+
+relationship 536c7805-f51b-963b-26c8-fbe60bd1f187
+	fromColumn: 'Agent jobs performance errors'.AgentJobKey
+	toColumn: 'Agent job'.AgentJobKey
+
+relationship 4220c936-1a34-c733-c764-764aeedc4b05
+	fromColumn: 'Agent jobs performance errors'.Date
+	toColumn: Date.Date
+
+relationship 17d2e555-7035-17ff-23df-2c5f1f2f2142
+	fromColumn: 'Agent jobs performance errors'.TimeKey
+	toColumn: Time.TimeKey
 
