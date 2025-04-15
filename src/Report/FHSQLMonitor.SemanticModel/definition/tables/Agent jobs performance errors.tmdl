@@ -1,0 +1,86 @@
+table 'Agent jobs performance errors'
+	lineageTag: 1ccb8a78-3016-439d-bee7-36c5cff17b1f
+
+	column Message
+		dataType: string
+		lineageTag: 08513f4c-7ccb-4d7c-ba1a-17504791e936
+		summarizeBy: none
+		sourceColumn: Message
+
+		annotation SummarizationSetBy = Automatic
+
+	column StartDateTime
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn
+		lineageTag: 1433dca2-4869-4d9d-90e6-2b3d46bea027
+		summarizeBy: none
+		sourceColumn: StartDateTime
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	column Date
+		dataType: dateTime
+		isHidden
+		formatString: Long Date
+		lineageTag: de2d1e58-7e96-4f19-bb0f-d4110dc8ba80
+		summarizeBy: none
+		sourceColumn: Date
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column TimeKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: b538557c-825b-413b-b25f-fa0f929e6995
+		summarizeBy: none
+		sourceColumn: TimeKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column AgentJobKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: ecdfb082-dcf6-4b0a-9236-be453923d007
+		summarizeBy: none
+		sourceColumn: AgentJobKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Agent jobs performance errors' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Agent jobs performance")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db = dbList{[Name = #"Database name"]}[Data], 
+				  table = db{[Schema = #"Schema name", Item = "Agent jobs performance errors"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset,
+				  SelectColumns = Table.SelectColumns(
+				    datasetToUse,
+				    {"Message", "StartDateTime", "Date", "TimeKey", "AgentJobKey"}
+				  )
+				in
+				    SelectColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

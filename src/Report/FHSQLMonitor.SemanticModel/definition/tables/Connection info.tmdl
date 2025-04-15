@@ -37,14 +37,6 @@ table 'Connection info'
 
 		annotation SummarizationSetBy = Automatic
 
-	column ClientInterface
-		dataType: string
-		lineageTag: d1997b8c-a8fc-47e3-b45a-9c89f49dc7d9
-		summarizeBy: none
-		sourceColumn: ClientInterface
-
-		annotation SummarizationSetBy = Automatic
-
 	partition 'Connection info' = m
 		mode: import
 		queryGroup: Dimensions
@@ -65,9 +57,13 @@ table 'Connection info'
 				  db = dbList{[Name = #"Database name"]}[Data], 
 				  table = db{[Schema = #"Schema name", Item = "Connection info"]}[Data], 
 				  emptyDataset = Table.FirstN(table, 0), 
-				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset,
+				  SelectColumns = Table.SelectColumns(
+				    datasetToUse,
+				    {"Database", "Host", "Program", "ConnectionInfoKey"}
+				  )
 				in
-				  datasetToUse
+				  SelectColumns
 				```
 
 	annotation PBI_ResultType = Table

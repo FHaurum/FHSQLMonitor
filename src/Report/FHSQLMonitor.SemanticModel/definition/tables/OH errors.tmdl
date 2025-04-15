@@ -40,15 +40,6 @@ table 'OH errors'
 
 		annotation SummarizationSetBy = Automatic
 
-	column ErrorNumber
-		dataType: int64
-		formatString: 0
-		lineageTag: 9081365e-166e-468b-bcec-ec1af5542cf6
-		summarizeBy: none
-		sourceColumn: ErrorNumber
-
-		annotation SummarizationSetBy = User
-
 	column ErrorMessage
 		dataType: string
 		lineageTag: d513d58c-35fd-4617-bb4d-1556295cc565
@@ -104,7 +95,6 @@ table 'OH errors'
 				      "EndTime", 
 				      "Duration", 
 				      "Command", 
-				      "ErrorNumber", 
 				      "ErrorMessage", 
 				      "Date", 
 				      "IndexKey"

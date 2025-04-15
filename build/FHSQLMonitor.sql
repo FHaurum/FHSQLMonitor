@@ -1,7 +1,7 @@
 USE master;
 
 --
--- FHSQLMonitor v2.3.0 - 2025.04.05 16.48.09
+-- FHSQLMonitor v2.4.0 - 2025.04.15 07.11.53
 --
 
 --
@@ -15,8 +15,8 @@ DECLARE @olaDatabase          nvarchar(128) = NULL;
 -- Service parameters - They are only used during a fresh installation and not during an update
 --   When updating the already configured values in the tables dbo.fhsmSchedules and dbo.fhsmRetentions remains unchanged
 --
-DECLARE @enableAgentJobsPerformance     bit = 1;
 DECLARE @enableAgentJobs                bit = 1;
+DECLARE @enableAgentJobsPerformance     bit = 1;
 DECLARE @enableAgeOfStatistics          bit = 1;
 DECLARE @enableBackupStatus             bit = 1;
 DECLARE @enableConnections              bit = 1;
@@ -147,7 +147,7 @@ BEGIN
 END;
 
 --
--- File part:_Install-FHSQLMonitor.sql modified: 2025.04.04 23.41.34
+-- File part:_Install-FHSQLMonitor.sql modified: 2025.04.15 07.11.29
 --
 SET @stmt = '
 SET NOCOUNT ON;
@@ -192,7 +192,7 @@ BEGIN
 	SET @myUserName = SUSER_NAME();
 	SET @nowUTC = SYSUTCDATETIME();
 	SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
-	SET @version = ''2.3'';
+	SET @version = ''2.4.0'';
 END;
 
 --
@@ -2008,6 +2008,7 @@ ELSE BEGIN
 						DECLARE @bulkSize int;
 						DECLARE @bulkSizeStr nvarchar(128);
 						DECLARE @days int;
+						DECLARE @defaultBulkSize int;
 						DECLARE @filter nvarchar(max);
 						DECLARE @id int;
 						DECLARE @message nvarchar(max);
@@ -2021,7 +2022,7 @@ ELSE BEGIN
 						DECLARE @thisTask nvarchar(128);
 						DECLARE @timeColumn nvarchar(128);
 
-						SET @bulkSize = 5000;
+						SET @defaultBulkSize = 5000;
 						SET @thisTask = OBJECT_NAME(@@PROCID);
 						SET @version = '''''''''' + @version + '''''''''';
 
@@ -2039,6 +2040,11 @@ ELSE BEGIN
 
 							SET @bulkSizeStr = (SELECT pt.Value FROM @parametersTable AS pt WHERE (pt.[Key] = ''''''''@BulkSize''''''''));
 							SET @bulkSize = dbo.fhsmFNTryParseAsInt(@bulkSizeStr);
+
+							IF (@bulkSize < 1) OR (@bulkSize IS NULL)
+							BEGIN
+								SET @bulkSize = @defaultBulkSize;
+							END;
 						END;
 
 						DECLARE tCur CURSOR LOCAL READ_ONLY FAST_FORWARD FOR
@@ -3386,8 +3392,8 @@ END;
 ';
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
-SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableBackupStatus = 0;',             'SET @enableBackupStatus = '             + CAST(@enableBackupStatus AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableConnections = 0;',              'SET @enableConnections = '              + CAST(@enableConnections AS nvarchar) + ';');
@@ -3749,8 +3755,8 @@ END;
 ';
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
-SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableBackupStatus = 0;',             'SET @enableBackupStatus = '             + CAST(@enableBackupStatus AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableConnections = 0;',              'SET @enableConnections = '              + CAST(@enableConnections AS nvarchar) + ';');
@@ -6311,8 +6317,8 @@ END;
 ';
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
-SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableBackupStatus = 0;',             'SET @enableBackupStatus = '             + CAST(@enableBackupStatus AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableConnections = 0;',              'SET @enableConnections = '              + CAST(@enableConnections AS nvarchar) + ';');
@@ -6954,8 +6960,8 @@ END;
 ';
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
-SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableBackupStatus = 0;',             'SET @enableBackupStatus = '             + CAST(@enableBackupStatus AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableConnections = 0;',              'SET @enableConnections = '              + CAST(@enableConnections AS nvarchar) + ';');
@@ -8221,8 +8227,8 @@ END;
 ';
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
-SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableBackupStatus = 0;',             'SET @enableBackupStatus = '             + CAST(@enableBackupStatus AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableConnections = 0;',              'SET @enableConnections = '              + CAST(@enableConnections AS nvarchar) + ';');
@@ -8941,8 +8947,8 @@ END;
 ';
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
-SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableBackupStatus = 0;',             'SET @enableBackupStatus = '             + CAST(@enableBackupStatus AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableConnections = 0;',              'SET @enableConnections = '              + CAST(@enableConnections AS nvarchar) + ';');
@@ -8970,7 +8976,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:AgentJobsPerformance.sql modified: 2025.04.05 09.53.24
+-- File part:AgentJobsPerformance.sql modified: 2025.04.09 14.27.17
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -9042,7 +9048,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.3'';
+		SET @version = ''2.4'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -9366,7 +9372,6 @@ ELSE BEGIN
 					,CAST(ajpe.StartDateTime AS date) AS Date
 					,(DATEPART(HOUR, ajpe.StartDateTime) * 60 * 60) + (DATEPART(MINUTE, ajpe.StartDateTime) * 60) + (DATEPART(SECOND, ajpe.StartDateTime)) AS TimeKey
 					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ajpe.Name, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS AgentJobKey
-					,ROW_NUMBER() OVER(ORDER BY ajpe.StartDateTime DESC, ajpe.Name) AS SortOrder
 				FROM dbo.fhsmAgentJobsPerformanceLatestError AS ajpe
 			'';
 			EXEC(@stmt);
@@ -10055,8 +10060,8 @@ END;
 ';
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
-SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableBackupStatus = 0;',             'SET @enableBackupStatus = '             + CAST(@enableBackupStatus AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableConnections = 0;',              'SET @enableConnections = '              + CAST(@enableConnections AS nvarchar) + ';');
@@ -10922,8 +10927,8 @@ END;
 ';
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
-SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableBackupStatus = 0;',             'SET @enableBackupStatus = '             + CAST(@enableBackupStatus AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableConnections = 0;',              'SET @enableConnections = '              + CAST(@enableConnections AS nvarchar) + ';');
@@ -11536,8 +11541,8 @@ END;
 ';
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
-SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableBackupStatus = 0;',             'SET @enableBackupStatus = '             + CAST(@enableBackupStatus AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableConnections = 0;',              'SET @enableConnections = '              + CAST(@enableConnections AS nvarchar) + ';');
@@ -12021,8 +12026,8 @@ END;
 ';
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
-SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableBackupStatus = 0;',             'SET @enableBackupStatus = '             + CAST(@enableBackupStatus AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableConnections = 0;',              'SET @enableConnections = '              + CAST(@enableConnections AS nvarchar) + ';');
@@ -12646,8 +12651,8 @@ END;
 ';
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
-SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableBackupStatus = 0;',             'SET @enableBackupStatus = '             + CAST(@enableBackupStatus AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableConnections = 0;',              'SET @enableConnections = '              + CAST(@enableConnections AS nvarchar) + ';');
@@ -13408,8 +13413,8 @@ END;
 ';
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
-SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableBackupStatus = 0;',             'SET @enableBackupStatus = '             + CAST(@enableBackupStatus AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableConnections = 0;',              'SET @enableConnections = '              + CAST(@enableConnections AS nvarchar) + ';');
@@ -13951,8 +13956,8 @@ END;
 ';
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
-SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableBackupStatus = 0;',             'SET @enableBackupStatus = '             + CAST(@enableBackupStatus AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableConnections = 0;',              'SET @enableConnections = '              + CAST(@enableConnections AS nvarchar) + ';');
@@ -13980,7 +13985,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:IndexOperational.sql modified: 2025.03.06 23.24.36
+-- File part:IndexOperational.sql modified: 2025.04.09 18.58.16
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -14052,7 +14057,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.1'';
+		SET @version = ''2.4'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -14304,48 +14309,37 @@ ELSE BEGIN
 					,ior.NonleafAllocationCount
 					,ior.LeafPageMergeCount
 					,ior.NonleafPageMergeCount
-					,ior.RangeScanCount
-					,ior.SingletonLookupCount
-					,ior.ForwardedFetchCount
-					,ior.LOBFetchInPages
-					,ior.LOBFetchInBytes
-					,ior.LOBOrphanCreateCount
-					,ior.LOBOrphanInsertCount
-					,ior.RowOverflowFetchInPages
-					,ior.RowOverflowFetchInBytes
-					,ior.ColumnValuePushOffRowCount
-					,ior.ColumnValuePullInRowCount
 					,ior.RowLockCount
 					,ior.RowLockWaitCount
 					,ior.RowLockWaitInMS
 					,ior.PageLockCount
 					,ior.PageLockWaitCount
 					,ior.PageLockWaitInMS
-					,ior.IndexLockPromotionAttemptCount
-					,ior.IndexLockPromotionCount
-					,ior.PageLatchWaitCount
-					,ior.PageLatchWaitInMS
-					,ior.PageIOLatchWaitCount
-					,ior.PageIOLatchWaitInMS
-					,ior.TreePageLatchWaitCount
-					,ior.TreePageLatchWaitInMS
-					,ior.TreePageIOLatchWaitCount
-					,ior.TreePageIOLatchWaitInMS
-					,ior.PageCompressionAttemptCount
-					,ior.PageCompressionSuccessCount
-					,ior.VersionGeneratedInrow
-					,ior.VersionGeneratedOffrow
-					,ior.GhostVersionInrow
-					,ior.GhostVersionOffrow
-					,ior.InsertOverGhostVersionInrow
-					,ior.InsertOverGhostVersionOffrow
 					,ior.Date
 					,ior.TimeKey
 					,ior.DatabaseKey
 					,ior.SchemaKey
 					,ior.ObjectKey
 					,ior.IndexKey
-				FROM dbo.fhsmIndexOperationalReport AS ior;
+				FROM dbo.fhsmIndexOperationalReport AS ior
+				WHERE
+					(ior.LeafInsertCount <> 0)
+					OR (ior.LeafDeleteCount <> 0)
+					OR (ior.LeafUpdateCount <> 0)
+					OR (ior.LeafGhostCount <> 0)
+					OR (ior.NonleafInsertCount <> 0)
+					OR (ior.NonleafDeleteCount <> 0)
+					OR (ior.NonleafUpdateCount <> 0)
+					OR (ior.LeafAllocationCount <> 0)
+					OR (ior.NonleafAllocationCount <> 0)
+					OR (ior.LeafPageMergeCount <> 0)
+					OR (ior.NonleafPageMergeCount <> 0)
+					OR (ior.RowLockCount <> 0)
+					OR (ior.RowLockWaitCount <> 0)
+					OR (ior.RowLockWaitInMS <> 0)
+					OR (ior.PageLockCount <> 0)
+					OR (ior.PageLockWaitCount <> 0)
+					OR (ior.PageLockWaitInMS <> 0);
 			'';
 			EXEC(@stmt);
 		END;
@@ -15268,8 +15262,8 @@ END;
 ';
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
-SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableBackupStatus = 0;',             'SET @enableBackupStatus = '             + CAST(@enableBackupStatus AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableConnections = 0;',              'SET @enableConnections = '              + CAST(@enableConnections AS nvarchar) + ';');
@@ -16270,8 +16264,8 @@ END;
 ';
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
-SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableBackupStatus = 0;',             'SET @enableBackupStatus = '             + CAST(@enableBackupStatus AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableConnections = 0;',              'SET @enableConnections = '              + CAST(@enableConnections AS nvarchar) + ';');
@@ -17199,8 +17193,8 @@ END;
 ';
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
-SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableBackupStatus = 0;',             'SET @enableBackupStatus = '             + CAST(@enableBackupStatus AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableConnections = 0;',              'SET @enableConnections = '              + CAST(@enableConnections AS nvarchar) + ';');
@@ -21062,8 +21056,8 @@ END;
 ';
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
-SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableBackupStatus = 0;',             'SET @enableBackupStatus = '             + CAST(@enableBackupStatus AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableConnections = 0;',              'SET @enableConnections = '              + CAST(@enableConnections AS nvarchar) + ';');
@@ -22126,8 +22120,8 @@ END;
 ';
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
-SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableBackupStatus = 0;',             'SET @enableBackupStatus = '             + CAST(@enableBackupStatus AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableConnections = 0;',              'SET @enableConnections = '              + CAST(@enableConnections AS nvarchar) + ';');
@@ -22867,8 +22861,8 @@ END;
 ';
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
-SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableBackupStatus = 0;',             'SET @enableBackupStatus = '             + CAST(@enableBackupStatus AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableConnections = 0;',              'SET @enableConnections = '              + CAST(@enableConnections AS nvarchar) + ';');
@@ -23748,8 +23742,8 @@ END;
 ';
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
-SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableBackupStatus = 0;',             'SET @enableBackupStatus = '             + CAST(@enableBackupStatus AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableConnections = 0;',              'SET @enableConnections = '              + CAST(@enableConnections AS nvarchar) + ';');
@@ -24117,8 +24111,8 @@ END;
 ';
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
-SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableBackupStatus = 0;',             'SET @enableBackupStatus = '             + CAST(@enableBackupStatus AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableConnections = 0;',              'SET @enableConnections = '              + CAST(@enableConnections AS nvarchar) + ';');
@@ -24689,8 +24683,8 @@ END;
 ';
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
-SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableBackupStatus = 0;',             'SET @enableBackupStatus = '             + CAST(@enableBackupStatus AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableConnections = 0;',              'SET @enableConnections = '              + CAST(@enableConnections AS nvarchar) + ';');
@@ -25754,8 +25748,8 @@ END;
 ';
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
-SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableBackupStatus = 0;',             'SET @enableBackupStatus = '             + CAST(@enableBackupStatus AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableConnections = 0;',              'SET @enableConnections = '              + CAST(@enableConnections AS nvarchar) + ';');
@@ -26541,8 +26535,8 @@ END;
 ';
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
-SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableBackupStatus = 0;',             'SET @enableBackupStatus = '             + CAST(@enableBackupStatus AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableConnections = 0;',              'SET @enableConnections = '              + CAST(@enableConnections AS nvarchar) + ';');
@@ -27102,8 +27096,8 @@ END;
 ';
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
-SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableBackupStatus = 0;',             'SET @enableBackupStatus = '             + CAST(@enableBackupStatus AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableConnections = 0;',              'SET @enableConnections = '              + CAST(@enableConnections AS nvarchar) + ';');
@@ -28224,8 +28218,8 @@ END;
 ';
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
-SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableBackupStatus = 0;',             'SET @enableBackupStatus = '             + CAST(@enableBackupStatus AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableConnections = 0;',              'SET @enableConnections = '              + CAST(@enableConnections AS nvarchar) + ';');
@@ -33787,8 +33781,8 @@ END;
 ';
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
-SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableBackupStatus = 0;',             'SET @enableBackupStatus = '             + CAST(@enableBackupStatus AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableConnections = 0;',              'SET @enableConnections = '              + CAST(@enableConnections AS nvarchar) + ';');
@@ -34254,8 +34248,8 @@ END;
 ';
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
-SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableBackupStatus = 0;',             'SET @enableBackupStatus = '             + CAST(@enableBackupStatus AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableConnections = 0;',              'SET @enableConnections = '              + CAST(@enableConnections AS nvarchar) + ';');
@@ -34341,8 +34335,8 @@ END;
 ';
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
-SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableBackupStatus = 0;',             'SET @enableBackupStatus = '             + CAST(@enableBackupStatus AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableConnections = 0;',              'SET @enableConnections = '              + CAST(@enableConnections AS nvarchar) + ';');
@@ -34386,5 +34380,5 @@ BEGIN
 END;
 
 RAISERROR('', 0, 1) WITH NOWAIT;
-SET @installationMsg = 'FHSQLMonitor in ' + @fhSQLMonitorDatabase + ' has been installed/upgraded to v2.3.0';
+SET @installationMsg = 'FHSQLMonitor in ' + @fhSQLMonitorDatabase + ' has been installed/upgraded to v2.4.0';
 RAISERROR(@installationMsg, 0, 1) WITH NOWAIT;

@@ -1,6 +1,6 @@
 ﻿$outputFile = "..\build\FHSQLMonitor.sql"
 
-$versionNumber = "v2.3.0"
+$versionNumber = "v2.4.0"
 
 $timeStr = (Get-Date).ToString("yyyy:MM:dd HH:mm:ss")
 
@@ -25,8 +25,8 @@ Add-Content $outputFile ""
 Add-Content $outputFile "-- Service parameters - They are only used during a fresh installation and not during an update"
 Add-Content $outputFile "--   When updating the already configured values in the tables dbo.fhsmSchedules and dbo.fhsmRetentions remains unchanged"
 Add-Content $outputFile "--"
-Add-Content $outputFile "DECLARE @enableAgentJobsPerformance     bit = 1;"
 Add-Content $outputFile "DECLARE @enableAgentJobs                bit = 1;"
+Add-Content $outputFile "DECLARE @enableAgentJobsPerformance     bit = 1;"
 Add-Content $outputFile "DECLARE @enableAgeOfStatistics          bit = 1;"
 Add-Content $outputFile "DECLARE @enableBackupStatus             bit = 1;"
 Add-Content $outputFile "DECLARE @enableConnections              bit = 1;"
@@ -187,8 +187,8 @@ foreach ($file in $filenames) {
     } else {
         Add-Content $outputFile "SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');"
         Add-Content $outputFile ""
-        Add-Content $outputFile "SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');"
         Add-Content $outputFile "SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');"
+        Add-Content $outputFile "SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');"
         Add-Content $outputFile "SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');"
         Add-Content $outputFile "SET @stmt = REPLACE(@stmt, 'SET @enableBackupStatus = 0;',             'SET @enableBackupStatus = '             + CAST(@enableBackupStatus AS nvarchar) + ';');"
         Add-Content $outputFile "SET @stmt = REPLACE(@stmt, 'SET @enableConnections = 0;',              'SET @enableConnections = '              + CAST(@enableConnections AS nvarchar) + ';');"

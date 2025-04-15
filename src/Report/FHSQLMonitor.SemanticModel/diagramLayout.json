@@ -556,20 +556,6 @@
         },
         {
           "location": {
-            "x": 1759.0445192971297,
-            "y": 752.691648873317
-          },
-          "nodeIndex": "Index partition",
-          "nodeLineageTag": "da37ce30-4b45-4dda-ae4e-98cf9a14e7c7",
-          "size": {
-            "height": 104,
-            "width": 234
-          },
-          "zIndex": 72,
-          "expandedHeight": 224
-        },
-        {
-          "location": {
             "x": 2324.0911618195464,
             "y": 743.87654422498474
           },
@@ -1334,13 +1320,13 @@
         },
         {
           "location": {
-            "x": 396,
-            "y": 294.9851107795979
+            "x": 340,
+            "y": 291.9851107795979
           },
           "nodeIndex": "Statistics age incremental",
           "nodeLineageTag": "4fdf87d4-22b7-4fcc-a3d0-9506344e894b",
           "size": {
-            "height": 152,
+            "height": 128,
             "width": 270
           },
           "zIndex": 0,
@@ -1362,7 +1348,7 @@
         },
         {
           "location": {
-            "x": 570,
+            "x": 360,
             "y": 0
           },
           "nodeIndex": "Object",
@@ -1376,21 +1362,7 @@
         },
         {
           "location": {
-            "x": 288,
-            "y": 0
-          },
-          "nodeIndex": "Index partition",
-          "nodeLineageTag": "da37ce30-4b45-4dda-ae4e-98cf9a14e7c7",
-          "size": {
-            "height": 104,
-            "width": 234
-          },
-          "zIndex": 0,
-          "expandedHeight": 224
-        },
-        {
-          "location": {
-            "x": 861,
+            "x": 664,
             "y": 0
           },
           "nodeIndex": "Object partition",
@@ -1404,8 +1376,8 @@
         },
         {
           "location": {
-            "x": 843,
-            "y": 302
+            "x": 661,
+            "y": 293
           },
           "nodeIndex": "Table size",
           "nodeLineageTag": "e1bfb39d-10d8-491f-9e8d-7b3e79b7cc82",
@@ -2774,20 +2746,6 @@
         },
         {
           "location": {
-            "x": 843,
-            "y": 245
-          },
-          "nodeIndex": "Missing indexes - Index details",
-          "nodeLineageTag": "877c856b-7b36-4568-b7ad-dcddb3562e0c",
-          "size": {
-            "height": 104,
-            "width": 295
-          },
-          "zIndex": 1,
-          "expandedHeight": 300
-        },
-        {
-          "location": {
             "x": 815,
             "y": 0
           },
@@ -2799,6 +2757,20 @@
           },
           "zIndex": 6,
           "expandedHeight": 145
+        },
+        {
+          "location": {
+            "x": 818,
+            "y": 247
+          },
+          "nodeIndex": "Missing indexes - Index details",
+          "nodeLineageTag": "1ab4a9dd-7a30-4e60-ac15-8c2e3f54279a",
+          "size": {
+            "height": 104,
+            "width": 350
+          },
+          "zIndex": 0,
+          "expandedHeight": 296
         }
       ],
       "name": "Missing indexes",

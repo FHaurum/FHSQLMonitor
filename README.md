@@ -3,9 +3,14 @@ To read more about the project go to my blog [SQL Server Monitoring](https://www
 
 Have fun :-)
 <p>
+<b>April 15, 2025: Version 2.4.0</b> with:</br>
+<li>Updated the report "Agent jobs performance" and the way the visuals interact</li>
+<li>General performance update of model, measures, data and visuals</li>
+</p>
+<p>
 <b>April 6, 2025: Version 2.3.0</b> with:</br>
 <li>New report "Agent jobs performance"</li>
-<li>Changed history tooltips on "Database configuration" and "Instance configuration" to be drill-through pages.</li>
+<li>Changed history tooltips on "Database configuration" and "Instance configuration" to be drill-through pages</li>
 </p>
 <p>
 <b>March 30, 2025: Version 2.2.2</b> fixing an error introduced in version 2.2.0 regarding calculating data and index space used by tables.
@@ -18,7 +23,7 @@ Have fun :-)
 <b>March 29, 2025: Version 2.2.0</b> with:</br>
 <li>New report "Index configuration"</li>
 <li>Corrected minor issues in the "Index usage" service</li>
-<li>Update of the existing service and report "Missing indexes" to use a new SQL2019+ DMV.</li>
+<li>Update of the existing service and report "Missing indexes" to use a new SQL2019+ DMV</li>
 </p>
 <p>
 <b>March 7, 2025: Version 2.1.0</b> with the new service "Partitioned indexes", as well as improved the installation script.

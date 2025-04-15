@@ -1,19 +1,6 @@
 table 'CPU per database'
 	lineageTag: 1264ea96-e0d5-439f-80db-efab08dd0774
 
-	column CPUPercent
-		dataType: double
-		isHidden
-		lineageTag: 526fb671-8e96-4f64-a14c-ca604b45ba5b
-		summarizeBy: none
-		sourceColumn: CPUPercent
-
-		changedProperty = IsHidden
-
-		annotation SummarizationSetBy = User
-
-		annotation PBI_FormatHint = {"isGeneralNumber":true}
-
 	column Date
 		dataType: dateTime
 		isHidden
@@ -80,7 +67,7 @@ table 'CPU per database'
 				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
 				  SelectColumns = Table.SelectColumns(
 				    datasetToUse, 
-				    {"CPUTimeMs", "CPUPercent", "Date", "TimeKey", "DatabaseKey"}
+				    {"CPUTimeMs", "Date", "TimeKey", "DatabaseKey"}
 				  )
 				in
 				  SelectColumns

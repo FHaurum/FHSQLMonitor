@@ -111,18 +111,6 @@ table 'Table size'
 
 		annotation SummarizationSetBy = User
 
-	column IndexPartitionKey
-		dataType: int64
-		isHidden
-		formatString: 0
-		lineageTag: b02d3adf-43b1-42ca-926f-d1854de56692
-		summarizeBy: none
-		sourceColumn: IndexPartitionKey
-
-		changedProperty = IsHidden
-
-		annotation SummarizationSetBy = User
-
 	partition 'Table size' = m
 		mode: import
 		queryGroup: Facts
@@ -137,10 +125,7 @@ table 'Table size'
 				  table = db{[Schema = #"Schema name", Item = "Table size"]}[Data], 
 				  emptyDataset = Table.FirstN(table, 0), 
 				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
-				  SelectColumns = Table.SelectColumns(
-				    datasetToUse,
-				    {"Rows", "Reserved", "Data", "IndexSize", "Unused", "Date", "ObjectKey", "IndexKey", "ObjectPartitionKey", "IndexPartitionKey"}
-				  )
+				  SelectColumns = Table.SelectColumns(datasetToUse,{"Rows", "Reserved", "Data", "IndexSize", "Unused", "Date", "ObjectKey", "IndexKey", "ObjectPartitionKey"})
 				in
 				  SelectColumns
 				```

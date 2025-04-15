@@ -25,18 +25,6 @@ table 'Missing indexes'
 
 		annotation SummarizationSetBy = Automatic
 
-	column UniqueCompiles
-		dataType: int64
-		isHidden
-		formatString: 0
-		lineageTag: 961fdf26-a970-41cf-9cc3-03a6e3857ced
-		summarizeBy: none
-		sourceColumn: UniqueCompiles
-
-		changedProperty = IsHidden
-
-		annotation SummarizationSetBy = User
-
 	column UserSeeks
 		dataType: int64
 		isHidden
@@ -56,30 +44,6 @@ table 'Missing indexes'
 		lineageTag: 9f45e56a-eaa4-45f3-9c46-2ebd6e7365aa
 		summarizeBy: none
 		sourceColumn: LastUserSeek
-
-		changedProperty = IsHidden
-
-		annotation SummarizationSetBy = Automatic
-
-	column UserScans
-		dataType: int64
-		isHidden
-		formatString: 0
-		lineageTag: 8f3a34c7-f817-4ac5-a035-1592767b60f2
-		summarizeBy: none
-		sourceColumn: UserScans
-
-		changedProperty = IsHidden
-
-		annotation SummarizationSetBy = User
-
-	column LastUserScan
-		dataType: dateTime
-		isHidden
-		formatString: General Date
-		lineageTag: 1562f71a-362c-44ad-ab9b-83c4320ce26b
-		summarizeBy: none
-		sourceColumn: LastUserScan
 
 		changedProperty = IsHidden
 
@@ -180,11 +144,8 @@ table 'Missing indexes'
 				      "EqualityColumns", 
 				      "InequalityColumns", 
 				      "IncludedColumns", 
-				      "UniqueCompiles", 
 				      "UserSeeks", 
 				      "LastUserSeek", 
-				      "UserScans", 
-				      "LastUserScan", 
 				      "AvgTotalUserCost", 
 				      "AvgUserImpact", 
 				      "LastUserSeekDate", 
@@ -207,5 +168,5 @@ table 'Missing indexes'
 
 	annotation PBI_NavigationStepName = Navigation
 
-	annotation PBI_ResultType = Table
+	annotation PBI_ResultType = Exception
 

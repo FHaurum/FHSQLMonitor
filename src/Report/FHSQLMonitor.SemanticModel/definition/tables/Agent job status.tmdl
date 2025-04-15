@@ -1,0 +1,68 @@
+table 'Agent job status'
+	lineageTag: 5f7fe3e0-7f3c-45a7-b019-f43c676d9231
+
+	column Status
+		dataType: string
+		lineageTag: 2785ea12-7ca7-4dc8-839a-9ae12fabdc8b
+		summarizeBy: none
+		sourceColumn: Status
+		sortByColumn: SortOrder
+
+		changedProperty = SortByColumn
+
+		annotation SummarizationSetBy = Automatic
+
+	column SortOrder
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 44d49b90-9630-440d-8c5f-16c9d8f8e25a
+		summarizeBy: none
+		sourceColumn: SortOrder
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column AgentJobStatsusKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 6f0e3764-c907-42a8-9244-391d1b801cc0
+		summarizeBy: none
+		sourceColumn: AgentJobStatsusKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Agent job status' = m
+		mode: import
+		queryGroup: Dimensions
+		source = ```
+				let
+				  loadConfigFirstMatch = Table.First(
+				    Table.SelectRows(
+				      #"Data load", 
+				      each List.Contains({"Agent jobs performance"}, [Service])
+				        and List.Contains({"Yes"}, [DataLoad])
+				    )
+				  ), 
+				  loadConfig = 
+				    if (loadConfigFirstMatch = null) then
+				      "No"
+				    else
+				      Record.Field(loadConfigFirstMatch, "DataLoad"), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db = dbList{[Name = #"Database name"]}[Data], 
+				  table = db{[Schema = #"Schema name", Item = "Agent job status"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset
+				in
+				    datasetToUse
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

@@ -1,0 +1,103 @@
+table 'Agent jobs performance'
+	lineageTag: 497b6a0d-cc53-47ad-be6f-cc3a1de03174
+
+	column Date
+		dataType: dateTime
+		isHidden
+		formatString: Long Date
+		lineageTag: 10ea1ab7-2ae3-4890-ad7c-e458ce5a4e7d
+		summarizeBy: none
+		sourceColumn: Date
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column Cnt
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 3aa1e697-763a-41b3-bbc8-3453646e9433
+		summarizeBy: none
+		sourceColumn: Cnt
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column SumDurationSeconds
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: c0ed970f-c467-4e5a-a9b0-d0576c12557f
+		summarizeBy: none
+		sourceColumn: SumDurationSeconds
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column AgentJobKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 7cb3027f-1278-4bb2-a086-1b4e6d1ce92e
+		summarizeBy: none
+		sourceColumn: AgentJobKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column TimeKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 667f3c50-afac-47e1-b32c-5ac4e151c600
+		summarizeBy: none
+		sourceColumn: TimeKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column AgentJobStatsusKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 3811afc8-516f-4656-aec6-8ebfa4ccfae5
+		summarizeBy: none
+		sourceColumn: AgentJobStatsusKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Agent jobs performance' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Agent jobs performance")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db = dbList{[Name = #"Database name"]}[Data], 
+				  table = db{[Schema = #"Schema name", Item = "Agent jobs performance"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset,
+				  SelectColumns = Table.SelectColumns(
+				    datasetToUse,
+				    {"Date", "Cnt", "SumDurationSeconds", "TimeKey", "AgentJobKey", "AgentJobStatsusKey"}
+				  )
+				in
+				    SelectColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

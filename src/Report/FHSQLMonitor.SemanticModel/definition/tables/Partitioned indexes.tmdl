@@ -1,15 +1,6 @@
 table 'Partitioned indexes'
 	lineageTag: 451ade23-fd30-4033-8314-c0b29da67bba
 
-	column 'Partition no.'
-		dataType: int64
-		formatString: 0
-		lineageTag: 9ff4515e-0618-4da0-aac3-43a1531fdefb
-		summarizeBy: none
-		sourceColumn: Partition no.
-
-		annotation SummarizationSetBy = User
-
 	column PartitionRowCount
 		dataType: int64
 		isHidden
@@ -82,8 +73,8 @@ table 'Partitioned indexes'
 				  table = db{[Schema = #"Schema name", Item = "Partitioned indexes"]}[Data], 
 				  emptyDataset = Table.FirstN(table, 0), 
 				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
-				  SelectColumns = Table.SelectColumns(datasetToUse,{"PartitionRange", "SortOrder", "PartitionNumber", "PartitionRowCount", "Date", "IndexKey"}),
-				  RenamedColumns = Table.RenameColumns(SelectColumns,{{"PartitionRange", "Partition range"}, {"PartitionNumber", "Partition no."}})
+				  SelectColumns = Table.SelectColumns(datasetToUse,{"PartitionRange", "SortOrder", "PartitionRowCount", "Date", "IndexKey"}),
+				  RenamedColumns = Table.RenameColumns(SelectColumns,{{"PartitionRange", "Partition range"}})
 				in
 				  RenamedColumns
 				```

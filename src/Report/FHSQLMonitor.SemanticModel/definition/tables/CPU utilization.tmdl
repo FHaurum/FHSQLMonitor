@@ -13,18 +13,6 @@ table 'CPU utilization'
 
 		annotation SummarizationSetBy = User
 
-	column SystemIdle
-		dataType: int64
-		isHidden
-		formatString: 0
-		lineageTag: a5f59654-c759-4698-a337-7f1ab9d82974
-		summarizeBy: none
-		sourceColumn: SystemIdle
-
-		changedProperty = IsHidden
-
-		annotation SummarizationSetBy = User
-
 	column OtherProcessUtilization
 		dataType: int64
 		isHidden
@@ -79,7 +67,7 @@ table 'CPU utilization'
 				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
 				  SelectColumns = Table.SelectColumns(
 				    datasetToUse, 
-				    {"SQLProcessUtilization", "SystemIdle", "OtherProcessUtilization", "Date", "TimeKey"}
+				    {"SQLProcessUtilization", "OtherProcessUtilization", "Date", "TimeKey"}
 				  )
 				in
 				  SelectColumns

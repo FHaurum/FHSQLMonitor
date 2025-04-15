@@ -28,11 +28,11 @@ queryGroup 'Connection parameters'
 
 annotation __PBI_TimeIntelligenceEnabled = 0
 
-annotation PBIDesktopVersion = 2.141.1451.0 (25.03)+5007b75f0f7edbed506e31fcb76584cd6d711788
+annotation PBIDesktopVersion = 2.141.1580.0 (25.03)+aa8628f0e8285c810874f1464275f27e3b63a25b
 
 annotation PBI_ProTooling = ["DevMode"]
 
-annotation PBI_QueryOrder = ["Agent job","Agent job status","Connection info","Database","Database file","Agent alerts","Agent jobs","Agent jobs - grid","Agent jobs - list","Agent jobs performance","Agent jobs performance errors","Backup age","Backup status","Connections","CPU per database","CPU utilization","Database IO","Database size","Database state","Database state history","Index configuration","Index operational","Index optimize","Index physical","Index usage","Instance configurations","Instance configurations history","Instance dump files","Instance hardware","Instance hardware history","Instance services","Instance SQL agent properties","Instance SQL agent properties history","Instance suspect pages","Missing indexes","OH errors","Partitioned indexes","Performance statistics","Plan cache usage","Plan guides","Query statements","Query statistics","Resource governor configuration","Resource governor external resource pool affinity","Resource governor external resource pools","Resource governor resource pool affinity","Resource governor resource pools","Resource governor workload groups","Statistics age","Statistics age incremental","Date","Index","Index alloc type","Index partition","Junk dimensions","Missing index statement","_Measures","Server name","Database name","Schema name","Data load list","Data load","LastRefresh","Log","Retentions","Schedules","Table size","Trace flags","Trace flags history","Triggers","Object","Object partition","Performance counter","Query statistic","Time","Wait type","Wait statistics","Who is active"]
+annotation PBI_QueryOrder = ["Agent job","Agent job status","Connection info","Database","Database file","Agent alerts","Agent jobs","Agent jobs - grid","Agent jobs - list","Agent jobs performance","Agent jobs performance errors","Backup age","Backup status","Connections","CPU per database","CPU utilization","Database IO","Database size","Database state","Database state history","Index configuration","Index operational","Index optimize","Index physical","Index usage","Instance configurations","Instance configurations history","Instance dump files","Instance hardware","Instance hardware history","Instance services","Instance SQL agent properties","Instance SQL agent properties history","Instance suspect pages","Missing indexes","Missing indexes - Index details","OH errors","Partitioned indexes","Performance statistics","Plan cache usage","Plan guides","Query statements","Query statistics","Resource governor configuration","Resource governor external resource pool affinity","Resource governor external resource pools","Resource governor resource pool affinity","Resource governor resource pools","Resource governor workload groups","Statistics age","Statistics age incremental","Date","Index","Index alloc type","Junk dimensions","Missing index statement","_Measures","Server name","Database name","Schema name","Data load list","Data load","LastRefresh","Log","Retentions","Schedules","Table size","Trace flags","Trace flags history","Triggers","Object","Object partition","Performance counter","Query statistic","Time","Wait type","Wait statistics","Who is active"]
 
 annotation __TEdtr = 1
 
@@ -79,7 +79,6 @@ ref table Retentions
 ref table 'Who is active'
 ref table 'Statistics age'
 ref table 'Statistics age incremental'
-ref table 'Index partition'
 ref table 'Object partition'
 ref table Triggers
 ref table 'Plan guides'
@@ -119,7 +118,6 @@ ref table 'Values 0-1000000 (log)'
 ref table 'Values 0-95 (5 delta)'
 ref table 'Partitioned indexes'
 ref table 'Index configuration'
-ref table 'Missing indexes - Index details'
 ref table 'Table type'
 ref table 'Missing index statement'
 ref table 'Missing index statement - Index details'
@@ -129,6 +127,7 @@ ref table 'Agent job status'
 ref table 'Agent jobs performance errors'
 ref table 'Instance SQL agent properties'
 ref table 'Instance SQL agent properties history'
+ref table 'Missing indexes - Index details'
 
 ref cultureInfo en-US
 

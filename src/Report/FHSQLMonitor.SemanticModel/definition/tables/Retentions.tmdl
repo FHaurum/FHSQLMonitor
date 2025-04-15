@@ -18,23 +18,6 @@ table Retentions
 
 		annotation SummarizationSetBy = Automatic
 
-	column 'Time column'
-		dataType: string
-		lineageTag: 1e871959-bfbb-46e6-b981-4b43e14072fd
-		summarizeBy: none
-		sourceColumn: Time column
-
-		annotation SummarizationSetBy = Automatic
-
-	column 'Is UTC'
-		dataType: boolean
-		formatString: """TRUE"";""TRUE"";""FALSE"""
-		lineageTag: 7b835ad5-7f5f-4e53-8177-9fea84594d60
-		summarizeBy: none
-		sourceColumn: Is UTC
-
-		annotation SummarizationSetBy = Automatic
-
 	column Days
 		dataType: int64
 		formatString: 0
@@ -73,9 +56,13 @@ table Retentions
 				let
 				  dbList = Sql.Databases(#"Server name"), 
 				  db     = dbList{[Name = #"Database name"]}[Data], 
-				  table  = db{[Schema = #"Schema name", Item = "Retentions"]}[Data]
+				  table  = db{[Schema = #"Schema name", Item = "Retentions"]}[Data],
+				  SelectColumns = Table.SelectColumns(
+				    table,
+				    {"Enabled", "Table", "Days", "Last started UTC", "Last executed UTC"}
+				  )
 				in
-				  table
+				  SelectColumns
 				```
 
 	annotation PBI_NavigationStepName = Navigation

@@ -40,7 +40,7 @@ BEGIN
 	SET @myUserName = SUSER_NAME();
 	SET @nowUTC = SYSUTCDATETIME();
 	SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
-	SET @version = '2.3';
+	SET @version = '2.4.0';
 END;
 
 --
@@ -1856,6 +1856,7 @@ ELSE BEGIN
 						DECLARE @bulkSize int;
 						DECLARE @bulkSizeStr nvarchar(128);
 						DECLARE @days int;
+						DECLARE @defaultBulkSize int;
 						DECLARE @filter nvarchar(max);
 						DECLARE @id int;
 						DECLARE @message nvarchar(max);
@@ -1869,7 +1870,7 @@ ELSE BEGIN
 						DECLARE @thisTask nvarchar(128);
 						DECLARE @timeColumn nvarchar(128);
 
-						SET @bulkSize = 5000;
+						SET @defaultBulkSize = 5000;
 						SET @thisTask = OBJECT_NAME(@@PROCID);
 						SET @version = ''''' + @version + ''''';
 
@@ -1887,6 +1888,11 @@ ELSE BEGIN
 
 							SET @bulkSizeStr = (SELECT pt.Value FROM @parametersTable AS pt WHERE (pt.[Key] = ''''@BulkSize''''));
 							SET @bulkSize = dbo.fhsmFNTryParseAsInt(@bulkSizeStr);
+
+							IF (@bulkSize < 1) OR (@bulkSize IS NULL)
+							BEGIN
+								SET @bulkSize = @defaultBulkSize;
+							END;
 						END;
 
 						DECLARE tCur CURSOR LOCAL READ_ONLY FAST_FORWARD FOR

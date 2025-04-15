@@ -231,10 +231,6 @@ relationship 6ca7fd96-d087-77b7-fa3a-9064317ce7a8
 	fromColumn: 'Statistics age'.IndexKey
 	toColumn: Index.IndexKey
 
-relationship 61cae8ac-4716-a2b5-b500-68819e459a2a
-	fromColumn: 'Statistics age incremental'.IndexPartitionKey
-	toColumn: 'Index partition'.IndexPartitionKey
-
 relationship 482ecd9e-001a-34b7-89e7-baa5a19ea096
 	fromColumn: 'Partitioned indexes'.Date
 	toColumn: Date.Date
@@ -264,10 +260,6 @@ relationship 33812109-ab46-e5b8-0a93-b86a3c6fda28
 	fromColumn: 'Missing indexes'.MissingIndexStatementKey
 	toColumn: 'Missing index statement'.MissingIndexStatementKey
 
-relationship ebf2e4cb-93f7-4e9a-ebe0-84bf6dcdf895
-	fromColumn: 'Missing indexes - Index details'.MissingIndexStatementKey
-	toColumn: 'Missing index statement - Index details'.MissingIndexStatementKey
-
 relationship 547b03be-c396-6ea5-aa65-99dc1d1a685a
 	fromColumn: 'Agent jobs performance'.AgentJobKey
 	toColumn: 'Agent job'.AgentJobKey
@@ -295,4 +287,8 @@ relationship 4220c936-1a34-c733-c764-764aeedc4b05
 relationship 17d2e555-7035-17ff-23df-2c5f1f2f2142
 	fromColumn: 'Agent jobs performance errors'.TimeKey
 	toColumn: Time.TimeKey
+
+relationship 8b97dcf0-ac88-4996-531e-2e344f0dbc05
+	fromColumn: 'Missing indexes - Index details'.MissingIndexStatementKey
+	toColumn: 'Missing index statement - Index details'.MissingIndexStatementKey
 

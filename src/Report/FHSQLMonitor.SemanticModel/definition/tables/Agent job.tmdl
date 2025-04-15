@@ -1,19 +1,27 @@
-table 'Object partition'
-	lineageTag: 2a5e1c86-a0c1-4d1b-83a3-127f540604bb
+table 'Agent job'
+	lineageTag: 86cd0341-3af0-49ac-a9e4-7c1729c9a04c
 
-	column ObjectPartitionKey
+	column 'Job name'
+		dataType: string
+		lineageTag: f0e6555f-1aca-441d-83d9-501eacbbab82
+		summarizeBy: none
+		sourceColumn: Job name
+
+		annotation SummarizationSetBy = Automatic
+
+	column AgentJobKey
 		dataType: int64
 		isHidden
 		formatString: 0
-		lineageTag: 0b547b41-cc3b-46a5-b179-dbc1faa8dd56
+		lineageTag: 4d1b7c4e-1882-4aa7-a667-07016aea0f79
 		summarizeBy: none
-		sourceColumn: ObjectPartitionKey
+		sourceColumn: AgentJobKey
 
 		changedProperty = IsHidden
 
 		annotation SummarizationSetBy = Automatic
 
-	partition 'Object partition' = m
+	partition 'Agent job' = m
 		mode: import
 		queryGroup: Dimensions
 		source = ```
@@ -21,7 +29,8 @@ table 'Object partition'
 				  loadConfigFirstMatch = Table.First(
 				    Table.SelectRows(
 				      #"Data load", 
-				      each List.Contains({"Statistics"}, [Service]) and List.Contains({"Yes"}, [DataLoad])
+				      each List.Contains({"Agent jobs performance"}, [Service])
+				        and List.Contains({"Yes"}, [DataLoad])
 				    )
 				  ), 
 				  loadConfig = 
@@ -31,12 +40,11 @@ table 'Object partition'
 				      Record.Field(loadConfigFirstMatch, "DataLoad"), 
 				  dbList = Sql.Databases(#"Server name"), 
 				  db = dbList{[Name = #"Database name"]}[Data], 
-				  table = db{[Schema = #"Schema name", Item = "Object partition"]}[Data], 
+				  table = db{[Schema = #"Schema name", Item = "Agent job"]}[Data], 
 				  emptyDataset = Table.FirstN(table, 0), 
-				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset,
-				    SelectColumns = Table.SelectColumns(datasetToUse,{"ObjectPartitionKey"})
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset
 				in
-				  SelectColumns
+				    datasetToUse
 				```
 
 	annotation PBI_NavigationStepName = Navigation

@@ -66,7 +66,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.1';
+		SET @version = '2.4';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -318,48 +318,37 @@ ELSE BEGIN
 					,ior.NonleafAllocationCount
 					,ior.LeafPageMergeCount
 					,ior.NonleafPageMergeCount
-					,ior.RangeScanCount
-					,ior.SingletonLookupCount
-					,ior.ForwardedFetchCount
-					,ior.LOBFetchInPages
-					,ior.LOBFetchInBytes
-					,ior.LOBOrphanCreateCount
-					,ior.LOBOrphanInsertCount
-					,ior.RowOverflowFetchInPages
-					,ior.RowOverflowFetchInBytes
-					,ior.ColumnValuePushOffRowCount
-					,ior.ColumnValuePullInRowCount
 					,ior.RowLockCount
 					,ior.RowLockWaitCount
 					,ior.RowLockWaitInMS
 					,ior.PageLockCount
 					,ior.PageLockWaitCount
 					,ior.PageLockWaitInMS
-					,ior.IndexLockPromotionAttemptCount
-					,ior.IndexLockPromotionCount
-					,ior.PageLatchWaitCount
-					,ior.PageLatchWaitInMS
-					,ior.PageIOLatchWaitCount
-					,ior.PageIOLatchWaitInMS
-					,ior.TreePageLatchWaitCount
-					,ior.TreePageLatchWaitInMS
-					,ior.TreePageIOLatchWaitCount
-					,ior.TreePageIOLatchWaitInMS
-					,ior.PageCompressionAttemptCount
-					,ior.PageCompressionSuccessCount
-					,ior.VersionGeneratedInrow
-					,ior.VersionGeneratedOffrow
-					,ior.GhostVersionInrow
-					,ior.GhostVersionOffrow
-					,ior.InsertOverGhostVersionInrow
-					,ior.InsertOverGhostVersionOffrow
 					,ior.Date
 					,ior.TimeKey
 					,ior.DatabaseKey
 					,ior.SchemaKey
 					,ior.ObjectKey
 					,ior.IndexKey
-				FROM dbo.fhsmIndexOperationalReport AS ior;
+				FROM dbo.fhsmIndexOperationalReport AS ior
+				WHERE
+					(ior.LeafInsertCount <> 0)
+					OR (ior.LeafDeleteCount <> 0)
+					OR (ior.LeafUpdateCount <> 0)
+					OR (ior.LeafGhostCount <> 0)
+					OR (ior.NonleafInsertCount <> 0)
+					OR (ior.NonleafDeleteCount <> 0)
+					OR (ior.NonleafUpdateCount <> 0)
+					OR (ior.LeafAllocationCount <> 0)
+					OR (ior.NonleafAllocationCount <> 0)
+					OR (ior.LeafPageMergeCount <> 0)
+					OR (ior.NonleafPageMergeCount <> 0)
+					OR (ior.RowLockCount <> 0)
+					OR (ior.RowLockWaitCount <> 0)
+					OR (ior.RowLockWaitInMS <> 0)
+					OR (ior.PageLockCount <> 0)
+					OR (ior.PageLockWaitCount <> 0)
+					OR (ior.PageLockWaitInMS <> 0);
 			';
 			EXEC(@stmt);
 		END;

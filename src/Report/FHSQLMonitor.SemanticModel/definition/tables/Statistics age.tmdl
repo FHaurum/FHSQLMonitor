@@ -3,37 +3,49 @@ table 'Statistics age'
 
 	column Age
 		dataType: int64
+		isHidden
 		formatString: #,0
 		lineageTag: 62c275e5-1034-42ec-8994-624428fde96b
 		summarizeBy: none
 		sourceColumn: Age
 
+		changedProperty = IsHidden
+
 		annotation SummarizationSetBy = User
 
 	column Rows
 		dataType: int64
+		isHidden
 		formatString: #,0
 		lineageTag: 15af72ea-fa85-4d66-ae79-cef97bacc8b1
 		summarizeBy: none
 		sourceColumn: Rows
 
+		changedProperty = IsHidden
+
 		annotation SummarizationSetBy = User
 
 	column 'Rows sampled'
 		dataType: int64
+		isHidden
 		formatString: #,0
 		lineageTag: 37da5aa3-9cb4-457d-9983-9972b3fbec72
 		summarizeBy: none
 		sourceColumn: Rows sampled
 
+		changedProperty = IsHidden
+
 		annotation SummarizationSetBy = User
 
 	column 'Modification counter'
 		dataType: int64
+		isHidden
 		formatString: #,0
 		lineageTag: dd3eaaf6-c953-4e04-aa6a-a59ac34b50f4
 		summarizeBy: none
 		sourceColumn: Modification counter
+
+		changedProperty = IsHidden
 
 		annotation SummarizationSetBy = User
 

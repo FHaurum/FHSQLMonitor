@@ -3,37 +3,49 @@ table 'Statistics age incremental'
 
 	column Age
 		dataType: int64
+		isHidden
 		formatString: #,0
 		lineageTag: 114029a6-00d8-4b2c-8923-8c8179bedfb8
 		summarizeBy: none
 		sourceColumn: Age
 
+		changedProperty = IsHidden
+
 		annotation SummarizationSetBy = User
 
 	column Rows
 		dataType: int64
+		isHidden
 		formatString: #,0
 		lineageTag: 05919e62-3e8d-4895-b6bc-4c1be8a207b4
 		summarizeBy: none
 		sourceColumn: Rows
 
+		changedProperty = IsHidden
+
 		annotation SummarizationSetBy = User
 
 	column 'Rows sampled'
 		dataType: int64
+		isHidden
 		formatString: #,0
 		lineageTag: 42e838bb-ff13-465b-9b4e-ec393f251926
 		summarizeBy: none
 		sourceColumn: Rows sampled
 
+		changedProperty = IsHidden
+
 		annotation SummarizationSetBy = User
 
 	column 'Modification counter'
 		dataType: int64
+		isHidden
 		formatString: #,0
 		lineageTag: 6e290ba0-d649-4bf8-a339-5631d4692b5a
 		summarizeBy: none
 		sourceColumn: Modification counter
+
+		changedProperty = IsHidden
 
 		annotation SummarizationSetBy = User
 
@@ -65,18 +77,6 @@ table 'Statistics age incremental'
 		lineageTag: ea6e0c3d-0f22-4bb1-aabf-37e2c8d9d59e
 		summarizeBy: none
 		sourceColumn: ObjectPartitionKey
-
-		changedProperty = IsHidden
-
-		annotation SummarizationSetBy = Automatic
-
-	column IndexPartitionKey
-		dataType: int64
-		isHidden
-		formatString: 0
-		lineageTag: 304bfb62-60a2-4347-933a-fdfa28a043be
-		summarizeBy: none
-		sourceColumn: IndexPartitionKey
 
 		changedProperty = IsHidden
 
@@ -130,8 +130,7 @@ table 'Statistics age incremental'
 				      "PartitionNumber", 
 				      "Date", 
 				      "ObjectPartitionKey", 
-				      "IndexKey", 
-				      "IndexPartitionKey"
+				      "IndexKey"
 				    }
 				  ), 
 				  RenameColumns = Table.RenameColumns(

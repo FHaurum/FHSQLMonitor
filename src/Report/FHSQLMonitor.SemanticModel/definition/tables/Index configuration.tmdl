@@ -25,27 +25,6 @@ table 'Index configuration'
 
 		annotation SummarizationSetBy = User
 
-	column IsUniqueConstraint
-		dataType: int64
-		isHidden
-		formatString: 0
-		lineageTag: 41224b92-1aa0-4d56-9159-f10ee12c8a22
-		summarizeBy: none
-		sourceColumn: IsUniqueConstraint
-
-		changedProperty = IsHidden
-
-		annotation SummarizationSetBy = User
-
-	column FillFactor
-		dataType: int64
-		formatString: 0
-		lineageTag: c03f580d-1d43-4f8b-a9b6-2ebe4da4f3ad
-		summarizeBy: none
-		sourceColumn: FillFactor
-
-		annotation SummarizationSetBy = User
-
 	column IsDisabled
 		dataType: int64
 		isHidden
@@ -70,30 +49,6 @@ table 'Index configuration'
 
 		annotation SummarizationSetBy = User
 
-	column AllowRowLocks
-		dataType: int64
-		isHidden
-		formatString: 0
-		lineageTag: a7890bc9-e4f0-45f0-be5c-4790b59cebfd
-		summarizeBy: none
-		sourceColumn: AllowRowLocks
-
-		changedProperty = IsHidden
-
-		annotation SummarizationSetBy = User
-
-	column AllowPageLocks
-		dataType: int64
-		isHidden
-		formatString: 0
-		lineageTag: 8eef1f1c-f156-44db-bacb-619fe2657fc8
-		summarizeBy: none
-		sourceColumn: AllowPageLocks
-
-		changedProperty = IsHidden
-
-		annotation SummarizationSetBy = User
-
 	column HasFilter
 		dataType: int64
 		isHidden
@@ -113,18 +68,6 @@ table 'Index configuration'
 		sourceColumn: FilterDefinition
 
 		annotation SummarizationSetBy = Automatic
-
-	column AutoCreated
-		dataType: int64
-		isHidden
-		formatString: 0
-		lineageTag: 651b6f74-edd2-4313-a167-6ed787869702
-		summarizeBy: none
-		sourceColumn: AutoCreated
-
-		changedProperty = IsHidden
-
-		annotation SummarizationSetBy = User
 
 	column IndexColumns
 		dataType: string
@@ -218,15 +161,10 @@ table 'Index configuration'
 				      "IndexTypeDesc",
 				      "IsUnique",
 				      "IsPrimaryKey",
-				      "IsUniqueConstraint",
-				      "FillFactor",
 				      "IsDisabled",
 				      "IsHypothetical",
-				      "AllowRowLocks",
-				      "AllowPageLocks",
 				      "HasFilter",
 				      "FilterDefinition",
-				      "AutoCreated",
 				      "IndexColumns",
 				      "IncludedColumns",
 				      "ObjectKey",
