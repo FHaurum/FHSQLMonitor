@@ -58,17 +58,32 @@ table 'Database file'
 				      "No"
 				    else
 				      Record.Field(loadConfigFirstMatch, "DataLoad"), 
-				  dbList = Sql.Databases(#"Server name"), 
-				  db = dbList{[Name = #"Database name"]}[Data], 
-				  table = db{[Schema = #"Schema name", Item = "Database file"]}[Data], 
+				  serverName = Record.Field(
+				    Table.First(Table.SelectRows(#"Connection parameters", each [Key] = "ServerName")), 
+				    "Value"
+				  ), 
+				  databaseName = Record.Field(
+				    Table.First(Table.SelectRows(#"Connection parameters", each [Key] = "DatabaseName")), 
+				    "Value"
+				  ), 
+				  schemaName = Record.Field(
+				    Table.First(Table.SelectRows(#"Connection parameters", each [Key] = "SchemaName")), 
+				    "Value"
+				  ), 
+				  dbList = Sql.Databases(serverName), 
+				  db     = dbList{[Name = databaseName]}[Data], 
+				  table  = db{[Schema = schemaName, Item = "Database file"]}[Data], 
 				  emptyDataset = Table.FirstN(table, 0), 
 				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
-				  RenameColumns = Table.RenameColumns(
+				  renameColumns = Table.RenameColumns(
 				    datasetToUse, 
-				    {{"Logical name", "Logical file"}, {"Database name", "Database"}}
+				    {
+				      {"Logical name", "Logical file"}, 
+				      {"Database name", "Database"}
+				    }
 				  )
 				in
-				  RenameColumns
+				  renameColumns
 				```
 
 	annotation PBI_ResultType = Table

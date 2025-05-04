@@ -85,10 +85,8 @@ ELSE BEGIN
 	--
 	BEGIN
 		DECLARE @maxStatementLength int;
-		DECLARE @maxStatementLineLength int;
 
 		SET @maxStatementLength = 1024;
-		SET @maxStatementLineLength = 140;
 	END;
 
 	--
@@ -383,13 +381,10 @@ ELSE BEGIN
 					CONVERT(nvarchar(18), qs.QueryHash, 1) AS [Query hash]
 					,qs.CreationTime
 					,qs.LastExecutionTime
-					,(dbo.fhsmFNSplitLines(
-						(CASE
-							WHEN LEN(qs.Statement) > ' + CAST(@maxStatementLength AS nvarchar) + ' THEN LEFT(qs.Statement, ' + CAST(@maxStatementLength AS nvarchar) + ') + CHAR(10) + ''...Statement truncated''
-							ELSE qs.Statement
-						END),
-						' + CAST(@maxStatementLineLength AS nvarchar) + '
-					)) AS Statement
+					,CASE
+						WHEN LEN(qs.Statement) > ' + CAST(@maxStatementLength AS nvarchar) + ' THEN LEFT(qs.Statement, ' + CAST(@maxStatementLength AS nvarchar) + ') + CHAR(10) + ''...Statement truncated''
+						ELSE qs.Statement
+					END AS Statement
 					,qs.Encrypted
 					,CAST(qs.Timestamp AS date) AS Date
 					,(DATEPART(HOUR, qs.Timestamp) * 60 * 60) + (DATEPART(MINUTE, qs.Timestamp) * 60) + (DATEPART(SECOND, qs.Timestamp)) AS TimeKey

@@ -1,15 +1,6 @@
 table 'Who is active'
 	lineageTag: bae50cf7-5d19-4139-b0ca-8ea695d3672b
 
-	column 'Last seen in sec.'
-		dataType: int64
-		formatString: #,0
-		lineageTag: 8c03845d-8038-44aa-8ac1-f914f1760ec3
-		summarizeBy: none
-		sourceColumn: Last seen in sec.
-
-		annotation SummarizationSetBy = User
-
 	column 'Collection time'
 		dataType: dateTime
 		formatString: dd-mmm-yyyy hh:nn:ss
@@ -32,7 +23,7 @@ table 'Who is active'
 
 	column SPID
 		dataType: int64
-		formatString: 0
+		formatString: #,0
 		lineageTag: cbe83e91-85e9-48d0-bb19-c436ab37a606
 		summarizeBy: none
 		sourceColumn: SPID
@@ -65,7 +56,7 @@ table 'Who is active'
 
 	column CPU
 		dataType: int64
-		formatString: 0
+		formatString: #,0
 		lineageTag: 25359a80-4018-4598-8046-651420124f21
 		summarizeBy: none
 		sourceColumn: CPU
@@ -74,7 +65,7 @@ table 'Who is active'
 
 	column 'Blocked by SPID'
 		dataType: int64
-		formatString: 0
+		formatString: #,0
 		lineageTag: 2964e9c5-3026-4c03-baa2-cb65381429e3
 		summarizeBy: none
 		sourceColumn: Blocked by SPID
@@ -83,7 +74,7 @@ table 'Who is active'
 
 	column Reads
 		dataType: int64
-		formatString: 0
+		formatString: #,0
 		lineageTag: 2e5c0451-d433-47a0-bbbe-bb46e8681102
 		summarizeBy: none
 		sourceColumn: Reads
@@ -92,7 +83,7 @@ table 'Who is active'
 
 	column 'Used memory'
 		dataType: int64
-		formatString: 0
+		formatString: #,0
 		lineageTag: 469ca5cb-5969-427d-9a11-a88dd5e3ca0f
 		summarizeBy: none
 		sourceColumn: Used memory
@@ -117,7 +108,7 @@ table 'Who is active'
 
 	column 'Open tran. cnt.'
 		dataType: int64
-		formatString: 0
+		formatString: #,0
 		lineageTag: 98c864aa-2d87-4158-825f-eb67daef9ba2
 		summarizeBy: none
 		sourceColumn: Open tran. cnt.
@@ -160,6 +151,15 @@ table 'Who is active'
 
 		annotation SummarizationSetBy = Automatic
 
+	column 'Sort order'
+		dataType: int64
+		formatString: #,0
+		lineageTag: cd3f3b1c-b392-4afc-aca6-bfb25d22d450
+		summarizeBy: none
+		sourceColumn: Sort order
+
+		annotation SummarizationSetBy = User
+
 	partition 'Who is active' = m
 		mode: import
 		queryGroup: Facts
@@ -169,15 +169,26 @@ table 'Who is active'
 				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Who is active")), 
 				    "DataLoad"
 				  ), 
-				  dbList = Sql.Databases(#"Server name"), 
-				  db = dbList{[Name = #"Database name"]}[Data], 
-				  table = db{[Schema = #"Schema name", Item = "Who is active"]}[Data], 
+				  serverName = Record.Field(
+				    Table.First(Table.SelectRows(#"Connection parameters", each [Key] = "ServerName")), 
+				    "Value"
+				  ), 
+				  databaseName = Record.Field(
+				    Table.First(Table.SelectRows(#"Connection parameters", each [Key] = "DatabaseName")), 
+				    "Value"
+				  ), 
+				  schemaName = Record.Field(
+				    Table.First(Table.SelectRows(#"Connection parameters", each [Key] = "SchemaName")), 
+				    "Value"
+				  ), 
+				  dbList = Sql.Databases(serverName), 
+				  db     = dbList{[Name = databaseName]}[Data], 
+				  table  = db{[Schema = schemaName, Item = "Who is active"]}[Data], 
 				  emptyDataset = Table.FirstN(table, 0), 
 				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
-				  SelectColumns = Table.SelectColumns(
+				  selectColumns = Table.SelectColumns(
 				    datasetToUse, 
 				    {
-				      "SecondsSinceLastSeen", 
 				      "CollectionTime", 
 				      "ElapsedTimeMS", 
 				      "SessionId", 
@@ -193,21 +204,21 @@ table 'Who is active'
 				      "OpenTranCount", 
 				      "HostName", 
 				      "ProgramName", 
+				      "SortOrder", 
 				      "DatabaseKey"
 				    }
 				  ), 
-				  ConcatenateColumns = Table.AddColumn(
-				    SelectColumns, 
+				  concatenateColumns = Table.AddColumn(
+				    selectColumns, 
 				    "ConcatenatedColumns", 
 				    each (([ProgramName] & "|") ?? "") & (([HostName] & "|") ?? "") & (([LoginName] & "|") ?? "")
 				  ), 
-				  RenameColumns = Table.RenameColumns(
-				    ConcatenateColumns, 
+				  renameColumns = Table.RenameColumns(
+				    concatenateColumns, 
 				    {
 				      {"HostName", "Host name"}, 
 				      {"LoginName", "Login name"}, 
 				      {"ProgramName", "Program name"}, 
-				      {"SecondsSinceLastSeen", "Last seen in sec."}, 
 				      {"CollectionTime", "Collection time"}, 
 				      {"SessionId", "SPID"}, 
 				      {"SQLText", "SQL"}, 
@@ -216,11 +227,12 @@ table 'Who is active'
 				      {"UsedMemory", "Used memory"}, 
 				      {"ImplicitTran", "Implicit tran."}, 
 				      {"OpenTranCount", "Open tran. cnt."}, 
-				      {"ElapsedTimeMS", "Elapsed time mS"}
+				      {"ElapsedTimeMS", "Elapsed time mS"}, 
+				      {"SortOrder", "Sort order"}
 				    }
 				  )
 				in
-				  RenameColumns
+				  renameColumns
 				```
 
 	annotation PBI_NavigationStepName = Navigation

@@ -12838,763 +12838,6 @@ cultureInfo en-US
 			        }
 			      ]
 			    },
-			    "p_database": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "Database name"
-			        }
-			      },
-			      "State": "Generated",
-			      "Visibility": {
-			        "Value": "Hidden"
-			      },
-			      "Terms": [
-			        {
-			          "database": {
-			            "LastModified": "2025-02-16T12:19:46.966Z"
-			          }
-			        },
-			        {
-			          "p folder": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.5
-			          }
-			        },
-			        {
-			          "p databank": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.5
-			          }
-			        },
-			        {
-			          "p file": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.485
-			          }
-			        },
-			        {
-			          "p record": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.485
-			          }
-			        },
-			        {
-			          "p catalogue": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.485
-			          }
-			        },
-			        {
-			          "p catalog": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.485
-			          }
-			        },
-			        {
-			          "p list": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.485
-			          }
-			        },
-			        {
-			          "p store": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.485
-			          }
-			        },
-			        {
-			          "p archive": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.485
-			          }
-			        },
-			        {
-			          "p database": {
-			            "State": "Deleted",
-			            "LastModified": "2025-02-16T12:19:46.966Z"
-			          }
-			        },
-			        {
-			          "pDatabase": {
-			            "Type": "Noun",
-			            "State": "Deleted",
-			            "LastModified": "2025-02-16T12:19:46.966Z"
-			          }
-			        }
-			      ]
-			    },
-			    "p_database.p_database": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "Database name",
-			          "ConceptualProperty": "pDatabase"
-			        }
-			      },
-			      "State": "Generated",
-			      "Visibility": {
-			        "Value": "Hidden"
-			      },
-			      "Terms": [
-			        {
-			          "p database": {
-			            "State": "Generated"
-			          }
-			        },
-			        {
-			          "pDatabase": {
-			            "Type": "Noun",
-			            "State": "Generated",
-			            "Weight": 0.99
-			          }
-			        },
-			        {
-			          "p folder": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.5
-			          }
-			        },
-			        {
-			          "p databank": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.5
-			          }
-			        },
-			        {
-			          "p file": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.485
-			          }
-			        },
-			        {
-			          "p record": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.485
-			          }
-			        },
-			        {
-			          "p catalogue": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.485
-			          }
-			        },
-			        {
-			          "p catalog": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.485
-			          }
-			        },
-			        {
-			          "p list": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.485
-			          }
-			        },
-			        {
-			          "p store": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.485
-			          }
-			        },
-			        {
-			          "p archive": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.485
-			          }
-			        }
-			      ]
-			    },
-			    "p_schema": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "Schema name"
-			        }
-			      },
-			      "State": "Generated",
-			      "Visibility": {
-			        "Value": "Hidden"
-			      },
-			      "Terms": [
-			        {
-			          "schema": {
-			            "LastModified": "2025-02-16T12:19:30.037Z"
-			          }
-			        },
-			        {
-			          "p representation": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.5
-			          }
-			        },
-			        {
-			          "p plan": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.485
-			          }
-			        },
-			        {
-			          "p diagram": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.485
-			          }
-			        },
-			        {
-			          "p scheme": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.485
-			          }
-			        },
-			        {
-			          "p schematic": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.485
-			          }
-			        },
-			        {
-			          "p graphic": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.485
-			          }
-			        },
-			        {
-			          "p chart": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.485
-			          }
-			        },
-			        {
-			          "p outline": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.485
-			          }
-			        },
-			        {
-			          "p draught": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.485
-			          }
-			        },
-			        {
-			          "p draft": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.485
-			          }
-			        },
-			        {
-			          "p schema": {
-			            "State": "Deleted",
-			            "LastModified": "2025-02-16T12:19:30.038Z"
-			          }
-			        },
-			        {
-			          "pSchema": {
-			            "Type": "Noun",
-			            "State": "Deleted",
-			            "LastModified": "2025-02-16T12:19:30.038Z"
-			          }
-			        }
-			      ]
-			    },
-			    "p_schema.p_schema": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "Schema name",
-			          "ConceptualProperty": "pSchema"
-			        }
-			      },
-			      "State": "Generated",
-			      "Visibility": {
-			        "Value": "Hidden"
-			      },
-			      "Terms": [
-			        {
-			          "p schema": {
-			            "State": "Generated"
-			          }
-			        },
-			        {
-			          "pSchema": {
-			            "Type": "Noun",
-			            "State": "Generated",
-			            "Weight": 0.99
-			          }
-			        },
-			        {
-			          "p representation": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.5
-			          }
-			        },
-			        {
-			          "p plan": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.485
-			          }
-			        },
-			        {
-			          "p diagram": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.485
-			          }
-			        },
-			        {
-			          "p scheme": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.485
-			          }
-			        },
-			        {
-			          "p schematic": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.485
-			          }
-			        },
-			        {
-			          "p graphic": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.485
-			          }
-			        },
-			        {
-			          "p chart": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.485
-			          }
-			        },
-			        {
-			          "p outline": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.485
-			          }
-			        },
-			        {
-			          "p draught": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.485
-			          }
-			        },
-			        {
-			          "p draft": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.485
-			          }
-			        }
-			      ]
-			    },
-			    "p_server": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "Server name"
-			        }
-			      },
-			      "State": "Generated",
-			      "Visibility": {
-			        "Value": "Hidden"
-			      },
-			      "Terms": [
-			        {
-			          "server": {
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "p waiter": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.5
-			          }
-			        },
-			        {
-			          "p waitperson": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.5
-			          }
-			        },
-			        {
-			          "p waitron": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.5
-			          }
-			        },
-			        {
-			          "p headwaiter": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.5
-			          }
-			        },
-			        {
-			          "waiter": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.491
-			          }
-			        },
-			        {
-			          "waitperson": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.491
-			          }
-			        },
-			        {
-			          "waitron": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.491
-			          }
-			        },
-			        {
-			          "headwaiter": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.491
-			          }
-			        },
-			        {
-			          "p attendant": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.485
-			          }
-			        },
-			        {
-			          "attendant": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.476
-			          }
-			        },
-			        {
-			          "p server": {
-			            "State": "Deleted",
-			            "LastModified": "2025-02-16T12:19:13.911Z"
-			          }
-			        },
-			        {
-			          "pServer": {
-			            "Type": "Noun",
-			            "State": "Deleted",
-			            "LastModified": "2025-02-16T12:19:13.911Z"
-			          }
-			        }
-			      ]
-			    },
-			    "p_server.p_server": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "Server name",
-			          "ConceptualProperty": "pServer"
-			        }
-			      },
-			      "State": "Generated",
-			      "Visibility": {
-			        "Value": "Hidden"
-			      },
-			      "Terms": [
-			        {
-			          "p server": {
-			            "State": "Generated"
-			          }
-			        },
-			        {
-			          "pServer": {
-			            "Type": "Noun",
-			            "State": "Generated",
-			            "Weight": 0.99
-			          }
-			        },
-			        {
-			          "server": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "p waiter": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.5
-			          }
-			        },
-			        {
-			          "p waitperson": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.5
-			          }
-			        },
-			        {
-			          "p waitron": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.5
-			          }
-			        },
-			        {
-			          "p headwaiter": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.5
-			          }
-			        },
-			        {
-			          "waiter": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.491
-			          }
-			        },
-			        {
-			          "waitperson": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.491
-			          }
-			        },
-			        {
-			          "waitron": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.491
-			          }
-			        },
-			        {
-			          "headwaiter": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.491
-			          }
-			        },
-			        {
-			          "p attendant": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.485
-			          }
-			        },
-			        {
-			          "attendant": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.476
-			          }
-			        }
-			      ]
-			    },
 			    "performance_counter": {
 			      "Definition": {
 			        "Binding": {
@@ -13928,6 +13171,26 @@ cultureInfo en-US
 			              "Agent": "Thesaurus"
 			            },
 			            "Weight": 0.452
+			          }
+			        },
+			        {
+			          "Pool": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        },
+			        {
+			          "Group": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
 			          }
 			        }
 			      ]
@@ -25994,7 +25257,7 @@ cultureInfo en-US
 			          }
 			        },
 			        {
-			          "Avg. page life expectancy": {
+			          "Avg.": {
 			            "State": "Suggested",
 			            "Source": {
 			              "Type": "External",
@@ -42037,7 +41300,7 @@ cultureInfo en-US
 			          }
 			        },
 			        {
-			          "Max. page life expectancy": {
+			          "Max.": {
 			            "State": "Suggested",
 			            "Source": {
 			              "Type": "External",
@@ -42464,7 +41727,7 @@ cultureInfo en-US
 			          }
 			        },
 			        {
-			          "Min. page life expectancy": {
+			          "Min.": {
 			            "State": "Suggested",
 			            "Source": {
 			              "Type": "External",
@@ -55273,6 +54536,16 @@ cultureInfo en-US
 			            },
 			            "Weight": 0.599
 			          }
+			        },
+			        {
+			          "Signal wait time mS": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
 			        }
 			      ]
 			    },
@@ -56365,6 +55638,16 @@ cultureInfo en-US
 			            },
 			            "Weight": 0.599
 			          }
+			        },
+			        {
+			          "Wait time mS": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
 			        }
 			      ]
 			    },
@@ -56568,6 +55851,16 @@ cultureInfo en-US
 			              "Agent": "Thesaurus"
 			            },
 			            "Weight": 0.494
+			          }
+			        },
+			        {
+			          "Waiting tasks": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
 			          }
 			        }
 			      ]
@@ -58866,6 +58159,16 @@ cultureInfo en-US
 			            },
 			            "Weight": 0.582
 			          }
+			        },
+			        {
+			          "Elapsed mS": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
 			        }
 			      ]
 			    },
@@ -58937,132 +58240,6 @@ cultureInfo en-US
 			        {
 			          "implicit tran.": {
 			            "State": "Generated"
-			          }
-			        }
-			      ]
-			    },
-			    "who_is_active.last_seen_in_sec_": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "Who is active",
-			          "ConceptualProperty": "Last seen in sec."
-			        }
-			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "last seen in sec.": {
-			            "State": "Generated"
-			          }
-			        },
-			        {
-			          "end seen in sec.": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.757
-			          }
-			        },
-			        {
-			          "final seen in sec.": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.757
-			          }
-			        },
-			        {
-			          "closing seen in sec.": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.757
-			          }
-			        },
-			        {
-			          "concluding seen in sec.": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.757
-			          }
-			        },
-			        {
-			          "finishing seen in sec.": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.757
-			          }
-			        },
-			        {
-			          "former seen in sec.": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.757
-			          }
-			        },
-			        {
-			          "latest seen in sec.": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.757
-			          }
-			        },
-			        {
-			          "latter seen in sec.": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.757
-			          }
-			        },
-			        {
-			          "past seen in sec.": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.757
-			          }
-			        },
-			        {
-			          "remaining seen in sec.": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.757
-			          }
-			        },
-			        {
-			          "Last seen sec.": {
-			            "State": "Suggested",
-			            "Source": {
-			              "Type": "External",
-			              "Agent": "PowerBI.VisualColumnRename"
-			            },
-			            "Weight": 0.9
 			          }
 			        }
 			      ]
@@ -59463,6 +58640,16 @@ cultureInfo en-US
 			              "Agent": "Thesaurus"
 			            },
 			            "Weight": 0.475
+			          }
+			        },
+			        {
+			          "Used mem.": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
 			          }
 			        }
 			      ]
@@ -60701,6 +59888,162 @@ cultureInfo en-US
 			        }
 			      },
 			      "State": "Generated"
+			    },
+			    "table_measures.show_filters_headers__blocks_and_deadlocks": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Show filters Headers - Blocks and deadlocks"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Filters": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.show_filters__blocks_and_deadlocks": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Show filters - Blocks and deadlocks"
+			        }
+			      },
+			      "State": "Generated"
+			    },
+			    "blocked_process.blocked_spid": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Blocked process",
+			          "ConceptualProperty": "Blocked SPID"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "SPID": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "blocked_process.blocking_spid": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Blocked process",
+			          "ConceptualProperty": "Blocking SPID"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "SPID": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.blocked_process__blocks_and_deadlocks": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "# Blocked process - Blocks and deadlocks"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Blocks": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.deadlock__blocks_and_deadlocks": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "# Deadlock - Blocks and deadlocks"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Deadlocks": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "data_load.dataload": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Data load",
+			          "ConceptualProperty": "DataLoad"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Load data": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.rows___partitioned_indexes": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Rows # - Partitioned indexes"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Rows": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
 			    }
 			  },
 			  "Relationships": {
@@ -65781,60 +65124,6 @@ cultureInfo en-US
 			          "ID": "object_partitions_have_schemata"
 			        }
 			      ]
-			    },
-			    "p_database_has_v_Measures_measure_front_page_parameters_text": {
-			      "Binding": {
-			        "ConceptualEntity": "Database name"
-			      },
-			      "State": "Generated",
-			      "Roles": {
-			        "p_database": {
-			          "Target": {
-			            "Entity": "p_database"
-			          }
-			        },
-			        "v_Measures_measure.front_page_parameters_text": {
-			          "Target": {
-			            "Entity": "v_Measures_measure.front_page_parameters_text"
-			          }
-			        }
-			      }
-			    },
-			    "p_schema_has_v_Measures_measure_front_page_parameters_text": {
-			      "Binding": {
-			        "ConceptualEntity": "Schema name"
-			      },
-			      "State": "Generated",
-			      "Roles": {
-			        "p_schema": {
-			          "Target": {
-			            "Entity": "p_schema"
-			          }
-			        },
-			        "v_Measures_measure.front_page_parameters_text": {
-			          "Target": {
-			            "Entity": "v_Measures_measure.front_page_parameters_text"
-			          }
-			        }
-			      }
-			    },
-			    "p_server_has_v_Measures_measure_front_page_parameters_text": {
-			      "Binding": {
-			        "ConceptualEntity": "Server name"
-			      },
-			      "State": "Generated",
-			      "Roles": {
-			        "p_server": {
-			          "Target": {
-			            "Entity": "p_server"
-			          }
-			        },
-			        "v_Measures_measure.front_page_parameters_text": {
-			          "Target": {
-			            "Entity": "v_Measures_measure.front_page_parameters_text"
-			          }
-			        }
-			      }
 			    },
 			    "performance_counter_has_counter": {
 			      "Binding": {

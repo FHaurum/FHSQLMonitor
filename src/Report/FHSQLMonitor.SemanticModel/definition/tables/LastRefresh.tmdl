@@ -27,11 +27,17 @@ table LastRefresh
 	partition LastRefresh = m
 		mode: import
 		queryGroup: Framework
-		source =
+		source = ```
 				let
-				  Source = #table(type table [LastRefresh = datetime], {{DateTime.LocalNow()}})
+				  source = #table(
+				    type table [LastRefresh = datetime], 
+				    {
+				      {DateTimeZone.RemoveZone(DateTimeZone.UtcNow())}
+				    }
+				  )
 				in
-				  Source
+				  source
+				```
 
 	annotation PBI_ResultType = Table
 

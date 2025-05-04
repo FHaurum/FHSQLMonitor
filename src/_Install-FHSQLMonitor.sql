@@ -40,7 +40,7 @@ BEGIN
 	SET @myUserName = SUSER_NAME();
 	SET @nowUTC = SYSUTCDATETIME();
 	SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
-	SET @version = '2.4.0';
+	SET @version = '2.5.0';
 END;
 
 --
@@ -2756,6 +2756,72 @@ ELSE BEGIN
 	-- Create views
 	--
 	BEGIN
+		--
+		-- Create view @pbiSchema.[Configurations]
+		--
+		BEGIN
+			SET @stmt = '
+				USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
+			
+				IF OBJECT_ID(''' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Configurations') + ''', ''V'') IS NULL
+				BEGIN
+					RAISERROR(''Creating stub view ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Configurations') + ''', 0, 1) WITH NOWAIT;
+
+					EXEC(''CREATE VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Configurations') + ' AS SELECT ''''dummy'''' AS Txt'');
+				END;
+			';
+			EXEC(@stmt);
+
+			SET @stmt = '
+				USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
+
+				DECLARE @stmt nvarchar(max);
+
+				RAISERROR(''Alter view ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Configurations') + ''', 0, 1) WITH NOWAIT;
+
+				SET @stmt = ''
+					ALTER VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Configurations') + '
+					AS
+					SELECT
+						c.[Key]
+						,c.Value
+					FROM dbo.fhsmConfigurations AS c;
+				'';
+				EXEC(@stmt);
+			';
+			EXEC(@stmt);
+		END;
+
+		--
+		-- Register extended properties on fact view @pbiSchema.[Configurations]
+		--
+		BEGIN
+			SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Configurations');
+
+			SET @stmt = '
+				USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
+
+				DECLARE @objName nvarchar(128);
+				DECLARE @schName nvarchar(128);
+
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+			';
+			EXEC sp_executesql
+				@stmt
+				,N'@objectName nvarchar(128), @version sql_variant, @nowUTCStr sql_variant, @myUserName sql_variant'
+				,@objectName = @objectName
+				,@version = @version
+				,@nowUTCStr = @nowUTCStr
+				,@myUserName = @myUserName;
+		END;
+
 		--
 		-- Create view @pbiSchema.[Log]
 		--

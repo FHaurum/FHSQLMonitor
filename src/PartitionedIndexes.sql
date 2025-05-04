@@ -66,7 +66,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.1';
+		SET @version = '2.5';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -378,6 +378,7 @@ ELSE BEGIN
 
 					DECLARE @database nvarchar(128);
 					DECLARE @databases nvarchar(max);
+					DECLARE @errorMsg nvarchar(max);
 					DECLARE @message nvarchar(max);
 					DECLARE @now datetime;
 					DECLARE @nowUTC datetime;
@@ -515,17 +516,25 @@ ELSE BEGIN
 									INNER JOIN sys.columns AS c ON (c.object_id = ic.object_id) AND (c.column_id = ic.column_id)
 									LEFT OUTER JOIN sys.partition_range_values AS prv ON (prv.function_id = pf.function_id) AND (pstats.partition_number = (CASE pf.boundary_value_on_right WHEN 0 THEN prv.boundary_id ELSE (prv.boundary_id + 1) END))
 								'';
-								INSERT INTO dbo.fhsmPartitionedIndexes(
-									DatabaseName, SchemaName, ObjectName, IndexName, IndexTypeDesc
-									,PartitionSchemeName
-									,PartitionFilegroupName, PartitionFunctionName, PartitionFunctionValueOnRight, PartitionFunctionCreateDate, PartitionFunctionModifyDate, PartitionBoundaryValue, PartitionColumn
-									,PartitionNumber, PartitionCompressionTypeDesc, PartitionRowCount
-									,TimestampUTC, Timestamp
-								)
-								EXEC sp_executesql
-									@stmt
-									,N''@now datetime, @nowUTC datetime''
-									,@now = @now, @nowUTC = @nowUTC;
+								BEGIN TRY
+									INSERT INTO dbo.fhsmPartitionedIndexes(
+										DatabaseName, SchemaName, ObjectName, IndexName, IndexTypeDesc
+										,PartitionSchemeName
+										,PartitionFilegroupName, PartitionFunctionName, PartitionFunctionValueOnRight, PartitionFunctionCreateDate, PartitionFunctionModifyDate, PartitionBoundaryValue, PartitionColumn
+										,PartitionNumber, PartitionCompressionTypeDesc, PartitionRowCount
+										,TimestampUTC, Timestamp
+									)
+									EXEC sp_executesql
+										@stmt
+										,N''@now datetime, @nowUTC datetime''
+										,@now = @now, @nowUTC = @nowUTC;
+								END TRY
+								BEGIN CATCH
+									SET @errorMsg = ERROR_MESSAGE();
+
+									SET @message = ''Database '''''' + @database + '''''' failed due to - '' + @errorMsg;
+									EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''Warning'', @message = @message;
+								END CATCH;
 							END
 							ELSE BEGIN
 								SET @message = ''Database '''''' + @database + '''''' is member of a replica but this server is not the primary node'';

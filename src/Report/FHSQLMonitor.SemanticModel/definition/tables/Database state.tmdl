@@ -148,12 +148,24 @@ table 'Database state'
 				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Database configuration")), 
 				    "DataLoad"
 				  ), 
-				  dbList = Sql.Databases(#"Server name"), 
-				  db = dbList{[Name = #"Database name"]}[Data], 
-				  table = db{[Schema = #"Schema name", Item = "Database state"]}[Data], 
+				  serverName = Record.Field(
+				    Table.First(Table.SelectRows(#"Connection parameters", each [Key] = "ServerName")), 
+				    "Value"
+				  ), 
+				  databaseName = Record.Field(
+				    Table.First(Table.SelectRows(#"Connection parameters", each [Key] = "DatabaseName")), 
+				    "Value"
+				  ), 
+				  schemaName = Record.Field(
+				    Table.First(Table.SelectRows(#"Connection parameters", each [Key] = "SchemaName")), 
+				    "Value"
+				  ), 
+				  dbList = Sql.Databases(serverName), 
+				  db     = dbList{[Name = databaseName]}[Data], 
+				  table  = db{[Schema = schemaName, Item = "Database state"]}[Data], 
 				  emptyDataset = Table.FirstN(table, 0), 
 				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
-				  SelectColumns = Table.SelectColumns(
+				  selectColumns = Table.SelectColumns(
 				    datasetToUse, 
 				    {
 				      "CollationName", 
@@ -173,8 +185,8 @@ table 'Database state'
 				      "DatabaseKey"
 				    }
 				  ), 
-				  RenameColumns = Table.RenameColumns(
-				    SelectColumns, 
+				  renameColumns = Table.RenameColumns(
+				    selectColumns, 
 				    {
 				      {"CollationName", "Collation"}, 
 				      {"CompatibilityLevel", "Comp. level"}, 
@@ -193,7 +205,7 @@ table 'Database state'
 				    }
 				  )
 				in
-				  RenameColumns
+				  renameColumns
 				```
 
 	annotation PBI_NavigationStepName = Navigation

@@ -167,12 +167,29 @@ table Schedules
 		queryGroup: Framework
 		source = ```
 				let
-				  dbList        = Sql.Databases(#"Server name"), 
-				  db            = dbList{[Name = #"Database name"]}[Data], 
-				  table         = db{[Schema = #"Schema name", Item = "Schedules"]}[Data], 
-				  RenameColumns = Table.RenameColumns(table, {{"LastErrorMessage", "Last error message"}})
+				  serverName = Record.Field(
+				    Table.First(Table.SelectRows(#"Connection parameters", each [Key] = "ServerName")), 
+				    "Value"
+				  ), 
+				  databaseName = Record.Field(
+				    Table.First(Table.SelectRows(#"Connection parameters", each [Key] = "DatabaseName")), 
+				    "Value"
+				  ), 
+				  schemaName = Record.Field(
+				    Table.First(Table.SelectRows(#"Connection parameters", each [Key] = "SchemaName")), 
+				    "Value"
+				  ), 
+				  dbList = Sql.Databases(serverName), 
+				  db     = dbList{[Name = databaseName]}[Data], 
+				  table  = db{[Schema = schemaName, Item = "Schedules"]}[Data], 
+				  renameColumns = Table.RenameColumns(
+				    table, 
+				    {
+				      {"LastErrorMessage", "Last error message"}
+				    }
+				  )
 				in
-				  RenameColumns
+				  renameColumns
 				```
 
 	annotation PBI_NavigationStepName = Navigation

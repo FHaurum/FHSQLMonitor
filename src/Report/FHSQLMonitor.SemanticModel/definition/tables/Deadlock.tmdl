@@ -1,0 +1,156 @@
+table Deadlock
+	lineageTag: a1c85509-9cec-4a28-91f8-bcff4b55284c
+
+	column Statement
+		dataType: string
+		lineageTag: a43e0e22-943d-42c1-9946-a8a6330750cc
+		summarizeBy: none
+		sourceColumn: Statement
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Sort order'
+		dataType: int64
+		formatString: #,0
+		lineageTag: 077d89f8-530f-4cfa-bb85-c608fe605f56
+		summarizeBy: none
+		sourceColumn: Sort order
+
+		annotation SummarizationSetBy = User
+
+	column 'Timestamp (UTC)'
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: 96f54c9b-ba21-4b82-922c-02a3b92b60d4
+		summarizeBy: none
+		sourceColumn: Timestamp (UTC)
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	column Date
+		dataType: dateTime
+		isHidden
+		formatString: Long Date
+		lineageTag: bd568a16-170d-485f-9230-09a87b335956
+		summarizeBy: none
+		sourceColumn: Date
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column TimeKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 741c5641-4fbb-4947-953f-d19c4caa3ce8
+		summarizeBy: none
+		sourceColumn: TimeKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Data set'
+		dataType: int64
+		formatString: #,0
+		lineageTag: 016f0550-421b-4ac2-a05a-99f5acc7bf34
+		summarizeBy: none
+		sourceColumn: Data set
+
+		annotation SummarizationSetBy = User
+
+	column BlocksAndDeadlocksKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 82f9650f-13cf-4f6a-8449-8df7d6799526
+		summarizeBy: none
+		sourceColumn: BlocksAndDeadlocksKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column DatabaseKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 213187a2-b202-48d7-a5d9-647e0e80a8a1
+		summarizeBy: none
+		sourceColumn: DatabaseKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column SPID
+		dataType: int64
+		formatString: #,0
+		lineageTag: 9969112d-9f70-4d6a-9ce3-4bfe871fd1a9
+		summarizeBy: none
+		sourceColumn: SPID
+
+		annotation SummarizationSetBy = User
+
+	partition Deadlock = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Blocks and deadlocks")), 
+				    "DataLoad"
+				  ), 
+				  serverName = Record.Field(
+				    Table.First(Table.SelectRows(#"Connection parameters", each [Key] = "ServerName")), 
+				    "Value"
+				  ), 
+				  databaseName = Record.Field(
+				    Table.First(Table.SelectRows(#"Connection parameters", each [Key] = "DatabaseName")), 
+				    "Value"
+				  ), 
+				  schemaName = Record.Field(
+				    Table.First(Table.SelectRows(#"Connection parameters", each [Key] = "SchemaName")), 
+				    "Value"
+				  ), 
+				  dbList = Sql.Databases(serverName), 
+				  db     = dbList{[Name = databaseName]}[Data], 
+				  table  = db{[Schema = schemaName, Item = "Deadlock"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  selectColumns = Table.SelectColumns(
+				    datasetToUse,
+				    {
+				      "SPID", 
+				      "Statement", 
+				      "DataSet", 
+				      "SortOrder", 
+				      "EventTimestampUTC", 
+				      "Date", 
+				      "TimeKey", 
+				      "BlocksAndDeadlocksKey", 
+				      "DatabaseKey"
+				    }
+				  ),
+				  renameColumns = Table.RenameColumns(
+				    selectColumns, 
+				    {
+				      {"Statement", "Statement"}, 
+				      {"DataSet", "Data set"}, 
+				      {"SortOrder", "Sort order"}, 
+				      {"EventTimestampUTC", "Timestamp (UTC)"}
+				    }
+				  )
+				in
+				  renameColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

@@ -1,7 +1,7 @@
 USE master;
 
 --
--- FHSQLMonitor v2.4.0 - 2025.04.15 07.11.53
+-- FHSQLMonitor v2.5.0 - 2025.05.04 17.50.40
 --
 
 --
@@ -10,15 +10,18 @@ USE master;
 DECLARE @createSQLAgentJob    bit           = 1;
 DECLARE @fhSQLMonitorDatabase nvarchar(128) = 'FHSQLMonitor';
 DECLARE @pbiSchema            nvarchar(128) = 'FHSM';
-DECLARE @olaDatabase          nvarchar(128) = NULL;
 
 -- Service parameters - They are only used during a fresh installation and not during an update
 --   When updating the already configured values in the tables dbo.fhsmSchedules and dbo.fhsmRetentions remains unchanged
+--
+DECLARE @blocksAndDeadlocksFilePath    nvarchar(260) = NULL;
+DECLARE @olaDatabase                   nvarchar(128) = NULL;
 --
 DECLARE @enableAgentJobs                bit = 1;
 DECLARE @enableAgentJobsPerformance     bit = 1;
 DECLARE @enableAgeOfStatistics          bit = 1;
 DECLARE @enableBackupStatus             bit = 1;
+DECLARE @enableBlocksAndDeadlocks       bit = 1;
 DECLARE @enableConnections              bit = 1;
 DECLARE @enableCPUUtilization           bit = 1;
 DECLARE @enableDatabaseIO               bit = 1;
@@ -147,7 +150,7 @@ BEGIN
 END;
 
 --
--- File part:_Install-FHSQLMonitor.sql modified: 2025.04.15 07.11.29
+-- File part:_Install-FHSQLMonitor.sql modified: 2025.05.04 17.43.58
 --
 SET @stmt = '
 SET NOCOUNT ON;
@@ -192,7 +195,7 @@ BEGIN
 	SET @myUserName = SUSER_NAME();
 	SET @nowUTC = SYSUTCDATETIME();
 	SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
-	SET @version = ''2.4.0'';
+	SET @version = ''2.5.0'';
 END;
 
 --
@@ -2909,6 +2912,72 @@ ELSE BEGIN
 	--
 	BEGIN
 		--
+		-- Create view @pbiSchema.[Configurations]
+		--
+		BEGIN
+			SET @stmt = ''
+				USE '' + QUOTENAME(@fhSQLMonitorDatabase) + '';
+			
+				IF OBJECT_ID('''''' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Configurations'') + '''''', ''''V'''') IS NULL
+				BEGIN
+					RAISERROR(''''Creating stub view '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Configurations'') + '''''', 0, 1) WITH NOWAIT;
+
+					EXEC(''''CREATE VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Configurations'') + '' AS SELECT ''''''''dummy'''''''' AS Txt'''');
+				END;
+			'';
+			EXEC(@stmt);
+
+			SET @stmt = ''
+				USE '' + QUOTENAME(@fhSQLMonitorDatabase) + '';
+
+				DECLARE @stmt nvarchar(max);
+
+				RAISERROR(''''Alter view '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Configurations'') + '''''', 0, 1) WITH NOWAIT;
+
+				SET @stmt = ''''
+					ALTER VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Configurations'') + ''
+					AS
+					SELECT
+						c.[Key]
+						,c.Value
+					FROM dbo.fhsmConfigurations AS c;
+				'''';
+				EXEC(@stmt);
+			'';
+			EXEC(@stmt);
+		END;
+
+		--
+		-- Register extended properties on fact view @pbiSchema.[Configurations]
+		--
+		BEGIN
+			SET @objectName = QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Configurations'');
+
+			SET @stmt = ''
+				USE '' + QUOTENAME(@fhSQLMonitorDatabase) + '';
+
+				DECLARE @objName nvarchar(128);
+				DECLARE @schName nvarchar(128);
+
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''''View'''', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''''FHSMVersion'''', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''''View'''', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''''FHSMCreated'''', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''''View'''', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''''FHSMCreatedBy'''', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''''View'''', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''''FHSMModified'''', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''''View'''', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''''FHSMModifiedBy'''', @propertyValue = @myUserName;
+			'';
+			EXEC sp_executesql
+				@stmt
+				,N''@objectName nvarchar(128), @version sql_variant, @nowUTCStr sql_variant, @myUserName sql_variant''
+				,@objectName = @objectName
+				,@version = @version
+				,@nowUTCStr = @nowUTCStr
+				,@myUserName = @myUserName;
+		END;
+
+		--
 		-- Create view @pbiSchema.[Log]
 		--
 		BEGIN
@@ -3390,12 +3459,14 @@ END
 END;
 
 ';
+SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableBackupStatus = 0;',             'SET @enableBackupStatus = '             + CAST(@enableBackupStatus AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableBlocksAndDeadlocks = 0;',       'SET @enableBlocksAndDeadlocks = '       + CAST(@enableBlocksAndDeadlocks AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableConnections = 0;',              'SET @enableConnections = '              + CAST(@enableConnections AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableCPUUtilization = 0;',           'SET @enableCPUUtilization = '           + CAST(@enableCPUUtilization AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableDatabaseIO = 0;',               'SET @enableDatabaseIO = '               + CAST(@enableDatabaseIO AS nvarchar) + ';');
@@ -3753,12 +3824,14 @@ EXEC(@stmt);
 END;
 
 ';
+SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableBackupStatus = 0;',             'SET @enableBackupStatus = '             + CAST(@enableBackupStatus AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableBlocksAndDeadlocks = 0;',       'SET @enableBlocksAndDeadlocks = '       + CAST(@enableBlocksAndDeadlocks AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableConnections = 0;',              'SET @enableConnections = '              + CAST(@enableConnections AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableCPUUtilization = 0;',           'SET @enableCPUUtilization = '           + CAST(@enableCPUUtilization AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableDatabaseIO = 0;',               'SET @enableDatabaseIO = '               + CAST(@enableDatabaseIO AS nvarchar) + ';');
@@ -6315,12 +6388,14 @@ EXEC(@stmt);
 END;
 
 ';
+SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableBackupStatus = 0;',             'SET @enableBackupStatus = '             + CAST(@enableBackupStatus AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableBlocksAndDeadlocks = 0;',       'SET @enableBlocksAndDeadlocks = '       + CAST(@enableBlocksAndDeadlocks AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableConnections = 0;',              'SET @enableConnections = '              + CAST(@enableConnections AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableCPUUtilization = 0;',           'SET @enableCPUUtilization = '           + CAST(@enableCPUUtilization AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableDatabaseIO = 0;',               'SET @enableDatabaseIO = '               + CAST(@enableDatabaseIO AS nvarchar) + ';');
@@ -6346,7 +6421,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:IndexOptimize-004.sql modified: 2025.04.02 10.07.52
+-- File part:IndexOptimize-004.sql modified: 2025.05.04 17.09.45
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -6497,7 +6572,7 @@ BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.3'';
+		SET @version = ''2.5'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -6509,17 +6584,6 @@ BEGIN
 		SET @productStartPos = @productEndPos + 1;
 		SET @productEndPos = CHARINDEX(''.'', @productVersion, @productStartPos);
 		SET @productVersion3 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
-	END;
-
-	--
-	-- Variables used in view to control the statement output
-	--
-	BEGIN
-		DECLARE @maxCommandLineLength int;
-		DECLARE @maxErrorMessageLineLength int;
-
-		SET @maxCommandLineLength = 75;
-		SET @maxErrorMessageLineLength = 75;
 	END;
 
 	--
@@ -6675,9 +6739,9 @@ BEGIN
 					,cl.StartTime
 					,cl.EndTime
 					,COALESCE(NULLIF(DATEDIFF(SECOND, cl.StartTime, cl.EndTime), 0), 1) AS Duration		-- Duration of 0 sec. will always be 1 sec.
-					,(dbo.fhsmFNSplitLines(cl.Command, '' + CAST(@maxCommandLineLength AS nvarchar) + '')) AS Command
+					,cl.Command
 					,cl.ErrorNumber
-					,(dbo.fhsmFNSplitLines(cl.ErrorMessage, '' + CAST(@maxErrorMessageLineLength AS nvarchar) + '')) AS ErrorMessage
+					,cl.ErrorMessage
 					,CAST(cl.StartTime AS date) AS Date
 					,(DATEPART(HOUR, cl.StartTime) * 60 * 60) + (DATEPART(MINUTE, cl.StartTime) * 60) + (DATEPART(SECOND, cl.StartTime)) AS TimeKey
 					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(cl.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
@@ -6958,12 +7022,14 @@ BEGIN
 END;
 
 ';
+SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableBackupStatus = 0;',             'SET @enableBackupStatus = '             + CAST(@enableBackupStatus AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableBlocksAndDeadlocks = 0;',       'SET @enableBlocksAndDeadlocks = '       + CAST(@enableBlocksAndDeadlocks AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableConnections = 0;',              'SET @enableConnections = '              + CAST(@enableConnections AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableCPUUtilization = 0;',           'SET @enableCPUUtilization = '           + CAST(@enableCPUUtilization AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableDatabaseIO = 0;',               'SET @enableDatabaseIO = '               + CAST(@enableDatabaseIO AS nvarchar) + ';');
@@ -8225,12 +8291,14 @@ ELSE BEGIN
 END;
 
 ';
+SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableBackupStatus = 0;',             'SET @enableBackupStatus = '             + CAST(@enableBackupStatus AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableBlocksAndDeadlocks = 0;',       'SET @enableBlocksAndDeadlocks = '       + CAST(@enableBlocksAndDeadlocks AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableConnections = 0;',              'SET @enableConnections = '              + CAST(@enableConnections AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableCPUUtilization = 0;',           'SET @enableCPUUtilization = '           + CAST(@enableCPUUtilization AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableDatabaseIO = 0;',               'SET @enableDatabaseIO = '               + CAST(@enableDatabaseIO AS nvarchar) + ';');
@@ -8945,12 +9013,14 @@ ELSE BEGIN
 END;
 
 ';
+SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableBackupStatus = 0;',             'SET @enableBackupStatus = '             + CAST(@enableBackupStatus AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableBlocksAndDeadlocks = 0;',       'SET @enableBlocksAndDeadlocks = '       + CAST(@enableBlocksAndDeadlocks AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableConnections = 0;',              'SET @enableConnections = '              + CAST(@enableConnections AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableCPUUtilization = 0;',           'SET @enableCPUUtilization = '           + CAST(@enableCPUUtilization AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableDatabaseIO = 0;',               'SET @enableDatabaseIO = '               + CAST(@enableDatabaseIO AS nvarchar) + ';');
@@ -8976,7 +9046,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:AgentJobsPerformance.sql modified: 2025.04.09 14.27.17
+-- File part:AgentJobsPerformance.sql modified: 2025.04.16 15.21.07
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -9048,7 +9118,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.4'';
+		SET @version = ''2.5'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -9338,8 +9408,18 @@ ELSE BEGIN
 					,ajp.MinDurationSeconds
 					,ajp.MaxDurationSeconds
 					,(ajp.Hour * 60 * 60) AS TimeKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ajp.Name,      DEFAULT,         DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS AgentJobKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ajp.JobStatus, ajp.StepsStatus, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS AgentJobStatsusKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ajp.Name, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS AgentJobKey
+					,CAST(
+						CASE
+							WHEN (ajp.JobStatus = 1) AND (ajp.StepsStatus = 0)	THEN 1	-- Ended with errors
+							WHEN (ajp.JobStatus = 1)							THEN 0	-- Succeeded
+							WHEN (ajp.JobStatus = 0)							THEN 2	-- Failed
+							WHEN (ajp.JobStatus = 2)							THEN 3	-- Retry
+							WHEN (ajp.JobStatus = 3)							THEN 4	-- Canceled
+							WHEN (ajp.JobStatus = 4)							THEN 5	-- In progress
+							WHEN (ajp.JobStatus = -1)							THEN 99	-- Missing data
+						END
+					AS bigint) AS AgentJobStatsusKey
 				FROM dbo.fhsmAgentJobsPerformance AS ajp;
 			'';
 			EXEC(@stmt);
@@ -9372,6 +9452,14 @@ ELSE BEGIN
 					,CAST(ajpe.StartDateTime AS date) AS Date
 					,(DATEPART(HOUR, ajpe.StartDateTime) * 60 * 60) + (DATEPART(MINUTE, ajpe.StartDateTime) * 60) + (DATEPART(SECOND, ajpe.StartDateTime)) AS TimeKey
 					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ajpe.Name, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS AgentJobKey
+					,CAST(
+						CASE
+							WHEN (ajpe.RunStatus = 0)	THEN 2	-- Failed
+							WHEN (ajpe.RunStatus = 2)	THEN 3	-- Retry
+							WHEN (ajpe.RunStatus = 3)	THEN 4	-- Canceled
+							WHEN (ajpe.RunStatus = 4)	THEN 5	-- In progress
+						END
+					AS bigint) AS AgentJobStatsusKey
 				FROM dbo.fhsmAgentJobsPerformanceLatestError AS ajpe
 			'';
 			EXEC(@stmt);
@@ -9395,17 +9483,17 @@ ELSE BEGIN
 				SELECT
 					s.Status
 					,s.SortOrder
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(s.JobStatus, s.StepsStatus, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS AgentJobStatsusKey
+					,CAST(s.StatusVal AS bigint) AS AgentJobStatsusKey
 				FROM (
 					VALUES
-						( 1,  1,  ''''Succeeded'''',         0),
-						( 1,  0,  ''''Ended with errors'''', 1),
-						( 0,  0,  ''''Failed'''',            2),
-						( 2,  2,  ''''Retry'''',             3),
-						( 3,  3,  ''''Canceled'''',          4),
-						( 4,  4,  ''''In progress'''',       5),
-						(-1, -1, ''''Missing data'''',       6)
-				) AS s(JobStatus, StepsStatus, Status, SortOrder);
+						( 0, ''''Succeeded'''',         0),
+						( 1, ''''Ended with errors'''', 1),
+						( 2, ''''Failed'''',            2),
+						( 3, ''''Retry'''',             3),
+						( 4, ''''Canceled'''',          4),
+						( 5, ''''In progress'''',       5),
+						(99, ''''Missing data'''',      6)
+				) AS s(StatusVal, Status, SortOrder);
 			'';
 			EXEC(@stmt);
 		END;
@@ -10058,12 +10146,14 @@ ELSE BEGIN
 END;
 
 ';
+SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableBackupStatus = 0;',             'SET @enableBackupStatus = '             + CAST(@enableBackupStatus AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableBlocksAndDeadlocks = 0;',       'SET @enableBlocksAndDeadlocks = '       + CAST(@enableBlocksAndDeadlocks AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableConnections = 0;',              'SET @enableConnections = '              + CAST(@enableConnections AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableCPUUtilization = 0;',           'SET @enableCPUUtilization = '           + CAST(@enableCPUUtilization AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableDatabaseIO = 0;',               'SET @enableDatabaseIO = '               + CAST(@enableDatabaseIO AS nvarchar) + ';');
@@ -10089,7 +10179,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:AgeOfStatistics.sql modified: 2025.03.06 23.21.20
+-- File part:AgeOfStatistics.sql modified: 2025.04.17 17.16.13
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -10161,7 +10251,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.1'';
+		SET @version = ''2.5'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -10493,6 +10583,7 @@ ELSE BEGIN
 
 					DECLARE @database nvarchar(128);
 					DECLARE @databases nvarchar(max);
+					DECLARE @errorMsg nvarchar(max);
 					DECLARE @message nvarchar(max);
 					DECLARE @now datetime;
 					DECLARE @nowUTC datetime;
@@ -10666,10 +10757,18 @@ ELSE BEGIN
 			SET @stmt += ''
 									WHERE (o.type IN (''''''''U'''''''', ''''''''V'''''''')) AND (i.type <> 0);
 								'''';
-								EXEC sp_executesql
-									@stmt
-									,N''''@nowUTC datetime, @now datetime''''
-									,@nowUTC = @nowUTC, @now = @now;
+								BEGIN TRY
+									EXEC sp_executesql
+										@stmt
+										,N''''@nowUTC datetime, @now datetime''''
+										,@nowUTC = @nowUTC, @now = @now;
+								END TRY
+								BEGIN CATCH
+									SET @errorMsg = ERROR_MESSAGE();
+
+									SET @message = ''''Database '''''''''''' + @database + '''''''''''' failed due to - '''' + @errorMsg;
+									EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''''Warning'''', @message = @message;
+								END CATCH;
 
 								IF EXISTS(
 									SELECT *
@@ -10706,10 +10805,18 @@ ELSE BEGIN
 										CROSS APPLY sys.dm_db_incremental_stats_properties(o.object_id, i.index_id) AS ddsp
 										WHERE (o.type = ''''''''U'''''''') AND (i.type <> 0);
 									'''';
-									EXEC sp_executesql
-										@stmt
-										,N''''@nowUTC datetime, @now datetime''''
-										,@nowUTC = @nowUTC, @now = @now;
+									BEGIN TRY
+										EXEC sp_executesql
+											@stmt
+											,N''''@nowUTC datetime, @now datetime''''
+											,@nowUTC = @nowUTC, @now = @now;
+									END TRY
+									BEGIN CATCH
+										SET @errorMsg = ERROR_MESSAGE();
+
+										SET @message = ''''Database '''''''''''' + @database + '''''''''''' failed due to - '''' + @errorMsg;
+										EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''''Warning'''', @message = @message;
+									END CATCH;
 								END;
 							END
 							ELSE BEGIN
@@ -10925,12 +11032,14 @@ ELSE BEGIN
 END;
 
 ';
+SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableBackupStatus = 0;',             'SET @enableBackupStatus = '             + CAST(@enableBackupStatus AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableBlocksAndDeadlocks = 0;',       'SET @enableBlocksAndDeadlocks = '       + CAST(@enableBlocksAndDeadlocks AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableConnections = 0;',              'SET @enableConnections = '              + CAST(@enableConnections AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableCPUUtilization = 0;',           'SET @enableCPUUtilization = '           + CAST(@enableCPUUtilization AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableDatabaseIO = 0;',               'SET @enableDatabaseIO = '               + CAST(@enableDatabaseIO AS nvarchar) + ';');
@@ -11539,12 +11648,1002 @@ ELSE BEGIN
 END;
 
 ';
+SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableBackupStatus = 0;',             'SET @enableBackupStatus = '             + CAST(@enableBackupStatus AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableBlocksAndDeadlocks = 0;',       'SET @enableBlocksAndDeadlocks = '       + CAST(@enableBlocksAndDeadlocks AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableConnections = 0;',              'SET @enableConnections = '              + CAST(@enableConnections AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableCPUUtilization = 0;',           'SET @enableCPUUtilization = '           + CAST(@enableCPUUtilization AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableDatabaseIO = 0;',               'SET @enableDatabaseIO = '               + CAST(@enableDatabaseIO AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableDatabaseSize = 0;',             'SET @enableDatabaseSize = '             + CAST(@enableDatabaseSize AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableDatabaseState = 0;',            'SET @enableDatabaseState = '            + CAST(@enableDatabaseState AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableIndexOperational = 0;',         'SET @enableIndexOperational = '         + CAST(@enableIndexOperational AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableIndexPhysical = 0;',            'SET @enableIndexPhysical = '            + CAST(@enableIndexPhysical AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableIndexUsage = 0;',               'SET @enableIndexUsage = '               + CAST(@enableIndexUsage AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableInstanceState = 0;',            'SET @enableInstanceState = '            + CAST(@enableInstanceState AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableMissingIndexes = 0;',           'SET @enableMissingIndexes = '           + CAST(@enableMissingIndexes AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enablePartitionedIndexes = 0;',       'SET @enablePartitionedIndexes = '       + CAST(@enablePartitionedIndexes AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enablePerformanceStatistics = 0;',    'SET @enablePerformanceStatistics = '    + CAST(@enablePerformanceStatistics AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enablePlanCacheUsage = 0;',           'SET @enablePlanCacheUsage = '           + CAST(@enablePlanCacheUsage AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enablePlanGuides = 0;',               'SET @enablePlanGuides = '               + CAST(@enablePlanGuides AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableQueryStatistics = 0;',          'SET @enableQueryStatistics = '          + CAST(@enableQueryStatistics AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableTableSize = 0;',                'SET @enableTableSize = '                + CAST(@enableTableSize AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableTriggers = 0;',                 'SET @enableTriggers = '                 + CAST(@enableTriggers AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableWaitStatistics = 0;',           'SET @enableWaitStatistics = '           + CAST(@enableWaitStatistics AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableWhoIsActive = 0;',              'SET @enableWhoIsActive = '              + CAST(@enableWhoIsActive AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableIndexRebuild = 0;',             'SET @enableIndexRebuild = '             + CAST(@enableIndexRebuild AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableIndexReorganize = 0;',          'SET @enableIndexReorganize = '          + CAST(@enableIndexReorganize AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @enableUpdateAllStatistics = '      + CAST(@enableUpdateAllStatistics AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
+EXEC(@stmt);
+--
+-- File part:BlocksAndDeadlocks.sql modified: 2025.05.04 14.57.26
+--
+SET @stmt = '
+USE [' + @fhSQLMonitorDatabase + '];
+SET NOCOUNT ON;
+
+--
+-- Set service to be disabled by default
+--
+BEGIN
+	DECLARE @enableBlocksAndDeadlocks bit;
+
+	SET @enableBlocksAndDeadlocks = 0;
+END;
+
+--
+-- Specify where the event files are located
+--
+BEGIN
+	DECLARE @blocksAndDeadlocksFilePath nvarchar(260);
+
+	SET @blocksAndDeadlocksFilePath = NULL;
+END;
+
+--
+-- Print out start message
+--
+BEGIN
+	RAISERROR('''', 0, 1) WITH NOWAIT;
+	RAISERROR(''Installing BlocksAndDeadlocks'', 0, 1) WITH NOWAIT;
+END;
+
+--
+-- Declare variables
+--
+BEGIN
+	DECLARE @blockedProcessThreshold int;
+	DECLARE @blockedProcessThresholdChanges TABLE(
+		Action nvarchar(10),
+		DeletedKey nvarchar(128),
+		DeletedValue nvarchar(128),
+		InsertedKey nvarchar(128),
+		InsertedValue nvarchar(128)
+	);
+	DECLARE @edition nvarchar(128);
+	DECLARE @message nvarchar(max);
+	DECLARE @myUserName nvarchar(128);
+	DECLARE @nowUTC datetime;
+	DECLARE @nowUTCStr nvarchar(128);
+	DECLARE @objectName nvarchar(128);
+	DECLARE @objName nvarchar(128);
+	DECLARE @pbiSchema nvarchar(128);
+	DECLARE @productEndPos int;
+	DECLARE @productStartPos int;
+	DECLARE @productVersion nvarchar(128);
+	DECLARE @productVersion1 int;
+	DECLARE @productVersion2 int;
+	DECLARE @productVersion3 int;
+	DECLARE @returnValue int;
+	DECLARE @schName nvarchar(128);
+	DECLARE @stmt nvarchar(max);
+	DECLARE @tableCompressionStmt nvarchar(max);
+	DECLARE @version nvarchar(128);
+END;
+
+--
+-- Test if we are in a database with FHSM registered
+--
+BEGIN
+	SET @returnValue = 0;
+
+	IF OBJECT_ID(''dbo.fhsmFNIsValidInstallation'') IS NOT NULL
+	BEGIN
+		SET @returnValue = dbo.fhsmFNIsValidInstallation();
+	END;
+END;
+
+IF (@returnValue = 0)
+BEGIN
+	RAISERROR(''Can not install as it appears the database is not correct installed'', 0, 1) WITH NOWAIT;
+END
+ELSE BEGIN
+	--
+	-- Initialize variables
+	--
+	BEGIN
+		SET @myUserName = SUSER_NAME();
+		SET @nowUTC = SYSUTCDATETIME();
+		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
+		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
+		SET @version = ''2.5'';
+
+		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
+		SET @productStartPos = 1;
+		SET @productEndPos = CHARINDEX(''.'', @productVersion, @productStartPos);
+		SET @productVersion1 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+		SET @productStartPos = @productEndPos + 1;
+		SET @productEndPos = CHARINDEX(''.'', @productVersion, @productStartPos);
+		SET @productVersion2 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+		SET @productStartPos = @productEndPos + 1;
+		SET @productEndPos = CHARINDEX(''.'', @productVersion, @productStartPos);
+		SET @productVersion3 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+	END;
+
+	--
+	-- Check if SQL is 2012 or higher
+	--
+	IF (@productVersion1 < 11)
+	BEGIN
+		RAISERROR(''!!!'', 0, 1) WITH NOWAIT;
+		RAISERROR(''!!! Can not install BlocksAndDeadlocks on SQL versions lower than SQL2012'', 0, 1) WITH NOWAIT;
+		RAISERROR(''!!!'', 0, 1) WITH NOWAIT;
+
+		--
+		-- We have to install empty views in order to satisfy the Power BI report
+		--
+		BEGIN
+			--
+			-- Create fact view @pbiSchema.[Blocked process]
+			--
+			BEGIN
+				SET @stmt = ''
+					IF OBJECT_ID('''''' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Blocked process'') + '''''', ''''V'''') IS NULL
+					BEGIN
+						EXEC(''''CREATE VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Blocked process'') + '' AS SELECT ''''''''dummy'''''''' AS Txt'''');
+					END;
+				'';
+				EXEC(@stmt);
+
+				SET @stmt = ''
+					ALTER VIEW  '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Blocked process'') + ''
+					AS
+					SELECT
+						TOP (0)
+						CAST(NULL AS int) AS BlockedSPID
+						,CAST(NULL AS nvarchar(max)) AS BlockedStatement
+						,CAST(NULL AS int) AS BlockingSPID
+						,CAST(NULL AS nvarchar(max)) AS BlockingStatement
+						,CAST(NULL AS int) AS DataSet
+						,CAST(NULL AS bigint) AS SortOrder
+						,CAST(NULL AS datetime2(3)) AS EventTimestampUTC
+						,CAST(NULL AS date) AS Date
+						,CAST(NULL AS int) AS TimeKey
+						,CAST(NULL AS bigint) AS BlocksAndDeadlocksKey
+						,CAST(NULL AS bigint) AS DatabaseKey;
+				'';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Register extended properties on fact view @pbiSchema.[Blocked process]
+			--
+			BEGIN
+				SET @objectName = QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Blocked process'');
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+			END;
+
+			--
+			-- Create fact view @pbiSchema.[Deadlock]
+			--
+			BEGIN
+				SET @stmt = ''
+					IF OBJECT_ID('''''' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Deadlock'') + '''''', ''''V'''') IS NULL
+					BEGIN
+						EXEC(''''CREATE VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Deadlock'') + '' AS SELECT ''''''''dummy'''''''' AS Txt'''');
+					END;
+				'';
+				EXEC(@stmt);
+
+				SET @stmt = ''
+					ALTER VIEW  '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Deadlock'') + ''
+					AS
+					SELECT
+						TOP (0)
+						CAST(NULL AS int) AS SPID
+						,CAST(NULL AS nvarchar(max)) AS Statement
+						,CAST(NULL AS int) AS DataSet
+						,CAST(NULL AS bigint) AS SortOrder
+						,CAST(NULL AS datetime2(3)) AS EventTimestampUTC
+						,CAST(NULL AS date) AS Date
+						,CAST(NULL AS int) AS TimeKey
+						,CAST(NULL AS bigint) AS BlocksAndDeadlocksKey
+						,CAST(NULL AS bigint) AS DatabaseKey;
+				'';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Register extended properties on fact view @pbiSchema.[Deadlock]
+			--
+			BEGIN
+				SET @objectName = QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Deadlock'');
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+			END;
+
+			--
+			-- Create fact view @pbiSchema.[Blocks and deadlocks]
+			--
+			BEGIN
+				SET @stmt = ''
+					IF OBJECT_ID('''''' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Blocks and deadlocks'') + '''''', ''''V'''') IS NULL
+					BEGIN
+						EXEC(''''CREATE VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Blocks and deadlocks'') + '' AS SELECT ''''''''dummy'''''''' AS Txt'''');
+					END;
+				'';
+				EXEC(@stmt);
+
+				SET @stmt = ''
+					ALTER VIEW  '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Blocks and deadlocks'') + ''
+					AS
+					SELECT
+						TOP (0)
+						CAST(NULL AS nvarchar(max)) AS ClientApp
+						,CAST(NULL AS nvarchar(max)) AS HostName
+						,CAST(NULL AS nvarchar(max)) AS LoginName
+						,CAST(NULL AS bigint) AS BlocksAndDeadlocksKey;
+				'';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Register extended properties on fact view @pbiSchema.[Blocks and deadlocks]
+			--
+			BEGIN
+				SET @objectName = QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Blocks and deadlocks'');
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+			END;
+		END;
+	END
+	ELSE BEGIN
+		--
+		-- Check if SQL version allows to use data compression
+		--
+		BEGIN
+			SET @tableCompressionStmt = '''';
+
+			SET @edition = CAST(SERVERPROPERTY(''Edition'') AS nvarchar);
+
+			IF (@edition = ''SQL Azure'')
+				OR (SUBSTRING(@edition, 1, CHARINDEX('' '', @edition)) = ''Developer'')
+				OR (SUBSTRING(@edition, 1, CHARINDEX('' '', @edition)) = ''Enterprise'')
+				OR (@productVersion1 > 13)
+				OR ((@productVersion1 = 13) AND (@productVersion2 >= 1))
+				OR ((@productVersion1 = 13) AND (@productVersion2 = 0) AND (@productVersion3 >= 4001))
+			BEGIN
+				SET @tableCompressionStmt = '' WITH (DATA_COMPRESSION = PAGE)'';
+			END;
+		END;
+
+		--
+		-- Print message if Blocked process reporting threshold is not set and with valid value
+		--
+		BEGIN
+			SET @blockedProcessThreshold = (
+				SELECT CAST(c.value_in_use AS int)
+				FROM sys.configurations AS c
+				WHERE (c.configuration_id = 1569)
+			);
+
+			IF (@blockedProcessThreshold = 0)
+			BEGIN
+				RAISERROR(''!!!'', 0, 1) WITH NOWAIT;
+				RAISERROR(''!!! Blocked process reporting threshold is not set'', 0, 1) WITH NOWAIT;
+				RAISERROR(''!!!'', 0, 1) WITH NOWAIT;
+			END
+			ELSE IF (@blockedProcessThreshold < 5)
+			BEGIN
+				RAISERROR(''!!!'', 0, 1) WITH NOWAIT;
+				RAISERROR(''!!! Blocked process reporting threshold is set to lower than 5 seconds'', 0, 1) WITH NOWAIT;
+				RAISERROR(''!!!'', 0, 1) WITH NOWAIT;
+			END;
+
+			WITH
+			conf([Key], Value) AS(
+				SELECT
+					''BlockedProcessThreshold'' AS [Key]
+					,CAST(@blockedProcessThreshold AS nvarchar) AS Value
+			)
+			MERGE dbo.fhsmConfigurations AS tgt
+			USING conf AS src ON (src.[Key] = tgt.[Key] COLLATE SQL_Latin1_General_CP1_CI_AS)
+			WHEN MATCHED AND (tgt.Value <> src.Value)
+				THEN UPDATE
+					SET tgt.Value = src.Value
+			WHEN NOT MATCHED BY TARGET
+				THEN INSERT([Key], Value)
+				VALUES(src.[Key], src.Value)
+			OUTPUT
+		        $action,
+				deleted.[Key],
+				deleted.Value,
+				inserted.[Key],
+				inserted.Value
+			INTO @blockedProcessThresholdChanges;
+
+			SET @message = (
+				SELECT ''Blocked process reporting threshold is '''''' + src.InsertedValue + '''''''' + COALESCE('' - changed from '''''' + src.DeletedValue + '''''''', '''')
+				FROM @blockedProcessThresholdChanges AS src
+			);
+			IF (@message IS NOT NULL)
+			BEGIN
+				RAISERROR(@message, 0, 1) WITH NOWAIT;
+				EXEC dbo.fhsmSPLog @name = ''Blocks and deadlocks - installation'', @version = @version, @task = ''BlocksAndDeadlocks'', @type = ''Info'', @message = @message;
+			END;
+		END;
+
+		--
+		-- Create tables
+		--
+		BEGIN
+			--
+			-- Create XML schema collection if it not already exists
+			--
+			IF NOT EXISTS(
+				SELECT *
+				FROM sys.xml_schema_collections AS xsc
+				WHERE (xsc.schema_id = SCHEMA_ID(''dbo'')) AND (xsc.name = ''fhsmBlocksAndDeadlocksXMLSchemaCollection'')
+			)
+			BEGIN
+				RAISERROR(''Creating XML schema collection dbo.fhsmBlocksAndDeadlocksXMLSchemaCollection'', 0, 1) WITH NOWAIT;
+
+				SET @stmt = ''
+					CREATE XML SCHEMA COLLECTION dbo.fhsmBlocksAndDeadlocksXMLSchemaCollection
+					AS N''''
+					<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+						<xs:element name="event">
+							<xs:complexType>
+								<xs:sequence>
+									<xs:element name="data" maxOccurs="unbounded" minOccurs="0">
+										<xs:complexType>
+											<xs:sequence>
+												<xs:element name="value"/>
+												<xs:element type="xs:string" name="text" minOccurs="0"/>
+											</xs:sequence>
+											<xs:attribute type="xs:string" name="name" use="optional"/>
+										</xs:complexType>
+									</xs:element>
+									<xs:element name="action" maxOccurs="unbounded" minOccurs="0">
+										<xs:complexType>
+											<xs:sequence>
+												<xs:element type="xs:string" name="value"/>
+											</xs:sequence>
+											<xs:attribute type="xs:string" name="name" use="optional"/>
+											<xs:attribute type="xs:string" name="package" use="optional"/>
+										</xs:complexType>
+									</xs:element>
+								</xs:sequence>
+								<xs:attribute type="xs:string" name="name"/>
+								<xs:attribute type="xs:string" name="package"/>
+								<xs:attribute type="xs:dateTime" name="timestamp"/>
+							</xs:complexType>
+						</xs:element>
+					</xs:schema>'''';
+				'';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Create table dbo.fhsmBlocksAndDeadlocks if it not already exists
+			--
+			IF OBJECT_ID(''dbo.fhsmBlocksAndDeadlocks'', ''U'') IS NULL
+			BEGIN
+				RAISERROR(''Creating table dbo.fhsmBlocksAndDeadlocks'', 0, 1) WITH NOWAIT;
+
+				SET @stmt = ''
+					CREATE TABLE dbo.fhsmBlocksAndDeadlocks(
+						Id int identity(1,1) NOT NULL
+						,EventTimestampUTC datetime2(3) NOT NULL
+						,FileName nvarchar(260) NOT NULL
+						,FileOffset bigint NOT NULL
+						,EventData XML(dbo.fhsmBlocksAndDeadlocksXMLSchemaCollection) NOT NULL
+						,TimestampUTC datetime NOT NULL
+						,Timestamp datetime NOT NULL
+						,CONSTRAINT PK_fhsmBlocksAndDeadlocks PRIMARY KEY(Id)'' + @tableCompressionStmt + ''
+					);
+
+					CREATE NONCLUSTERED INDEX NC_fhsmBlocksAndDeadlocks_EventTimestampUTC ON dbo.fhsmBlocksAndDeadlocks(EventTimestampUTC)'' + @tableCompressionStmt + '';
+					CREATE NONCLUSTERED INDEX NC_fhsmBlocksAndDeadlocks_TimestampUTC ON dbo.fhsmBlocksAndDeadlocks(TimestampUTC)'' + @tableCompressionStmt + '';
+					CREATE NONCLUSTERED INDEX NC_fhsmBlocksAndDeadlocks_Timestamp ON dbo.fhsmBlocksAndDeadlocks(Timestamp)'' + @tableCompressionStmt + '';
+				'';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Register extended properties on the table dbo.fhsmBlocksAndDeadlocks
+			--
+			BEGIN
+				SET @objectName = ''dbo.fhsmBlocksAndDeadlocks'';
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+			END;
+		END;
+
+		--
+		-- Create functions
+		--
+
+		--
+		-- Create views
+		--
+		BEGIN
+			--
+			-- Create fact view @pbiSchema.[Blocked process]
+			--
+			BEGIN
+				SET @stmt = ''
+					IF OBJECT_ID('''''' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Blocked process'') + '''''', ''''V'''') IS NULL
+					BEGIN
+						EXEC(''''CREATE VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Blocked process'') + '' AS SELECT ''''''''dummy'''''''' AS Txt'''');
+					END;
+				'';
+				EXEC(@stmt);
+
+				SET @stmt = ''
+					ALTER VIEW  '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Blocked process'') + ''
+					AS
+					SELECT
+						a.BlockedSPID
+						,a.BlockedStatement
+						,a.BlockingSPID
+						,a.BlockingStatement
+						,a.Id AS DataSet
+						,ROW_NUMBER() OVER(ORDER BY a.EventTimestampUTC, a.Id) AS SortOrder
+						,a.EventTimestampUTC
+						,CAST(a.EventTimestampUTC AS date) AS Date
+						,(DATEPART(HOUR, a.EventTimestampUTC) * 60 * 60) + (DATEPART(MINUTE, a.EventTimestampUTC) * 60) + (DATEPART(SECOND, a.EventTimestampUTC)) AS TimeKey
+						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(a.ClientApp, a.HostName, a.LoginName, DEFAULT, DEFAULT, DEFAULT) AS k) AS BlocksAndDeadlocksKey
+						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(a.CurrentDBName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
+					FROM (
+						SELECT
+							f.EventData.query(''''(event/data[@name="blocked_process"]/value/blocked-process-report/blocked-process/process)[1]'''').value(''''(process/@hostname)[1]'''', ''''nvarchar(max)'''') AS HostName
+							,f.EventData.query(''''(event/data[@name="blocked_process"]/value/blocked-process-report/blocked-process/process)[1]'''').value(''''(process/@clientapp)[1]'''', ''''nvarchar(max)'''') AS ClientApp
+							,f.EventData.query(''''(event/data[@name="blocked_process"]/value/blocked-process-report/blocked-process/process)[1]'''').value(''''(process/@loginname)[1]'''', ''''nvarchar(max)'''') AS LoginName
+							,f.EventData.query(''''(event/data[@name="blocked_process"]/value/blocked-process-report/blocked-process/process)[1]'''').value(''''(process/@currentdbname)[1]'''', ''''nvarchar(max)'''') AS CurrentDBName
+							,CAST(f.EventData.query(''''(event/data[@name="blocked_process"]/value/blocked-process-report/blocked-process/process)[1]'''').value(''''(process/@spid)[1]'''', ''''nvarchar(max)'''') AS int) AS BlockedSPID
+							,f.EventData.query(''''(event/data[@name="blocked_process"]/value/blocked-process-report/blocked-process/process/inputbuf)[1]'''').value(''''(inputbuf/text())[1]'''', ''''nvarchar(max)'''') AS BlockedStatement
+							,CAST(f.EventData.query(''''(event/data[@name="blocked_process"]/value/blocked-process-report/blocking-process/process)[1]'''').value(''''(process/@spid)[1]'''', ''''nvarchar(max)'''') AS int) AS BlockingSPID
+							,f.EventData.query(''''(event/data[@name="blocked_process"]/value/blocked-process-report/blocking-process/process/inputbuf)[1]'''').value(''''(inputbuf/text())[1]'''', ''''nvarchar(max)'''') AS BlockingStatement
+							,CAST(f.EventData AS nvarchar(max)) AS EventDataText
+							,f.FileName
+							,f.FileOffset
+							,f.Id
+							,f.EventTimestampUTC
+						FROM dbo.fhsmBlocksAndDeadlocks AS f
+						WHERE (f.EventData.value(''''(event/@name)[1]'''', ''''nvarchar(max)'''') = ''''blocked_process_report'''')
+					) AS a
+					WHERE (a.BlockedSPID <> a.BlockingSPID);
+				'';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Register extended properties on fact view @pbiSchema.[Blocked process]
+			--
+			BEGIN
+				SET @objectName = QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Blocked process'');
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+			END;
+
+			--
+			-- Create fact view @pbiSchema.[Deadlock]
+			--
+			BEGIN
+				SET @stmt = ''
+					IF OBJECT_ID('''''' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Deadlock'') + '''''', ''''V'''') IS NULL
+					BEGIN
+						EXEC(''''CREATE VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Deadlock'') + '' AS SELECT ''''''''dummy'''''''' AS Txt'''');
+					END;
+				'';
+				EXEC(@stmt);
+
+				SET @stmt = ''
+					ALTER VIEW  '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Deadlock'') + ''
+					AS
+					SELECT
+						a.SPID
+						,a.Statement
+						,a.Id AS DataSet
+						,ROW_NUMBER() OVER(ORDER BY a.EventTimestampUTC, a.Id, a.SPID DESC) AS SortOrder
+						,a.EventTimestampUTC
+						,CAST(a.EventTimestampUTC AS date) AS Date
+						,(DATEPART(HOUR, a.EventTimestampUTC) * 60 * 60) + (DATEPART(MINUTE, a.EventTimestampUTC) * 60) + (DATEPART(SECOND, a.EventTimestampUTC)) AS TimeKey
+						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(a.ClientApp, a.HostName, a.LoginName, DEFAULT, DEFAULT, DEFAULT) AS k) AS BlocksAndDeadlocksKey
+						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(a.CurrentDBName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
+					FROM (
+						SELECT
+							t.c.query(''''(.)[1]'''').value(''''(process/@hostname)[1]'''', ''''nvarchar(max)'''') AS HostName
+							,t.c.query(''''(.)[1]'''').value(''''(process/@clientapp)[1]'''', ''''nvarchar(max)'''') AS ClientApp
+							,t.c.query(''''(.)[1]'''').value(''''(process/@loginname)[1]'''', ''''nvarchar(max)'''') AS LoginName
+							,t.c.query(''''(.)[1]'''').value(''''(process/@currentdbname)[1]'''', ''''nvarchar(max)'''') AS CurrentDBName
+							,CAST(t.c.query(''''(.)[1]'''').value(''''(process/@spid)[1]'''', ''''nvarchar(max)'''') AS int) AS SPID
+							,t.c.query(''''(inputbuf)[1]'''').value(''''(inputbuf/text())[1]'''', ''''nvarchar(max)'''') AS Statement
+							,CAST(f.EventData AS nvarchar(max)) AS EventDataText
+							,f.FileName
+							,f.FileOffset
+							,f.Id
+							,f.EventTimestampUTC
+						FROM (
+							SELECT
+								dl.EventTimestampUTC
+								,dl.FileName
+								,dl.FileOffset
+								,dl.EventData
+								,dl.Id
+							FROM dbo.fhsmBlocksAndDeadlocks AS dl
+							WHERE (dl.EventData.value(''''(event/@name)[1]'''', ''''nvarchar(max)'''') = ''''xml_deadlock_report'''')
+						) AS f
+						CROSS APPLY f.EventData.nodes(''''/event/data/value/deadlock/process-list/process'''') AS t(c)
+					) AS a;
+				'';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Register extended properties on fact view @pbiSchema.[Deadlock]
+			--
+			BEGIN
+				SET @objectName = QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Deadlock'');
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+			END;
+
+			--
+			-- Create dimension view @pbiSchema.[Blocks and deadlocks]
+			--
+			BEGIN
+				SET @stmt = ''
+					IF OBJECT_ID('''''' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Blocks and deadlocks'') + '''''', ''''V'''') IS NULL
+					BEGIN
+						EXEC(''''CREATE VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Blocks and deadlocks'') + '' AS SELECT ''''''''dummy'''''''' AS Txt'''');
+					END;
+				'';
+				EXEC(@stmt);
+
+				SET @stmt = ''
+					ALTER VIEW  '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Blocks and deadlocks'') + ''
+					AS
+					SELECT
+						a.ClientApp
+						,a.HostName
+						,a.LoginName
+						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(a.ClientApp, a.HostName, a.LoginName, DEFAULT, DEFAULT, DEFAULT) AS k) AS BlocksAndDeadlocksKey
+					FROM (
+						SELECT
+							DISTINCT
+							a.HostName
+							,a.ClientApp
+							,a.LoginName
+						FROM (
+							SELECT
+								f.EventData.query(''''(event/data[@name="blocked_process"]/value/blocked-process-report/blocked-process/process)[1]'''').value(''''(process/@hostname)[1]'''', ''''nvarchar(max)'''') AS HostName
+								,f.EventData.query(''''(event/data[@name="blocked_process"]/value/blocked-process-report/blocked-process/process)[1]'''').value(''''(process/@clientapp)[1]'''', ''''nvarchar(max)'''') AS ClientApp
+								,f.EventData.query(''''(event/data[@name="blocked_process"]/value/blocked-process-report/blocked-process/process)[1]'''').value(''''(process/@loginname)[1]'''', ''''nvarchar(max)'''') AS LoginName
+								,CAST(f.EventData.query(''''(event/data[@name="blocked_process"]/value/blocked-process-report/blocked-process/process)[1]'''').value(''''(process/@spid)[1]'''', ''''nvarchar(max)'''') AS int) AS BlockedSPID
+								,CAST(f.EventData.query(''''(event/data[@name="blocked_process"]/value/blocked-process-report/blocking-process/process)[1]'''').value(''''(process/@spid)[1]'''', ''''nvarchar(max)'''') AS int) AS BlockingSPID
+							FROM dbo.fhsmBlocksAndDeadlocks AS f
+							WHERE (f.EventData.value(''''(event/@name)[1]'''', ''''nvarchar(max)'''') = ''''blocked_process_report'''')
+						) AS a
+						WHERE (a.BlockedSPID <> a.BlockingSPID)
+
+						UNION
+
+						SELECT
+							DISTINCT
+							t.c.query(''''(.)[1]'''').value(''''(process/@hostname)[1]'''', ''''nvarchar(max)'''') AS HostName
+							,t.c.query(''''(.)[1]'''').value(''''(process/@clientapp)[1]'''', ''''nvarchar(max)'''') AS ClientApp
+							,t.c.query(''''(.)[1]'''').value(''''(process/@loginname)[1]'''', ''''nvarchar(max)'''') AS LoginName
+						FROM (
+							SELECT dl.EventData
+							FROM dbo.fhsmBlocksAndDeadlocks AS dl
+							WHERE (dl.EventData.value(''''(event/@name)[1]'''', ''''nvarchar(max)'''') = ''''xml_deadlock_report'''')
+						) AS f
+						CROSS APPLY f.EventData.nodes(''''/event/data/value/deadlock/process-list/process'''') AS t(c)
+					) AS a;
+				'';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Register extended properties on dimension view @pbiSchema.[Blocks and deadlocks]
+			--
+			BEGIN
+				SET @objectName = QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Blocks and deadlocks'');
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+			END;
+		END;
+
+		--
+		-- Create stored procedures
+		--
+		BEGIN
+			--
+			-- Create stored procedure dbo.fhsmSPBlocksAndDeadlocks
+			--
+			BEGIN
+				SET @stmt = ''
+					IF OBJECT_ID(''''dbo.fhsmSPBlocksAndDeadlocks'''', ''''P'''') IS NULL
+					BEGIN
+						EXEC(''''CREATE PROC dbo.fhsmSPBlocksAndDeadlocks AS SELECT ''''''''dummy'''''''' AS Txt'''');
+					END;
+				'';
+				EXEC(@stmt);
+
+				SET @stmt = ''
+					ALTER PROC dbo.fhsmSPBlocksAndDeadlocks (
+						@name nvarchar(128)
+						,@version nvarchar(128) OUTPUT
+					)
+					AS
+					BEGIN
+						SET NOCOUNT ON;
+
+						DECLARE @blockedProcessThreshold int;
+						DECLARE @blockedProcessThresholdChanges TABLE(
+							Action nvarchar(10),
+							DeletedKey nvarchar(128),
+							DeletedValue nvarchar(128),
+							InsertedKey nvarchar(128),
+							InsertedValue nvarchar(128)
+						);
+						DECLARE @errorMsg nvarchar(max);
+						DECLARE @fileName nvarchar(260);
+						DECLARE @fileOffset bigint;
+						DECLARE @filePath nvarchar(260);
+						DECLARE @filePathEvent nvarchar(260);
+						DECLARE @message nvarchar(max);
+						DECLARE @now datetime;
+						DECLARE @nowUTC datetime;
+						DECLARE @parameters nvarchar(max);
+						DECLARE @parametersTable TABLE([Key] nvarchar(128) NOT NULL, Value nvarchar(128) NULL);
+						DECLARE @runningFilePath nvarchar(260);
+						DECLARE @sessionName nvarchar(128);
+						DECLARE @stmt nvarchar(max);
+						DECLARE @testFileName nvarchar(260);
+						DECLARE @thisTask nvarchar(128);
+
+						SET @thisTask = OBJECT_NAME(@@PROCID);
+						SET @version = '''''' + @version + '''''';
+
+						--
+						-- Get the parameters for the command
+						--
+						BEGIN
+							SET @parameters = dbo.fhsmFNGetTaskParameter(@thisTask, @name);
+
+							INSERT INTO @parametersTable([Key], Value)
+							SELECT
+								(SELECT s.Txt FROM dbo.fhsmFNSplitString(p.Txt, ''''='''') AS s WHERE (s.Part = 1)) AS [Key]
+								,(SELECT s.Txt FROM dbo.fhsmFNSplitString(p.Txt, ''''='''') AS s WHERE (s.Part = 2)) AS Value
+							FROM dbo.fhsmFNSplitString(@parameters, '''';'''') AS p;
+
+							SET @filePath = (SELECT pt.Value FROM @parametersTable AS pt WHERE (pt.[Key] = ''''@FilePath''''));
+							SET @filePath = NULLIF(REPLACE(@filePath, '''''''''''''''', ''''''''), '''''''');
+						END;
+
+						--
+						-- Initialize variables
+						--
+						BEGIN
+							SET @sessionName = ''''FHSMBlocksAndDeadlocks'''';
+							SET @filePathEvent = COALESCE(@filePath + ''''\'''', '''''''') + @sessionName + ''''.xel'''';
+							SET @filePath = REPLACE(@filePathEvent, ''''.xel'''', ''''*.xel'''');
+						END;
+				'';
+				SET @stmt += ''
+						--
+						-- Register configuration changes
+						--
+						BEGIN
+							SET @blockedProcessThreshold = (
+								SELECT CAST(c.value_in_use AS int)
+								FROM sys.configurations AS c
+								WHERE (c.configuration_id = 1569)
+							);
+
+							WITH
+							conf([Key], Value) AS(
+								SELECT
+									''''BlockedProcessThreshold'''' AS [Key]
+									,CAST(@blockedProcessThreshold AS nvarchar) AS Value
+							)
+							MERGE dbo.fhsmConfigurations AS tgt
+							USING conf AS src ON (src.[Key] = tgt.[Key] COLLATE SQL_Latin1_General_CP1_CI_AS)
+							WHEN MATCHED AND (tgt.Value <> src.Value)
+								THEN UPDATE
+									SET tgt.Value = src.Value
+							WHEN NOT MATCHED BY TARGET
+								THEN INSERT([Key], Value)
+								VALUES(src.[Key], src.Value)
+							OUTPUT
+								$action,
+								deleted.[Key],
+								deleted.Value,
+								inserted.[Key],
+								inserted.Value
+							INTO @blockedProcessThresholdChanges;
+
+							SET @message = (
+								SELECT ''''Blocked process reporting threshold is '''''''''''' + src.InsertedValue + '''''''''''''''' + COALESCE('''' - changed from '''''''''''' + src.DeletedValue + '''''''''''''''', '''''''')
+								FROM @blockedProcessThresholdChanges AS src
+							);
+							IF (@message IS NOT NULL)
+							BEGIN
+								EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''''Info'''', @message = @message;
+							END;
+						END;
+				'';
+				SET @stmt += ''
+						--
+						-- Setup or change event session if @filePath is not configured or the same
+						--
+						BEGIN
+							SET @runningFilePath = (
+								SELECT CAST(sesf.value AS nvarchar(260))
+								FROM sys.server_event_sessions AS ses
+								INNER JOIN sys.server_event_session_fields AS sesf ON (sesf.event_session_id = ses.event_session_id)
+								WHERE (ses.name = @sessionName) AND (sesf.name = ''''FILENAME'''')
+							);
+
+							IF (@runningFilePath <> @filePathEvent) OR (@runningFilePath IS NULL)
+							BEGIN
+								IF EXISTS(
+									SELECT *
+									FROM sys.server_event_sessions AS ses
+									WHERE (ses.name = @sessionName)
+								)
+								BEGIN
+									SET @stmt = ''''DROP EVENT SESSION '''' + QUOTENAME(@sessionName) + '''' ON SERVER;'''';
+									EXEC(@stmt);
+								END;
+
+								SET @stmt = ''''
+									CREATE EVENT SESSION '''' + QUOTENAME(@sessionName) + '''' ON SERVER
+									ADD EVENT sqlserver.blocked_process_report(
+										ACTION(
+											sqlserver.client_app_name,
+											sqlserver.client_hostname,
+											sqlserver.database_name
+										)
+									),
+									ADD EVENT sqlserver.xml_deadlock_report(
+										ACTION(
+											sqlserver.client_app_name,
+											sqlserver.client_hostname,
+											sqlserver.database_name
+										)
+									)
+									ADD TARGET package0.asynchronous_file_target(
+										SET
+										filename = N''''''''<FILENAME>'''''''',
+										max_file_size = (10),
+										max_rollover_files = 2
+									)
+									WITH (
+										EVENT_RETENTION_MODE = ALLOW_SINGLE_EVENT_LOSS,
+										MAX_DISPATCH_LATENCY = 15 SECONDS,
+										STARTUP_STATE = ON
+									);
+								'''';
+
+								SET @stmt = REPLACE(@stmt, ''''<FILENAME>'''', @filePathEvent);
+								EXEC(@stmt);
+
+								SET @stmt = ''''ALTER EVENT SESSION '''' + QUOTENAME(@sessionName) + '''' ON SERVER STATE = START;'''';
+								EXEC(@stmt);
+							END;
+						END;
+				'';
+				SET @stmt += ''
+						--
+						-- Get latest file name and offset
+						--
+						BEGIN
+							SELECT TOP (1)
+								@fileName = f.FileName
+								,@fileOffset = f.FileOffset
+							FROM dbo.fhsmBlocksAndDeadlocks AS f
+							ORDER BY f.Id DESC;
+
+							BEGIN TRY
+								SET @testFileName = (
+									SELECT TOP (1) f.file_name
+									FROM sys.fn_xe_file_target_read_file(@filePath, NULL, @fileName, @fileOffset) AS f
+								);
+							END TRY
+							BEGIN CATCH
+								SET @fileName = NULL;
+								SET @fileOffset = NULL;
+							END CATCH;
+						END;
+				'';
+				SET @stmt += ''
+						--
+						-- Collect data
+						--
+						BEGIN
+							SELECT
+								@now = SYSDATETIME()
+								,@nowUTC = SYSUTCDATETIME();
+
+							BEGIN TRY
+								INSERT INTO dbo.fhsmBlocksAndDeadlocks(EventTimestampUTC, FileName, FileOffset, EventData, TimestampUTC, Timestamp)
+								SELECT a.EventTimestampUTC, a.FileName, a.FileOffset, a.EventData, a.TimestampUTC, a.Timestamp
+								FROM (
+									SELECT
+										'' + CASE WHEN (@productVersion1 <= 13) THEN ''@nowUTC'' ELSE ''f.timestamp_utc'' END + '' AS EventTimestampUTC
+										,f.file_name AS FileName
+										,f.file_offset AS FileOffset
+										,CAST(f.event_data AS varchar(max)) AS EventData
+										,@nowUTC AS TimestampUTC
+										,@now AS Timestamp
+									FROM sys.fn_xe_file_target_read_file(@filePath, NULL, @fileName, @fileOffset) AS f
+								) AS a
+								WHERE NOT EXISTS(
+									SELECT *
+									FROM dbo.fhsmBlocksAndDeadlocks AS t
+									WHERE (t.EventTimestampUTC = a.EventTimestampUTC)
+								)
+								ORDER BY
+									'' + CASE WHEN (@productVersion1 <= 13) THEN '''' ELSE ''a.EventTimestampUTC,'' END + ''
+									a.FileName,
+									a.FileOffset;
+							END TRY
+							BEGIN CATCH
+								SET @errorMsg = ERROR_MESSAGE();
+
+								SET @message = ''''Failed due to - '''' + @errorMsg;
+								EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''''Warning'''', @message = @message;
+							END CATCH;
+						END;
+
+						RETURN 0;
+					END;
+				'';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Register extended properties on the stored procedure dbo.fhsmSPBlocksAndDeadlocks
+			--
+			BEGIN
+				SET @objectName = ''dbo.fhsmSPBlocksAndDeadlocks'';
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+			END;
+		END;
+
+		--
+		-- Register retention
+		--
+		BEGIN
+			WITH
+			retention(Enabled, TableName, Sequence, TimeColumn, IsUtc, Days, Filter) AS(
+				SELECT
+					1
+					,''dbo.fhsmBlocksAndDeadlocks''
+					,1
+					,''TimestampUTC''
+					,1
+					,7
+					,NULL
+			)
+			MERGE dbo.fhsmRetentions AS tgt
+			USING retention AS src ON (src.TableName = tgt.TableName) AND (src.Sequence = tgt.Sequence)
+			WHEN NOT MATCHED BY TARGET
+				THEN INSERT(Enabled, TableName, Sequence, TimeColumn, IsUtc, Days, Filter)
+				VALUES(src.Enabled, src.TableName, src.Sequence, src.TimeColumn, src.IsUtc, src.Days, src.Filter);
+		END;
+
+		--
+		-- Register schedules
+		--
+		BEGIN
+			WITH
+			schedules(Enabled, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters) AS(
+				SELECT
+					@enableBlocksAndDeadlocks
+					,''Blocks and deadlocks''
+					,PARSENAME(''dbo.fhsmSPBlocksAndDeadlocks'', 1)
+					,5 * 60
+					,CAST(''1900-1-1T00:00:00.0000'' AS datetime2(0))
+					,CAST(''1900-1-1T23:59:59.0000'' AS datetime2(0))
+					,1, 1, 1, 1, 1, 1, 1
+					,''@FilePath = '''''' + COALESCE(@blocksAndDeadlocksFilePath, '''') + ''''''''
+			)
+			MERGE dbo.fhsmSchedules AS tgt
+			USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
+			WHEN NOT MATCHED BY TARGET
+				THEN INSERT(Enabled, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters)
+				VALUES(src.Enabled, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameters);
+		END;
+
+		--
+		-- Register dimensions
+		--
+
+		--
+		-- Update dimensions based upon the fact tables
+		--
+	END;
+END;
+
+';
+SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');
+SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
+
+SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableBackupStatus = 0;',             'SET @enableBackupStatus = '             + CAST(@enableBackupStatus AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableBlocksAndDeadlocks = 0;',       'SET @enableBlocksAndDeadlocks = '       + CAST(@enableBlocksAndDeadlocks AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableConnections = 0;',              'SET @enableConnections = '              + CAST(@enableConnections AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableCPUUtilization = 0;',           'SET @enableCPUUtilization = '           + CAST(@enableCPUUtilization AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableDatabaseIO = 0;',               'SET @enableDatabaseIO = '               + CAST(@enableDatabaseIO AS nvarchar) + ';');
@@ -12024,12 +13123,14 @@ ELSE BEGIN
 END;
 
 ';
+SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableBackupStatus = 0;',             'SET @enableBackupStatus = '             + CAST(@enableBackupStatus AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableBlocksAndDeadlocks = 0;',       'SET @enableBlocksAndDeadlocks = '       + CAST(@enableBlocksAndDeadlocks AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableConnections = 0;',              'SET @enableConnections = '              + CAST(@enableConnections AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableCPUUtilization = 0;',           'SET @enableCPUUtilization = '           + CAST(@enableCPUUtilization AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableDatabaseIO = 0;',               'SET @enableDatabaseIO = '               + CAST(@enableDatabaseIO AS nvarchar) + ';');
@@ -12649,12 +13750,14 @@ ELSE BEGIN
 END;
 
 ';
+SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableBackupStatus = 0;',             'SET @enableBackupStatus = '             + CAST(@enableBackupStatus AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableBlocksAndDeadlocks = 0;',       'SET @enableBlocksAndDeadlocks = '       + CAST(@enableBlocksAndDeadlocks AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableConnections = 0;',              'SET @enableConnections = '              + CAST(@enableConnections AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableCPUUtilization = 0;',           'SET @enableCPUUtilization = '           + CAST(@enableCPUUtilization AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableDatabaseIO = 0;',               'SET @enableDatabaseIO = '               + CAST(@enableDatabaseIO AS nvarchar) + ';');
@@ -12680,7 +13783,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:DatabaseIO.sql modified: 2025.03.06 23.23.15
+-- File part:DatabaseIO.sql modified: 2025.04.17 16.42.49
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -12752,7 +13855,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.1'';
+		SET @version = ''2.5'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -13113,6 +14216,7 @@ ELSE BEGIN
 
 					DECLARE @database nvarchar(128);
 					DECLARE @databases nvarchar(max);
+					DECLARE @errorMsg nvarchar(max);
 					DECLARE @ioStallQueuedReadMSStmt nvarchar(max);
 					DECLARE @ioStallQueuedWriteMSStmt nvarchar(max);
 					DECLARE @message nvarchar(max);
@@ -13249,18 +14353,26 @@ ELSE BEGIN
 									FROM sys.dm_io_virtual_file_stats(DB_ID(), NULL) AS divfs
 									INNER JOIN sys.database_files AS df WITH (NOLOCK) ON (divfs.file_id = df.file_id);
 								'''';
-								INSERT INTO dbo.fhsmDatabaseIO(
-									DatabaseName, LogicalName, Type
-									,SampleMS, IOStall
-									,NumOfReads, NumOfBytesRead, IOStallReadMS, IOStallQueuedReadMS
-									,NumOfWrites, NumOfBytesWritten, IOStallWriteMS, IOStallQueuedWriteMS
-									,SizeOnDiskBytes
-									,TimestampUTC, Timestamp
-								)
-								EXEC sp_executesql
-									@stmt
-									,N''''@now datetime, @nowUTC datetime''''
-									,@now = @now, @nowUTC = @nowUTC;
+								BEGIN TRY
+									INSERT INTO dbo.fhsmDatabaseIO(
+										DatabaseName, LogicalName, Type
+										,SampleMS, IOStall
+										,NumOfReads, NumOfBytesRead, IOStallReadMS, IOStallQueuedReadMS
+										,NumOfWrites, NumOfBytesWritten, IOStallWriteMS, IOStallQueuedWriteMS
+										,SizeOnDiskBytes
+										,TimestampUTC, Timestamp
+									)
+									EXEC sp_executesql
+										@stmt
+										,N''''@now datetime, @nowUTC datetime''''
+										,@now = @now, @nowUTC = @nowUTC;
+								END TRY
+								BEGIN CATCH
+									SET @errorMsg = ERROR_MESSAGE();
+
+									SET @message = ''''Database '''''''''''' + @database + '''''''''''' failed due to - '''' + @errorMsg;
+									EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''''Warning'''', @message = @message;
+								END CATCH;
 							END
 							ELSE BEGIN
 								SET @message = ''''Database '''''''''''' + @database + '''''''''''' is member of a replica but this server is not the primary node'''';
@@ -13411,12 +14523,14 @@ ELSE BEGIN
 END;
 
 ';
+SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableBackupStatus = 0;',             'SET @enableBackupStatus = '             + CAST(@enableBackupStatus AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableBlocksAndDeadlocks = 0;',       'SET @enableBlocksAndDeadlocks = '       + CAST(@enableBlocksAndDeadlocks AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableConnections = 0;',              'SET @enableConnections = '              + CAST(@enableConnections AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableCPUUtilization = 0;',           'SET @enableCPUUtilization = '           + CAST(@enableCPUUtilization AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableDatabaseIO = 0;',               'SET @enableDatabaseIO = '               + CAST(@enableDatabaseIO AS nvarchar) + ';');
@@ -13442,7 +14556,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:DatabaseSize.sql modified: 2025.03.06 23.23.33
+-- File part:DatabaseSize.sql modified: 2025.04.17 17.10.10
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -13514,7 +14628,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.1'';
+		SET @version = ''2.5'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -13681,6 +14795,7 @@ ELSE BEGIN
 
 					DECLARE @database nvarchar(128);
 					DECLARE @databases nvarchar(max);
+					DECLARE @errorMsg nvarchar(max);
 					DECLARE @message nvarchar(max);
 					DECLARE @now datetime;
 					DECLARE @nowUTC datetime;
@@ -13799,11 +14914,19 @@ ELSE BEGIN
 										FROM sys.database_files AS df WITH (NOLOCK)
 									) AS a;
 								'''';
-								INSERT INTO dbo.fhsmDatabaseSize(DatabaseName, LogicalName, Type, CurrentSize, UsedSize, TimestampUTC, Timestamp)
-								EXEC sp_executesql
-									@stmt
-									,N''''@now datetime, @nowUTC datetime''''
-									,@now = @now, @nowUTC = @nowUTC;
+								BEGIN TRY
+									INSERT INTO dbo.fhsmDatabaseSize(DatabaseName, LogicalName, Type, CurrentSize, UsedSize, TimestampUTC, Timestamp)
+									EXEC sp_executesql
+										@stmt
+										,N''''@now datetime, @nowUTC datetime''''
+										,@now = @now, @nowUTC = @nowUTC;
+								END TRY
+								BEGIN CATCH
+									SET @errorMsg = ERROR_MESSAGE();
+
+									SET @message = ''''Database '''''''''''' + @database + '''''''''''' failed due to - '''' + @errorMsg;
+									EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''''Warning'''', @message = @message;
+								END CATCH;
 							END
 							ELSE BEGIN
 								SET @message = ''''Database '''''''''''' + @database + '''''''''''' is member of a replica but this server is not the primary node'''';
@@ -13954,12 +15077,14 @@ ELSE BEGIN
 END;
 
 ';
+SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableBackupStatus = 0;',             'SET @enableBackupStatus = '             + CAST(@enableBackupStatus AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableBlocksAndDeadlocks = 0;',       'SET @enableBlocksAndDeadlocks = '       + CAST(@enableBlocksAndDeadlocks AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableConnections = 0;',              'SET @enableConnections = '              + CAST(@enableConnections AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableCPUUtilization = 0;',           'SET @enableCPUUtilization = '           + CAST(@enableCPUUtilization AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableDatabaseIO = 0;',               'SET @enableDatabaseIO = '               + CAST(@enableDatabaseIO AS nvarchar) + ';');
@@ -13985,7 +15110,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:IndexOperational.sql modified: 2025.04.09 18.58.16
+-- File part:IndexOperational.sql modified: 2025.04.17 16.50.35
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -14057,7 +15182,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.4'';
+		SET @version = ''2.5'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -14387,6 +15512,7 @@ ELSE BEGIN
 
 					DECLARE @database nvarchar(128);
 					DECLARE @databases nvarchar(max);
+					DECLARE @errorMsg nvarchar(max);
 					DECLARE @ghostVersionInrowStmt nvarchar(max);
 					DECLARE @ghostVersionOffrowStmt nvarchar(max);
 					DECLARE @insertOverGhostVersionInrowStmt nvarchar(max);
@@ -14587,35 +15713,43 @@ ELSE BEGIN
 									WHERE (o.type IN (''''''''U'''''''', ''''''''V''''''''))
 									GROUP BY DB_NAME(ddios.database_id), sch.name, o.name, i.name;
 								'''';
-								INSERT INTO dbo.fhsmIndexOperational(
-									DatabaseName, SchemaName, ObjectName, IndexName
-									,LeafInsertCount, LeafDeleteCount, LeafUpdateCount, LeafGhostCount
-									,NonleafInsertCount, NonleafDeleteCount, NonleafUpdateCount
-									,LeafAllocationCount, NonleafAllocationCount
-									,LeafPageMergeCount, NonleafPageMergeCount
-									,RangeScanCount, SingletonLookupCount
-									,ForwardedFetchCount, LOBFetchInPages, LOBFetchInBytes
-									,LOBOrphanCreateCount, LOBOrphanInsertCount
-									,RowOverflowFetchInPages, RowOverflowFetchInBytes
-									,ColumnValuePushOffRowCount, ColumnValuePullInRowCount
-									,RowLockCount, RowLockWaitCount, RowLockWaitInMS
-									,PageLockCount, PageLockWaitCount, PageLockWaitInMS
-									,IndexLockPromotionAttemptCount, IndexLockPromotionCount
-									,PageLatchWaitCount, PageLatchWaitInMS
-									,PageIOLatchWaitCount, PageIOLatchWaitInMS
-									,TreePageLatchWaitCount, TreePageLatchWaitInMS
-									,TreePageIOLatchWaitCount, TreePageIOLatchWaitInMS
-									,PageCompressionAttemptCount, PageCompressionSuccessCount
-									,VersionGeneratedInrow, VersionGeneratedOffrow
-									,GhostVersionInrow, GhostVersionOffrow
-									,InsertOverGhostVersionInrow, InsertOverGhostVersionOffrow
-									,LastSQLServiceRestart
-									,TimestampUTC, Timestamp
-								)
-								EXEC sp_executesql
-									@stmt
-									,N''''@now datetime, @nowUTC datetime''''
-									,@now = @now, @nowUTC = @nowUTC;
+								BEGIN TRY
+									INSERT INTO dbo.fhsmIndexOperational(
+										DatabaseName, SchemaName, ObjectName, IndexName
+										,LeafInsertCount, LeafDeleteCount, LeafUpdateCount, LeafGhostCount
+										,NonleafInsertCount, NonleafDeleteCount, NonleafUpdateCount
+										,LeafAllocationCount, NonleafAllocationCount
+										,LeafPageMergeCount, NonleafPageMergeCount
+										,RangeScanCount, SingletonLookupCount
+										,ForwardedFetchCount, LOBFetchInPages, LOBFetchInBytes
+										,LOBOrphanCreateCount, LOBOrphanInsertCount
+										,RowOverflowFetchInPages, RowOverflowFetchInBytes
+										,ColumnValuePushOffRowCount, ColumnValuePullInRowCount
+										,RowLockCount, RowLockWaitCount, RowLockWaitInMS
+										,PageLockCount, PageLockWaitCount, PageLockWaitInMS
+										,IndexLockPromotionAttemptCount, IndexLockPromotionCount
+										,PageLatchWaitCount, PageLatchWaitInMS
+										,PageIOLatchWaitCount, PageIOLatchWaitInMS
+										,TreePageLatchWaitCount, TreePageLatchWaitInMS
+										,TreePageIOLatchWaitCount, TreePageIOLatchWaitInMS
+										,PageCompressionAttemptCount, PageCompressionSuccessCount
+										,VersionGeneratedInrow, VersionGeneratedOffrow
+										,GhostVersionInrow, GhostVersionOffrow
+										,InsertOverGhostVersionInrow, InsertOverGhostVersionOffrow
+										,LastSQLServiceRestart
+										,TimestampUTC, Timestamp
+									)
+									EXEC sp_executesql
+										@stmt
+										,N''''@now datetime, @nowUTC datetime''''
+										,@now = @now, @nowUTC = @nowUTC;
+								END TRY
+								BEGIN CATCH
+									SET @errorMsg = ERROR_MESSAGE();
+
+									SET @message = ''''Database '''''''''''' + @database + '''''''''''' failed due to - '''' + @errorMsg;
+									EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''''Warning'''', @message = @message;
+								END CATCH;
 							END
 							ELSE BEGIN
 								SET @message = ''''Database '''''''''''' + @database + '''''''''''' is member of a replica but this server is not the primary node'''';
@@ -15260,12 +16394,14 @@ ELSE BEGIN
 END;
 
 ';
+SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableBackupStatus = 0;',             'SET @enableBackupStatus = '             + CAST(@enableBackupStatus AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableBlocksAndDeadlocks = 0;',       'SET @enableBlocksAndDeadlocks = '       + CAST(@enableBlocksAndDeadlocks AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableConnections = 0;',              'SET @enableConnections = '              + CAST(@enableConnections AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableCPUUtilization = 0;',           'SET @enableCPUUtilization = '           + CAST(@enableCPUUtilization AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableDatabaseIO = 0;',               'SET @enableDatabaseIO = '               + CAST(@enableDatabaseIO AS nvarchar) + ';');
@@ -15291,7 +16427,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:IndexPhysical.sql modified: 2025.03.31 23.47.44
+-- File part:IndexPhysical.sql modified: 2025.04.17 17.55.44
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -15363,7 +16499,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.1'';
+		SET @version = ''2.5'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -15770,6 +16906,7 @@ ELSE BEGIN
 					DECLARE @columnstoreDeleteBufferStateDescStmt nvarchar(max);
 					DECLARE @database nvarchar(128);
 					DECLARE @databases nvarchar(max);
+					DECLARE @errorMsg nvarchar(max);
 					DECLARE @fhsmDatabaseName nvarchar(128);
 					DECLARE @inrowDiffVersionRecordCountStmt nvarchar(max);
 					DECLARE @inrowVersionRecordCountStmt nvarchar(max);
@@ -16036,28 +17173,36 @@ ELSE BEGIN
 								'''';
 			'';
 			SET @stmt += ''
-								INSERT INTO dbo.fhsmIndexPhysical(
-									DatabaseName, SchemaName, ObjectName, IndexName, Mode
-									,PartitionNumber, IndexTypeDesc, AllocUnitTypeDesc, IndexDepth, IndexLevel, ColumnstoreDeleteBufferStateDesc
-									,AvgFragmentationInPercent, FragmentCount, AvgFragmentSizeInPages
-									,PageCount, AvgPageSpaceUsedInPercent, RecordCount
-									,GhostRecordCount, VersionGhostRecordCount
-									,MinRecordSizeInBytes, MaxRecordSizeInBytes, AvgRecordSizeInBytes
-									,ForwardedRecordCount
-									,CompressedPageCount
-									,VersionRecordCount, InrowVersionRecordCount, InrowDiffVersionRecordCount, TotalInrowVersionPayloadSizeInBytes
-									,OffrowRegularVersionRecordCount, OffrowLongTermVersionRecordCount
-									,LastSQLServiceRestart
-									,TimestampUTC, Timestamp
-									,TimestampUTCDate, TimestampDate
-									,TimeKey
-									,DatabaseKey, SchemaKey, ObjectKey
-									,IndexKey, IndexTypeKey, IndexAllocTypeKey
-								)
-								EXEC sp_executesql
-									@stmt
-									,N''''@mode nvarchar(8), @object nvarchar(128), @now datetime, @nowUTC datetime''''
-									,@mode = @mode, @object = @object, @now = @now, @nowUTC = @nowUTC;
+								BEGIN TRY
+									INSERT INTO dbo.fhsmIndexPhysical(
+										DatabaseName, SchemaName, ObjectName, IndexName, Mode
+										,PartitionNumber, IndexTypeDesc, AllocUnitTypeDesc, IndexDepth, IndexLevel, ColumnstoreDeleteBufferStateDesc
+										,AvgFragmentationInPercent, FragmentCount, AvgFragmentSizeInPages
+										,PageCount, AvgPageSpaceUsedInPercent, RecordCount
+										,GhostRecordCount, VersionGhostRecordCount
+										,MinRecordSizeInBytes, MaxRecordSizeInBytes, AvgRecordSizeInBytes
+										,ForwardedRecordCount
+										,CompressedPageCount
+										,VersionRecordCount, InrowVersionRecordCount, InrowDiffVersionRecordCount, TotalInrowVersionPayloadSizeInBytes
+										,OffrowRegularVersionRecordCount, OffrowLongTermVersionRecordCount
+										,LastSQLServiceRestart
+										,TimestampUTC, Timestamp
+										,TimestampUTCDate, TimestampDate
+										,TimeKey
+										,DatabaseKey, SchemaKey, ObjectKey
+										,IndexKey, IndexTypeKey, IndexAllocTypeKey
+									)
+									EXEC sp_executesql
+										@stmt
+										,N''''@mode nvarchar(8), @object nvarchar(128), @now datetime, @nowUTC datetime''''
+										,@mode = @mode, @object = @object, @now = @now, @nowUTC = @nowUTC;
+								END TRY
+								BEGIN CATCH
+									SET @errorMsg = ERROR_MESSAGE();
+
+									SET @message = ''''Database '''''''''''' + @database + '''''''''''' failed due to - '''' + @errorMsg;
+									EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''''Warning'''', @message = @message;
+								END CATCH;
 							END
 							ELSE BEGIN
 								SET @message = ''''Database '''''''''''' + @database + '''''''''''' is member of a replica but this server is not the primary node'''';
@@ -16262,12 +17407,14 @@ ELSE BEGIN
 END;
 
 ';
+SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableBackupStatus = 0;',             'SET @enableBackupStatus = '             + CAST(@enableBackupStatus AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableBlocksAndDeadlocks = 0;',       'SET @enableBlocksAndDeadlocks = '       + CAST(@enableBlocksAndDeadlocks AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableConnections = 0;',              'SET @enableConnections = '              + CAST(@enableConnections AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableCPUUtilization = 0;',           'SET @enableCPUUtilization = '           + CAST(@enableCPUUtilization AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableDatabaseIO = 0;',               'SET @enableDatabaseIO = '               + CAST(@enableDatabaseIO AS nvarchar) + ';');
@@ -16293,7 +17440,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:IndexUsage.sql modified: 2025.04.02 10.06.07
+-- File part:IndexUsage.sql modified: 2025.05.04 17.10.46
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -16365,7 +17512,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.3'';
+		SET @version = ''2.5'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -16377,17 +17524,6 @@ ELSE BEGIN
 		SET @productStartPos = @productEndPos + 1;
 		SET @productEndPos = CHARINDEX(''.'', @productVersion, @productStartPos);
 		SET @productVersion3 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
-	END;
-
-	--
-	-- Variables used in view to control the statement output
-	--
-	BEGIN
-		DECLARE @maxIndexColumnsLineLength int;
-		DECLARE @maxIncludedColumnsLineLength int;
-
-		SET @maxIndexColumnsLineLength = 40;
-		SET @maxIncludedColumnsLineLength = 40;
 	END;
 
 	--
@@ -16534,8 +17670,8 @@ ELSE BEGIN
 					,iu.HasFilter			+ 0 AS HasFilter
 					,iu.FilterDefinition
 					,iu.AutoCreated			+ 0 AS AutoCreated
-					,(dbo.fhsmFNSplitLines(iu.IndexColumns, '' + CAST(@maxIndexColumnsLineLength AS nvarchar) + '')) AS IndexColumns
-					,(dbo.fhsmFNSplitLines(iu.IncludedColumns, '' + CAST(@maxIncludedColumnsLineLength AS nvarchar) + '')) AS IncludedColumns
+					,iu.IndexColumns
+					,iu.IncludedColumns
 					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iu.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
 					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iu.DatabaseName, iu.SchemaName, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS SchemaKey
 					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iu.DatabaseName, iu.SchemaName, iu.ObjectName, DEFAULT, DEFAULT, DEFAULT) AS k) AS ObjectKey
@@ -16814,6 +17950,7 @@ ELSE BEGIN
 					DECLARE @autoCreatedStmt nvarchar(max);
 					DECLARE @database nvarchar(128);
 					DECLARE @databases nvarchar(max);
+					DECLARE @errorMsg nvarchar(max);
 					DECLARE @message nvarchar(max);
 					DECLARE @now datetime;
 					DECLARE @nowUTC datetime;
@@ -16997,24 +18134,32 @@ ELSE BEGIN
 									) AS includedColumns
 									WHERE (o.type IN (''''''''U'''''''', ''''''''V''''''''))
 								'''';
-								INSERT INTO dbo.fhsmIndexUsage(
-									DatabaseName, SchemaName, ObjectName, IndexName
-									,UserSeeks, UserScans, UserLookups, UserUpdates
-									,LastUserSeek, LastUserScan, LastUserLookup, LastUserUpdate
-									,IndexType, IsUnique, IsPrimaryKey, IsUniqueConstraint
-									,[FillFactor]
-									,IsDisabled, IsHypothetical
-									,AllowRowLocks, AllowPageLocks
-									,HasFilter, FilterDefinition
-									,AutoCreated
-									,IndexColumns, IncludedColumns
-									,LastSQLServiceRestart
-									,TimestampUTC, Timestamp
-								)
-								EXEC sp_executesql
-									@stmt
-									,N''''@now datetime, @nowUTC datetime''''
-									,@now = @now, @nowUTC = @nowUTC;
+								BEGIN TRY
+									INSERT INTO dbo.fhsmIndexUsage(
+										DatabaseName, SchemaName, ObjectName, IndexName
+										,UserSeeks, UserScans, UserLookups, UserUpdates
+										,LastUserSeek, LastUserScan, LastUserLookup, LastUserUpdate
+										,IndexType, IsUnique, IsPrimaryKey, IsUniqueConstraint
+										,[FillFactor]
+										,IsDisabled, IsHypothetical
+										,AllowRowLocks, AllowPageLocks
+										,HasFilter, FilterDefinition
+										,AutoCreated
+										,IndexColumns, IncludedColumns
+										,LastSQLServiceRestart
+										,TimestampUTC, Timestamp
+									)
+									EXEC sp_executesql
+										@stmt
+										,N''''@now datetime, @nowUTC datetime''''
+										,@now = @now, @nowUTC = @nowUTC;
+								END TRY
+								BEGIN CATCH
+									SET @errorMsg = ERROR_MESSAGE();
+
+									SET @message = ''''Database '''''''''''' + @database + '''''''''''' failed due to - '''' + @errorMsg;
+									EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''''Warning'''', @message = @message;
+								END CATCH;
 							END
 							ELSE BEGIN
 								SET @message = ''''Database '''''''''''' + @database + '''''''''''' is member of a replica but this server is not the primary node'''';
@@ -17191,12 +18336,14 @@ ELSE BEGIN
 END;
 
 ';
+SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableBackupStatus = 0;',             'SET @enableBackupStatus = '             + CAST(@enableBackupStatus AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableBlocksAndDeadlocks = 0;',       'SET @enableBlocksAndDeadlocks = '       + CAST(@enableBlocksAndDeadlocks AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableConnections = 0;',              'SET @enableConnections = '              + CAST(@enableConnections AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableCPUUtilization = 0;',           'SET @enableCPUUtilization = '           + CAST(@enableCPUUtilization AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableDatabaseIO = 0;',               'SET @enableDatabaseIO = '               + CAST(@enableDatabaseIO AS nvarchar) + ';');
@@ -21054,12 +22201,14 @@ ELSE BEGIN
 END;
 
 ';
+SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableBackupStatus = 0;',             'SET @enableBackupStatus = '             + CAST(@enableBackupStatus AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableBlocksAndDeadlocks = 0;',       'SET @enableBlocksAndDeadlocks = '       + CAST(@enableBlocksAndDeadlocks AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableConnections = 0;',              'SET @enableConnections = '              + CAST(@enableConnections AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableCPUUtilization = 0;',           'SET @enableCPUUtilization = '           + CAST(@enableCPUUtilization AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableDatabaseIO = 0;',               'SET @enableDatabaseIO = '               + CAST(@enableDatabaseIO AS nvarchar) + ';');
@@ -21085,7 +22234,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:MissingIndexes.sql modified: 2025.04.02 10.06.59
+-- File part:MissingIndexes.sql modified: 2025.05.04 17.14.26
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -21157,7 +22306,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.3'';
+		SET @version = ''2.5'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -21175,17 +22324,9 @@ ELSE BEGIN
 	-- Variables used in view to control the statement output
 	--
 	BEGIN
-		DECLARE @maxEqualityColumnsLineLength int;
-		DECLARE @maxInequalityColumnsLineLength int;
-		DECLARE @maxIncludedColumnsLineLength int;
 		DECLARE @maxStatementLength int;
-		DECLARE @maxStatementLineLength int;
 
-		SET @maxEqualityColumnsLineLength = 35;
-		SET @maxInequalityColumnsLineLength = 35;
-		SET @maxIncludedColumnsLineLength = 35;
 		SET @maxStatementLength = 1024;
-		SET @maxStatementLineLength = 140;
 	END;
 
 	--
@@ -21460,9 +22601,9 @@ ELSE BEGIN
 			END;
 			SET @stmt += ''
 				SELECT
-					(dbo.fhsmFNSplitLines(b.EqualityColumns, '' + CAST(@maxEqualityColumnsLineLength AS nvarchar) + '')) AS EqualityColumns
-					,(dbo.fhsmFNSplitLines(b.InequalityColumns, '' + CAST(@maxInequalityColumnsLineLength AS nvarchar) + '')) AS InequalityColumns
-					,(dbo.fhsmFNSplitLines(b.IncludedColumns, '' + CAST(@maxIncludedColumnsLineLength AS nvarchar) + '')) AS IncludedColumns
+					b.EqualityColumns
+					,b.InequalityColumns
+					,b.IncludedColumns
 					,b.DeltaUniqueCompiles AS UniqueCompiles
 					,b.DeltaUserSeeks AS UserSeeks
 					,b.LastUserSeek
@@ -21677,13 +22818,10 @@ ELSE BEGIN
 			'';
 			SET @stmt += ''
 				SELECT
-					(dbo.fhsmFNSplitLines(
-						(CASE
-							WHEN LEN(mis.Statement) > '' + CAST(@maxStatementLength AS nvarchar) + '' THEN LEFT(mis.Statement, '' + CAST(@maxStatementLength AS nvarchar) + '') + CHAR(10) + ''''...Statement truncated''''
-							ELSE mis.Statement
-						END),
-						'' + CAST(@maxStatementLineLength AS nvarchar) + ''
-					)) AS Statement
+					CASE
+						WHEN LEN(mis.Statement) > '' + CAST(@maxStatementLength AS nvarchar) + '' THEN LEFT(mis.Statement, '' + CAST(@maxStatementLength AS nvarchar) + '') + CHAR(10) + ''''...Statement truncated''''
+						ELSE mis.Statement
+					END AS Statement
 					,(SELECT k.[Key] FROM FHSQLMonitor.dbo.fhsmFNGenerateKey(mis.DatabaseName, CONVERT(nvarchar(18), mis.QueryHash, 1), DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS MissingIndexStatementKey
 				FROM dbo.fhsmMissingIndexStatement AS mis;
 				'';
@@ -22118,12 +23256,14 @@ ELSE BEGIN
 END;
 
 ';
+SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableBackupStatus = 0;',             'SET @enableBackupStatus = '             + CAST(@enableBackupStatus AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableBlocksAndDeadlocks = 0;',       'SET @enableBlocksAndDeadlocks = '       + CAST(@enableBlocksAndDeadlocks AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableConnections = 0;',              'SET @enableConnections = '              + CAST(@enableConnections AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableCPUUtilization = 0;',           'SET @enableCPUUtilization = '           + CAST(@enableCPUUtilization AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableDatabaseIO = 0;',               'SET @enableDatabaseIO = '               + CAST(@enableDatabaseIO AS nvarchar) + ';');
@@ -22149,7 +23289,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:PartitionedIndexes.sql modified: 2025.03.12 22.28.44
+-- File part:PartitionedIndexes.sql modified: 2025.04.17 17.52.18
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -22221,7 +23361,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.1'';
+		SET @version = ''2.5'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -22533,6 +23673,7 @@ ELSE BEGIN
 
 					DECLARE @database nvarchar(128);
 					DECLARE @databases nvarchar(max);
+					DECLARE @errorMsg nvarchar(max);
 					DECLARE @message nvarchar(max);
 					DECLARE @now datetime;
 					DECLARE @nowUTC datetime;
@@ -22670,17 +23811,25 @@ ELSE BEGIN
 									INNER JOIN sys.columns AS c ON (c.object_id = ic.object_id) AND (c.column_id = ic.column_id)
 									LEFT OUTER JOIN sys.partition_range_values AS prv ON (prv.function_id = pf.function_id) AND (pstats.partition_number = (CASE pf.boundary_value_on_right WHEN 0 THEN prv.boundary_id ELSE (prv.boundary_id + 1) END))
 								'''';
-								INSERT INTO dbo.fhsmPartitionedIndexes(
-									DatabaseName, SchemaName, ObjectName, IndexName, IndexTypeDesc
-									,PartitionSchemeName
-									,PartitionFilegroupName, PartitionFunctionName, PartitionFunctionValueOnRight, PartitionFunctionCreateDate, PartitionFunctionModifyDate, PartitionBoundaryValue, PartitionColumn
-									,PartitionNumber, PartitionCompressionTypeDesc, PartitionRowCount
-									,TimestampUTC, Timestamp
-								)
-								EXEC sp_executesql
-									@stmt
-									,N''''@now datetime, @nowUTC datetime''''
-									,@now = @now, @nowUTC = @nowUTC;
+								BEGIN TRY
+									INSERT INTO dbo.fhsmPartitionedIndexes(
+										DatabaseName, SchemaName, ObjectName, IndexName, IndexTypeDesc
+										,PartitionSchemeName
+										,PartitionFilegroupName, PartitionFunctionName, PartitionFunctionValueOnRight, PartitionFunctionCreateDate, PartitionFunctionModifyDate, PartitionBoundaryValue, PartitionColumn
+										,PartitionNumber, PartitionCompressionTypeDesc, PartitionRowCount
+										,TimestampUTC, Timestamp
+									)
+									EXEC sp_executesql
+										@stmt
+										,N''''@now datetime, @nowUTC datetime''''
+										,@now = @now, @nowUTC = @nowUTC;
+								END TRY
+								BEGIN CATCH
+									SET @errorMsg = ERROR_MESSAGE();
+
+									SET @message = ''''Database '''''''''''' + @database + '''''''''''' failed due to - '''' + @errorMsg;
+									EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''''Warning'''', @message = @message;
+								END CATCH;
 							END
 							ELSE BEGIN
 								SET @message = ''''Database '''''''''''' + @database + '''''''''''' is member of a replica but this server is not the primary node'''';
@@ -22859,12 +24008,14 @@ ELSE BEGIN
 END;
 
 ';
+SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableBackupStatus = 0;',             'SET @enableBackupStatus = '             + CAST(@enableBackupStatus AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableBlocksAndDeadlocks = 0;',       'SET @enableBlocksAndDeadlocks = '       + CAST(@enableBlocksAndDeadlocks AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableConnections = 0;',              'SET @enableConnections = '              + CAST(@enableConnections AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableCPUUtilization = 0;',           'SET @enableCPUUtilization = '           + CAST(@enableCPUUtilization AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableDatabaseIO = 0;',               'SET @enableDatabaseIO = '               + CAST(@enableDatabaseIO AS nvarchar) + ';');
@@ -23740,12 +24891,14 @@ ELSE BEGIN
 END;
 
 ';
+SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableBackupStatus = 0;',             'SET @enableBackupStatus = '             + CAST(@enableBackupStatus AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableBlocksAndDeadlocks = 0;',       'SET @enableBlocksAndDeadlocks = '       + CAST(@enableBlocksAndDeadlocks AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableConnections = 0;',              'SET @enableConnections = '              + CAST(@enableConnections AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableCPUUtilization = 0;',           'SET @enableCPUUtilization = '           + CAST(@enableCPUUtilization AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableDatabaseIO = 0;',               'SET @enableDatabaseIO = '               + CAST(@enableDatabaseIO AS nvarchar) + ';');
@@ -24109,12 +25262,14 @@ ELSE BEGIN
 END;
 
 ';
+SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableBackupStatus = 0;',             'SET @enableBackupStatus = '             + CAST(@enableBackupStatus AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableBlocksAndDeadlocks = 0;',       'SET @enableBlocksAndDeadlocks = '       + CAST(@enableBlocksAndDeadlocks AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableConnections = 0;',              'SET @enableConnections = '              + CAST(@enableConnections AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableCPUUtilization = 0;',           'SET @enableCPUUtilization = '           + CAST(@enableCPUUtilization AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableDatabaseIO = 0;',               'SET @enableDatabaseIO = '               + CAST(@enableDatabaseIO AS nvarchar) + ';');
@@ -24140,7 +25295,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:PlanGuides.sql modified: 2025.03.06 23.27.57
+-- File part:PlanGuides.sql modified: 2025.04.17 17.03.30
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -24212,7 +25367,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.1'';
+		SET @version = ''2.5'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -24397,6 +25552,7 @@ ELSE BEGIN
 
 					DECLARE @database nvarchar(128);
 					DECLARE @databases nvarchar(max);
+					DECLARE @errorMsg nvarchar(max);
 					DECLARE @message nvarchar(max);
 					DECLARE @now datetime;
 					DECLARE @nowUTC datetime;
@@ -24527,20 +25683,28 @@ ELSE BEGIN
 									LEFT OUTER JOIN sys.schemas AS sch ON (sch.schema_id = o.schema_id)
 									OUTER APPLY sys.fn_validate_plan_guide(pg.plan_guide_id) AS vpg
 								'''';
-								INSERT INTO dbo.fhsmPlanGuides(
-									DatabaseName
-									,PlanGuideId, Name
-									,CreateDate, ModifyDate
-									,IsDisabled, QueryText, ScopeTypeDesc
-									,ScopedSchema, ScopedObject
-									,ScopeBatch, Parameters, Hints
-									,MsgNum, Severity, State, Message
-									,TimestampUTC, Timestamp
-								)
-								EXEC sp_executesql
-									@stmt
-									,N''''@now datetime, @nowUTC datetime''''
-									,@now = @now, @nowUTC = @nowUTC;
+								BEGIN TRY
+									INSERT INTO dbo.fhsmPlanGuides(
+										DatabaseName
+										,PlanGuideId, Name
+										,CreateDate, ModifyDate
+										,IsDisabled, QueryText, ScopeTypeDesc
+										,ScopedSchema, ScopedObject
+										,ScopeBatch, Parameters, Hints
+										,MsgNum, Severity, State, Message
+										,TimestampUTC, Timestamp
+									)
+									EXEC sp_executesql
+										@stmt
+										,N''''@now datetime, @nowUTC datetime''''
+										,@now = @now, @nowUTC = @nowUTC;
+								END TRY
+								BEGIN CATCH
+									SET @errorMsg = ERROR_MESSAGE();
+
+									SET @message = ''''Database '''''''''''' + @database + '''''''''''' failed due to - '''' + @errorMsg;
+									EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''''Warning'''', @message = @message;
+								END CATCH;
 							END
 							ELSE BEGIN
 								SET @message = ''''Database '''''''''''' + @database + '''''''''''' is member of a replica but this server is not the primary node'''';
@@ -24681,12 +25845,14 @@ ELSE BEGIN
 END;
 
 ';
+SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableBackupStatus = 0;',             'SET @enableBackupStatus = '             + CAST(@enableBackupStatus AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableBlocksAndDeadlocks = 0;',       'SET @enableBlocksAndDeadlocks = '       + CAST(@enableBlocksAndDeadlocks AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableConnections = 0;',              'SET @enableConnections = '              + CAST(@enableConnections AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableCPUUtilization = 0;',           'SET @enableCPUUtilization = '           + CAST(@enableCPUUtilization AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableDatabaseIO = 0;',               'SET @enableDatabaseIO = '               + CAST(@enableDatabaseIO AS nvarchar) + ';');
@@ -24712,7 +25878,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:QueryStatistics.sql modified: 2025.04.02 10.08.21
+-- File part:QueryStatistics.sql modified: 2025.05.04 17.15.25
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -24803,10 +25969,8 @@ ELSE BEGIN
 	--
 	BEGIN
 		DECLARE @maxStatementLength int;
-		DECLARE @maxStatementLineLength int;
 
 		SET @maxStatementLength = 1024;
-		SET @maxStatementLineLength = 140;
 	END;
 
 	--
@@ -25101,13 +26265,10 @@ ELSE BEGIN
 					CONVERT(nvarchar(18), qs.QueryHash, 1) AS [Query hash]
 					,qs.CreationTime
 					,qs.LastExecutionTime
-					,(dbo.fhsmFNSplitLines(
-						(CASE
-							WHEN LEN(qs.Statement) > '' + CAST(@maxStatementLength AS nvarchar) + '' THEN LEFT(qs.Statement, '' + CAST(@maxStatementLength AS nvarchar) + '') + CHAR(10) + ''''...Statement truncated''''
-							ELSE qs.Statement
-						END),
-						'' + CAST(@maxStatementLineLength AS nvarchar) + ''
-					)) AS Statement
+					,CASE
+						WHEN LEN(qs.Statement) > '' + CAST(@maxStatementLength AS nvarchar) + '' THEN LEFT(qs.Statement, '' + CAST(@maxStatementLength AS nvarchar) + '') + CHAR(10) + ''''...Statement truncated''''
+						ELSE qs.Statement
+					END AS Statement
 					,qs.Encrypted
 					,CAST(qs.Timestamp AS date) AS Date
 					,(DATEPART(HOUR, qs.Timestamp) * 60 * 60) + (DATEPART(MINUTE, qs.Timestamp) * 60) + (DATEPART(SECOND, qs.Timestamp)) AS TimeKey
@@ -25746,12 +26907,14 @@ ELSE BEGIN
 END;
 
 ';
+SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableBackupStatus = 0;',             'SET @enableBackupStatus = '             + CAST(@enableBackupStatus AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableBlocksAndDeadlocks = 0;',       'SET @enableBlocksAndDeadlocks = '       + CAST(@enableBlocksAndDeadlocks AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableConnections = 0;',              'SET @enableConnections = '              + CAST(@enableConnections AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableCPUUtilization = 0;',           'SET @enableCPUUtilization = '           + CAST(@enableCPUUtilization AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableDatabaseIO = 0;',               'SET @enableDatabaseIO = '               + CAST(@enableDatabaseIO AS nvarchar) + ';');
@@ -25777,7 +26940,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:TableSize.sql modified: 2025.03.30 11.31.56
+-- File part:TableSize.sql modified: 2025.04.17 17.44.31
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -25849,7 +27012,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.2.2'';
+		SET @version = ''2.5'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -26219,6 +27382,7 @@ ELSE BEGIN
 
 					DECLARE @database nvarchar(128);
 					DECLARE @databases nvarchar(max);
+					DECLARE @errorMsg nvarchar(max);
 					DECLARE @message nvarchar(max);
 					DECLARE @now datetime;
 					DECLARE @nowUTC datetime;
@@ -26321,16 +27485,24 @@ ELSE BEGIN
 							BEGIN
 								DELETE @spaceUsed;
 
-								SET @stmt = ''''EXEC dbo.fhsmSPSpaceUsed @database = @database;'''';
-								INSERT INTO @spaceUsed
-								EXEC sp_executesql
-									@stmt
-									,N''''@database nvarchar(128)''''
-									,@database = @database;
+								BEGIN TRY
+									SET @stmt = ''''EXEC dbo.fhsmSPSpaceUsed @database = @database;'''';
+									INSERT INTO @spaceUsed
+									EXEC sp_executesql
+										@stmt
+										,N''''@database nvarchar(128)''''
+										,@database = @database;
 
-								INSERT INTO dbo.fhsmTableSize(DatabaseName, SchemaName, ObjectName, IndexName, PartitionNumber, IsMemoryOptimized, Rows, Reserved, Data, IndexSize, Unused, TimestampUTC, Timestamp)
-								SELECT su.DatabaseName, su.SchemaName, su.ObjectName, su.IndexName, su.PartitionNumber, su.IsMemoryOptimized, su.Rows, su.Reserved, su.Data, su.IndexSize, su.Unused, @nowUTC, @now
-								FROM @spaceUsed AS su;
+									INSERT INTO dbo.fhsmTableSize(DatabaseName, SchemaName, ObjectName, IndexName, PartitionNumber, IsMemoryOptimized, Rows, Reserved, Data, IndexSize, Unused, TimestampUTC, Timestamp)
+									SELECT su.DatabaseName, su.SchemaName, su.ObjectName, su.IndexName, su.PartitionNumber, su.IsMemoryOptimized, su.Rows, su.Reserved, su.Data, su.IndexSize, su.Unused, @nowUTC, @now
+									FROM @spaceUsed AS su;
+								END TRY
+								BEGIN CATCH
+									SET @errorMsg = ERROR_MESSAGE();
+
+									SET @message = ''''Database '''''''''''' + @database + '''''''''''' failed due to - '''' + @errorMsg;
+									EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''''Warning'''', @message = @message;
+								END CATCH;
 							END
 							ELSE BEGIN
 								SET @message = ''''Database '''''''''''' + @database + '''''''''''' is member of a replica but this server is not the primary node'''';
@@ -26533,12 +27705,14 @@ ELSE BEGIN
 END;
 
 ';
+SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableBackupStatus = 0;',             'SET @enableBackupStatus = '             + CAST(@enableBackupStatus AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableBlocksAndDeadlocks = 0;',       'SET @enableBlocksAndDeadlocks = '       + CAST(@enableBlocksAndDeadlocks AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableConnections = 0;',              'SET @enableConnections = '              + CAST(@enableConnections AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableCPUUtilization = 0;',           'SET @enableCPUUtilization = '           + CAST(@enableCPUUtilization AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableDatabaseIO = 0;',               'SET @enableDatabaseIO = '               + CAST(@enableDatabaseIO AS nvarchar) + ';');
@@ -26564,7 +27738,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:Triggers.sql modified: 2025.03.06 23.28.52
+-- File part:Triggers.sql modified: 2025.05.03 14.32.41
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -26636,7 +27810,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.1'';
+		SET @version = ''2.5'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -26687,6 +27861,7 @@ ELSE BEGIN
 					,ParentClass tinyint NULL
 					,ParentSchema nvarchar(128) NULL
 					,ParentObject nvarchar(128) NULL
+					,Name nvarchar(128) NULL
 					,Type char(2) NULL
 					,CreateDate datetime NOT NULL
 					,ModifyDate datetime NOT NULL
@@ -26703,6 +27878,15 @@ ELSE BEGIN
 				CREATE NONCLUSTERED INDEX NC_fhsmTriggers_Timestamp ON dbo.fhsmTriggers(Timestamp)'' + @tableCompressionStmt + '';
 				CREATE NONCLUSTERED INDEX NC_fhsmTriggers_DatabaseName ON dbo.fhsmTriggers(DatabaseName)'' + @tableCompressionStmt + '';
 			'';
+			EXEC(@stmt);
+		END;
+
+		--
+		-- Add column added in version 2.5
+		--
+		IF NOT EXISTS(SELECT * FROM sys.columns AS c WHERE (c.object_id = OBJECT_ID(''dbo.fhsmTriggers'')) AND (c.name = ''Name''))
+		BEGIN
+			SET @stmt = ''ALTER TABLE dbo.fhsmTriggers ADD [Name] nvarchar(128) NULL;'';
 			EXEC(@stmt);
 		END;
 
@@ -26757,6 +27941,7 @@ ELSE BEGIN
 						WHEN ''''TR'''' THEN ''''SQL trigger''''
 						ELSE ''''Type:'''' + t.Type
 					END AS Type
+					,t.Name AS TriggerName
 					,t.CreateDate
 					,t.ModifyDate
 					,t.IsMsShipped
@@ -26820,6 +28005,7 @@ ELSE BEGIN
 
 					DECLARE @database nvarchar(128);
 					DECLARE @databases nvarchar(max);
+					DECLARE @errorMsg nvarchar(max);
 					DECLARE @message nvarchar(max);
 					DECLARE @now datetime;
 					DECLARE @nowUTC datetime;
@@ -26929,8 +28115,9 @@ ELSE BEGIN
 									SELECT
 										DB_NAME() AS DatabaseName
 										,t.parent_class AS ParentClass
-										,sch.name AS ParentSchema
-										,o.name AS ParentObject
+										,parentSch.name AS ParentSchema
+										,parentO.name AS ParentObject
+										,o.name AS Name
 										,t.type AS Type
 										,t.create_date AS CreateDate
 										,t.modify_date AS ModifyDate
@@ -26940,20 +28127,29 @@ ELSE BEGIN
 										,t.is_instead_of_trigger AS IsInsteadOfTrigger
 										,@nowUTC, @now
 									FROM sys.triggers AS t
-									LEFT OUTER JOIN sys.objects AS o ON (o.object_id = t.parent_id)
-									LEFT OUTER JOIN sys.schemas AS sch ON (sch.schema_id = o.schema_id)
+									LEFT OUTER JOIN sys.objects AS o ON (o.object_id = t.object_id)
+									LEFT OUTER JOIN sys.objects AS parentO ON (parentO.object_id = t.parent_id)
+									LEFT OUTER JOIN sys.schemas AS parentSch ON (parentSch.schema_id = parentO.schema_id);
 								'''';
-								INSERT INTO dbo.fhsmTriggers(
-									DatabaseName
-									,ParentClass, ParentSchema, ParentObject, Type
-									,CreateDate, ModifyDate
-									,IsMsShipped, IsDisabled, IsNotForReplication, IsInsteadOfTrigger
-									,TimestampUTC, Timestamp
-								)
-								EXEC sp_executesql
-									@stmt
-									,N''''@now datetime, @nowUTC datetime''''
-									,@now = @now, @nowUTC = @nowUTC;
+								BEGIN TRY
+									INSERT INTO dbo.fhsmTriggers(
+										DatabaseName
+										,ParentClass, ParentSchema, ParentObject, Name, Type
+										,CreateDate, ModifyDate
+										,IsMsShipped, IsDisabled, IsNotForReplication, IsInsteadOfTrigger
+										,TimestampUTC, Timestamp
+									)
+									EXEC sp_executesql
+										@stmt
+										,N''''@now datetime, @nowUTC datetime''''
+										,@now = @now, @nowUTC = @nowUTC;
+								END TRY
+								BEGIN CATCH
+									SET @errorMsg = ERROR_MESSAGE();
+
+									SET @message = ''''Database '''''''''''' + @database + '''''''''''' failed due to - '''' + @errorMsg;
+									EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''''Warning'''', @message = @message;
+								END CATCH;
 							END
 							ELSE BEGIN
 								SET @message = ''''Database '''''''''''' + @database + '''''''''''' is member of a replica but this server is not the primary node'''';
@@ -27094,12 +28290,14 @@ ELSE BEGIN
 END;
 
 ';
+SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableBackupStatus = 0;',             'SET @enableBackupStatus = '             + CAST(@enableBackupStatus AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableBlocksAndDeadlocks = 0;',       'SET @enableBlocksAndDeadlocks = '       + CAST(@enableBlocksAndDeadlocks AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableConnections = 0;',              'SET @enableConnections = '              + CAST(@enableConnections AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableCPUUtilization = 0;',           'SET @enableCPUUtilization = '           + CAST(@enableCPUUtilization AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableDatabaseIO = 0;',               'SET @enableDatabaseIO = '               + CAST(@enableDatabaseIO AS nvarchar) + ';');
@@ -28216,12 +29414,14 @@ ELSE BEGIN
 END;
 
 ';
+SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableBackupStatus = 0;',             'SET @enableBackupStatus = '             + CAST(@enableBackupStatus AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableBlocksAndDeadlocks = 0;',       'SET @enableBlocksAndDeadlocks = '       + CAST(@enableBlocksAndDeadlocks AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableConnections = 0;',              'SET @enableConnections = '              + CAST(@enableConnections AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableCPUUtilization = 0;',           'SET @enableCPUUtilization = '           + CAST(@enableCPUUtilization AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableDatabaseIO = 0;',               'SET @enableDatabaseIO = '               + CAST(@enableDatabaseIO AS nvarchar) + ';');
@@ -33779,12 +34979,14 @@ EXEC(@stmt);
 END;
 
 ';
+SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableBackupStatus = 0;',             'SET @enableBackupStatus = '             + CAST(@enableBackupStatus AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableBlocksAndDeadlocks = 0;',       'SET @enableBlocksAndDeadlocks = '       + CAST(@enableBlocksAndDeadlocks AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableConnections = 0;',              'SET @enableConnections = '              + CAST(@enableConnections AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableCPUUtilization = 0;',           'SET @enableCPUUtilization = '           + CAST(@enableCPUUtilization AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableDatabaseIO = 0;',               'SET @enableDatabaseIO = '               + CAST(@enableDatabaseIO AS nvarchar) + ';');
@@ -33810,7 +35012,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:WhoIsActive-002.sql modified: 2025.04.05 15.31.51
+-- File part:WhoIsActive-002.sql modified: 2025.05.04 17.16.10
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -33901,10 +35103,8 @@ ELSE BEGIN
 	--
 	BEGIN
 		DECLARE @maxSQLTextLength int;
-		DECLARE @maxSQLTextLineLength int;
 
 		SET @maxSQLTextLength = 1024;
-		SET @maxSQLTextLineLength = 70;
 	END;
 
 	--
@@ -34005,13 +35205,10 @@ ELSE BEGIN
 					,a.login_time AS LoginTime
 					,DATEDIFF(MILLISECOND, a.start_time, a.collection_time) AS ElapsedTimeMS
 					,a.session_id AS SessionId
-					,(dbo.fhsmFNSplitLines(
-						(CASE
-							WHEN LEN(a.sql_text) > '' + CAST(@maxSQLTextLength AS nvarchar) + '' THEN LEFT(a.sql_text, '' + CAST(@maxSQLTextLength AS nvarchar) + '') + CHAR(10) + ''''...Statement truncated''''
-							ELSE a.sql_text
-						END),
-						'' + CAST(@maxSQLTextLineLength AS nvarchar) + ''
-					)) AS SQLText
+					,CASE
+						WHEN LEN(a.sql_text) > '' + CAST(@maxSQLTextLength AS nvarchar) + '' THEN LEFT(a.sql_text, '' + CAST(@maxSQLTextLength AS nvarchar) + '') + CHAR(10) + ''''...Statement truncated''''
+						ELSE a.sql_text
+					END AS SQLText
 					,a.sql_command AS SQLCommand
 					,a.login_name AS LoginName
 					,a.wait_info AS WaitInfo
@@ -34030,6 +35227,7 @@ ELSE BEGIN
 					,a.percent_complete AS PercentComplete
 					,a.host_name AS HostName
 					,a.program_name AS ProgramName
+					,ROW_NUMBER() OVER(ORDER BY a.collection_time, (a.reads - a.FirstReads), a.session_id DESC) AS SortOrder
 					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(a.database_name, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
 				FROM (
 					SELECT
@@ -34246,12 +35444,14 @@ ELSE BEGIN
 END;
 
 ';
+SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableBackupStatus = 0;',             'SET @enableBackupStatus = '             + CAST(@enableBackupStatus AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableBlocksAndDeadlocks = 0;',       'SET @enableBlocksAndDeadlocks = '       + CAST(@enableBlocksAndDeadlocks AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableConnections = 0;',              'SET @enableConnections = '              + CAST(@enableConnections AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableCPUUtilization = 0;',           'SET @enableCPUUtilization = '           + CAST(@enableCPUUtilization AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableDatabaseIO = 0;',               'SET @enableDatabaseIO = '               + CAST(@enableDatabaseIO AS nvarchar) + ';');
@@ -34277,7 +35477,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:CleanupAfterInstallationAndUpgrade.sql modified: 2025.04.02 10.05.17
+-- File part:CleanupAfterInstallationAndUpgrade.sql modified: 2025.05.04 17.18.19
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -34315,30 +35515,58 @@ BEGIN
 	RAISERROR(''Can not execute as it appears the database is not correct installed'', 0, 1) WITH NOWAIT;
 END
 ELSE BEGIN
-	IF OBJECT_ID(''dbo.fhsmSplitLines'', ''FN'') IS NOT NULL
+	--
+	-- Drop function dbo.fhsmFNSplitLines
+	--
 	BEGIN
-		IF EXISTS(
-			SELECT *
-			FROM sys.dm_sql_referencing_entities(''dbo.fhsmSplitLines'', ''OBJECT'') AS dsre
-		)
+		IF OBJECT_ID(''dbo.fhsmFNSplitLines'', ''FN'') IS NOT NULL
 		BEGIN
-			RAISERROR(''Cannot drop function dbo.fhsmSplitLines as it is still in use'', 0, 1) WITH NOWAIT;
-		END
-		ELSE BEGIN
-			RAISERROR(''Dropping function dbo.fhsmSplitLines'', 0, 1) WITH NOWAIT;
+			IF EXISTS(
+				SELECT *
+				FROM sys.dm_sql_referencing_entities(''dbo.fhsmFNSplitLines'', ''OBJECT'') AS dsre
+			)
+			BEGIN
+				RAISERROR(''Cannot drop function dbo.fhsmFNSplitLines as it is still in use'', 0, 1) WITH NOWAIT;
+			END
+			ELSE BEGIN
+				RAISERROR(''Dropping function dbo.fhsmFNSplitLines'', 0, 1) WITH NOWAIT;
 
-			EXEC(''DROP FUNCTION dbo.fhsmSplitLines;'');
+				EXEC(''DROP FUNCTION dbo.fhsmFNSplitLines;'');
+			END;
+		END;
+	END;
+
+	--
+	-- Drop function dbo.fhsmSplitLines
+	--
+	BEGIN
+		IF OBJECT_ID(''dbo.fhsmSplitLines'', ''FN'') IS NOT NULL
+		BEGIN
+			IF EXISTS(
+				SELECT *
+				FROM sys.dm_sql_referencing_entities(''dbo.fhsmSplitLines'', ''OBJECT'') AS dsre
+			)
+			BEGIN
+				RAISERROR(''Cannot drop function dbo.fhsmSplitLines as it is still in use'', 0, 1) WITH NOWAIT;
+			END
+			ELSE BEGIN
+				RAISERROR(''Dropping function dbo.fhsmSplitLines'', 0, 1) WITH NOWAIT;
+
+				EXEC(''DROP FUNCTION dbo.fhsmSplitLines;'');
+			END;
 		END;
 	END;
 END;
 
 ';
+SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableBackupStatus = 0;',             'SET @enableBackupStatus = '             + CAST(@enableBackupStatus AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @enableBlocksAndDeadlocks = 0;',       'SET @enableBlocksAndDeadlocks = '       + CAST(@enableBlocksAndDeadlocks AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableConnections = 0;',              'SET @enableConnections = '              + CAST(@enableConnections AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableCPUUtilization = 0;',           'SET @enableCPUUtilization = '           + CAST(@enableCPUUtilization AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableDatabaseIO = 0;',               'SET @enableDatabaseIO = '               + CAST(@enableDatabaseIO AS nvarchar) + ';');
@@ -34380,5 +35608,5 @@ BEGIN
 END;
 
 RAISERROR('', 0, 1) WITH NOWAIT;
-SET @installationMsg = 'FHSQLMonitor in ' + @fhSQLMonitorDatabase + ' has been installed/upgraded to v2.4.0';
+SET @installationMsg = 'FHSQLMonitor in ' + @fhSQLMonitorDatabase + ' has been installed/upgraded to v2.5.0';
 RAISERROR(@installationMsg, 0, 1) WITH NOWAIT;

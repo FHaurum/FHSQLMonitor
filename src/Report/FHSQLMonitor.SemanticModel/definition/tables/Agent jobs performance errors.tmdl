@@ -58,6 +58,18 @@ table 'Agent jobs performance errors'
 
 		annotation SummarizationSetBy = Automatic
 
+	column AgentJobStatsusKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 481317d1-1106-49e0-9e5b-f8f8d9945603
+		summarizeBy: none
+		sourceColumn: AgentJobStatsusKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
 	partition 'Agent jobs performance errors' = m
 		mode: import
 		queryGroup: Facts
@@ -67,17 +79,36 @@ table 'Agent jobs performance errors'
 				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Agent jobs performance")), 
 				    "DataLoad"
 				  ), 
-				  dbList = Sql.Databases(#"Server name"), 
-				  db = dbList{[Name = #"Database name"]}[Data], 
-				  table = db{[Schema = #"Schema name", Item = "Agent jobs performance errors"]}[Data], 
+				  serverName = Record.Field(
+				    Table.First(Table.SelectRows(#"Connection parameters", each [Key] = "ServerName")), 
+				    "Value"
+				  ), 
+				  databaseName = Record.Field(
+				    Table.First(Table.SelectRows(#"Connection parameters", each [Key] = "DatabaseName")), 
+				    "Value"
+				  ), 
+				  schemaName = Record.Field(
+				    Table.First(Table.SelectRows(#"Connection parameters", each [Key] = "SchemaName")), 
+				    "Value"
+				  ), 
+				  dbList = Sql.Databases(serverName), 
+				  db     = dbList{[Name = databaseName]}[Data], 
+				  table  = db{[Schema = schemaName, Item = "Agent jobs performance errors"]}[Data], 
 				  emptyDataset = Table.FirstN(table, 0), 
 				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset,
-				  SelectColumns = Table.SelectColumns(
+				  selectColumns = Table.SelectColumns(
 				    datasetToUse,
-				    {"Message", "StartDateTime", "Date", "TimeKey", "AgentJobKey"}
+				    {
+				      "Message", 
+				      "StartDateTime", 
+				      "Date", 
+				      "TimeKey", 
+				      "AgentJobKey", 
+				      "AgentJobStatsusKey"
+				    }
 				  )
 				in
-				    SelectColumns
+				  selectColumns
 				```
 
 	annotation PBI_NavigationStepName = Navigation

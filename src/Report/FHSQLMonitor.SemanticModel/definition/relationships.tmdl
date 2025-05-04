@@ -292,3 +292,39 @@ relationship 8b97dcf0-ac88-4996-531e-2e344f0dbc05
 	fromColumn: 'Missing indexes - Index details'.MissingIndexStatementKey
 	toColumn: 'Missing index statement - Index details'.MissingIndexStatementKey
 
+relationship 75c059aa-3f0e-733c-a03e-23eba6fb8d91
+	fromColumn: 'Agent jobs performance errors'.AgentJobStatsusKey
+	toColumn: 'Agent job status'.AgentJobStatsusKey
+
+relationship 05801a7d-6def-d783-9129-e7bb3640ea5c
+	fromColumn: 'Blocked process'.Date
+	toColumn: Date.Date
+
+relationship 87498887-3678-eda2-11eb-b6289a461e61
+	fromColumn: Deadlock.Date
+	toColumn: Date.Date
+
+relationship 471aa505-0fd7-703c-4825-cb676b12d2f5
+	fromColumn: 'Blocked process'.TimeKey
+	toColumn: Time.TimeKey
+
+relationship d9fdd0c3-e88b-2eb5-cccd-52c51a4375e8
+	fromColumn: Deadlock.TimeKey
+	toColumn: Time.TimeKey
+
+relationship f3246abc-8a05-654c-f890-9ca7afd9f495
+	fromColumn: Deadlock.DatabaseKey
+	toColumn: Database.DatabaseKey
+
+relationship 174fce10-b1f4-fa33-572d-7f7900ffcd90
+	fromColumn: 'Blocked process'.DatabaseKey
+	toColumn: Database.DatabaseKey
+
+relationship a4a0753f-e380-718f-eff6-0b94435a9fa1
+	fromColumn: Deadlock.BlocksAndDeadlocksKey
+	toColumn: 'Blocks and deadlocks'.BlocksAndDeadlocksKey
+
+relationship 97cbeb76-f69e-d5ae-9ba9-5951ef7f9049
+	fromColumn: 'Blocked process'.BlocksAndDeadlocksKey
+	toColumn: 'Blocks and deadlocks'.BlocksAndDeadlocksKey
+

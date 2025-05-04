@@ -85,10 +85,8 @@ ELSE BEGIN
 	--
 	BEGIN
 		DECLARE @maxSQLTextLength int;
-		DECLARE @maxSQLTextLineLength int;
 
 		SET @maxSQLTextLength = 1024;
-		SET @maxSQLTextLineLength = 70;
 	END;
 
 	--
@@ -189,13 +187,10 @@ ELSE BEGIN
 					,a.login_time AS LoginTime
 					,DATEDIFF(MILLISECOND, a.start_time, a.collection_time) AS ElapsedTimeMS
 					,a.session_id AS SessionId
-					,(dbo.fhsmFNSplitLines(
-						(CASE
-							WHEN LEN(a.sql_text) > ' + CAST(@maxSQLTextLength AS nvarchar) + ' THEN LEFT(a.sql_text, ' + CAST(@maxSQLTextLength AS nvarchar) + ') + CHAR(10) + ''...Statement truncated''
-							ELSE a.sql_text
-						END),
-						' + CAST(@maxSQLTextLineLength AS nvarchar) + '
-					)) AS SQLText
+					,CASE
+						WHEN LEN(a.sql_text) > ' + CAST(@maxSQLTextLength AS nvarchar) + ' THEN LEFT(a.sql_text, ' + CAST(@maxSQLTextLength AS nvarchar) + ') + CHAR(10) + ''...Statement truncated''
+						ELSE a.sql_text
+					END AS SQLText
 					,a.sql_command AS SQLCommand
 					,a.login_name AS LoginName
 					,a.wait_info AS WaitInfo
@@ -214,6 +209,7 @@ ELSE BEGIN
 					,a.percent_complete AS PercentComplete
 					,a.host_name AS HostName
 					,a.program_name AS ProgramName
+					,ROW_NUMBER() OVER(ORDER BY a.collection_time, (a.reads - a.FirstReads), a.session_id DESC) AS SortOrder
 					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(a.database_name, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
 				FROM (
 					SELECT

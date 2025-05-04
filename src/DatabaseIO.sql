@@ -66,7 +66,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.1';
+		SET @version = '2.5';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -427,6 +427,7 @@ ELSE BEGIN
 
 					DECLARE @database nvarchar(128);
 					DECLARE @databases nvarchar(max);
+					DECLARE @errorMsg nvarchar(max);
 					DECLARE @ioStallQueuedReadMSStmt nvarchar(max);
 					DECLARE @ioStallQueuedWriteMSStmt nvarchar(max);
 					DECLARE @message nvarchar(max);
@@ -563,18 +564,26 @@ ELSE BEGIN
 									FROM sys.dm_io_virtual_file_stats(DB_ID(), NULL) AS divfs
 									INNER JOIN sys.database_files AS df WITH (NOLOCK) ON (divfs.file_id = df.file_id);
 								'';
-								INSERT INTO dbo.fhsmDatabaseIO(
-									DatabaseName, LogicalName, Type
-									,SampleMS, IOStall
-									,NumOfReads, NumOfBytesRead, IOStallReadMS, IOStallQueuedReadMS
-									,NumOfWrites, NumOfBytesWritten, IOStallWriteMS, IOStallQueuedWriteMS
-									,SizeOnDiskBytes
-									,TimestampUTC, Timestamp
-								)
-								EXEC sp_executesql
-									@stmt
-									,N''@now datetime, @nowUTC datetime''
-									,@now = @now, @nowUTC = @nowUTC;
+								BEGIN TRY
+									INSERT INTO dbo.fhsmDatabaseIO(
+										DatabaseName, LogicalName, Type
+										,SampleMS, IOStall
+										,NumOfReads, NumOfBytesRead, IOStallReadMS, IOStallQueuedReadMS
+										,NumOfWrites, NumOfBytesWritten, IOStallWriteMS, IOStallQueuedWriteMS
+										,SizeOnDiskBytes
+										,TimestampUTC, Timestamp
+									)
+									EXEC sp_executesql
+										@stmt
+										,N''@now datetime, @nowUTC datetime''
+										,@now = @now, @nowUTC = @nowUTC;
+								END TRY
+								BEGIN CATCH
+									SET @errorMsg = ERROR_MESSAGE();
+
+									SET @message = ''Database '''''' + @database + '''''' failed due to - '' + @errorMsg;
+									EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''Warning'', @message = @message;
+								END CATCH;
 							END
 							ELSE BEGIN
 								SET @message = ''Database '''''' + @database + '''''' is member of a replica but this server is not the primary node'';

@@ -8,6 +8,7 @@ AgentJobs.sql
 AgentJobsPerformance.sql
 AgeOfStatistics.sql
 BackupStatus.sql
+BlocksAndDeadlocks.sql
 Connections.sql
 CPUUtilization.sql
 DatabaseIO.sql

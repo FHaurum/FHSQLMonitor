@@ -1,0 +1,178 @@
+table 'Blocked process'
+	lineageTag: 99935d5e-e88b-456b-9f14-b780416e8255
+
+	column 'Blocked statement'
+		dataType: string
+		lineageTag: 15beb503-d3e7-497c-86e9-1d6c435e9d84
+		summarizeBy: none
+		sourceColumn: Blocked statement
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Blocking statement'
+		dataType: string
+		lineageTag: 61401d3d-cdf6-465e-8241-53ccc1be0623
+		summarizeBy: none
+		sourceColumn: Blocking statement
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Sort order'
+		dataType: int64
+		formatString: #,0
+		lineageTag: ad5f24b5-f031-45fa-a2c6-90e9f3c91104
+		summarizeBy: none
+		sourceColumn: Sort order
+
+		annotation SummarizationSetBy = User
+
+	column 'Timestamp (UTC)'
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: 9c3a678d-eb73-4b20-8b75-d72c966bd5f5
+		summarizeBy: none
+		sourceColumn: Timestamp (UTC)
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	column Date
+		dataType: dateTime
+		isHidden
+		formatString: Long Date
+		lineageTag: 82d68628-8cf0-4473-8f3a-ff59b7de678d
+		summarizeBy: none
+		sourceColumn: Date
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column TimeKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 0375285c-f3e5-4c93-867e-6acc8278cb4e
+		summarizeBy: none
+		sourceColumn: TimeKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Data set'
+		dataType: int64
+		formatString: #,0
+		lineageTag: b24a9090-0775-4bb1-9331-e54d3c026a66
+		summarizeBy: none
+		sourceColumn: Data set
+
+		annotation SummarizationSetBy = User
+
+	column BlocksAndDeadlocksKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 4bf866b4-898e-457b-b318-c30cba76fc13
+		summarizeBy: none
+		sourceColumn: BlocksAndDeadlocksKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column DatabaseKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: d7bf3b7a-77cd-4358-a231-542ec9f19680
+		summarizeBy: none
+		sourceColumn: DatabaseKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Blocked SPID'
+		dataType: int64
+		formatString: #,0
+		lineageTag: 88762e8e-42a9-4687-a4b1-b52202a34a6e
+		summarizeBy: none
+		sourceColumn: Blocked SPID
+
+		annotation SummarizationSetBy = User
+
+	column 'Blocking SPID'
+		dataType: int64
+		formatString: #,0
+		lineageTag: 5aaa43fb-548f-4f1c-8ab6-f1e9b3c331c1
+		summarizeBy: none
+		sourceColumn: Blocking SPID
+
+		annotation SummarizationSetBy = User
+
+	partition 'Blocked process' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Blocks and deadlocks")), 
+				    "DataLoad"
+				  ), 
+				  serverName = Record.Field(
+				    Table.First(Table.SelectRows(#"Connection parameters", each [Key] = "ServerName")), 
+				    "Value"
+				  ), 
+				  databaseName = Record.Field(
+				    Table.First(Table.SelectRows(#"Connection parameters", each [Key] = "DatabaseName")), 
+				    "Value"
+				  ), 
+				  schemaName = Record.Field(
+				    Table.First(Table.SelectRows(#"Connection parameters", each [Key] = "SchemaName")), 
+				    "Value"
+				  ), 
+				  dbList = Sql.Databases(serverName), 
+				  db     = dbList{[Name = databaseName]}[Data], 
+				  table  = db{[Schema = schemaName, Item = "Blocked process"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  selectColumns = Table.SelectColumns(
+				    datasetToUse,
+				    {
+				      "BlockedSPID", 
+				      "BlockedStatement", 
+				      "BlockingSPID", 
+				      "BlockingStatement", 
+				      "DataSet", 
+				      "SortOrder", 
+				      "EventTimestampUTC", 
+				      "Date", 
+				      "TimeKey", 
+				      "BlocksAndDeadlocksKey", 
+				      "DatabaseKey"
+				    }
+				  ),
+				  renameColumns = Table.RenameColumns(
+				    selectColumns, 
+				    {
+				      {"BlockedSPID", "Blocked SPID"}, 
+				      {"BlockedStatement", "Blocked statement"},
+				      {"BlockingSPID", "Blocking SPID"}, 
+				      {"BlockingStatement", "Blocking statement"}, 
+				      {"DataSet", "Data set"}, 
+				      {"SortOrder", "Sort order"}, 
+				      {"EventTimestampUTC", "Timestamp (UTC)"}
+				    }
+				  )
+				in
+				  renameColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

@@ -115,17 +115,32 @@ table 'Backup status'
 				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Backup")), 
 				    "DataLoad"
 				  ), 
-				  dbList = Sql.Databases(#"Server name"), 
-				  db = dbList{[Name = #"Database name"]}[Data], 
-				  table = db{[Schema = #"Schema name", Item = "Backup status"]}[Data], 
+				  serverName = Record.Field(
+				    Table.First(Table.SelectRows(#"Connection parameters", each [Key] = "ServerName")), 
+				    "Value"
+				  ), 
+				  databaseName = Record.Field(
+				    Table.First(Table.SelectRows(#"Connection parameters", each [Key] = "DatabaseName")), 
+				    "Value"
+				  ), 
+				  schemaName = Record.Field(
+				    Table.First(Table.SelectRows(#"Connection parameters", each [Key] = "SchemaName")), 
+				    "Value"
+				  ), 
+				  dbList = Sql.Databases(serverName), 
+				  db     = dbList{[Name = databaseName]}[Data], 
+				  table  = db{[Schema = schemaName, Item = "Backup status"]}[Data], 
 				  emptyDataset = Table.FirstN(table, 0), 
 				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
-				  ChangeType = Table.TransformColumnTypes(
+				  changeType = Table.TransformColumnTypes(
 				    datasetToUse, 
-				    {{"BackupSize", Int64.Type}, {"CompressedBackupSize", Int64.Type}}
+				    {
+				      {"BackupSize", Int64.Type}, 
+				      {"CompressedBackupSize", Int64.Type}
+				    }
 				  ), 
-				  SelectColumns = Table.SelectColumns(
-				    ChangeType, 
+				  selectColumns = Table.SelectColumns(
+				    changeType, 
 				    {
 				      "BackupStartDate", 
 				      "BackupFinishDate", 
@@ -139,12 +154,15 @@ table 'Backup status'
 				      "BackupTypeJunkDimensionKey"
 				    }
 				  ), 
-				  RenameColumns = Table.RenameColumns(
-				    SelectColumns, 
-				    {{"IsCopyOnly", "Copy only"}, {"IsDamaged", "Damaged"}}
+				  renameColumns = Table.RenameColumns(
+				    selectColumns, 
+				    {
+				      {"IsCopyOnly", "Copy only"}, 
+				      {"IsDamaged", "Damaged"}
+				    }
 				  )
 				in
-				  RenameColumns
+				  renameColumns
 				```
 
 	annotation PBI_NavigationStepName = Navigation

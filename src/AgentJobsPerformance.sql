@@ -66,7 +66,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.4';
+		SET @version = '2.5';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -356,8 +356,18 @@ ELSE BEGIN
 					,ajp.MinDurationSeconds
 					,ajp.MaxDurationSeconds
 					,(ajp.Hour * 60 * 60) AS TimeKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ajp.Name,      DEFAULT,         DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS AgentJobKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ajp.JobStatus, ajp.StepsStatus, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS AgentJobStatsusKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ajp.Name, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS AgentJobKey
+					,CAST(
+						CASE
+							WHEN (ajp.JobStatus = 1) AND (ajp.StepsStatus = 0)	THEN 1	-- Ended with errors
+							WHEN (ajp.JobStatus = 1)							THEN 0	-- Succeeded
+							WHEN (ajp.JobStatus = 0)							THEN 2	-- Failed
+							WHEN (ajp.JobStatus = 2)							THEN 3	-- Retry
+							WHEN (ajp.JobStatus = 3)							THEN 4	-- Canceled
+							WHEN (ajp.JobStatus = 4)							THEN 5	-- In progress
+							WHEN (ajp.JobStatus = -1)							THEN 99	-- Missing data
+						END
+					AS bigint) AS AgentJobStatsusKey
 				FROM dbo.fhsmAgentJobsPerformance AS ajp;
 			';
 			EXEC(@stmt);
@@ -390,6 +400,14 @@ ELSE BEGIN
 					,CAST(ajpe.StartDateTime AS date) AS Date
 					,(DATEPART(HOUR, ajpe.StartDateTime) * 60 * 60) + (DATEPART(MINUTE, ajpe.StartDateTime) * 60) + (DATEPART(SECOND, ajpe.StartDateTime)) AS TimeKey
 					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ajpe.Name, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS AgentJobKey
+					,CAST(
+						CASE
+							WHEN (ajpe.RunStatus = 0)	THEN 2	-- Failed
+							WHEN (ajpe.RunStatus = 2)	THEN 3	-- Retry
+							WHEN (ajpe.RunStatus = 3)	THEN 4	-- Canceled
+							WHEN (ajpe.RunStatus = 4)	THEN 5	-- In progress
+						END
+					AS bigint) AS AgentJobStatsusKey
 				FROM dbo.fhsmAgentJobsPerformanceLatestError AS ajpe
 			';
 			EXEC(@stmt);
@@ -413,17 +431,17 @@ ELSE BEGIN
 				SELECT
 					s.Status
 					,s.SortOrder
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(s.JobStatus, s.StepsStatus, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS AgentJobStatsusKey
+					,CAST(s.StatusVal AS bigint) AS AgentJobStatsusKey
 				FROM (
 					VALUES
-						( 1,  1,  ''Succeeded'',         0),
-						( 1,  0,  ''Ended with errors'', 1),
-						( 0,  0,  ''Failed'',            2),
-						( 2,  2,  ''Retry'',             3),
-						( 3,  3,  ''Canceled'',          4),
-						( 4,  4,  ''In progress'',       5),
-						(-1, -1, ''Missing data'',       6)
-				) AS s(JobStatus, StepsStatus, Status, SortOrder);
+						( 0, ''Succeeded'',         0),
+						( 1, ''Ended with errors'', 1),
+						( 2, ''Failed'',            2),
+						( 3, ''Retry'',             3),
+						( 4, ''Canceled'',          4),
+						( 5, ''In progress'',       5),
+						(99, ''Missing data'',      6)
+				) AS s(StatusVal, Status, SortOrder);
 			';
 			EXEC(@stmt);
 		END;

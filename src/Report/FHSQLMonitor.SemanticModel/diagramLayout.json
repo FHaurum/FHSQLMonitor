@@ -1073,45 +1073,6 @@
         },
         {
           "location": {
-            "x": 0,
-            "y": 849.5
-          },
-          "nodeIndex": "Server name",
-          "size": {
-            "height": 72,
-            "width": 234
-          },
-          "zIndex": 0,
-          "expandedHeight": 104
-        },
-        {
-          "location": {
-            "x": 290,
-            "y": 849.5
-          },
-          "nodeIndex": "Database name",
-          "size": {
-            "height": 72,
-            "width": 234
-          },
-          "zIndex": 0,
-          "expandedHeight": 104
-        },
-        {
-          "location": {
-            "x": 590,
-            "y": 852.5
-          },
-          "nodeIndex": "Schema name",
-          "size": {
-            "height": 72,
-            "width": 234
-          },
-          "zIndex": 0,
-          "expandedHeight": 104
-        },
-        {
-          "location": {
             "x": 3133.7995174397274,
             "y": 230.91036771669604
           },
@@ -1288,6 +1249,74 @@
           },
           "zIndex": 0,
           "expandedHeight": 176
+        },
+        {
+          "location": {
+            "x": 2446.7346891767597,
+            "y": 1234.6593244151632
+          },
+          "nodeIndex": "Blocked process",
+          "nodeLineageTag": "99935d5e-e88b-456b-9f14-b780416e8255",
+          "size": {
+            "height": 72,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 300
+        },
+        {
+          "location": {
+            "x": 0.79822156724912929,
+            "y": 739.92090413575556
+          },
+          "nodeIndex": "Configurations",
+          "nodeLineageTag": "f7da455a-9dad-4f8c-b2eb-5c24aff47dd0",
+          "size": {
+            "height": 72,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 128
+        },
+        {
+          "location": {
+            "x": 2447.8025160015686,
+            "y": 1335.8097864140864
+          },
+          "nodeIndex": "Deadlock",
+          "size": {
+            "height": 72,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 296
+        },
+        {
+          "location": {
+            "x": 2743.3890250316344,
+            "y": 1297.6330581474542
+          },
+          "nodeIndex": "Blocks and deadlocks",
+          "nodeLineageTag": "2c95f677-44f5-4dfa-a1d8-e67f476a1af9",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 176
+        },
+        {
+          "location": {
+            "x": 2759.7104897825698,
+            "y": 0
+          },
+          "nodeIndex": "Connection parameters",
+          "size": {
+            "height": 72,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 128
         }
       ],
       "name": "All tables",
@@ -1471,7 +1500,7 @@
             "height": 176,
             "width": 263
           },
-          "zIndex": 4,
+          "zIndex": 3,
           "expandedHeight": 272
         },
         {
@@ -1513,7 +1542,7 @@
             "height": 104,
             "width": 234
           },
-          "zIndex": 6,
+          "zIndex": 5,
           "expandedHeight": 176
         },
         {
@@ -1527,7 +1556,7 @@
             "height": 104,
             "width": 234
           },
-          "zIndex": 3,
+          "zIndex": 6,
           "expandedHeight": 152
         },
         {
@@ -1538,10 +1567,10 @@
           "nodeIndex": "Agent jobs performance errors",
           "nodeLineageTag": "1ccb8a78-3016-439d-bee7-36c5cff17b1f",
           "size": {
-            "height": 152,
+            "height": 176,
             "width": 300
           },
-          "zIndex": 5,
+          "zIndex": 4,
           "expandedHeight": 300
         }
       ],
@@ -1646,6 +1675,105 @@
       "nodes": [
         {
           "location": {
+            "x": 331,
+            "y": 295
+          },
+          "nodeIndex": "Blocked process",
+          "nodeLineageTag": "99935d5e-e88b-456b-9f14-b780416e8255",
+          "size": {
+            "height": 176,
+            "width": 234
+          },
+          "zIndex": 2,
+          "expandedHeight": 361
+        },
+        {
+          "location": {
+            "x": 0,
+            "y": 0
+          },
+          "nodeIndex": "Date",
+          "nodeLineageTag": "66406d91-b832-4567-b6e4-a3786a0597bb",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 3,
+          "expandedHeight": 230
+        },
+        {
+          "location": {
+            "x": 331,
+            "y": 0
+          },
+          "nodeIndex": "Time",
+          "nodeLineageTag": "544922c4-f043-457f-b0e4-e98e212a0454",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 4,
+          "expandedHeight": 180
+        },
+        {
+          "location": {
+            "x": 657,
+            "y": 297
+          },
+          "nodeIndex": "Deadlock",
+          "nodeLineageTag": "a1c85509-9cec-4a28-91f8-bcff4b55284c",
+          "size": {
+            "height": 176,
+            "width": 234
+          },
+          "zIndex": 1,
+          "expandedHeight": 310
+        },
+        {
+          "location": {
+            "x": 657,
+            "y": 0
+          },
+          "nodeIndex": "Blocks and deadlocks",
+          "nodeLineageTag": "2c95f677-44f5-4dfa-a1d8-e67f476a1af9",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 6,
+          "expandedHeight": 182
+        },
+        {
+          "location": {
+            "x": 983,
+            "y": 0
+          },
+          "nodeIndex": "Database",
+          "nodeLineageTag": "afa4b2f5-6362-4b41-9da5-56394d652976",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 5,
+          "expandedHeight": 128
+        }
+      ],
+      "name": "Blocks and deadlocks",
+      "zoomValue": 100,
+      "pinKeyFieldsToTop": false,
+      "showExtraHeaderInfo": false,
+      "hideKeyFieldsWhenCollapsed": false,
+      "tablesLocked": false
+    },
+    {
+      "ordinal": 6,
+      "scrollPosition": {
+        "x": 0,
+        "y": 0
+      },
+      "nodes": [
+        {
+          "location": {
             "x": 286.16420851286546,
             "y": 208.19779705671817
           },
@@ -1723,7 +1851,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 6,
+      "ordinal": 7,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -1822,7 +1950,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 7,
+      "ordinal": 8,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -1907,7 +2035,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 8,
+      "ordinal": 9,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -1964,7 +2092,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 9,
+      "ordinal": 10,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -2021,7 +2149,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 10,
+      "ordinal": 11,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -2105,7 +2233,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 11,
+      "ordinal": 12,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -2190,7 +2318,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 12,
+      "ordinal": 13,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -2275,7 +2403,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 13,
+      "ordinal": 14,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -2318,7 +2446,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 14,
+      "ordinal": 15,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -2403,7 +2531,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 15,
+      "ordinal": 16,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -2682,7 +2810,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 16,
+      "ordinal": 17,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -2781,7 +2909,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 17,
+      "ordinal": 18,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -2838,7 +2966,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 18,
+      "ordinal": 19,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -2909,7 +3037,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 19,
+      "ordinal": 20,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -2966,7 +3094,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 20,
+      "ordinal": 21,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -3009,7 +3137,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 21,
+      "ordinal": 22,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -3094,7 +3222,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 22,
+      "ordinal": 23,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -3165,7 +3293,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 23,
+      "ordinal": 24,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -3208,7 +3336,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 24,
+      "ordinal": 25,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -3293,7 +3421,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 25,
+      "ordinal": 26,
       "scrollPosition": {
         "x": 0,
         "y": 0

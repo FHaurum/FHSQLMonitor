@@ -66,7 +66,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.3';
+		SET @version = '2.5';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -78,17 +78,6 @@ ELSE BEGIN
 		SET @productStartPos = @productEndPos + 1;
 		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
 		SET @productVersion3 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
-	END;
-
-	--
-	-- Variables used in view to control the statement output
-	--
-	BEGIN
-		DECLARE @maxIndexColumnsLineLength int;
-		DECLARE @maxIncludedColumnsLineLength int;
-
-		SET @maxIndexColumnsLineLength = 40;
-		SET @maxIncludedColumnsLineLength = 40;
 	END;
 
 	--
@@ -235,8 +224,8 @@ ELSE BEGIN
 					,iu.HasFilter			+ 0 AS HasFilter
 					,iu.FilterDefinition
 					,iu.AutoCreated			+ 0 AS AutoCreated
-					,(dbo.fhsmFNSplitLines(iu.IndexColumns, ' + CAST(@maxIndexColumnsLineLength AS nvarchar) + ')) AS IndexColumns
-					,(dbo.fhsmFNSplitLines(iu.IncludedColumns, ' + CAST(@maxIncludedColumnsLineLength AS nvarchar) + ')) AS IncludedColumns
+					,iu.IndexColumns
+					,iu.IncludedColumns
 					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iu.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
 					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iu.DatabaseName, iu.SchemaName, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS SchemaKey
 					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iu.DatabaseName, iu.SchemaName, iu.ObjectName, DEFAULT, DEFAULT, DEFAULT) AS k) AS ObjectKey
@@ -515,6 +504,7 @@ ELSE BEGIN
 					DECLARE @autoCreatedStmt nvarchar(max);
 					DECLARE @database nvarchar(128);
 					DECLARE @databases nvarchar(max);
+					DECLARE @errorMsg nvarchar(max);
 					DECLARE @message nvarchar(max);
 					DECLARE @now datetime;
 					DECLARE @nowUTC datetime;
@@ -698,24 +688,32 @@ ELSE BEGIN
 									) AS includedColumns
 									WHERE (o.type IN (''''U'''', ''''V''''))
 								'';
-								INSERT INTO dbo.fhsmIndexUsage(
-									DatabaseName, SchemaName, ObjectName, IndexName
-									,UserSeeks, UserScans, UserLookups, UserUpdates
-									,LastUserSeek, LastUserScan, LastUserLookup, LastUserUpdate
-									,IndexType, IsUnique, IsPrimaryKey, IsUniqueConstraint
-									,[FillFactor]
-									,IsDisabled, IsHypothetical
-									,AllowRowLocks, AllowPageLocks
-									,HasFilter, FilterDefinition
-									,AutoCreated
-									,IndexColumns, IncludedColumns
-									,LastSQLServiceRestart
-									,TimestampUTC, Timestamp
-								)
-								EXEC sp_executesql
-									@stmt
-									,N''@now datetime, @nowUTC datetime''
-									,@now = @now, @nowUTC = @nowUTC;
+								BEGIN TRY
+									INSERT INTO dbo.fhsmIndexUsage(
+										DatabaseName, SchemaName, ObjectName, IndexName
+										,UserSeeks, UserScans, UserLookups, UserUpdates
+										,LastUserSeek, LastUserScan, LastUserLookup, LastUserUpdate
+										,IndexType, IsUnique, IsPrimaryKey, IsUniqueConstraint
+										,[FillFactor]
+										,IsDisabled, IsHypothetical
+										,AllowRowLocks, AllowPageLocks
+										,HasFilter, FilterDefinition
+										,AutoCreated
+										,IndexColumns, IncludedColumns
+										,LastSQLServiceRestart
+										,TimestampUTC, Timestamp
+									)
+									EXEC sp_executesql
+										@stmt
+										,N''@now datetime, @nowUTC datetime''
+										,@now = @now, @nowUTC = @nowUTC;
+								END TRY
+								BEGIN CATCH
+									SET @errorMsg = ERROR_MESSAGE();
+
+									SET @message = ''Database '''''' + @database + '''''' failed due to - '' + @errorMsg;
+									EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''Warning'', @message = @message;
+								END CATCH;
 							END
 							ELSE BEGIN
 								SET @message = ''Database '''''' + @database + '''''' is member of a replica but this server is not the primary node'';

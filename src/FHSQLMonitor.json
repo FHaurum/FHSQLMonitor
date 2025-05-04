@@ -57,14 +57,14 @@
         "labels": [
           {
             "fontFamily": "Segoe UI",
-            "fontSize": 8
+            "fontSize": 12
           }
         ],
         "title": [
           {
             "bold": true,
             "fontFamily": "Segoe UI",
-            "fontSize": 8,
+            "fontSize": 12,
             "show": false
           }
         ],
@@ -101,7 +101,7 @@
         "categoryAxis": [
           {
             "fontFamily": "Segoe UI",
-            "fontSize": 8,
+            "fontSize": 12,
             "gridlineShow": false,
             "showAxisTitle": false
           }
@@ -109,14 +109,14 @@
         "legend": [
           {
             "fontFamily": "Segoe UI",
-            "fontSize": 8,
+            "fontSize": 12,
             "showTitle": false
           }
         ],
         "subTitle": [
           {
             "fontFamily": "Segoe UI",
-            "fontSize": 8,
+            "fontSize": 12,
             "show": true
           }
         ],
@@ -124,13 +124,13 @@
           {
             "bold": true,
             "fontFamily": "Segoe UI",
-            "fontSize": 8
+            "fontSize": 12
           }
         ],
         "valueAxis": [
           {
             "fontFamily": "Segoe UI",
-            "fontSize": 8,
+            "fontSize": 10,
             "showAxisTitle": false
           }
         ]
@@ -162,7 +162,7 @@
         "categoryAxis": [
           {
             "fontFamily": "Segoe UI",
-            "fontSize": 8,
+            "fontSize": 12,
             "gridlineShow": false,
             "showAxisTitle": false
           }
@@ -170,14 +170,14 @@
         "legend": [
           {
             "fontFamily": "Segoe UI",
-            "fontSize": 8,
+            "fontSize": 12,
             "showTitle": false
           }
         ],
         "subTitle": [
           {
             "fontFamily": "Segoe UI",
-            "fontSize": 8,
+            "fontSize": 12,
             "show": true
           }
         ],
@@ -185,13 +185,13 @@
           {
             "bold": true,
             "fontFamily": "Segoe UI",
-            "fontSize": 8
+            "fontSize": 12
           }
         ],
         "valueAxis": [
           {
             "fontFamily": "Segoe UI",
-            "fontSize": 8,
+            "fontSize": 10,
             "gridlineColor": {
               "solid": {
                 "color": "#BCD9FF"
@@ -233,7 +233,7 @@
         "categoryAxis": [
           {
             "fontFamily": "Segoe UI",
-            "fontSize": 8,
+            "fontSize": 12,
             "gridlineShow": false,
             "showAxisTitle": false
           }
@@ -248,19 +248,19 @@
             "backgroundTransparency": 60,
             "enableBackground": true,
             "enableTitleDataLabel": true,
-            "fontSize": 8,
+            "fontSize": 12,
             "horizontalAlignment": "right",
             "labelContentLayout": "MultiLine",
             "labelDensity": 0,
             "labelPosition": "Under",
             "show": true,
-            "titleFontSize": 8
+            "titleFontSize": 12
           }
         ],
         "legend": [
           {
             "fontFamily": "Segoe UI",
-            "fontSize": 8
+            "fontSize": 12
           }
         ],
         "lineStyles": [
@@ -274,7 +274,7 @@
         "subTitle": [
           {
             "fontFamily": "Segoe UI",
-            "fontSize": 8,
+            "fontSize": 12,
             "show": true
           }
         ],
@@ -282,13 +282,13 @@
           {
             "bold": true,
             "fontFamily": "Segoe UI",
-            "fontSize": 8
+            "fontSize": 12
           }
         ],
         "valueAxis": [
           {
             "fontFamily": "Segoe UI",
-            "fontSize": 8,
+            "fontSize": 10,
             "gridlineColor": {
               "solid": {
                 "color": "#BCD9FF"
@@ -330,7 +330,7 @@
         "categoryAxis": [
           {
             "fontFamily": "Segoe UI",
-            "fontSize": 8,
+            "fontSize": 12,
             "gridlineShow": false,
             "showAxisTitle": false
           }
@@ -338,7 +338,7 @@
         "legend": [
           {
             "fontFamily": "Segoe UI",
-            "fontSize": 8
+            "fontSize": 12
           }
         ],
         "lineStyles": [
@@ -349,7 +349,7 @@
         "subTitle": [
           {
             "fontFamily": "Segoe UI",
-            "fontSize": 8,
+            "fontSize": 12,
             "show": true
           }
         ],
@@ -357,13 +357,13 @@
           {
             "bold": true,
             "fontFamily": "Segoe UI",
-            "fontSize": 8
+            "fontSize": 12
           }
         ],
         "valueAxis": [
           {
             "fontFamily": "Segoe UI",
-            "fontSize": 8,
+            "fontSize": 10,
             "gridlineColor": {
               "solid": {
                 "color": "#BCD9FF"
@@ -373,8 +373,14 @@
             "gridlineStyle": "solid",
             "gridlineThickness": 1,
             "gridlineTransparency": 40,
-            "showAxisTitle": false,
-            "start": 0
+            "secFontFamily": "Segoe UI",
+            "secFontSize": 10,
+            "secTitleFontFamily": "Segoe UI",
+            "secTitleFontSize": 10,
+            "showAxisTitle": true,
+            "start": 0,
+            "titleFontFamily": "Segoe UI",
+            "titleFontSize": 10
           }
         ]
       }
@@ -405,7 +411,7 @@
         "categoryAxis": [
           {
             "fontFamily": "Segoe UI",
-            "fontSize": 8,
+            "fontSize": 12,
             "gridlineShow": false,
             "showAxisTitle": false
           }
@@ -413,7 +419,7 @@
         "legend": [
           {
             "fontFamily": "Segoe UI",
-            "fontSize": 8
+            "fontSize": 12
           }
         ],
         "lineStyles": [
@@ -424,7 +430,7 @@
         "subTitle": [
           {
             "fontFamily": "Segoe UI",
-            "fontSize": 8,
+            "fontSize": 12,
             "show": true
           }
         ],
@@ -432,13 +438,13 @@
           {
             "bold": true,
             "fontFamily": "Segoe UI",
-            "fontSize": 8
+            "fontSize": 12
           }
         ],
         "valueAxis": [
           {
             "fontFamily": "Segoe UI",
-            "fontSize": 8,
+            "fontSize": 10,
             "gridlineColor": {
               "solid": {
                 "color": "#BCD9FF"
@@ -448,8 +454,14 @@
             "gridlineStyle": "solid",
             "gridlineThickness": 1,
             "gridlineTransparency": 40,
-            "showAxisTitle": false,
-            "start": 0
+            "secFontFamily": "Segoe UI",
+            "secFontSize": 10,
+            "secTitleFontFamily": "Segoe UI",
+            "secTitleFontSize": 10,
+            "showAxisTitle": true,
+            "start": 0,
+            "titleFontFamily": "Segoe UI",
+            "titleFontSize": 10
           }
         ]
       }
@@ -501,7 +513,7 @@
             },
             "bold": true,
             "fontFamily": "Segoe UI",
-            "fontSize": 8
+            "fontSize": 12
           }
         ],
         "grid": [
@@ -523,7 +535,7 @@
           {
             "bold": true,
             "fontFamily": "Segoe UI",
-            "fontSize": 8
+            "fontSize": 12
           }
         ],
         "values": [
@@ -540,14 +552,14 @@
             },
             "bandedRowHeaders": true,
             "fontFamily": "Segoe UI",
-            "fontSize": 8
+            "fontSize": 12
           }
         ],
         "title": [
           {
             "bold": true,
             "fontFamily": "Segoe UI",
-            "fontSize": 8,
+            "fontSize": 12,
             "show": true
           }
         ],
@@ -590,7 +602,7 @@
           {
             "bold": true,
             "fontFamily": "Segoe UI",
-            "textSize": 8
+            "textSize": 12
           }
         ],
         "items": [
@@ -601,7 +613,7 @@
               }
             },
             "fontFamily": "Segoe UI",
-            "textSize": 8
+            "textSize": 12
           }
         ],
         "visualHeader": [
@@ -615,7 +627,7 @@
       "*": {
         "applyButton": [
           {
-            "iconSize": 8
+            "iconSize": 12
           }
         ],
         "background": [
@@ -643,13 +655,13 @@
           {
             "bold": true,
             "fontFamily": "Segoe UI",
-            "textSize": 8
+            "textSize": 12
           }
         ],
         "inputText": [
           {
-            "dismissSize": 8,
-            "fontSize": 8,
+            "dismissSize": 12,
+            "fontSize": 12,
             "fontTransparency": 20
           }
         ],
@@ -674,7 +686,7 @@
           {
             "bold": true,
             "fontFamily": "Segoe UI",
-            "fontSize": 8,
+            "fontSize": 12,
             "show": false
           }
         ],
@@ -718,7 +730,7 @@
             },
             "bold": true,
             "fontFamily": "Segoe UI",
-            "fontSize": 8
+            "fontSize": 12
           }
         ],
         "values": [
@@ -735,14 +747,14 @@
             },
             "bandedRowHeaders": true,
             "fontFamily": "Segoe UI",
-            "fontSize": 8
+            "fontSize": 12
           }
         ],
         "title": [
           {
             "bold": true,
             "fontFamily": "Segoe UI",
-            "fontSize": 8,
+            "fontSize": 12,
             "show": true
           }
         ]

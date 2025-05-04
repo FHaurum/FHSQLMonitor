@@ -68,15 +68,41 @@ table 'Partitioned indexes'
 				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Partitioned indexes")), 
 				    "DataLoad"
 				  ), 
-				  dbList = Sql.Databases(#"Server name"), 
-				  db = dbList{[Name = #"Database name"]}[Data], 
-				  table = db{[Schema = #"Schema name", Item = "Partitioned indexes"]}[Data], 
+				  serverName = Record.Field(
+				    Table.First(Table.SelectRows(#"Connection parameters", each [Key] = "ServerName")), 
+				    "Value"
+				  ), 
+				  databaseName = Record.Field(
+				    Table.First(Table.SelectRows(#"Connection parameters", each [Key] = "DatabaseName")), 
+				    "Value"
+				  ), 
+				  schemaName = Record.Field(
+				    Table.First(Table.SelectRows(#"Connection parameters", each [Key] = "SchemaName")), 
+				    "Value"
+				  ), 
+				  dbList = Sql.Databases(serverName), 
+				  db     = dbList{[Name = databaseName]}[Data], 
+				  table  = db{[Schema = schemaName, Item = "Partitioned indexes"]}[Data], 
 				  emptyDataset = Table.FirstN(table, 0), 
 				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
-				  SelectColumns = Table.SelectColumns(datasetToUse,{"PartitionRange", "SortOrder", "PartitionRowCount", "Date", "IndexKey"}),
-				  RenamedColumns = Table.RenameColumns(SelectColumns,{{"PartitionRange", "Partition range"}})
+				  selectColumns = Table.SelectColumns(
+				    datasetToUse, 
+				    {
+				      "PartitionRange", 
+				      "SortOrder", 
+				      "PartitionRowCount", 
+				      "Date", 
+				      "IndexKey"
+				    }
+				  ),
+				  renamedColumns = Table.RenameColumns(
+				    selectColumns, 
+				    {
+				      {"PartitionRange", "Partition range"}
+				    }
+				  )
 				in
-				  RenamedColumns
+				  renamedColumns
 				```
 
 	annotation PBI_NavigationStepName = Navigation

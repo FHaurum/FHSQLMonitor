@@ -270,12 +270,24 @@ table 'Agent jobs - grid'
 				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Agent jobs configuration")), 
 				    "DataLoad"
 				  ), 
-				  dbList = Sql.Databases(#"Server name"), 
-				  db = dbList{[Name = #"Database name"]}[Data], 
-				  table = db{[Schema = #"Schema name", Item = "Agent jobs - grid"]}[Data], 
+				  serverName = Record.Field(
+				    Table.First(Table.SelectRows(#"Connection parameters", each [Key] = "ServerName")), 
+				    "Value"
+				  ), 
+				  databaseName = Record.Field(
+				    Table.First(Table.SelectRows(#"Connection parameters", each [Key] = "DatabaseName")), 
+				    "Value"
+				  ), 
+				  schemaName = Record.Field(
+				    Table.First(Table.SelectRows(#"Connection parameters", each [Key] = "SchemaName")), 
+				    "Value"
+				  ), 
+				  dbList = Sql.Databases(serverName), 
+				  db     = dbList{[Name = databaseName]}[Data], 
+				  table  = db{[Schema = schemaName, Item = "Agent jobs - grid"]}[Data], 
 				  emptyDataset = Table.FirstN(table, 0), 
 				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
-				  RenamedColumns = Table.RenameColumns(
+				  renamedColumns = Table.RenameColumns(
 				    datasetToUse, 
 				    {
 				      {"JobName", "Job"}, 
@@ -288,7 +300,7 @@ table 'Agent jobs - grid'
 				    }
 				  )
 				in
-				  RenamedColumns
+				  renamedColumns
 				```
 
 	annotation PBI_NavigationStepName = Navigation

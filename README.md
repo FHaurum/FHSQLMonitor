@@ -3,6 +3,11 @@ To read more about the project go to my blog [SQL Server Monitoring](https://www
 
 Have fun :-)
 <p>
+<b>May 4, 2025: Version 2.5.0</b> with:</br>
+<li>New report "Blocks and deadlocks"</li>
+<li>Updated all pages to use 1080:1920 instead of 720:1280</li>
+</p>
+<p>
 <b>April 15, 2025: Version 2.4.0</b> with:</br>
 <li>Updated the report "Agent jobs performance" and the way the visuals interact</li>
 <li>General performance update of model, measures, data and visuals</li>

@@ -1,0 +1,81 @@
+table 'Connection parameters'
+	lineageTag: 203d750f-b541-42aa-9578-2dadd33af92c
+
+	column Key
+		dataType: string
+		isHidden
+		lineageTag: 776d57de-edcb-4ed1-93ec-878aaa91a1b9
+		summarizeBy: none
+		sourceColumn: Key
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column Value
+		dataType: string
+		isHidden
+		lineageTag: 24f5ddc7-770d-4ef9-92e0-e6c929a4f858
+		summarizeBy: none
+		sourceColumn: Value
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Default value'
+		dataType: string
+		isHidden
+		lineageTag: 2729598b-fa51-4721-92fe-120b4729446d
+		summarizeBy: none
+		sourceColumn: Default value
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Connection parameters' = m
+		mode: import
+		queryGroup: 'Connection parameters'
+		source = ```
+				let
+				  defaultParameters = Table.FromRows(
+				    Json.Document(
+				      Binary.Decompress(
+				        Binary.FromText(
+				          "i45WCk4tKkst8kvMTVXSUcrJT07MycgvLlGK1YlWckksSUxKLE6FSrp5BAf6+ObnZZbkF4Hlg5MzUnMTEbK+SrGxAA==", 
+				          BinaryEncoding.Base64
+				        ), 
+				        Compression.Deflate
+				      )
+				    ),
+				    let
+				      _t = ((type nullable text) meta [Serialized.Text = true])
+				    in
+				      type table [Key = _t, #"Default value" = _t]
+				  ),
+				  addValueColumn = Table.AddColumn(
+				    defaultParameters, 
+				    "Value", 
+				    each
+				           if [Key] = "ServerName"   then (if Text.Trim(#"Server name")   = "" then null else #"Server name")   ?? [Default value]
+				      else if [Key] = "DatabaseName" then (if Text.Trim(#"Database name") = "" then null else #"Database name") ?? [Default value]
+				      else if [Key] = "SchemaName"   then (if Text.Trim(#"Schema name")   = "" then null else #"Schema name")   ?? [Default value]
+				      else null
+				  ),
+				  changedTypes = Table.TransformColumnTypes(
+				    addValueColumn,
+				    {
+				      {"Key", type text}, 
+				      {"Default value", type text}, 
+				      {"Value", type text}
+				    }
+				  )
+				in
+				    changedTypes
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

@@ -145,7 +145,7 @@ BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.3';
+		SET @version = '2.5';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -157,17 +157,6 @@ BEGIN
 		SET @productStartPos = @productEndPos + 1;
 		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
 		SET @productVersion3 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
-	END;
-
-	--
-	-- Variables used in view to control the statement output
-	--
-	BEGIN
-		DECLARE @maxCommandLineLength int;
-		DECLARE @maxErrorMessageLineLength int;
-
-		SET @maxCommandLineLength = 75;
-		SET @maxErrorMessageLineLength = 75;
 	END;
 
 	--
@@ -323,9 +312,9 @@ BEGIN
 					,cl.StartTime
 					,cl.EndTime
 					,COALESCE(NULLIF(DATEDIFF(SECOND, cl.StartTime, cl.EndTime), 0), 1) AS Duration		-- Duration of 0 sec. will always be 1 sec.
-					,(dbo.fhsmFNSplitLines(cl.Command, ' + CAST(@maxCommandLineLength AS nvarchar) + ')) AS Command
+					,cl.Command
 					,cl.ErrorNumber
-					,(dbo.fhsmFNSplitLines(cl.ErrorMessage, ' + CAST(@maxErrorMessageLineLength AS nvarchar) + ')) AS ErrorMessage
+					,cl.ErrorMessage
 					,CAST(cl.StartTime AS date) AS Date
 					,(DATEPART(HOUR, cl.StartTime) * 60 * 60) + (DATEPART(MINUTE, cl.StartTime) * 60) + (DATEPART(SECOND, cl.StartTime)) AS TimeKey
 					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(cl.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey

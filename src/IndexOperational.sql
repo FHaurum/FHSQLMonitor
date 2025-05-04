@@ -66,7 +66,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.4';
+		SET @version = '2.5';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -396,6 +396,7 @@ ELSE BEGIN
 
 					DECLARE @database nvarchar(128);
 					DECLARE @databases nvarchar(max);
+					DECLARE @errorMsg nvarchar(max);
 					DECLARE @ghostVersionInrowStmt nvarchar(max);
 					DECLARE @ghostVersionOffrowStmt nvarchar(max);
 					DECLARE @insertOverGhostVersionInrowStmt nvarchar(max);
@@ -596,35 +597,43 @@ ELSE BEGIN
 									WHERE (o.type IN (''''U'''', ''''V''''))
 									GROUP BY DB_NAME(ddios.database_id), sch.name, o.name, i.name;
 								'';
-								INSERT INTO dbo.fhsmIndexOperational(
-									DatabaseName, SchemaName, ObjectName, IndexName
-									,LeafInsertCount, LeafDeleteCount, LeafUpdateCount, LeafGhostCount
-									,NonleafInsertCount, NonleafDeleteCount, NonleafUpdateCount
-									,LeafAllocationCount, NonleafAllocationCount
-									,LeafPageMergeCount, NonleafPageMergeCount
-									,RangeScanCount, SingletonLookupCount
-									,ForwardedFetchCount, LOBFetchInPages, LOBFetchInBytes
-									,LOBOrphanCreateCount, LOBOrphanInsertCount
-									,RowOverflowFetchInPages, RowOverflowFetchInBytes
-									,ColumnValuePushOffRowCount, ColumnValuePullInRowCount
-									,RowLockCount, RowLockWaitCount, RowLockWaitInMS
-									,PageLockCount, PageLockWaitCount, PageLockWaitInMS
-									,IndexLockPromotionAttemptCount, IndexLockPromotionCount
-									,PageLatchWaitCount, PageLatchWaitInMS
-									,PageIOLatchWaitCount, PageIOLatchWaitInMS
-									,TreePageLatchWaitCount, TreePageLatchWaitInMS
-									,TreePageIOLatchWaitCount, TreePageIOLatchWaitInMS
-									,PageCompressionAttemptCount, PageCompressionSuccessCount
-									,VersionGeneratedInrow, VersionGeneratedOffrow
-									,GhostVersionInrow, GhostVersionOffrow
-									,InsertOverGhostVersionInrow, InsertOverGhostVersionOffrow
-									,LastSQLServiceRestart
-									,TimestampUTC, Timestamp
-								)
-								EXEC sp_executesql
-									@stmt
-									,N''@now datetime, @nowUTC datetime''
-									,@now = @now, @nowUTC = @nowUTC;
+								BEGIN TRY
+									INSERT INTO dbo.fhsmIndexOperational(
+										DatabaseName, SchemaName, ObjectName, IndexName
+										,LeafInsertCount, LeafDeleteCount, LeafUpdateCount, LeafGhostCount
+										,NonleafInsertCount, NonleafDeleteCount, NonleafUpdateCount
+										,LeafAllocationCount, NonleafAllocationCount
+										,LeafPageMergeCount, NonleafPageMergeCount
+										,RangeScanCount, SingletonLookupCount
+										,ForwardedFetchCount, LOBFetchInPages, LOBFetchInBytes
+										,LOBOrphanCreateCount, LOBOrphanInsertCount
+										,RowOverflowFetchInPages, RowOverflowFetchInBytes
+										,ColumnValuePushOffRowCount, ColumnValuePullInRowCount
+										,RowLockCount, RowLockWaitCount, RowLockWaitInMS
+										,PageLockCount, PageLockWaitCount, PageLockWaitInMS
+										,IndexLockPromotionAttemptCount, IndexLockPromotionCount
+										,PageLatchWaitCount, PageLatchWaitInMS
+										,PageIOLatchWaitCount, PageIOLatchWaitInMS
+										,TreePageLatchWaitCount, TreePageLatchWaitInMS
+										,TreePageIOLatchWaitCount, TreePageIOLatchWaitInMS
+										,PageCompressionAttemptCount, PageCompressionSuccessCount
+										,VersionGeneratedInrow, VersionGeneratedOffrow
+										,GhostVersionInrow, GhostVersionOffrow
+										,InsertOverGhostVersionInrow, InsertOverGhostVersionOffrow
+										,LastSQLServiceRestart
+										,TimestampUTC, Timestamp
+									)
+									EXEC sp_executesql
+										@stmt
+										,N''@now datetime, @nowUTC datetime''
+										,@now = @now, @nowUTC = @nowUTC;
+								END TRY
+								BEGIN CATCH
+									SET @errorMsg = ERROR_MESSAGE();
+
+									SET @message = ''Database '''''' + @database + '''''' failed due to - '' + @errorMsg;
+									EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''Warning'', @message = @message;
+								END CATCH;
 							END
 							ELSE BEGIN
 								SET @message = ''Database '''''' + @database + '''''' is member of a replica but this server is not the primary node'';

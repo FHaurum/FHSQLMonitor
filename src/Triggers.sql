@@ -66,7 +66,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.1';
+		SET @version = '2.5';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -117,6 +117,7 @@ ELSE BEGIN
 					,ParentClass tinyint NULL
 					,ParentSchema nvarchar(128) NULL
 					,ParentObject nvarchar(128) NULL
+					,Name nvarchar(128) NULL
 					,Type char(2) NULL
 					,CreateDate datetime NOT NULL
 					,ModifyDate datetime NOT NULL
@@ -133,6 +134,15 @@ ELSE BEGIN
 				CREATE NONCLUSTERED INDEX NC_fhsmTriggers_Timestamp ON dbo.fhsmTriggers(Timestamp)' + @tableCompressionStmt + ';
 				CREATE NONCLUSTERED INDEX NC_fhsmTriggers_DatabaseName ON dbo.fhsmTriggers(DatabaseName)' + @tableCompressionStmt + ';
 			';
+			EXEC(@stmt);
+		END;
+
+		--
+		-- Add column added in version 2.5
+		--
+		IF NOT EXISTS(SELECT * FROM sys.columns AS c WHERE (c.object_id = OBJECT_ID('dbo.fhsmTriggers')) AND (c.name = 'Name'))
+		BEGIN
+			SET @stmt = 'ALTER TABLE dbo.fhsmTriggers ADD [Name] nvarchar(128) NULL;';
 			EXEC(@stmt);
 		END;
 
@@ -187,6 +197,7 @@ ELSE BEGIN
 						WHEN ''TR'' THEN ''SQL trigger''
 						ELSE ''Type:'' + t.Type
 					END AS Type
+					,t.Name AS TriggerName
 					,t.CreateDate
 					,t.ModifyDate
 					,t.IsMsShipped
@@ -250,6 +261,7 @@ ELSE BEGIN
 
 					DECLARE @database nvarchar(128);
 					DECLARE @databases nvarchar(max);
+					DECLARE @errorMsg nvarchar(max);
 					DECLARE @message nvarchar(max);
 					DECLARE @now datetime;
 					DECLARE @nowUTC datetime;
@@ -359,8 +371,9 @@ ELSE BEGIN
 									SELECT
 										DB_NAME() AS DatabaseName
 										,t.parent_class AS ParentClass
-										,sch.name AS ParentSchema
-										,o.name AS ParentObject
+										,parentSch.name AS ParentSchema
+										,parentO.name AS ParentObject
+										,o.name AS Name
 										,t.type AS Type
 										,t.create_date AS CreateDate
 										,t.modify_date AS ModifyDate
@@ -370,20 +383,29 @@ ELSE BEGIN
 										,t.is_instead_of_trigger AS IsInsteadOfTrigger
 										,@nowUTC, @now
 									FROM sys.triggers AS t
-									LEFT OUTER JOIN sys.objects AS o ON (o.object_id = t.parent_id)
-									LEFT OUTER JOIN sys.schemas AS sch ON (sch.schema_id = o.schema_id)
+									LEFT OUTER JOIN sys.objects AS o ON (o.object_id = t.object_id)
+									LEFT OUTER JOIN sys.objects AS parentO ON (parentO.object_id = t.parent_id)
+									LEFT OUTER JOIN sys.schemas AS parentSch ON (parentSch.schema_id = parentO.schema_id);
 								'';
-								INSERT INTO dbo.fhsmTriggers(
-									DatabaseName
-									,ParentClass, ParentSchema, ParentObject, Type
-									,CreateDate, ModifyDate
-									,IsMsShipped, IsDisabled, IsNotForReplication, IsInsteadOfTrigger
-									,TimestampUTC, Timestamp
-								)
-								EXEC sp_executesql
-									@stmt
-									,N''@now datetime, @nowUTC datetime''
-									,@now = @now, @nowUTC = @nowUTC;
+								BEGIN TRY
+									INSERT INTO dbo.fhsmTriggers(
+										DatabaseName
+										,ParentClass, ParentSchema, ParentObject, Name, Type
+										,CreateDate, ModifyDate
+										,IsMsShipped, IsDisabled, IsNotForReplication, IsInsteadOfTrigger
+										,TimestampUTC, Timestamp
+									)
+									EXEC sp_executesql
+										@stmt
+										,N''@now datetime, @nowUTC datetime''
+										,@now = @now, @nowUTC = @nowUTC;
+								END TRY
+								BEGIN CATCH
+									SET @errorMsg = ERROR_MESSAGE();
+
+									SET @message = ''Database '''''' + @database + '''''' failed due to - '' + @errorMsg;
+									EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''Warning'', @message = @message;
+								END CATCH;
 							END
 							ELSE BEGIN
 								SET @message = ''Database '''''' + @database + '''''' is member of a replica but this server is not the primary node'';

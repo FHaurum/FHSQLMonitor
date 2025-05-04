@@ -66,7 +66,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.3';
+		SET @version = '2.5';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -84,17 +84,9 @@ ELSE BEGIN
 	-- Variables used in view to control the statement output
 	--
 	BEGIN
-		DECLARE @maxEqualityColumnsLineLength int;
-		DECLARE @maxInequalityColumnsLineLength int;
-		DECLARE @maxIncludedColumnsLineLength int;
 		DECLARE @maxStatementLength int;
-		DECLARE @maxStatementLineLength int;
 
-		SET @maxEqualityColumnsLineLength = 35;
-		SET @maxInequalityColumnsLineLength = 35;
-		SET @maxIncludedColumnsLineLength = 35;
 		SET @maxStatementLength = 1024;
-		SET @maxStatementLineLength = 140;
 	END;
 
 	--
@@ -369,9 +361,9 @@ ELSE BEGIN
 			END;
 			SET @stmt += '
 				SELECT
-					(dbo.fhsmFNSplitLines(b.EqualityColumns, ' + CAST(@maxEqualityColumnsLineLength AS nvarchar) + ')) AS EqualityColumns
-					,(dbo.fhsmFNSplitLines(b.InequalityColumns, ' + CAST(@maxInequalityColumnsLineLength AS nvarchar) + ')) AS InequalityColumns
-					,(dbo.fhsmFNSplitLines(b.IncludedColumns, ' + CAST(@maxIncludedColumnsLineLength AS nvarchar) + ')) AS IncludedColumns
+					b.EqualityColumns
+					,b.InequalityColumns
+					,b.IncludedColumns
 					,b.DeltaUniqueCompiles AS UniqueCompiles
 					,b.DeltaUserSeeks AS UserSeeks
 					,b.LastUserSeek
@@ -586,13 +578,10 @@ ELSE BEGIN
 			';
 			SET @stmt += '
 				SELECT
-					(dbo.fhsmFNSplitLines(
-						(CASE
-							WHEN LEN(mis.Statement) > ' + CAST(@maxStatementLength AS nvarchar) + ' THEN LEFT(mis.Statement, ' + CAST(@maxStatementLength AS nvarchar) + ') + CHAR(10) + ''...Statement truncated''
-							ELSE mis.Statement
-						END),
-						' + CAST(@maxStatementLineLength AS nvarchar) + '
-					)) AS Statement
+					CASE
+						WHEN LEN(mis.Statement) > ' + CAST(@maxStatementLength AS nvarchar) + ' THEN LEFT(mis.Statement, ' + CAST(@maxStatementLength AS nvarchar) + ') + CHAR(10) + ''...Statement truncated''
+						ELSE mis.Statement
+					END AS Statement
 					,(SELECT k.[Key] FROM FHSQLMonitor.dbo.fhsmFNGenerateKey(mis.DatabaseName, CONVERT(nvarchar(18), mis.QueryHash, 1), DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS MissingIndexStatementKey
 				FROM dbo.fhsmMissingIndexStatement AS mis;
 				';

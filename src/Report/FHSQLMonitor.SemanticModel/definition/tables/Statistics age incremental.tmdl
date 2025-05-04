@@ -114,12 +114,24 @@ table 'Statistics age incremental'
 				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Statistics")), 
 				    "DataLoad"
 				  ), 
-				  dbList = Sql.Databases(#"Server name"), 
-				  db = dbList{[Name = #"Database name"]}[Data], 
-				  table = db{[Schema = #"Schema name", Item = "Statistics age incremental"]}[Data], 
+				  serverName = Record.Field(
+				    Table.First(Table.SelectRows(#"Connection parameters", each [Key] = "ServerName")), 
+				    "Value"
+				  ), 
+				  databaseName = Record.Field(
+				    Table.First(Table.SelectRows(#"Connection parameters", each [Key] = "DatabaseName")), 
+				    "Value"
+				  ), 
+				  schemaName = Record.Field(
+				    Table.First(Table.SelectRows(#"Connection parameters", each [Key] = "SchemaName")), 
+				    "Value"
+				  ), 
+				  dbList = Sql.Databases(serverName), 
+				  db     = dbList{[Name = databaseName]}[Data], 
+				  table  = db{[Schema = schemaName, Item = "Statistics age incremental"]}[Data], 
 				  emptyDataset = Table.FirstN(table, 0), 
 				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
-				  SelectColumns = Table.SelectColumns(
+				  selectColumns = Table.SelectColumns(
 				    datasetToUse, 
 				    {
 				      "Age", 
@@ -133,8 +145,8 @@ table 'Statistics age incremental'
 				      "IndexKey"
 				    }
 				  ), 
-				  RenameColumns = Table.RenameColumns(
-				    SelectColumns, 
+				  renameColumns = Table.RenameColumns(
+				    selectColumns, 
 				    {
 				      {"RowsSampled", "Rows sampled"}, 
 				      {"ModificationCounter", "Modification counter"}, 
@@ -142,7 +154,7 @@ table 'Statistics age incremental'
 				    }
 				  )
 				in
-				  RenameColumns
+				  renameColumns
 				```
 
 	annotation PBI_NavigationStepName = Navigation

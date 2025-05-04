@@ -1,5 +1,33 @@
+/// Default behavior with an empty list is to load all
 expression 'Data load list' = null meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=false]
 	lineageTag: 138f92da-e0a3-496b-b21b-5836c9211f38
+	queryGroup: 'Connection parameters'
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Null
+
+/// Default Server name is "localhost"
+expression 'Server name' = null meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=false]
+	lineageTag: 56bdcbee-4fe0-4688-8519-5d27e37f9e61
+	queryGroup: 'Connection parameters'
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Null
+
+/// Default Database name is "FHSQLMonitor"
+expression 'Database name' = null meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=false]
+	lineageTag: 36e9bfb4-9a1e-4e89-b98c-eb0644e52b1a
+	queryGroup: 'Connection parameters'
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Null
+
+/// Default Schema name is "FHSM"
+expression 'Schema name' = null meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=false]
+	lineageTag: 79cbb58a-ebbb-4f04-a7e5-9e15fdf353fd
 	queryGroup: 'Connection parameters'
 
 	annotation PBI_NavigationStepName = Navigation

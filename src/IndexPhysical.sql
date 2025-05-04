@@ -66,7 +66,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.1';
+		SET @version = '2.5';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -473,6 +473,7 @@ ELSE BEGIN
 					DECLARE @columnstoreDeleteBufferStateDescStmt nvarchar(max);
 					DECLARE @database nvarchar(128);
 					DECLARE @databases nvarchar(max);
+					DECLARE @errorMsg nvarchar(max);
 					DECLARE @fhsmDatabaseName nvarchar(128);
 					DECLARE @inrowDiffVersionRecordCountStmt nvarchar(max);
 					DECLARE @inrowVersionRecordCountStmt nvarchar(max);
@@ -739,28 +740,36 @@ ELSE BEGIN
 								'';
 			';
 			SET @stmt += '
-								INSERT INTO dbo.fhsmIndexPhysical(
-									DatabaseName, SchemaName, ObjectName, IndexName, Mode
-									,PartitionNumber, IndexTypeDesc, AllocUnitTypeDesc, IndexDepth, IndexLevel, ColumnstoreDeleteBufferStateDesc
-									,AvgFragmentationInPercent, FragmentCount, AvgFragmentSizeInPages
-									,PageCount, AvgPageSpaceUsedInPercent, RecordCount
-									,GhostRecordCount, VersionGhostRecordCount
-									,MinRecordSizeInBytes, MaxRecordSizeInBytes, AvgRecordSizeInBytes
-									,ForwardedRecordCount
-									,CompressedPageCount
-									,VersionRecordCount, InrowVersionRecordCount, InrowDiffVersionRecordCount, TotalInrowVersionPayloadSizeInBytes
-									,OffrowRegularVersionRecordCount, OffrowLongTermVersionRecordCount
-									,LastSQLServiceRestart
-									,TimestampUTC, Timestamp
-									,TimestampUTCDate, TimestampDate
-									,TimeKey
-									,DatabaseKey, SchemaKey, ObjectKey
-									,IndexKey, IndexTypeKey, IndexAllocTypeKey
-								)
-								EXEC sp_executesql
-									@stmt
-									,N''@mode nvarchar(8), @object nvarchar(128), @now datetime, @nowUTC datetime''
-									,@mode = @mode, @object = @object, @now = @now, @nowUTC = @nowUTC;
+								BEGIN TRY
+									INSERT INTO dbo.fhsmIndexPhysical(
+										DatabaseName, SchemaName, ObjectName, IndexName, Mode
+										,PartitionNumber, IndexTypeDesc, AllocUnitTypeDesc, IndexDepth, IndexLevel, ColumnstoreDeleteBufferStateDesc
+										,AvgFragmentationInPercent, FragmentCount, AvgFragmentSizeInPages
+										,PageCount, AvgPageSpaceUsedInPercent, RecordCount
+										,GhostRecordCount, VersionGhostRecordCount
+										,MinRecordSizeInBytes, MaxRecordSizeInBytes, AvgRecordSizeInBytes
+										,ForwardedRecordCount
+										,CompressedPageCount
+										,VersionRecordCount, InrowVersionRecordCount, InrowDiffVersionRecordCount, TotalInrowVersionPayloadSizeInBytes
+										,OffrowRegularVersionRecordCount, OffrowLongTermVersionRecordCount
+										,LastSQLServiceRestart
+										,TimestampUTC, Timestamp
+										,TimestampUTCDate, TimestampDate
+										,TimeKey
+										,DatabaseKey, SchemaKey, ObjectKey
+										,IndexKey, IndexTypeKey, IndexAllocTypeKey
+									)
+									EXEC sp_executesql
+										@stmt
+										,N''@mode nvarchar(8), @object nvarchar(128), @now datetime, @nowUTC datetime''
+										,@mode = @mode, @object = @object, @now = @now, @nowUTC = @nowUTC;
+								END TRY
+								BEGIN CATCH
+									SET @errorMsg = ERROR_MESSAGE();
+
+									SET @message = ''Database '''''' + @database + '''''' failed due to - '' + @errorMsg;
+									EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''Warning'', @message = @message;
+								END CATCH;
 							END
 							ELSE BEGIN
 								SET @message = ''Database '''''' + @database + '''''' is member of a replica but this server is not the primary node'';

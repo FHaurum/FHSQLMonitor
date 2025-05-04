@@ -66,7 +66,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.1';
+		SET @version = '2.5';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -398,6 +398,7 @@ ELSE BEGIN
 
 					DECLARE @database nvarchar(128);
 					DECLARE @databases nvarchar(max);
+					DECLARE @errorMsg nvarchar(max);
 					DECLARE @message nvarchar(max);
 					DECLARE @now datetime;
 					DECLARE @nowUTC datetime;
@@ -571,10 +572,18 @@ ELSE BEGIN
 			SET @stmt += '
 									WHERE (o.type IN (''''U'''', ''''V'''')) AND (i.type <> 0);
 								'';
-								EXEC sp_executesql
-									@stmt
-									,N''@nowUTC datetime, @now datetime''
-									,@nowUTC = @nowUTC, @now = @now;
+								BEGIN TRY
+									EXEC sp_executesql
+										@stmt
+										,N''@nowUTC datetime, @now datetime''
+										,@nowUTC = @nowUTC, @now = @now;
+								END TRY
+								BEGIN CATCH
+									SET @errorMsg = ERROR_MESSAGE();
+
+									SET @message = ''Database '''''' + @database + '''''' failed due to - '' + @errorMsg;
+									EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''Warning'', @message = @message;
+								END CATCH;
 
 								IF EXISTS(
 									SELECT *
@@ -611,10 +620,18 @@ ELSE BEGIN
 										CROSS APPLY sys.dm_db_incremental_stats_properties(o.object_id, i.index_id) AS ddsp
 										WHERE (o.type = ''''U'''') AND (i.type <> 0);
 									'';
-									EXEC sp_executesql
-										@stmt
-										,N''@nowUTC datetime, @now datetime''
-										,@nowUTC = @nowUTC, @now = @now;
+									BEGIN TRY
+										EXEC sp_executesql
+											@stmt
+											,N''@nowUTC datetime, @now datetime''
+											,@nowUTC = @nowUTC, @now = @now;
+									END TRY
+									BEGIN CATCH
+										SET @errorMsg = ERROR_MESSAGE();
+
+										SET @message = ''Database '''''' + @database + '''''' failed due to - '' + @errorMsg;
+										EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''Warning'', @message = @message;
+									END CATCH;
 								END;
 							END
 							ELSE BEGIN

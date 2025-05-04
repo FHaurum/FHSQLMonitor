@@ -1,27 +1,43 @@
-table Database
-	lineageTag: afa4b2f5-6362-4b41-9da5-56394d652976
+table 'Blocks and deadlocks'
+	lineageTag: 2c95f677-44f5-4dfa-a1d8-e67f476a1af9
 
-	column Database
+	column 'Client application'
 		dataType: string
-		lineageTag: d20a57c0-130d-4b34-9d95-46036cb2b9b3
+		lineageTag: 3b91fddc-9004-4b36-90ad-f1e6828f142c
 		summarizeBy: none
-		sourceColumn: Database
+		sourceColumn: Client application
 
 		annotation SummarizationSetBy = Automatic
 
-	column DatabaseKey
+	column 'Host name'
+		dataType: string
+		lineageTag: 8c0bf149-c653-42ec-b2bf-bca9caa404b5
+		summarizeBy: none
+		sourceColumn: Host name
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Login name'
+		dataType: string
+		lineageTag: 012b9f47-e580-4d58-9a00-847e4db19baa
+		summarizeBy: none
+		sourceColumn: Login name
+
+		annotation SummarizationSetBy = Automatic
+
+	column BlocksAndDeadlocksKey
 		dataType: int64
 		isHidden
 		formatString: 0
-		lineageTag: 672d37cb-16e9-4df5-85e3-b079f5519200
+		lineageTag: 467c9ecd-6159-4c8e-a078-d689664c6095
 		summarizeBy: none
-		sourceColumn: DatabaseKey
+		sourceColumn: BlocksAndDeadlocksKey
 
 		changedProperty = IsHidden
 
 		annotation SummarizationSetBy = Automatic
 
-	partition Database = m
+	partition 'Blocks and deadlocks' = m
 		mode: import
 		queryGroup: Dimensions
 		source = ```
@@ -30,7 +46,7 @@ table Database
 				    Table.SelectRows(
 				      #"Data load", 
 				      each List.Contains(
-				        {"Backup", "Blocks and deadlocks", "CPU", "Database configuration", "Plan guides", "Triggers", "Who is active"}, 
+				        {"Blocks and deadlocks"}, 
 				        [Service]
 				      )
 				        and List.Contains({"Yes"}, [DataLoad])
@@ -55,14 +71,22 @@ table Database
 				  ), 
 				  dbList = Sql.Databases(serverName), 
 				  db     = dbList{[Name = databaseName]}[Data], 
-				  table  = db{[Schema = schemaName, Item = "Database"]}[Data], 
+				  table  = db{[Schema = schemaName, Item = "Blocks and deadlocks"]}[Data], 
 				  emptyDataset = Table.FirstN(table, 0), 
-				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset,
+				  renameColumns = Table.RenameColumns(
+				    datasetToUse, 
+				    {
+				      {"ClientApp", "Client application"}, 
+				      {"HostName", "Host name"}, 
+				      {"LoginName", "Login name"}
+				    }
+				  )
 				in
-				  datasetToUse
+				  renameColumns
 				```
 
-	annotation PBI_ResultType = Table
-
 	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
 

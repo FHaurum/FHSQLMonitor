@@ -82,7 +82,7 @@ table _Measures
 			VAR _lastRefreshed = [Last refreshed]
 			VAR _lastRefreshedTxt =
 			    FORMAT ( _lastRefreshed, [Date-min format string] )
-			VAR _text = "Last refreshed " & _lastRefreshedTxt
+			VAR _text = "Last refreshed (UTC): " & _lastRefreshedTxt
 			VAR _result = _text
 			RETURN
 			    _result
@@ -1037,7 +1037,7 @@ table _Measures
 			    FORMAT ( _lastRefreshed, [Date-min format string] )
 			VAR _text =
 			    "Last data (local): " & _lastDataTxt
-			        & UNICHAR ( 10 ) & "Last refreshed (local): " & _lastRefreshedTxt
+			        & UNICHAR ( 10 ) & "Last refreshed (UTC): " & _lastRefreshedTxt
 			VAR _result = _text
 			RETURN
 			    _result
@@ -1046,18 +1046,35 @@ table _Measures
 
 	measure 'Front page parameters text' =
 			
-			"Server: " & MAX ( 'Server name'[Server name] )
-			    & UNICHAR ( 10 ) & "Database: "
-			    & MAX ( 'Database name'[Database name] )
-			    & UNICHAR ( 10 ) & "Schema: "
-			    & MAX ( 'Schema name'[Schema name] )
+			VAR _serverName =
+			    CALCULATE (
+			        MAX ( 'Connection parameters'[Value] ),
+			        'Connection parameters'[Key] = "ServerName"
+			    )
+			VAR _databaseName =
+			    CALCULATE (
+			        MAX ( 'Connection parameters'[Value] ),
+			        'Connection parameters'[Key] = "DatabaseName"
+			    )
+			VAR _schemaName =
+			    CALCULATE (
+			        MAX ( 'Connection parameters'[Value] ),
+			        'Connection parameters'[Key] = "SchemaName"
+			    )
+			VAR _text =
+			    "Server: " & _serverName
+			        & UNICHAR ( 10 ) & "Database: " & _databaseName
+			        & UNICHAR ( 10 ) & "Schema: " & _schemaName
+			VAR _result = _text
+			RETURN
+			    _result
 		displayFolder: Common
 		lineageTag: 0233978e-6713-4987-a2a8-ed9b34aa32ee
 
 	measure 'Front page version text' =
 			
 			[Info text] & UNICHAR ( 10 ) & " "
-			    & UNICHAR ( 10 ) & "Developed using Power BI Desktop version: 2.141.1580.0 64-bit (March 2025)"
+			    & UNICHAR ( 10 ) & "Developed using Power BI Desktop version: 2.142.928.0 64-bit (April 2025)"
 		displayFolder: Common
 		lineageTag: e74236c7-2bcf-4409-b8d2-ddb49a83e10b
 
@@ -2133,7 +2150,7 @@ table _Measures
 
 	measure 'Version number' =
 			
-			"2.4.0"
+			"2.5.0"
 		isHidden
 		displayFolder: Common
 		lineageTag: 39428edf-bb47-48d0-a60e-f025984fd1ba
@@ -4114,9 +4131,12 @@ table _Measures
 	measure 'Details read title - Database IO' =
 			
 			VAR _types =
-			    VALUES ( 'Database file'[Type] )
+			    CALCULATETABLE (
+			        VALUES ( 'Database file'[Type] ),
+			        FILTER ( 'Database file', [Number of bytes read MB - Database IO] <> BLANK () )
+			    )
 			VAR _typesCombined =
-			    LOWER ( CONCATENATEX ( _types, 'Database file'[Type], " and " ) )
+			    LOWER ( CONCATENATEX ( _types, 'Database file'[Type], "+" ) )
 			VAR _latestDate = [Latest date - Database IO]
 			VAR _pastDate = [Past date - Database IO]
 			VAR _realDatesBackInTime =
@@ -4144,9 +4164,12 @@ table _Measures
 	measure 'Details write title - Database IO' =
 			
 			VAR _types =
-			    VALUES ( 'Database file'[Type] )
+			    CALCULATETABLE (
+			        VALUES ( 'Database file'[Type] ),
+			        FILTER ( 'Database file', [Number of bytes written MB - Database IO] <> BLANK () )
+			    )
 			VAR _typesCombined =
-			    LOWER ( CONCATENATEX ( _types, 'Database file'[Type], " and " ) )
+			    LOWER ( CONCATENATEX ( _types, 'Database file'[Type], "+" ) )
 			VAR _latestDate = [Latest date - Database IO]
 			VAR _pastDate = [Past date - Database IO]
 			VAR _realDatesBackInTime =
@@ -6340,7 +6363,7 @@ table _Measures
 			VAR _maxDataDateTxt =
 			    FORMAT ( _maxDataDate, [Date format string] )
 			VAR _txt =
-			    "Monitor non-info logs"
+			    "Monitor non debug and info logs"
 			        & IF (
 			            _minDataDate <> BLANK (),
 			            " between " & _minDataDateTxt & " (UTC) and " & _maxDataDateTxt & " (UTC)"
@@ -7499,8 +7522,14 @@ table _Measures
 			    CALCULATE ( MIN ( 'Backup age'[LatestLogBackupStartDate] ), ALL () )
 			VAR _minStatusDate =
 			    CALCULATE ( MIN ( 'Backup status'[Date] ), ALL () )
-			VAR _minDataDate =
+			VAR _minBackupAgeDate =
 			    MIN ( MIN ( MIN ( _minFullDate, _minDiffDate ), _minLogDate ), _minStatusDate )
+			VAR _minDataDate =
+			    IF (
+			        _minBackupAgeDate = BLANK(),
+			        _minStatusDate,
+			        MIN ( _minBackupAgeDate, _minStatusDate )
+			    )
 			VAR _maxFullDate =
 			    CALCULATE ( MAX ( 'Backup age'[LatestFullBackupStartDate] ), ALL () )
 			VAR _maxDiffDate =
@@ -8791,10 +8820,15 @@ table _Measures
 	measure 'Show filters Headers - Agent jobs performance' =
 			
 			IF (
-			    ISFILTERED ( 'Agent job'[Job name] ),
-			    "Job:" & UNICHAR ( 127 )
-			        & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Agent job'[Job name] ) ) )
+			    ISFILTERED ( 'Agent job status'[Status] ),
+			    "Status:" & UNICHAR ( 127 )
+			        & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Agent job status'[Status] ) ) )
 			)
+			    & IF (
+			        ISFILTERED ( 'Agent job'[Job name] ),
+			        "Job:" & UNICHAR ( 127 )
+			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Agent job'[Job name] ) ) )
+			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Year] ),
 			        "Year:" & UNICHAR ( 127 )
@@ -8821,14 +8855,23 @@ table _Measures
 	measure 'Show filters - Agent jobs performance' =
 			
 			IF (
-			    ISFILTERED ( 'Agent job'[Job name] ),
+			    ISFILTERED ( 'Agent job status'[Status] ),
 			    VAR _items =
-			        VALUES ( 'Agent job'[Job name] )
+			        VALUES ( 'Agent job status'[Status] )
 			    VAR _itemsCombined =
-			        CONCATENATEX ( _items, 'Agent job'[Job name], UNICHAR ( 10 ) )
+			        CONCATENATEX ( _items, 'Agent job status'[Status], UNICHAR ( 10 ) )
 			    RETURN
 			        _itemsCombined & UNICHAR ( 10 )
 			)
+			    & IF (
+			        ISFILTERED ( 'Agent job'[Job name] ),
+			        VAR _items =
+			            VALUES ( 'Agent job'[Job name] )
+			        VAR _itemsCombined =
+			            CONCATENATEX ( _items, 'Agent job'[Job name], UNICHAR ( 10 ) )
+			        RETURN
+			            _itemsCombined & UNICHAR ( 10 )
+			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Year] ),
 			        VAR _items =
@@ -8871,7 +8914,8 @@ table _Measures
 	measure 'Is filters applied - Agent jobs performance' =
 			
 			IF (
-			    ISFILTERED ( 'Agent job'[Job name] ) || ISFILTERED ( 'Date'[Year] )
+			    ISFILTERED ( 'Agent job status'[Status] ) || ISFILTERED ( 'Agent job'[Job name] )
+			        || ISFILTERED ( 'Date'[Year] )
 			        || ISFILTERED ( 'Date'[Month] )
 			        || ISFILTERED ( 'Date'[Day] )
 			        || ISFILTERED ( 'Date'[Day index] ),
@@ -9322,6 +9366,230 @@ table _Measures
 		formatString: #,0
 		displayFolder: Statistics\Statistics age incremental
 		lineageTag: cb0f9ee7-8a95-458a-b8b0-a5a3264acd20
+
+	measure 'Data range - Blocks and deadlocks' =
+			
+			VAR _minDataDate =
+			    MIN (
+			        CALCULATE ( MIN ( 'Blocked process'[Date] ), ALL () ),
+			        CALCULATE ( MIN ( 'Deadlock'[Date] ), ALL () )
+			    )
+			VAR _maxDataDate =
+			    MAX (
+			        CALCULATE ( MAX ( 'Blocked process'[Date] ), ALL () ),
+			        CALCULATE ( MAX ( 'Deadlock'[Date] ), ALL () )
+			    )
+			VAR _minDataDateTxt =
+			    FORMAT ( _minDataDate, [Date format string] )
+			VAR _maxDataDateTxt =
+			    FORMAT ( _maxDataDate, [Date format string] )
+			VAR _txt =
+			    IF (
+			        _minDataDate = BLANK (),
+			        "",
+			        "Data available between " & _minDataDateTxt & " and " & _maxDataDateTxt
+			    )
+			VAR _result = _txt
+			RETURN
+			    _result
+		displayFolder: Blocks and deadlocks
+		lineageTag: 3646f2be-c3f2-40a2-afbe-6ed5a3a69f65
+
+	measure 'Show filters - Blocks and deadlocks' =
+			
+			IF (
+			    ISFILTERED ( 'Blocks and deadlocks'[Client application] ),
+			    VAR _items =
+			        VALUES ( 'Blocks and deadlocks'[Client application] )
+			    VAR _itemsCombined =
+			        CONCATENATEX ( _items, 'Blocks and deadlocks'[Client application], UNICHAR ( 10 ) )
+			    RETURN
+			        _itemsCombined & UNICHAR ( 10 )
+			)
+			    & IF (
+			        ISFILTERED ( 'Blocks and deadlocks'[Host name] ),
+			        VAR _items =
+			            VALUES ( 'Blocks and deadlocks'[Host name] )
+			        VAR _itemsCombined =
+			            CONCATENATEX ( _items, 'Blocks and deadlocks'[Host name], UNICHAR ( 10 ) )
+			        RETURN
+			            _itemsCombined & UNICHAR ( 10 )
+			    )
+			    & IF (
+			        ISFILTERED ( 'Blocks and deadlocks'[Login name] ),
+			        VAR _items =
+			            VALUES ( 'Blocks and deadlocks'[Login name] )
+			        VAR _itemsCombined =
+			            CONCATENATEX ( _items, 'Blocks and deadlocks'[Login name], UNICHAR ( 10 ) )
+			        RETURN
+			            _itemsCombined & UNICHAR ( 10 )
+			    )
+			    & IF (
+			        ISFILTERED ( 'Date'[Year] ),
+			        VAR _items =
+			            VALUES ( 'Date'[Year] )
+			        VAR _itemsCombined =
+			            CONCATENATEX ( _items, 'Date'[Year], UNICHAR ( 10 ) )
+			        RETURN
+			            _itemsCombined & UNICHAR ( 10 )
+			    )
+			    & IF (
+			        ISFILTERED ( 'Date'[Month] ),
+			        VAR _items =
+			            VALUES ( 'Date'[Month] )
+			        VAR _itemsCombined =
+			            CONCATENATEX ( _items, 'Date'[Month], UNICHAR ( 10 ) )
+			        RETURN
+			            _itemsCombined & UNICHAR ( 10 )
+			    )
+			    & IF (
+			        ISFILTERED ( 'Date'[Day] ),
+			        VAR _items =
+			            VALUES ( 'Date'[Day] )
+			        VAR _itemsCombined =
+			            CONCATENATEX ( _items, 'Date'[Day], UNICHAR ( 10 ) )
+			        RETURN
+			            _itemsCombined & UNICHAR ( 10 )
+			    )
+			    & IF (
+			        ISFILTERED ( 'Date'[Day index] ),
+			        VAR _items =
+			            VALUES ( 'Date'[Day index] )
+			        VAR _itemsCombined =
+			            CONCATENATEX ( _items, 'Date'[Day index], UNICHAR ( 10 ) )
+			        RETURN
+			            _itemsCombined & UNICHAR ( 10 )
+			    )
+		displayFolder: Blocks and deadlocks
+		lineageTag: 22236592-c406-499b-b014-0525e8ffb672
+
+	measure 'Show filters Headers - Blocks and deadlocks' =
+			
+			IF (
+			    ISFILTERED ( 'Blocks and deadlocks'[Client application] ),
+			    "Client app.:" & UNICHAR ( 127 )
+			        & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Blocks and deadlocks'[Client application] ) ) )
+			)
+			    & IF (
+			        ISFILTERED ( 'Blocks and deadlocks'[Host name] ),
+			        "Host name:" & UNICHAR ( 127 )
+			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Blocks and deadlocks'[Host name] ) ) )
+			    )
+			    & IF (
+			        ISFILTERED ( 'Blocks and deadlocks'[Login name] ),
+			        "Login name:" & UNICHAR ( 127 )
+			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Blocks and deadlocks'[Login name] ) ) )
+			    )
+			    & IF (
+			        ISFILTERED ( 'Date'[Year] ),
+			        "Year:" & UNICHAR ( 127 )
+			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Year] ) ) )
+			    )
+			    & IF (
+			        ISFILTERED ( 'Date'[Month] ),
+			        "Month:" & UNICHAR ( 127 )
+			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Month] ) ) )
+			    )
+			    & IF (
+			        ISFILTERED ( 'Date'[Day] ),
+			        "Day:" & UNICHAR ( 127 )
+			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Day] ) ) )
+			    )
+			    & IF (
+			        ISFILTERED ( 'Date'[Day index] ),
+			        "Day index:" & UNICHAR ( 127 )
+			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Day index] ) ) )
+			    )
+		displayFolder: Blocks and deadlocks
+		lineageTag: c7b37e4f-ccde-4295-acbc-4cd1df213df3
+
+	measure '# Blocked process - Blocks and deadlocks' =
+			
+			COUNTROWS ( 'Blocked process' )
+		formatString: #,0
+		displayFolder: Blocks and deadlocks
+		lineageTag: 13aa6c76-f5b3-4598-9b9c-fb6d4015dca8
+
+	measure '# Deadlock - Blocks and deadlocks' =
+			
+			DISTINCTCOUNT ( Deadlock[Data set] )
+		formatString: #,0
+		displayFolder: Blocks and deadlocks
+		lineageTag: 250ffbc6-6b55-4ca3-b748-00592015c56e
+
+	measure 'VLF - Blocks and deadlocks' =
+			
+			[# Blocked process - Blocks and deadlocks] + [# Deadlock - Blocks and deadlocks]
+		formatString: 0
+		displayFolder: Blocks and deadlocks
+		lineageTag: ff9831d2-c0f6-4a12-a17e-25b0f4c876dc
+
+	measure 'Is filters applied - Blocks and deadlocks' =
+			
+			IF (
+			    ISFILTERED ( 'Blocks and deadlocks'[Client application] ) || ISFILTERED ( 'Blocks and deadlocks'[Host name] )
+			        || ISFILTERED ( 'Blocks and deadlocks'[Login name] )
+			        || ISFILTERED ( 'Date'[Year] )
+			        || ISFILTERED ( 'Date'[Month] )
+			        || ISFILTERED ( 'Date'[Day] )
+			        || ISFILTERED ( 'Date'[Day index] ),
+			    1,
+			    0
+			)
+		formatString: 0
+		displayFolder: Blocks and deadlocks
+		lineageTag: b5b66304-1783-48bb-8766-197b05f4949a
+
+	measure 'Open filter button tooltip - Blocks and deadlocks' =
+			
+			IF (
+			    [Is filters applied - Blocks and deadlocks] = 1,
+			    [Filters are applied text],
+			    [Filters are not applied]
+			)
+		displayFolder: Blocks and deadlocks
+		lineageTag: a8ec7265-3df7-4a45-b8ed-d8bbb6c4a77f
+
+	measure 'Copy only flag - Backup status' =
+			
+			SELECTEDVALUE ( 'Backup status'[Copy only] ) + 0
+		formatString: 0
+		displayFolder: Backup\Backup status
+		lineageTag: 8f4f8334-7d32-4bb5-b722-18e8715da163
+
+	measure 'Damaged flag - Backup status' =
+			
+			SELECTEDVALUE ( 'Backup status'[Damaged] ) + 0
+		formatString: 0
+		displayFolder: Backup\Backup status
+		lineageTag: acc2b693-117a-4604-9016-21cc73ec3c97
+
+	measure 'Backups # - Backup status' =
+			
+			COUNTROWS ( 'Backup status' ) + 0
+		formatString: 0
+		displayFolder: Backup\Backup status
+		lineageTag: 0dc0de14-2756-4397-8469-6de5ab6c0129
+
+	measure 'Copy only backups # - Backup status' =
+			
+			CALCULATE (
+			    [Backups # - Backup status],
+			    'Backup status'[Copy only]
+			)
+		formatString: #,0
+		displayFolder: Backup\Backup status
+		lineageTag: 13588d13-f0c0-45f7-8c3c-df5491d80995
+
+	measure 'Damaged backups # - Backup status' =
+			
+			CALCULATE (
+			    [Backups # - Backup status],
+			    'Backup status'[Damaged]
+			)
+		formatString: #,0
+		displayFolder: Backup\Backup status
+		lineageTag: 0a15e2ef-72f7-4673-83ee-a8397e23050d
 
 	partition _Measures = m
 		mode: import

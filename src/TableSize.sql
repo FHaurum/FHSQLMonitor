@@ -66,7 +66,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.2.2';
+		SET @version = '2.5';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -436,6 +436,7 @@ ELSE BEGIN
 
 					DECLARE @database nvarchar(128);
 					DECLARE @databases nvarchar(max);
+					DECLARE @errorMsg nvarchar(max);
 					DECLARE @message nvarchar(max);
 					DECLARE @now datetime;
 					DECLARE @nowUTC datetime;
@@ -538,16 +539,24 @@ ELSE BEGIN
 							BEGIN
 								DELETE @spaceUsed;
 
-								SET @stmt = ''EXEC dbo.fhsmSPSpaceUsed @database = @database;'';
-								INSERT INTO @spaceUsed
-								EXEC sp_executesql
-									@stmt
-									,N''@database nvarchar(128)''
-									,@database = @database;
+								BEGIN TRY
+									SET @stmt = ''EXEC dbo.fhsmSPSpaceUsed @database = @database;'';
+									INSERT INTO @spaceUsed
+									EXEC sp_executesql
+										@stmt
+										,N''@database nvarchar(128)''
+										,@database = @database;
 
-								INSERT INTO dbo.fhsmTableSize(DatabaseName, SchemaName, ObjectName, IndexName, PartitionNumber, IsMemoryOptimized, Rows, Reserved, Data, IndexSize, Unused, TimestampUTC, Timestamp)
-								SELECT su.DatabaseName, su.SchemaName, su.ObjectName, su.IndexName, su.PartitionNumber, su.IsMemoryOptimized, su.Rows, su.Reserved, su.Data, su.IndexSize, su.Unused, @nowUTC, @now
-								FROM @spaceUsed AS su;
+									INSERT INTO dbo.fhsmTableSize(DatabaseName, SchemaName, ObjectName, IndexName, PartitionNumber, IsMemoryOptimized, Rows, Reserved, Data, IndexSize, Unused, TimestampUTC, Timestamp)
+									SELECT su.DatabaseName, su.SchemaName, su.ObjectName, su.IndexName, su.PartitionNumber, su.IsMemoryOptimized, su.Rows, su.Reserved, su.Data, su.IndexSize, su.Unused, @nowUTC, @now
+									FROM @spaceUsed AS su;
+								END TRY
+								BEGIN CATCH
+									SET @errorMsg = ERROR_MESSAGE();
+
+									SET @message = ''Database '''''' + @database + '''''' failed due to - '' + @errorMsg;
+									EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''Warning'', @message = @message;
+								END CATCH;
 							END
 							ELSE BEGIN
 								SET @message = ''Database '''''' + @database + '''''' is member of a replica but this server is not the primary node'';

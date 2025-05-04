@@ -1,9 +1,9 @@
-table 'Instance SQL agent properties'
-	lineageTag: 96fa56fe-aac3-4f0b-8f87-8d434f2c0d51
+table Configurations
+	lineageTag: f7da455a-9dad-4f8c-b2eb-5c24aff47dd0
 
 	column Key
 		dataType: string
-		lineageTag: c4a3422a-daa3-40e9-9f84-456b68d0f161
+		lineageTag: 194004bb-5357-417f-b87a-4bd2eda65918
 		summarizeBy: none
 		sourceColumn: Key
 
@@ -11,32 +11,17 @@ table 'Instance SQL agent properties'
 
 	column Value
 		dataType: string
-		lineageTag: 48581a23-3da5-44f0-8af3-a088ec660e1b
+		lineageTag: 03f68a99-cf11-40da-852e-e9cc959090c7
 		summarizeBy: none
 		sourceColumn: Value
 
 		annotation SummarizationSetBy = Automatic
 
-	column Timestamp
-		dataType: dateTime
-		formatString: dd-mmm-yyyy hh:nn:ss
-		lineageTag: 6cc30f5e-bf95-41df-8d76-30a0505f653b
-		summarizeBy: none
-		sourceColumn: Timestamp
-
-		annotation SummarizationSetBy = Automatic
-
-		annotation PBI_FormatHint = {"isCustom":true}
-
-	partition 'Instance SQL agent properties' = m
+	partition Configurations = m
 		mode: import
-		queryGroup: Facts
+		queryGroup: Framework
 		source = ```
 				let
-				  loadConfig = Record.Field(
-				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Instance configuration")), 
-				    "DataLoad"
-				  ), 
 				  serverName = Record.Field(
 				    Table.First(Table.SelectRows(#"Connection parameters", each [Key] = "ServerName")), 
 				    "Value"
@@ -51,11 +36,9 @@ table 'Instance SQL agent properties'
 				  ), 
 				  dbList = Sql.Databases(serverName), 
 				  db     = dbList{[Name = databaseName]}[Data], 
-				  table  = db{[Schema = schemaName, Item = "Instance SQL agent properties"]}[Data], 
-				  emptyDataset = Table.FirstN(table, 0), 
-				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset
+				  table  = db{[Schema = schemaName, Item = "Configurations"]}[Data]
 				in
-				  datasetToUse
+				  table
 				```
 
 	annotation PBI_NavigationStepName = Navigation

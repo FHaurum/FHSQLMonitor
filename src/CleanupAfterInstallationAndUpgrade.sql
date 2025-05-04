@@ -32,19 +32,45 @@ BEGIN
 	RAISERROR('Can not execute as it appears the database is not correct installed', 0, 1) WITH NOWAIT;
 END
 ELSE BEGIN
-	IF OBJECT_ID('dbo.fhsmSplitLines', 'FN') IS NOT NULL
+	--
+	-- Drop function dbo.fhsmFNSplitLines
+	--
 	BEGIN
-		IF EXISTS(
-			SELECT *
-			FROM sys.dm_sql_referencing_entities('dbo.fhsmSplitLines', 'OBJECT') AS dsre
-		)
+		IF OBJECT_ID('dbo.fhsmFNSplitLines', 'FN') IS NOT NULL
 		BEGIN
-			RAISERROR('Cannot drop function dbo.fhsmSplitLines as it is still in use', 0, 1) WITH NOWAIT;
-		END
-		ELSE BEGIN
-			RAISERROR('Dropping function dbo.fhsmSplitLines', 0, 1) WITH NOWAIT;
+			IF EXISTS(
+				SELECT *
+				FROM sys.dm_sql_referencing_entities('dbo.fhsmFNSplitLines', 'OBJECT') AS dsre
+			)
+			BEGIN
+				RAISERROR('Cannot drop function dbo.fhsmFNSplitLines as it is still in use', 0, 1) WITH NOWAIT;
+			END
+			ELSE BEGIN
+				RAISERROR('Dropping function dbo.fhsmFNSplitLines', 0, 1) WITH NOWAIT;
 
-			EXEC('DROP FUNCTION dbo.fhsmSplitLines;');
+				EXEC('DROP FUNCTION dbo.fhsmFNSplitLines;');
+			END;
+		END;
+	END;
+
+	--
+	-- Drop function dbo.fhsmSplitLines
+	--
+	BEGIN
+		IF OBJECT_ID('dbo.fhsmSplitLines', 'FN') IS NOT NULL
+		BEGIN
+			IF EXISTS(
+				SELECT *
+				FROM sys.dm_sql_referencing_entities('dbo.fhsmSplitLines', 'OBJECT') AS dsre
+			)
+			BEGIN
+				RAISERROR('Cannot drop function dbo.fhsmSplitLines as it is still in use', 0, 1) WITH NOWAIT;
+			END
+			ELSE BEGIN
+				RAISERROR('Dropping function dbo.fhsmSplitLines', 0, 1) WITH NOWAIT;
+
+				EXEC('DROP FUNCTION dbo.fhsmSplitLines;');
+			END;
 		END;
 	END;
 END;
