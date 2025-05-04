@@ -5,7 +5,7 @@ Have fun :-)
 <p>
 <b>May 4, 2025: Version 2.5.0</b> with:</br>
 <li>New report "Blocks and deadlocks"</li>
-<li>Updated all pages to use 1080:1920 instead of 720:1280</li>
+<li>Updated all pages to use 1920>1080 instead of 1280>720</li>
 </p>
 <p>
 <b>April 15, 2025: Version 2.4.0</b> with:</br>
