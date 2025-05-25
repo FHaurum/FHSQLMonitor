@@ -66,7 +66,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.5';
+		SET @version = '2.6';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -104,7 +104,7 @@ ELSE BEGIN
 	--
 	BEGIN
 		--
-		-- Create table dbo.fhsmDatabaseIO if it not already exists
+		-- Create table dbo.fhsmDatabaseIO and indexes if they not already exists
 		--
 		IF OBJECT_ID('dbo.fhsmDatabaseIO', 'U') IS NULL
 		BEGIN
@@ -131,9 +131,35 @@ ELSE BEGIN
 					,Timestamp datetime NOT NULL
 					,CONSTRAINT PK_DatabaseIO PRIMARY KEY(Id)' + @tableCompressionStmt + '
 				);
+			';
+			EXEC(@stmt);
+		END;
 
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmDatabaseIO')) AND (i.name = 'NC_fhsmDatabaseIO_TimestampUTC'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmDatabaseIO_TimestampUTC] to table dbo.fhsmDatabaseIO', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmDatabaseIO_TimestampUTC ON dbo.fhsmDatabaseIO(TimestampUTC)' + @tableCompressionStmt + ';
+			';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmDatabaseIO')) AND (i.name = 'NC_fhsmDatabaseIO_Timestamp'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmDatabaseIO_Timestamp] to table dbo.fhsmDatabaseIO', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmDatabaseIO_Timestamp ON dbo.fhsmDatabaseIO(Timestamp)' + @tableCompressionStmt + ';
+			';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmDatabaseIO')) AND (i.name = 'NC_fhsmDatabaseIO_DatabaseName_LogicalName_Type'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmDatabaseIO_DatabaseName_LogicalName_Type] to table dbo.fhsmDatabaseIO', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmDatabaseIO_DatabaseName_LogicalName_Type ON dbo.fhsmDatabaseIO(DatabaseName, LogicalName, Type)' + @tableCompressionStmt + ';
 			';
 			EXEC(@stmt);
@@ -220,11 +246,12 @@ ELSE BEGIN
 						WHEN b.DeltaNumOfWrites = 0 THEN NULL
 						ELSE b.DeltaIOStallWriteMS / CAST(b.DeltaNumOfWrites AS decimal(12,1))
 					END AS WriteLatencyMS
+
 					,b.Timestamp
-					,b.Date
-					,b.TimeKey
-					,b.DatabaseKey
-					,b.DatabaseFileKey
+					,CAST(b.Timestamp AS date) AS Date
+					,(DATEPART(HOUR, b.Timestamp) * 60 * 60) + (DATEPART(MINUTE, b.Timestamp) * 60) + (DATEPART(SECOND, b.Timestamp)) AS TimeKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(b.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(b.DatabaseName, b.LogicalName, CASE b.Type WHEN 0 THEN ''Data'' WHEN 1 THEN ''Log'' WHEN 2 THEN ''Filestream'' END, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseFileKey
 			';
 			SET @stmt += '
 				FROM (
@@ -274,11 +301,11 @@ ELSE BEGIN
 							WHEN (a.PreviousIOStallQueuedWriteMS > a.IOStallQueuedWriteMS) OR (a.PreviousSampleMS > a.SampleMS) THEN a.IOStallQueuedWriteMS
 							ELSE a.IOStallQueuedWriteMS - a.PreviousIOStallQueuedWriteMS
 						END AS DeltaIOStallQueuedWriteMS
+
 						,a.Timestamp
-						,a.Date
-						,a.TimeKey
-						,a.DatabaseKey
-						,a.DatabaseFileKey
+						,a.DatabaseName
+						,a.LogicalName
+						,a.Type
 			';
 			SET @stmt += '
 					FROM (
@@ -320,10 +347,9 @@ ELSE BEGIN
 							,prevDio.IOStallQueuedWriteMS AS PreviousIOStallQueuedWriteMS
 
 							,dio.Timestamp
-							,CAST(dio.Timestamp AS date) AS Date
-							,(DATEPART(HOUR, dio.Timestamp) * 60 * 60) + (DATEPART(MINUTE, dio.Timestamp) * 60) + (DATEPART(SECOND, dio.Timestamp)) AS TimeKey
-							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(dio.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
-							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(dio.DatabaseName, dio.LogicalName, CASE dio.Type WHEN 0 THEN ''Data'' WHEN 1 THEN ''Log'' WHEN 2 THEN ''Filestream'' END, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseFileKey
+							,dio.DatabaseName
+							,dio.LogicalName
+							,dio.Type
 						FROM databaseIO AS dio
 						LEFT OUTER JOIN databaseIO AS prevDio ON
 							(prevDio.DatabaseName = dio.DatabaseName)
@@ -339,29 +365,38 @@ ELSE BEGIN
 						SELECT
 							dio.SampleMS
 							,LAG(dio.SampleMS) OVER(PARTITION BY dio.DatabaseName, dio.LogicalName, dio.Type ORDER BY dio.TimestampUTC) AS PreviousSampleMS
+
 							,dio.IOStall
 							,LAG(dio.IOStall) OVER(PARTITION BY dio.DatabaseName, dio.LogicalName, dio.Type ORDER BY dio.TimestampUTC) AS PreviousIOStall
+
 							,dio.NumOfReads
 							,LAG(dio.NumOfReads) OVER(PARTITION BY dio.DatabaseName, dio.LogicalName, dio.Type ORDER BY dio.TimestampUTC) AS PreviousNumOfReads
+
 							,dio.NumOfBytesRead
 							,LAG(dio.NumOfBytesRead) OVER(PARTITION BY dio.DatabaseName, dio.LogicalName, dio.Type ORDER BY dio.TimestampUTC) AS PreviousNumOfBytesRead
+
 							,dio.IOStallReadMS
 							,LAG(dio.IOStallReadMS) OVER(PARTITION BY dio.DatabaseName, dio.LogicalName, dio.Type ORDER BY dio.TimestampUTC) AS PreviousIOStallReadMS
+
 							,dio.IOStallQueuedReadMS
 							,LAG(dio.IOStallQueuedReadMS) OVER(PARTITION BY dio.DatabaseName, dio.LogicalName, dio.Type ORDER BY dio.TimestampUTC) AS PreviousIOStallQueuedReadMS
+
 							,dio.NumOfWrites
 							,LAG(dio.NumOfWrites) OVER(PARTITION BY dio.DatabaseName, dio.LogicalName, dio.Type ORDER BY dio.TimestampUTC) AS PreviousNumOfWrites
+
 							,dio.NumOfBytesWritten
 							,LAG(dio.NumOfBytesWritten) OVER(PARTITION BY dio.DatabaseName, dio.LogicalName, dio.Type ORDER BY dio.TimestampUTC) AS PreviousNumOfBytesWritten
+
 							,dio.IOStallWriteMS
 							,LAG(dio.IOStallWriteMS) OVER(PARTITION BY dio.DatabaseName, dio.LogicalName, dio.Type ORDER BY dio.TimestampUTC) AS PreviousIOStallWriteMS
+
 							,dio.IOStallQueuedWriteMS
 							,LAG(dio.IOStallQueuedWriteMS) OVER(PARTITION BY dio.DatabaseName, dio.LogicalName, dio.Type ORDER BY dio.TimestampUTC) AS PreviousIOStallQueuedWriteMS
+
 							,dio.Timestamp
-							,CAST(dio.Timestamp AS date) AS Date
-							,(DATEPART(HOUR, dio.Timestamp) * 60 * 60) + (DATEPART(MINUTE, dio.Timestamp) * 60) + (DATEPART(SECOND, dio.Timestamp)) AS TimeKey
-							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(dio.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
-							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(dio.DatabaseName, dio.LogicalName, CASE dio.Type WHEN 0 THEN ''Data'' WHEN 1 THEN ''Log'' WHEN 2 THEN ''Filestream'' END, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseFileKey
+							,dio.DatabaseName
+							,dio.LogicalName
+							,dio.Type
 						FROM dbo.fhsmDatabaseIO AS dio
 				';
 			END;

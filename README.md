@@ -3,6 +3,12 @@ You can try the [live demo](https://app.powerbi.com/view?r=eyJrIjoiMDQ2MDQ3ZjQtO
 
 Have fun :-)
 <p>
+<b>May 25, 2025: Version 2.6.0</b> with:</br>
+<li>Optimized the "Blocks and deadlocks" report with added drill-through pages, and with info views in the framework to easily get the underlying XML documents</li>
+<li>Performance update on the view queries to improve report refresh</li>
+<li>Changed the report to not allow empty parameters and use default values as it resulted in dynamic queries that prevented data refresh from Power BI services</li>
+</p>
+<p>
 <b>May 4, 2025: Version 2.5.0</b> with:</br>
 <li>New report "Blocks and deadlocks"</li>
 <li>Updated all pages to use 1920:1080 instead of 1280:720</li>

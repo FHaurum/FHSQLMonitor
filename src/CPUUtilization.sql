@@ -66,7 +66,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.1';
+		SET @version = '2.6';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -104,7 +104,7 @@ ELSE BEGIN
 	--
 	BEGIN
 		--
-		-- Create table dbo.fhsmCPUUtilization if it not already exists
+		-- Create table dbo.fhsmCPUUtilization and indexes if they not already exists
 		--
 		IF OBJECT_ID('dbo.fhsmCPUUtilization', 'U') IS NULL
 		BEGIN
@@ -122,8 +122,25 @@ ELSE BEGIN
 					,Timestamp datetime NOT NULL
 					,CONSTRAINT PK_CPUUtilization PRIMARY KEY(Id)' + @tableCompressionStmt + '
 				);
+			';
+			EXEC(@stmt);
+		END;
 
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmCPUUtilization')) AND (i.name = 'NC_fhsmCPUUtilization_EventTimeUTC'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmCPUUtilization_EventTimeUTC] to table dbo.fhsmCPUUtilization', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmCPUUtilization_EventTimeUTC ON dbo.fhsmCPUUtilization(EventTimeUTC)' + @tableCompressionStmt + ';
+			';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmCPUUtilization')) AND (i.name = 'NC_fhsmCPUUtilization_EventTime'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmCPUUtilization_EventTime] to table dbo.fhsmCPUUtilization', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmCPUUtilization_EventTime ON dbo.fhsmCPUUtilization(EventTime)' + @tableCompressionStmt + ';
 			';
 			EXEC(@stmt);
@@ -145,6 +162,7 @@ ELSE BEGIN
 		END;
 
 		--
+		-- Create table dbo.fhsmCPUPerDatabase and indexes if they not already exists
 		-- Create table dbo.fhsmCPUPerDatabase if it not already exists
 		--
 		IF OBJECT_ID('dbo.fhsmCPUPerDatabase', 'U') IS NULL
@@ -161,8 +179,25 @@ ELSE BEGIN
 					,Timestamp datetime NOT NULL
 					,CONSTRAINT PK_CPUPerDatabase PRIMARY KEY(Id)' + @tableCompressionStmt + '
 				);
+			';
+			EXEC(@stmt);
+		END;
 
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmCPUPerDatabase')) AND (i.name = 'NC_fhsmCPUPerDatabase_TimestampUTC'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmCPUPerDatabase_TimestampUTC] to table dbo.fhsmCPUPerDatabase', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmCPUPerDatabase_TimestampUTC ON dbo.fhsmCPUPerDatabase(TimestampUTC)' + @tableCompressionStmt + ';
+			';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmCPUPerDatabase')) AND (i.name = 'NC_fhsmCPUPerDatabase_Timestamp'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmCPUPerDatabase_Timestamp] to table dbo.fhsmCPUPerDatabase', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmCPUPerDatabase_Timestamp ON dbo.fhsmCPUPerDatabase(Timestamp)' + @tableCompressionStmt + ';
 			';
 			EXEC(@stmt);
@@ -582,7 +617,6 @@ ELSE BEGIN
 	-- Update dimensions based upon the fact tables
 	--
 	BEGIN
-		EXEC dbo.fhsmSPUpdateDimensions @table = 'dbo.fhsmCPUUtilization';
 		EXEC dbo.fhsmSPUpdateDimensions @table = 'dbo.fhsmCPUPerDatabase';
 	END;
 END;

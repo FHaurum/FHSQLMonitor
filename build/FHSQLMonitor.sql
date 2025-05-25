@@ -1,50 +1,53 @@
 USE master;
 
 --
--- FHSQLMonitor v2.5.0 - 2025.05.04 17.50.40
+-- FHSQLMonitor v2.6.0 - 2025.05.25 17.53.15
 --
 
---
--- Installation parameters - They are used both during a fresh installation and during an update
---
-DECLARE @createSQLAgentJob    bit           = 1;
-DECLARE @fhSQLMonitorDatabase nvarchar(128) = 'FHSQLMonitor';
-DECLARE @pbiSchema            nvarchar(128) = 'FHSM';
+BEGIN
+	--
+	-- Installation parameters - They are used both during a fresh installation and during an update
+	--
+	DECLARE @createSQLAgentJob    bit           = 1;
+	DECLARE @fhSQLMonitorDatabase nvarchar(128) = 'FHSQLMonitor';
+	DECLARE @pbiSchema            nvarchar(128) = 'FHSM';
 
--- Service parameters - They are only used during a fresh installation and not during an update
---   When updating the already configured values in the tables dbo.fhsmSchedules and dbo.fhsmRetentions remains unchanged
---
-DECLARE @blocksAndDeadlocksFilePath    nvarchar(260) = NULL;
-DECLARE @olaDatabase                   nvarchar(128) = NULL;
---
-DECLARE @enableAgentJobs                bit = 1;
-DECLARE @enableAgentJobsPerformance     bit = 1;
-DECLARE @enableAgeOfStatistics          bit = 1;
-DECLARE @enableBackupStatus             bit = 1;
-DECLARE @enableBlocksAndDeadlocks       bit = 1;
-DECLARE @enableConnections              bit = 1;
-DECLARE @enableCPUUtilization           bit = 1;
-DECLARE @enableDatabaseIO               bit = 1;
-DECLARE @enableDatabaseSize             bit = 1;
-DECLARE @enableDatabaseState            bit = 1;
-DECLARE @enableIndexOperational         bit = 1;
-DECLARE @enableIndexPhysical            bit = 1;
-DECLARE @enableIndexUsage               bit = 1;
-DECLARE @enableInstanceState            bit = 1;
-DECLARE @enableMissingIndexes           bit = 1;
-DECLARE @enablePartitionedIndexes       bit = 1;
-DECLARE @enablePerformanceStatistics    bit = 1;
-DECLARE @enablePlanCacheUsage           bit = 1;
-DECLARE @enablePlanGuides               bit = 1;
-DECLARE @enableQueryStatistics          bit = 1;
-DECLARE @enableTableSize                bit = 1;
-DECLARE @enableTriggers                 bit = 1;
-DECLARE @enableWaitStatistics           bit = 1;
-DECLARE @enableWhoIsActive              bit = 1;
-DECLARE @enableIndexRebuild             bit = 0;
-DECLARE @enableIndexReorganize          bit = 0;
-DECLARE @enableUpdateAllStatistics      bit = 0;
-DECLARE @enableUpdateModifiedStatistics bit = 0;
+	--
+	-- Service parameters - They are only used during a fresh installation and not during an update
+	--   When updating the already configured values in the tables dbo.fhsmSchedules and dbo.fhsmRetentions remains unchanged
+	--
+	DECLARE @blocksAndDeadlocksFilePath    nvarchar(260) = NULL;
+	DECLARE @olaDatabase                   nvarchar(128) = NULL;
+
+	DECLARE @enableAgentJobs                bit = 1;
+	DECLARE @enableAgentJobsPerformance     bit = 1;
+	DECLARE @enableAgeOfStatistics          bit = 1;
+	DECLARE @enableBackupStatus             bit = 1;
+	DECLARE @enableBlocksAndDeadlocks       bit = 1;
+	DECLARE @enableConnections              bit = 1;
+	DECLARE @enableCPUUtilization           bit = 1;
+	DECLARE @enableDatabaseIO               bit = 1;
+	DECLARE @enableDatabaseSize             bit = 1;
+	DECLARE @enableDatabaseState            bit = 1;
+	DECLARE @enableIndexOperational         bit = 1;
+	DECLARE @enableIndexPhysical            bit = 1;
+	DECLARE @enableIndexUsage               bit = 1;
+	DECLARE @enableInstanceState            bit = 1;
+	DECLARE @enableMissingIndexes           bit = 1;
+	DECLARE @enablePartitionedIndexes       bit = 1;
+	DECLARE @enablePerformanceStatistics    bit = 1;
+	DECLARE @enablePlanCacheUsage           bit = 1;
+	DECLARE @enablePlanGuides               bit = 1;
+	DECLARE @enableQueryStatistics          bit = 1;
+	DECLARE @enableTableSize                bit = 1;
+	DECLARE @enableTriggers                 bit = 1;
+	DECLARE @enableWaitStatistics           bit = 1;
+	DECLARE @enableWhoIsActive              bit = 1;
+	DECLARE @enableIndexRebuild             bit = 0;
+	DECLARE @enableIndexReorganize          bit = 0;
+	DECLARE @enableUpdateAllStatistics      bit = 0;
+	DECLARE @enableUpdateModifiedStatistics bit = 0;
+END;
 
 --
 -- No need to change more from here on
@@ -150,7 +153,7 @@ BEGIN
 END;
 
 --
--- File part:_Install-FHSQLMonitor.sql modified: 2025.05.04 17.43.58
+-- File part:_Install-FHSQLMonitor.sql modified: 2025.05.25 17.51.06
 --
 SET @stmt = '
 SET NOCOUNT ON;
@@ -195,7 +198,7 @@ BEGIN
 	SET @myUserName = SUSER_NAME();
 	SET @nowUTC = SYSUTCDATETIME();
 	SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
-	SET @version = ''2.5.0'';
+	SET @version = ''2.6.0'';
 END;
 
 --
@@ -423,6 +426,112 @@ ELSE BEGIN
 	END;
 
 	--
+	-- Create or alter function dbo.fhsmFNParseDimensionColumn
+	--
+	BEGIN
+		SET @stmt = ''
+			USE '' + QUOTENAME(@fhSQLMonitorDatabase) + '';
+
+			DECLARE @stmt nvarchar(max);
+
+			IF OBJECT_ID(''''dbo.fhsmFNParseDimensionColumn'''', ''''FN'''') IS NULL
+			BEGIN
+				RAISERROR(''''Creating stub function dbo.fhsmFNParseDimensionColumn'''', 0, 1) WITH NOWAIT;
+
+				EXEC(''''CREATE FUNCTION dbo.fhsmFNParseDimensionColumn() RETURNS nvarchar(128) AS BEGIN RETURN NULL; END;'''');
+			END;
+
+			--
+			-- Alter dbo.fhsmFNParseDimensionColumn
+			--
+			BEGIN
+				RAISERROR(''''Alter function dbo.fhsmFNParseDimensionColumn'''', 0, 1) WITH NOWAIT;
+
+				SET @stmt = ''''
+					ALTER FUNCTION dbo.fhsmFNParseDimensionColumn(@column nvarchar(128))
+					RETURNS nvarchar(128)
+					AS
+					BEGIN
+						DECLARE @pos1 int;
+						DECLARE @pos2 int;
+						DECLARE @token nvarchar(128);
+
+						SET @token = ''''''''CASE '''''''';
+						IF (LEFT(@column, LEN(@token)) = @token)
+						BEGIN
+							SET @pos1 = CHARINDEX('''''''' '''''''', @column);
+							SET @pos2 = CHARINDEX('''''''' '''''''', @column, @pos1 + 1);
+
+							SET @column = SUBSTRING(@column, @pos1 + 1, @pos2 - @pos1 - 1);
+						END;
+
+						SET @token = ''''''''CAST('''''''';
+						IF (LEFT(@column, LEN(@token)) = @token)
+						BEGIN
+							SET @pos1 = CHARINDEX('''''''' '''''''', @column);
+
+							SET @column = SUBSTRING(@column, LEN(@token) + 1, @pos1 - LEN(@token) - 1);
+						END;
+
+						SET @token = ''''''''COALESCE('''''''';
+						IF (LEFT(@column, LEN(@token)) = @token)
+						BEGIN
+							SET @pos1 = CHARINDEX('''''''','''''''', @column);
+
+							SET @column = SUBSTRING(@column, LEN(@token) + 1, @pos1 - LEN(@token) - 1);
+						END;
+
+						SET @token = ''''''''CONVERT('''''''';
+						IF (LEFT(@column, LEN(@token)) = @token)
+						BEGIN
+							SET @pos1 = CHARINDEX('''''''','''''''', @column);
+							SET @pos2 = CHARINDEX('''''''','''''''', @column, @pos1 + 1);
+
+							SET @column = SUBSTRING(@column, @pos1 + 1, @pos2 - @pos1 - 1);
+						END;
+
+						SET @column = LTRIM(RTRIM(@column));
+
+						RETURN @column;
+					END;
+				'''';
+				EXEC(@stmt);
+			END;
+		'';
+		EXEC(@stmt);
+	END;
+
+	--
+	-- Register extended properties on the function dbo.fhsmFNParseDimensionColumn
+	--
+	BEGIN
+		SET @objectName = ''dbo.fhsmFNParseDimensionColumn'';
+
+		SET @stmt = ''
+			USE '' + QUOTENAME(@fhSQLMonitorDatabase) + '';
+			
+			DECLARE @objName nvarchar(128);
+			DECLARE @schName nvarchar(128);
+
+			SET @objName = PARSENAME(@objectName, 1);
+			SET @schName = PARSENAME(@objectName, 2);
+
+			EXEC dbo.fhsmSPExtendedProperties @objectType = ''''Function'''', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''''FHSMVersion'''', @propertyValue = @version;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = ''''Function'''', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''''FHSMCreated'''', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = ''''Function'''', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''''FHSMCreatedBy'''', @propertyValue = @myUserName;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = ''''Function'''', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''''FHSMModified'''', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = ''''Function'''', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''''FHSMModifiedBy'''', @propertyValue = @myUserName;
+		'';
+		EXEC sp_executesql
+			@stmt
+			,N''@objectName nvarchar(128), @version sql_variant, @nowUTCStr sql_variant, @myUserName sql_variant''
+			,@objectName = @objectName
+			,@version = @version
+			,@nowUTCStr = @nowUTCStr
+			,@myUserName = @myUserName;
+	END;
+
+	--
 	-- Create or alter function dbo.fhsmFNTryParseAsInt
 	--
 	BEGIN
@@ -577,7 +686,7 @@ ELSE BEGIN
 	END;
 
 	--
-	-- Create table dbo.fhsmConfigurations if it not already exists
+	-- Create table dbo.fhsmConfigurations and indexes if they not already exists
 	--
 	BEGIN
 		SET @stmt = ''
@@ -593,7 +702,10 @@ ELSE BEGIN
 					,Value nvarchar(128) NOT NULL
 					,CONSTRAINT PK_fhsmConfigurations PRIMARY KEY([Key])'' + @tableCompressionStmt + ''
 				);
+			END;
 
+			IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''''dbo.fhsmConfigurations'''')) AND (i.name = ''''NC_fhsmConfigurations_Id''''))
+			BEGIN
 				CREATE NONCLUSTERED INDEX NC_fhsmConfigurations_Id ON dbo.fhsmConfigurations(Id)'' + @tableCompressionStmt + '';
 			END;
 		'';
@@ -740,7 +852,7 @@ ELSE BEGIN
 	END;
 
 	--
-	-- Create table dbo.fhsmRetentions if it not already exists
+	-- Create table dbo.fhsmRetentions and indexes if they not already exists
 	--
 	BEGIN
 		SET @stmt = ''
@@ -764,7 +876,10 @@ ELSE BEGIN
 					,CONSTRAINT PK_fhsmRetentions PRIMARY KEY(Id)'' + @tableCompressionStmt + ''
 					,CONSTRAINT UQ_fhsmRetentions_TableName_Sequence UNIQUE(TableName, Sequence)'' + @tableCompressionStmt + ''
 				);
+			END;
 
+			IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''''dbo.fhsmRetentions'''')) AND (i.name = ''''NC_fhsmRetentions_Enabled_TableName_Sequence''''))
+			BEGIN
 				CREATE NONCLUSTERED INDEX NC_fhsmRetentions_Enabled_TableName_Sequence ON dbo.fhsmRetentions(Enabled, TableName, Sequence)'' + @tableCompressionStmt + '';
 			END;
 		'';
@@ -802,7 +917,7 @@ ELSE BEGIN
 	END;
 
 	--
-	-- Create table dbo.fhsmLog if it not already exists
+	-- Create table dbo.fhsmLog and indexes if they not already exists
 	--
 	BEGIN
 		SET @stmt = ''
@@ -823,9 +938,20 @@ ELSE BEGIN
 					,Timestamp datetime NOT NULL CONSTRAINT DEF_fhsmLog_Timestamp DEFAULT (SYSDATETIME())
 					,CONSTRAINT PK_fhsmLog PRIMARY KEY(Id)'' + @tableCompressionStmt + ''
 				);
+			END;
 
+			IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''''dbo.fhsmLog'''')) AND (i.name = ''''NC_fhsmLog_TimestampUTC''''))
+			BEGIN
 				CREATE NONCLUSTERED INDEX NC_fhsmLog_TimestampUTC ON dbo.fhsmLog(TimestampUTC)'' + @tableCompressionStmt + '';
+			END;
+
+			IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''''dbo.fhsmLog'''')) AND (i.name = ''''NC_fhsmLog_Timestamp''''))
+			BEGIN
 				CREATE NONCLUSTERED INDEX NC_fhsmLog_Timestamp ON dbo.fhsmLog(Timestamp)'' + @tableCompressionStmt + '';
+			END;
+
+			IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''''dbo.fhsmLog'''')) AND (i.name = ''''NC_fhsmLog_Type_Timestamp''''))
+			BEGIN
 				CREATE NONCLUSTERED INDEX NC_fhsmLog_Type_Timestamp ON dbo.fhsmLog(Type, Timestamp)'' + @tableCompressionStmt + '';
 			END;
 		'';
@@ -891,7 +1017,7 @@ ELSE BEGIN
 	END;
 
 	--
-	-- Create table dbo.fhsmSchedules if it not already exists
+	-- Create table dbo.fhsmSchedules and indexes if they not already exists
 	--
 	BEGIN
 		SET @stmt = ''
@@ -923,7 +1049,10 @@ ELSE BEGIN
 					,CONSTRAINT PK_fhsmSchedules PRIMARY KEY(Id)'' + @tableCompressionStmt + ''
 					,CONSTRAINT UQ_fhsmSchedules_Name UNIQUE(Name)'' + @tableCompressionStmt + ''
 				);
+			END;
 
+			IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''''dbo.fhsmSchedules'''')) AND (i.name = ''''NC_fhsmSchedules_Enabled_Name''''))
+			BEGIN
 				CREATE NONCLUSTERED INDEX NC_fhsmSchedules_Enabled_Name ON dbo.fhsmSchedules(Enabled, Name)'' + @tableCompressionStmt + '';
 			END;
 		'';
@@ -1464,7 +1593,7 @@ ELSE BEGIN
 										''''''''fhsmConfigurations'''''''', ''''''''fhsmDimensions'''''''', ''''''''fhsmLog'''''''', ''''''''fhsmRetentions'''''''', ''''''''fhsmSchedules''''''''
 										,''''''''fhsmSPCleanup'''''''', ''''''''fhsmSPExtendedProperties'''''''', ''''''''fhsmSPLog'''''''', ''''''''fhsmSPSchedules'''''''', ''''''''fhsmSPUpdateDimensions''''''''
 										,''''''''fhsmFNAgentJobTime'''''''', ''''''''fhsmFNGenerateKey'''''''', ''''''''fhsmFNGetConfiguration'''''''', ''''''''fhsmFNGetExecutionDelaySec'''''''', ''''''''fhsmFNGetTaskParameter''''''''
-										,''''''''fhsmFNParseDatabasesStr'''''''', ''''''''fhsmFNSplitLines'''''''', ''''''''fhsmFNSplitString'''''''', ''''''''fhsmFNTryParseAsInt''''''''
+										,''''''''fhsmFNParseDatabasesStr'''''''', ''''''''fhsmFNParseDimensionColumn'''''''', ''''''''fhsmFNSplitString'''''''', ''''''''fhsmFNTryParseAsInt''''''''
 									))
 							) AS a
 						);
@@ -1773,103 +1902,6 @@ ELSE BEGIN
 	--
 	BEGIN
 		SET @objectName = ''dbo.fhsmFNSplitString'';
-
-		SET @stmt = ''
-			USE '' + QUOTENAME(@fhSQLMonitorDatabase) + '';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''''Function'''', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''''FHSMVersion'''', @propertyValue = @version;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''''Function'''', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''''FHSMCreated'''', @propertyValue = @nowUTCStr;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''''Function'''', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''''FHSMCreatedBy'''', @propertyValue = @myUserName;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''''Function'''', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''''FHSMModified'''', @propertyValue = @nowUTCStr;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''''Function'''', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''''FHSMModifiedBy'''', @propertyValue = @myUserName;
-		'';
-		EXEC sp_executesql
-			@stmt
-			,N''@objectName nvarchar(128), @version sql_variant, @nowUTCStr sql_variant, @myUserName sql_variant''
-			,@objectName = @objectName
-			,@version = @version
-			,@nowUTCStr = @nowUTCStr
-			,@myUserName = @myUserName;
-	END;
-
-	--
-	-- Create or alter function dbo.fhsmFNSplitLines
-	--
-	BEGIN
-		SET @stmt = ''
-			USE '' + QUOTENAME(@fhSQLMonitorDatabase) + '';
-
-			DECLARE @stmt nvarchar(max);
-
-			IF OBJECT_ID(''''dbo.fhsmFNSplitLines'''', ''''FN'''') IS NULL
-			BEGIN
-				RAISERROR(''''Creating stub function dbo.fhsmFNSplitLines'''', 0, 1) WITH NOWAIT;
-
-				EXEC(''''CREATE FUNCTION dbo.fhsmFNSplitLines() RETURNS bit AS BEGIN RETURN 0; END;'''');
-			END;
-
-			--
-			-- Alter dbo.fhsmFNSplitLines
-			--
-			BEGIN
-				RAISERROR(''''Alter function dbo.fhsmFNSplitLines'''', 0, 1) WITH NOWAIT;
-
-				SET @stmt = ''''
-					ALTER FUNCTION dbo.fhsmFNSplitLines(
-						@val nvarchar(max),
-						@lineLen int
-					)
-					RETURNS nvarchar(max)
-					AS
-					BEGIN
-						DECLARE @c nvarchar(1);
-						DECLARE @curLen int = 0;
-						DECLARE @i int = 0;
-						DECLARE @rv nvarchar(max) = '''''''''''''''';
-
-						WHILE (@i <= len(@val))
-						BEGIN
-							SET @c = SUBSTRING(@val, @i, 1);
-							SET @curlen = @curlen + 1;
-
-							SET @rv = @rv + @c;
-
-							IF (@c IN (CHAR(10), CHAR(13)))
-							BEGIN
-								SET @curLen = 0;
-							END
-							ELSE IF (@curlen >= @lineLen)
-							BEGIN
-								IF (@c IN (N'''''''' '''''''', N'''''''',''''''''))
-								BEGIN
-									SET @rv = @rv + char(10);
-									SET @curlen = 0;
-								END
-							END
-
-							SET @i = @i + 1;
-						END;
-
-						RETURN @rv;
-					END;
-				'''';
-				EXEC(@stmt);
-			END;
-		'';
-		EXEC(@stmt);
-	END;
-
-	--
-	-- Register extended properties on the function dbo.fhsmFNSplitLines
-	--
-	BEGIN
-		SET @objectName = ''dbo.fhsmFNSplitLines'';
 
 		SET @stmt = ''
 			USE '' + QUOTENAME(@fhSQLMonitorDatabase) + '';
@@ -2442,7 +2474,10 @@ ELSE BEGIN
 						DECLARE @dimensionKey nvarchar(128);
 						DECLARE @dimensionName nvarchar(128);
 						DECLARE @dimensionStmt nvarchar(max);
+						DECLARE @edition nvarchar(128);
 						DECLARE @firstTable bit;
+						DECLARE @indexName nvarchar(128);
+						DECLARE @indexStmt nvarchar(max);
 						DECLARE @myUserName nvarchar(128);
 						DECLARE @nowUTC datetime;
 						DECLARE @nowUTCStr nvarchar(128);
@@ -2453,6 +2488,12 @@ ELSE BEGIN
 						DECLARE @outputColumn5 nvarchar(128);
 						DECLARE @outputColumn6 nvarchar(128);
 						DECLARE @pbiSchema nvarchar(128);
+						DECLARE @productEndPos int;
+						DECLARE @productStartPos int;
+						DECLARE @productVersion nvarchar(128);
+						DECLARE @productVersion1 int;
+						DECLARE @productVersion2 int;
+						DECLARE @productVersion3 int;
 						DECLARE @srcAlias nvarchar(128);
 						DECLARE @srcColumn1 nvarchar(128);
 						DECLARE @srcColumn2 nvarchar(128);
@@ -2463,6 +2504,7 @@ ELSE BEGIN
 						DECLARE @srcDateColumn nvarchar(128);
 						DECLARE @srcTable nvarchar(128);
 						DECLARE @srcWhere nvarchar(max);
+						DECLARE @tableCompressionStmt nvarchar(max);
 						DECLARE @version nvarchar(128);
 
 						SET @myUserName = SUSER_NAME();
@@ -2470,10 +2512,189 @@ ELSE BEGIN
 						SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 						SET @version = '''''''''' + @version + '''''''''';
 
+						SET @productVersion = CAST(SERVERPROPERTY(''''''''ProductVersion'''''''') AS nvarchar);
+						SET @productStartPos = 1;
+						SET @productEndPos = CHARINDEX(''''''''.'''''''', @productVersion, @productStartPos);
+						SET @productVersion1 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+						SET @productStartPos = @productEndPos + 1;
+						SET @productEndPos = CHARINDEX(''''''''.'''''''', @productVersion, @productStartPos);
+						SET @productVersion2 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+						SET @productStartPos = @productEndPos + 1;
+						SET @productEndPos = CHARINDEX(''''''''.'''''''', @productVersion, @productStartPos);
+						SET @productVersion3 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+
 						SET @pbiSchema = dbo.fhsmFNGetConfiguration(''''''''PBISchema'''''''');
 		'';
 		SET @stmt += ''
+						--
+						-- Check if SQL version allows to use data compression
+						--
+						BEGIN
+							SET @tableCompressionStmt = '''''''''''''''';
 
+							SET @edition = CAST(SERVERPROPERTY(''''''''Edition'''''''') AS nvarchar);
+
+							IF (@edition = ''''''''SQL Azure'''''''')
+								OR (SUBSTRING(@edition, 1, CHARINDEX('''''''' '''''''', @edition)) = ''''''''Developer'''''''')
+								OR (SUBSTRING(@edition, 1, CHARINDEX('''''''' '''''''', @edition)) = ''''''''Enterprise'''''''')
+								OR (@productVersion1 > 13)
+								OR ((@productVersion1 = 13) AND (@productVersion2 >= 1))
+								OR ((@productVersion1 = 13) AND (@productVersion2 = 0) AND (@productVersion3 >= 4001))
+							BEGIN
+								SET @tableCompressionStmt = '''''''' WITH (DATA_COMPRESSION = PAGE)'''''''';
+							END;
+						END;
+		'';
+		SET @stmt += ''
+						--
+						-- Create indexes based upon dbo.fhsmDimensions
+						--
+						BEGIN
+							DECLARE dCur CURSOR LOCAL READ_ONLY FAST_FORWARD FOR
+							SELECT DISTINCT d.SrcTable, d.SrcColumn1, d.SrcColumn2, d.SrcColumn3, d.SrcColumn4, d.SrcColumn5, d.SrcColumn6
+							FROM dbo.fhsmDimensions AS d
+							INNER JOIN (
+								SELECT DISTINCT d.DimensionName
+								FROM dbo.fhsmDimensions AS d
+							) AS modifiedSrcTables ON (modifiedSrcTables.DimensionName = d.DimensionName)
+							ORDER BY d.SrcTable, d.SrcColumn6 DESC, d.SrcColumn5 DESC, d.SrcColumn4 DESC, d.SrcColumn3 DESC, d.SrcColumn2 DESC, d.SrcColumn1 DESC;
+
+							OPEN dCur;
+
+							SET @currentDimensionName = '''''''';
+							SET @dimensionStmt = '''''''';
+							SET @firstTable = 1;
+
+							WHILE (1 = 1)
+							BEGIN
+								FETCH NEXT FROM dCur
+								INTO @srcTable, @srcColumn1, @srcColumn2, @srcColumn3, @srcColumn4, @srcColumn5, @srcColumn6
+
+								IF (@@FETCH_STATUS <> 0)
+								BEGIN
+									BREAK;
+								END;
+
+								SET @srcColumn1 = dbo.[fhsmFNParseDimensionColumn](@srcColumn1);
+								SET @srcColumn2 = dbo.[fhsmFNParseDimensionColumn](@srcColumn2);
+								SET @srcColumn3 = dbo.[fhsmFNParseDimensionColumn](@srcColumn3);
+								SET @srcColumn4 = dbo.[fhsmFNParseDimensionColumn](@srcColumn4);
+								SET @srcColumn5 = dbo.[fhsmFNParseDimensionColumn](@srcColumn5);
+								SET @srcColumn6 = dbo.[fhsmFNParseDimensionColumn](@srcColumn6);
+
+								SET @indexName =
+									''''''''NCAuto_'''''''' + PARSENAME(@srcTable, 1) + ''''''''_''''''''
+										+ PARSENAME(@srcColumn1, 1)
+										+ COALESCE(''''''''_'''''''' + PARSENAME(@srcColumn2, 1), '''''''''''''''')
+										+ COALESCE(''''''''_'''''''' + PARSENAME(@srcColumn3, 1), '''''''''''''''')
+										+ COALESCE(''''''''_'''''''' + PARSENAME(@srcColumn4, 1), '''''''''''''''')
+										+ COALESCE(''''''''_'''''''' + PARSENAME(@srcColumn5, 1), '''''''''''''''')
+										+ COALESCE(''''''''_'''''''' + PARSENAME(@srcColumn6, 1), '''''''''''''''');
+
+								SET @indexStmt = ''''''''
+									SET ANSI_WARNINGS OFF;
+
+									DECLARE @coveringIndexExists int;
+									DECLARE @indexName nvarchar(128);
+									DECLARE @stmt nvarchar(max);
+		'';
+		SET @stmt += ''
+									DECLARE iCur CURSOR LOCAL READ_ONLY FAST_FORWARD FOR
+									SELECT i.name AS IndexName
+									FROM '''''''' + COALESCE(QUOTENAME(PARSENAME(@srcTable, 3)) + ''''''''.'''''''', '''''''''''''''') + ''''''''sys.indexes AS i
+									INNER JOIN '''''''' + COALESCE(QUOTENAME(PARSENAME(@srcTable, 3)) + ''''''''.'''''''', '''''''''''''''') + ''''''''sys.objects AS o ON (o.object_id = i.object_id)
+									INNER JOIN '''''''' + COALESCE(QUOTENAME(PARSENAME(@srcTable, 3)) + ''''''''.'''''''', '''''''''''''''') + ''''''''sys.schemas AS sch ON (sch.schema_id = o.schema_id)
+									WHERE (sch.name = '''''''''''''''''''''''' + PARSENAME(@srcTable, 2) + '''''''''''''''''''''''') AND (o.name = '''''''''''''''''''''''' + PARSENAME(@srcTable, 1) + '''''''''''''''''''''''')
+									ORDER BY i.name;
+
+									OPEN iCur;
+
+									SET @coveringIndexExists = 0;
+
+									WHILE (1 = 1)
+									BEGIN
+										FETCH NEXT FROM iCur
+										INTO @indexName;
+
+										IF (@@FETCH_STATUS <> 0)
+										BEGIN
+											BREAK;
+										END;
+
+										IF EXISTS (
+											SELECT *
+											FROM (
+												SELECT
+													i.name,
+													MAX(CASE WHEN (ic.key_ordinal = 1) THEN c.name END) AS Column1,
+													MAX(CASE WHEN (ic.key_ordinal = 2) THEN c.name END) AS Column2,
+													MAX(CASE WHEN (ic.key_ordinal = 3) THEN c.name END) AS Column3,
+													MAX(CASE WHEN (ic.key_ordinal = 4) THEN c.name END) AS Column4,
+													MAX(CASE WHEN (ic.key_ordinal = 5) THEN c.name END) AS Column5,
+													MAX(CASE WHEN (ic.key_ordinal = 6) THEN c.name END) AS Column6
+													  FROM '''''''' + COALESCE(QUOTENAME(PARSENAME(@srcTable, 3)) + ''''''''.'''''''', '''''''''''''''') + ''''''''sys.indexes AS i
+												INNER JOIN '''''''' + COALESCE(QUOTENAME(PARSENAME(@srcTable, 3)) + ''''''''.'''''''', '''''''''''''''') + ''''''''sys.index_columns AS ic ON (ic.object_id = i.object_id) AND (ic.index_id = i.index_id)
+												INNER JOIN '''''''' + COALESCE(QUOTENAME(PARSENAME(@srcTable, 3)) + ''''''''.'''''''', '''''''''''''''') + ''''''''sys.columns AS c ON (c.object_id = ic.object_id) AND (c.column_id = ic.column_id)
+												INNER JOIN '''''''' + COALESCE(QUOTENAME(PARSENAME(@srcTable, 3)) + ''''''''.'''''''', '''''''''''''''') + ''''''''sys.objects AS o ON (o.object_id = c.object_id)
+												INNER JOIN '''''''' + COALESCE(QUOTENAME(PARSENAME(@srcTable, 3)) + ''''''''.'''''''', '''''''''''''''') + ''''''''sys.schemas AS sch ON (sch.schema_id = o.schema_id)
+												WHERE (sch.name = '''''''''''''''''''''''' + PARSENAME(@srcTable, 2) + '''''''''''''''''''''''') AND (o.name = '''''''''''''''''''''''' + PARSENAME(@srcTable, 1) + '''''''''''''''''''''''') AND (i.name = @indexName)
+												GROUP BY i.name
+											) AS a
+											WHERE (1 = 1)
+												AND (a.Column1 = PARSENAME(@srcColumn1, 1))
+												AND ((a.Column2 = PARSENAME(@srcColumn2, 1)) OR (PARSENAME(@srcColumn2, 1) IS NULL))
+												AND ((a.Column3 = PARSENAME(@srcColumn3, 1)) OR (PARSENAME(@srcColumn3, 1) IS NULL))
+												AND ((a.Column4 = PARSENAME(@srcColumn4, 1)) OR (PARSENAME(@srcColumn4, 1) IS NULL))
+												AND ((a.Column5 = PARSENAME(@srcColumn5, 1)) OR (PARSENAME(@srcColumn5, 1) IS NULL))
+												AND ((a.Column6 = PARSENAME(@srcColumn6, 1)) OR (PARSENAME(@srcColumn6, 1) IS NULL))
+										)
+										BEGIN
+											SET @coveringIndexExists = 1;
+											BREAK;
+										END;
+									END;
+
+									CLOSE iCur;
+									DEALLOCATE iCur;
+		'';
+		SET @stmt += ''
+									IF (@coveringIndexExists = 0)
+									BEGIN
+										SET @stmt = ''''''''''''''''Adding index ['''''''' + @indexName + ''''''''] to table '''''''' + @srcTable + '''''''''''''''''''''''';
+										RAISERROR(@stmt, 0, 1) WITH NOWAIT;
+
+										SET @stmt = ''''''''''''''''
+											CREATE NONCLUSTERED INDEX ''''''''
+											+ ''''''''['''''''' + @indexName + ''''''''] ON '''''''' + @srcTable
+											+ ''''''''(''''''''
+												+ PARSENAME(@srcColumn1, 1)
+												+ COALESCE('''''''', '''''''' + PARSENAME(@srcColumn2, 1), '''''''''''''''')
+												+ COALESCE('''''''', '''''''' + PARSENAME(@srcColumn3, 1), '''''''''''''''')
+												+ COALESCE('''''''', '''''''' + PARSENAME(@srcColumn4, 1), '''''''''''''''')
+												+ COALESCE('''''''', '''''''' + PARSENAME(@srcColumn5, 1), '''''''''''''''')
+												+ COALESCE('''''''', '''''''' + PARSENAME(@srcColumn6, 1), '''''''''''''''')
+											+ '''''''')'''''''' + @tableCompressionStmt + '''''''';
+										'''''''''''''''';
+										EXEC(@stmt);
+									END;
+								'''''''';
+
+								EXEC sp_executesql
+									@indexStmt
+									,N''''''''@srcColumn1 nvarchar(128), @srcColumn2 nvarchar(128), @srcColumn3 nvarchar(128), @srcColumn4 nvarchar(128), @srcColumn5 nvarchar(128), @srcColumn6 nvarchar(128)''''''''
+									,@srcColumn1 = @srcColumn1
+									,@srcColumn2 = @srcColumn2
+									,@srcColumn3 = @srcColumn3
+									,@srcColumn4 = @srcColumn4
+									,@srcColumn5 = @srcColumn5
+									,@srcColumn6 = @srcColumn6;
+							END;
+
+							CLOSE dCur;
+							DEALLOCATE dCur;
+						END;
+		'';
+		SET @stmt += ''
 						--
 						-- Create Time dimension if it does not exist
 						--
@@ -6421,7 +6642,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:IndexOptimize-004.sql modified: 2025.05.04 17.09.45
+-- File part:IndexOptimize-004.sql modified: 2025.05.23 16.36.34
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -6572,7 +6793,7 @@ BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.5'';
+		SET @version = ''2.6'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -6614,6 +6835,8 @@ BEGIN
 		--
 		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.CommandLog'')) AND (i.name = ''NC_CommandLog_StartTime''))
 		BEGIN
+			RAISERROR(''Adding index [NC_CommandLog_StartTime] to table dbo.CommandLog'', 0, 1) WITH NOWAIT;
+
 			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_CommandLog_StartTime ON dbo.CommandLog(StartTime ASC)'' + @tableCompressionStmt + '';
 			'';
@@ -6625,6 +6848,8 @@ BEGIN
 		--
 		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.CommandLog'')) AND (i.name = ''NC_CommandLog_DatabaseName_SchemaName_ObjectName_IndexName''))
 		BEGIN
+			RAISERROR(''Adding index [NC_CommandLog_DatabaseName_SchemaName_ObjectName_IndexName] to table dbo.CommandLog'', 0, 1) WITH NOWAIT;
+
 			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_CommandLog_DatabaseName_SchemaName_ObjectName_IndexName ON dbo.CommandLog(DatabaseName, SchemaName, ObjectName, IndexName)'' + @tableCompressionStmt + '';
 			'';
@@ -7055,7 +7280,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:DatabaseState.sql modified: 2025.03.06 23.23.55
+-- File part:DatabaseState.sql modified: 2025.05.23 16.32.49
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -7127,7 +7352,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.1'';
+		SET @version = ''2.6'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -7165,7 +7390,7 @@ ELSE BEGIN
 	--
 	BEGIN
 		--
-		-- Create table dbo.fhsmDatabaseState if it not already exists
+		-- Create table dbo.fhsmDatabaseState and indexes if they not already exists
 		--
 		IF OBJECT_ID(''dbo.fhsmDatabaseState'', ''U'') IS NULL
 		BEGIN
@@ -7184,10 +7409,45 @@ ELSE BEGIN
 					,Timestamp datetime NOT NULL
 					,CONSTRAINT PK_fhsmDatabaseState PRIMARY KEY(Id)'' + @tableCompressionStmt + ''
 				);
+			'';
+			EXEC(@stmt);
+		END;
 
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmDatabaseState'')) AND (i.name = ''NC_fhsmDatabaseState_TimestampUTC''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmDatabaseState_TimestampUTC] to table dbo.fhsmDatabaseState'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmDatabaseState_TimestampUTC ON dbo.fhsmDatabaseState(TimestampUTC)'' + @tableCompressionStmt + '';
+			'';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmDatabaseState'')) AND (i.name = ''NC_fhsmDatabaseState_Timestamp''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmDatabaseState_Timestamp] to table dbo.fhsmDatabaseState'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmDatabaseState_Timestamp ON dbo.fhsmDatabaseState(Timestamp)'' + @tableCompressionStmt + '';
+			'';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmDatabaseState'')) AND (i.name = ''NC_fhsmDatabaseState_Query_DatabaseName_Key_ValidTo''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmDatabaseState_Query_DatabaseName_Key_ValidTo] to table dbo.fhsmDatabaseState'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmDatabaseState_Query_DatabaseName_Key_ValidTo ON dbo.fhsmDatabaseState(Query, DatabaseName, [Key], ValidTo) INCLUDE(Value)'' + @tableCompressionStmt + '';
+			'';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmDatabaseState'')) AND (i.name = ''NC_fhsmDatabaseState_ValidTo_Query_DatabaseName_key''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmDatabaseState_ValidTo_Query_DatabaseName_key] to table dbo.fhsmDatabaseState'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmDatabaseState_ValidTo_Query_DatabaseName_key ON dbo.fhsmDatabaseState(ValidTo, Query, DatabaseName, [Key]) INCLUDE(Value)'' + @tableCompressionStmt + '';
 			'';
 			EXEC(@stmt);
@@ -8324,7 +8584,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:AgentJobs.sql modified: 2025.03.06 23.21.32
+-- File part:AgentJobs.sql modified: 2025.05.23 16.12.52
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -8396,7 +8656,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.1'';
+		SET @version = ''2.6'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -8434,7 +8694,7 @@ ELSE BEGIN
 	--
 	BEGIN
 		--
-		-- Create table dbo.fhsmAgentJobs if it not already exists
+		-- Create table dbo.fhsmAgentJobs and indexes if they not already exists
 		--
 		IF OBJECT_ID(''dbo.fhsmAgentJobs'', ''U'') IS NULL
 		BEGIN
@@ -8466,8 +8726,25 @@ ELSE BEGIN
 					,Timestamp datetime NOT NULL
 					,CONSTRAINT PK_fhsmAgentJobs PRIMARY KEY(Id)'' + @tableCompressionStmt + ''
 				);
+			'';
+			EXEC(@stmt);
+		END;
 
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmAgentJobs'')) AND (i.name = ''NC_fhsmAgentJobs_TimestampUTC''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmAgentJobs_TimestampUTC] to table dbo.fhsmAgentJobs'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmAgentJobs_TimestampUTC ON dbo.fhsmAgentJobs(TimestampUTC)'' + @tableCompressionStmt + '';
+			'';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmAgentJobs'')) AND (i.name = ''NC_fhsmAgentJobs_Timestamp''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmAgentJobs_Timestamp] to table dbo.fhsmAgentJobs'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmAgentJobs_Timestamp ON dbo.fhsmAgentJobs(Timestamp)'' + @tableCompressionStmt + '';
 			'';
 			EXEC(@stmt);
@@ -9046,7 +9323,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:AgentJobsPerformance.sql modified: 2025.04.16 15.21.07
+-- File part:AgentJobsPerformance.sql modified: 2025.05.23 16.18.44
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -9118,7 +9395,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.5'';
+		SET @version = ''2.6'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -9156,7 +9433,7 @@ ELSE BEGIN
 	--
 	BEGIN
 		--
-		-- Create table dbo.fhsmAgentJobsPerformance if it not already exists
+		-- Create table dbo.fhsmAgentJobsPerformance and indexes if they not already exists
 		--
 		IF OBJECT_ID(''dbo.fhsmAgentJobsPerformance'', ''U'') IS NULL
 		BEGIN
@@ -9176,8 +9453,25 @@ ELSE BEGIN
 					,MaxDurationSeconds int NOT NULL
 					,CONSTRAINT PK_fhsmAgentJobsPerformance PRIMARY KEY(Id)'' + @tableCompressionStmt + ''
 				);
+			'';
+			EXEC(@stmt);
+		END;
 
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmAgentJobsPerformance'')) AND (i.name = ''NC_fhsmAgentJobsPerformance_Date_Name''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmAgentJobsPerformance_Date_Name] to table dbo.fhsmAgentJobsPerformance'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmAgentJobsPerformance_Date_Name ON dbo.fhsmAgentJobsPerformance(Date, Name)'' + @tableCompressionStmt + '';
+			'';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmAgentJobsPerformance'')) AND (i.name = ''NC_fhsmAgentJobsPerformance_Name_Date''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmAgentJobsPerformance_Name_Date] to table dbo.fhsmAgentJobsPerformance'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmAgentJobsPerformance_Name_Date ON dbo.fhsmAgentJobsPerformance(Name, Date)'' + @tableCompressionStmt + '';
 			'';
 			EXEC(@stmt);
@@ -9199,7 +9493,7 @@ ELSE BEGIN
 		END;
 
 		--
-		-- Create table dbo.fhsmAgentJobsPerformanceDelta if it not already exists
+		-- Create table dbo.fhsmAgentJobsPerformanceDelta and indexes if they not already exists
 		--
 		IF OBJECT_ID(''dbo.fhsmAgentJobsPerformanceDelta'', ''U'') IS NULL
 		BEGIN
@@ -9217,9 +9511,35 @@ ELSE BEGIN
 					,Timestamp datetime NOT NULL
 					,CONSTRAINT PK_fhsmAgentJobsPerformanceDelta PRIMARY KEY(Id)'' + @tableCompressionStmt + ''
 				);
+			'';
+			EXEC(@stmt);
+		END;
 
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmAgentJobsPerformanceDelta'')) AND (i.name = ''NC_fhsmAgentJobsPerformanceDelta_TimestampUTC''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmAgentJobsPerformanceDelta_TimestampUTC] to table dbo.fhsmAgentJobsPerformanceDelta'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmAgentJobsPerformanceDelta_TimestampUTC ON dbo.fhsmAgentJobsPerformanceDelta(TimestampUTC)'' + @tableCompressionStmt + '';
+			'';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmAgentJobsPerformanceDelta'')) AND (i.name = ''NC_fhsmAgentJobsPerformanceDelta_Timestamp''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmAgentJobsPerformanceDelta_Timestamp] to table dbo.fhsmAgentJobsPerformanceDelta'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmAgentJobsPerformanceDelta_Timestamp ON dbo.fhsmAgentJobsPerformanceDelta(Timestamp)'' + @tableCompressionStmt + '';
+			'';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmAgentJobsPerformanceDelta'')) AND (i.name = ''NC_fhsmAgentJobsPerformanceDelta_Name_TimestampUTC''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmAgentJobsPerformanceDelta_Name_TimestampUTC] to table dbo.fhsmAgentJobsPerformanceDelta'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmAgentJobsPerformanceDelta_Name_TimestampUTC ON dbo.fhsmAgentJobsPerformanceDelta(Name, TimestampUTC)'' + @tableCompressionStmt + '';
 			'';
 			EXEC(@stmt);
@@ -9241,7 +9561,7 @@ ELSE BEGIN
 		END;
 
 		--
-		-- Create table dbo.fhsmAgentJobsPerformanceLatest if it not already exists
+		-- Create table dbo.fhsmAgentJobsPerformanceLatest and indexes if they not already exists
 		--
 		IF OBJECT_ID(''dbo.fhsmAgentJobsPerformanceLatest'', ''U'') IS NULL
 		BEGIN
@@ -9260,9 +9580,35 @@ ELSE BEGIN
 					,Timestamp datetime NOT NULL
 					,CONSTRAINT PK_fhsmAgentJobsPerformanceLatest PRIMARY KEY(Id)'' + @tableCompressionStmt + ''
 				);
+			'';
+			EXEC(@stmt);
+		END;
 
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmAgentJobsPerformanceLatest'')) AND (i.name = ''NC_fhsmAgentJobsPerformanceLatest_TimestampUTC''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmAgentJobsPerformanceLatest_TimestampUTC] to table dbo.fhsmAgentJobsPerformanceLatest'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmAgentJobsPerformanceLatest_TimestampUTC ON dbo.fhsmAgentJobsPerformanceLatest(TimestampUTC)'' + @tableCompressionStmt + '';
+			'';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmAgentJobsPerformanceLatest'')) AND (i.name = ''NC_fhsmAgentJobsPerformanceLatest_Timestamp''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmAgentJobsPerformanceLatest_Timestamp] to table dbo.fhsmAgentJobsPerformanceLatest'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmAgentJobsPerformanceLatest_Timestamp ON dbo.fhsmAgentJobsPerformanceLatest(Timestamp)'' + @tableCompressionStmt + '';
+			'';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmAgentJobsPerformanceLatest'')) AND (i.name = ''NC_fhsmAgentJobsPerformanceLatest_Name_TimestampUTC''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmAgentJobsPerformanceLatest_Name_TimestampUTC] to table dbo.fhsmAgentJobsPerformanceLatest'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmAgentJobsPerformanceLatest_Name_TimestampUTC ON dbo.fhsmAgentJobsPerformanceLatest(Name, TimestampUTC)'' + @tableCompressionStmt + '';
 			'';
 			EXEC(@stmt);
@@ -9284,7 +9630,7 @@ ELSE BEGIN
 		END;
 
 		--
-		-- Create table dbo.fhsmAgentJobsPerformanceErrorDelta if it not already exists
+		-- Create table dbo.fhsmAgentJobsPerformanceErrorDelta and indexes if they not already exists
 		--
 		IF OBJECT_ID(''dbo.fhsmAgentJobsPerformanceErrorDelta'', ''U'') IS NULL
 		BEGIN
@@ -9307,9 +9653,35 @@ ELSE BEGIN
 					,Timestamp datetime NOT NULL
 					,CONSTRAINT PK_fhsmAgentJobsPerformanceErrorDelta PRIMARY KEY(Id)'' + @tableCompressionStmt + ''
 				);
+			'';
+			EXEC(@stmt);
+		END;
 
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmAgentJobsPerformanceErrorDelta'')) AND (i.name = ''NC_fhsmAgentJobsPerformanceErrorDelta_TimestampUTC''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmAgentJobsPerformanceErrorDelta_TimestampUTC] to table dbo.fhsmAgentJobsPerformanceErrorDelta'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmAgentJobsPerformanceErrorDelta_TimestampUTC ON dbo.fhsmAgentJobsPerformanceErrorDelta(TimestampUTC)'' + @tableCompressionStmt + '';
+			'';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmAgentJobsPerformanceErrorDelta'')) AND (i.name = ''NC_fhsmAgentJobsPerformanceErrorDelta_Timestamp''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmAgentJobsPerformanceErrorDelta_Timestamp] to table dbo.fhsmAgentJobsPerformanceErrorDelta'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmAgentJobsPerformanceErrorDelta_Timestamp ON dbo.fhsmAgentJobsPerformanceErrorDelta(Timestamp)'' + @tableCompressionStmt + '';
+			'';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmAgentJobsPerformanceErrorDelta'')) AND (i.name = ''NC_fhsmAgentJobsPerformanceErrorDelta_Name_TimestampUTC''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmAgentJobsPerformanceErrorDelta_Name_TimestampUTC] to table dbo.fhsmAgentJobsPerformanceErrorDelta'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmAgentJobsPerformanceErrorDelta_Name_TimestampUTC ON dbo.fhsmAgentJobsPerformanceErrorDelta(Name, TimestampUTC)'' + @tableCompressionStmt + '';
 			'';
 			EXEC(@stmt);
@@ -9331,7 +9703,7 @@ ELSE BEGIN
 		END;
 
 		--
-		-- Create table dbo.fhsmAgentJobsPerformanceLatestError if it not already exists
+		-- Create table dbo.fhsmAgentJobsPerformanceLatestError and indexes if they not already exists
 		--
 		IF OBJECT_ID(''dbo.fhsmAgentJobsPerformanceLatestError'', ''U'') IS NULL
 		BEGIN
@@ -9354,9 +9726,35 @@ ELSE BEGIN
 					,Timestamp datetime NOT NULL
 					,CONSTRAINT PK_fhsmAgentJobsPerformanceLatestError PRIMARY KEY(Id)'' + @tableCompressionStmt + ''
 				);
+			'';
+			EXEC(@stmt);
+		END;
 
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmAgentJobsPerformanceLatestError'')) AND (i.name = ''NC_fhsmAgentJobsPerformanceLatestError_TimestampUTC''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmAgentJobsPerformanceLatestError_TimestampUTC] to table dbo.fhsmAgentJobsPerformanceLatestError'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmAgentJobsPerformanceLatestError_TimestampUTC ON dbo.fhsmAgentJobsPerformanceLatestError(TimestampUTC)'' + @tableCompressionStmt + '';
+			'';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmAgentJobsPerformanceLatestError'')) AND (i.name = ''NC_fhsmAgentJobsPerformanceLatestError_Timestamp''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmAgentJobsPerformanceLatestError_Timestamp] to table dbo.fhsmAgentJobsPerformanceLatestError'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmAgentJobsPerformanceLatestError_Timestamp ON dbo.fhsmAgentJobsPerformanceLatestError(Timestamp)'' + @tableCompressionStmt + '';
+			'';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmAgentJobsPerformanceLatestError'')) AND (i.name = ''NC_fhsmAgentJobsPerformanceLatestError_Name_TimestampUTC''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmAgentJobsPerformanceLatestError_Name_TimestampUTC] to table dbo.fhsmAgentJobsPerformanceLatestError'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmAgentJobsPerformanceLatestError_Name_TimestampUTC ON dbo.fhsmAgentJobsPerformanceLatestError(Name, TimestampUTC)'' + @tableCompressionStmt + '';
 			'';
 			EXEC(@stmt);
@@ -10179,7 +10577,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:AgeOfStatistics.sql modified: 2025.04.17 17.16.13
+-- File part:AgeOfStatistics.sql modified: 2025.05.23 16.21.18
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -10251,7 +10649,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.5'';
+		SET @version = ''2.6'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -10289,7 +10687,7 @@ ELSE BEGIN
 	--
 	BEGIN
 		--
-		-- Create table dbo.fhsmStatisticsAge if it not already exists
+		-- Create table dbo.fhsmStatisticsAge and indexes if they not already exists
 		--
 		IF OBJECT_ID(''dbo.fhsmStatisticsAge'', ''U'') IS NULL
 		BEGIN
@@ -10314,9 +10712,35 @@ ELSE BEGIN
 					,Timestamp datetime NOT NULL
 					,CONSTRAINT PK_fhsmStatisticsAge PRIMARY KEY(Id)'' + @tableCompressionStmt + ''
 				);
+			'';
+			EXEC(@stmt);
+		END;
 
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmStatisticsAge'')) AND (i.name = ''NC_fhsmStatisticsAge_TimestampUTC''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmStatisticsAge_TimestampUTC] to table dbo.fhsmStatisticsAge'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmStatisticsAge_TimestampUTC ON dbo.fhsmStatisticsAge(TimestampUTC)'' + @tableCompressionStmt + '';
+			'';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmStatisticsAge'')) AND (i.name = ''NC_fhsmStatisticsAge_Timestamp_LastUpdated''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmStatisticsAge_Timestamp_LastUpdated] to table dbo.fhsmStatisticsAge'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmStatisticsAge_Timestamp_LastUpdated ON dbo.fhsmStatisticsAge(Timestamp, LastUpdated) INCLUDE(DatabaseName, SchemaName, ObjectName, IndexName)'' + @tableCompressionStmt + '';
+			'';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmStatisticsAge'')) AND (i.name = ''NC_fhsmStatisticsAge_DatabaseName_SchemaName_ObjectName_IndexName''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmStatisticsAge_DatabaseName_SchemaName_ObjectName_IndexName] to table dbo.fhsmStatisticsAge'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmStatisticsAge_DatabaseName_SchemaName_ObjectName_IndexName ON dbo.fhsmStatisticsAge(DatabaseName, SchemaName, ObjectName, IndexName)'' + @tableCompressionStmt + '';
 			'';
 			EXEC(@stmt);
@@ -10338,7 +10762,7 @@ ELSE BEGIN
 		END;
 
 		--
-		-- Create table dbo.fhsmStatisticsAgeIncremental if it not already exists
+		-- Create table dbo.fhsmStatisticsAgeIncremental and indexes if they not already exists
 		--
 		IF OBJECT_ID(''dbo.fhsmStatisticsAgeIncremental'', ''U'') IS NULL
 		BEGIN
@@ -10363,9 +10787,35 @@ ELSE BEGIN
 					,Timestamp datetime NOT NULL
 					,CONSTRAINT PK_fhsmStatisticsAgeIncremental PRIMARY KEY(Id)'' + @tableCompressionStmt + ''
 				);
+			'';
+			EXEC(@stmt);
+		END;
 
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmStatisticsAgeIncremental'')) AND (i.name = ''NC_fhsmStatisticsAgeIncremental_TimestampUTC''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmStatisticsAgeIncremental_TimestampUTC] to table dbo.fhsmStatisticsAgeIncremental'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmStatisticsAgeIncremental_TimestampUTC ON dbo.fhsmStatisticsAgeIncremental(TimestampUTC)'' + @tableCompressionStmt + '';
+			'';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmStatisticsAgeIncremental'')) AND (i.name = ''NC_fhsmStatisticsAgeIncremental_Timestamp_LastUpdated''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmStatisticsAgeIncremental_Timestamp_LastUpdated] to table dbo.fhsmStatisticsAgeIncremental'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmStatisticsAgeIncremental_Timestamp_LastUpdated ON dbo.fhsmStatisticsAgeIncremental(Timestamp, LastUpdated) INCLUDE(DatabaseName, SchemaName, ObjectName, IndexName)'' + @tableCompressionStmt + '';
+			'';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmStatisticsAgeIncremental'')) AND (i.name = ''NC_fhsmStatisticsAgeIncremental_DatabaseName_SchemaName_ObjectName_IndexName''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmStatisticsAgeIncremental_DatabaseName_SchemaName_ObjectName_IndexName] to table dbo.fhsmStatisticsAgeIncremental'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmStatisticsAgeIncremental_DatabaseName_SchemaName_ObjectName_IndexName ON dbo.fhsmStatisticsAgeIncremental(DatabaseName, SchemaName, ObjectName, IndexName)'' + @tableCompressionStmt + '';
 			'';
 			EXEC(@stmt);
@@ -11065,7 +11515,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:BackupStatus.sql modified: 2025.03.06 23.22.04
+-- File part:BackupStatus.sql modified: 2025.05.23 16.23.15
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -11137,7 +11587,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.1'';
+		SET @version = ''2.6'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -11175,7 +11625,7 @@ ELSE BEGIN
 	--
 	BEGIN
 		--
-		-- Create table dbo.fhsmBackupStatus if it not already exists
+		-- Create table dbo.fhsmBackupStatus and indexes if they not already exists
 		--
 		IF OBJECT_ID(''dbo.fhsmBackupStatus'', ''U'') IS NULL
 		BEGIN
@@ -11201,10 +11651,46 @@ ELSE BEGIN
 					,Timestamp datetime NOT NULL
 					,CONSTRAINT PK_BackupStatus PRIMARY KEY(Id)'' + @tableCompressionStmt + ''
 				);
+			'';
+			EXEC(@stmt);
+		END;
 
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmBackupStatus'')) AND (i.name = ''NC_fhsmBackupStatus_TimestampUTC''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmBackupStatus_TimestampUTC] to table dbo.fhsmBackupStatus'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmBackupStatus_TimestampUTC ON dbo.fhsmBackupStatus(TimestampUTC)'' + @tableCompressionStmt + '';
+			'';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmBackupStatus'')) AND (i.name = ''NC_fhsmBackupStatus_Timestamp''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmBackupStatus_Timestamp] to table dbo.fhsmBackupStatus'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmBackupStatus_Timestamp ON dbo.fhsmBackupStatus(Timestamp)'' + @tableCompressionStmt + '';
+			'';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmBackupStatus'')) AND (i.name = ''NC_fhsmBackupStatus_DatabaseName_BackupStartDate''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmBackupStatus_DatabaseName_BackupStartDate] to table dbo.fhsmBackupStatus'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmBackupStatus_DatabaseName_BackupStartDate ON dbo.fhsmBackupStatus(DatabaseName, BackupStartDate)'' + @tableCompressionStmt + '';
+			'';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmBackupStatus'')) AND (i.name = ''NC_fhsmBackupStatus_IsCopyOnly_IsDamaged''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmBackupStatus_IsCopyOnly_IsDamaged] to table dbo.fhsmBackupStatus'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
+				CREATE NONCLUSTERED INDEX NC_fhsmBackupStatus_IsCopyOnly_IsDamaged ON dbo.fhsmBackupStatus(IsCopyOnly ASC, IsDamaged ASC) INCLUDE(DatabaseName, BackupStartDate, Type)'' + @tableCompressionStmt + '';
 			'';
 			EXEC(@stmt);
 		END;
@@ -11284,14 +11770,14 @@ ELSE BEGIN
 							,d.TimestampUTC AS RecoveryModeChangeTimestampUTC
 							,d.Timestamp AS RecoveryModeChangeTimestamp
 							,CASE d.recovery_model
-								WHEN 1 THEN ''''FULL''''			-- Check for Database and Log
-								WHEN 2 THEN ''''BULK_LOGGED''''	-- Check for Database and Log
-								WHEN 3 THEN ''''SIMPLE''''		-- Check for Database
+								WHEN ''''1'''' THEN ''''FULL''''		-- Check for Database and Log
+								WHEN ''''2'''' THEN ''''BULK_LOGGED''''	-- Check for Database and Log
+								WHEN ''''3'''' THEN ''''SIMPLE''''		-- Check for Database
 								ELSE ''''?:'''' + d.recovery_model
 							END AS RecoveryModel
-							,latestFull.BackupStartDate AS LatestFullBackupStartDate
-							,latestDiff.BackupStartDate AS LatestDiffBackupStartDate
-							,latestLog.BackupStartDate AS LatestLogBackupStartDate
+							,latest.LatestFullBackupStartDate
+							,latest.LatestDiffBackupStartDate
+							,latest.LatestLogBackupStartDate
 						FROM (
 							SELECT dbState.DatabaseName, dbState.TimestampUTC, dbState.Timestamp, dbState.Value AS [recovery_model]
 							FROM dbo.fhsmDatabaseState AS dbState
@@ -11304,47 +11790,23 @@ ELSE BEGIN
 				'';
 			SET @stmt += ''
 						LEFT OUTER JOIN (
-							SELECT bsRanked.DatabaseName, bsRanked.BackupStartDate
+							SELECT
+								bsRanked.DatabaseName
+								,MAX(CASE WHEN (bsRanked.Type = ''''D'''') THEN bsRanked.BackupStartDate END) AS LatestFullBackupStartDate
+								,MAX(CASE WHEN (bsRanked.Type = ''''I'''') THEN bsRanked.BackupStartDate END) AS LatestDiffBackupStartDate
+								,MAX(CASE WHEN (bsRanked.Type = ''''L'''') THEN bsRanked.BackupStartDate END) AS LatestLogBackupStartDate
 							FROM (
 								SELECT
 									bs.DatabaseName
+									,bs.Type
 									,bs.BackupStartDate
-									,ROW_NUMBER() OVER(PARTITION BY bs.DatabaseName ORDER BY bs.BackupStartDate DESC) AS _Rnk
-									,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(bs.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
-									,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(1, bs.Type, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS BackupTypeJunkDimensionKey
+									,ROW_NUMBER() OVER(PARTITION BY bs.DatabaseName, bs.Type ORDER BY bs.BackupStartDate DESC) AS _Rnk
 								FROM dbo.fhsmBackupStatus AS bs
-								WHERE (bs.Type = ''''D'''') AND (bs.IsCopyOnly = 0) AND (bs.IsDamaged = 0)
+								WHERE (bs.IsCopyOnly = 0) AND (bs.IsDamaged = 0)
 							) AS bsRanked
 							WHERE (bsRanked._Rnk = 1)
-						) AS latestFull ON (d.DatabaseName = latestFull.DatabaseName)
-						LEFT OUTER JOIN (
-							SELECT bsRanked.DatabaseName, bsRanked.BackupStartDate
-							FROM (
-								SELECT
-									bs.DatabaseName
-									,bs.BackupStartDate
-									,ROW_NUMBER() OVER(PARTITION BY bs.DatabaseName ORDER BY bs.BackupStartDate DESC) AS _Rnk
-									,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(bs.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
-									,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(1, bs.Type, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS BackupTypeJunkDimensionKey
-								FROM dbo.fhsmBackupStatus AS bs
-								WHERE (bs.Type = ''''I'''') AND (bs.IsCopyOnly = 0) AND (bs.IsDamaged = 0)
-							) AS bsRanked
-							WHERE (bsRanked._Rnk = 1)
-						) AS latestDiff ON (d.DatabaseName = latestDiff.DatabaseName)
-						LEFT OUTER JOIN (
-							SELECT bsRanked.DatabaseName, bsRanked.BackupStartDate
-							FROM (
-								SELECT
-									bs.DatabaseName
-									,bs.BackupStartDate
-									,ROW_NUMBER() OVER(PARTITION BY bs.DatabaseName ORDER BY bs.BackupStartDate DESC) AS _Rnk
-									,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(bs.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
-									,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(1, bs.Type, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS BackupTypeJunkDimensionKey
-								FROM dbo.fhsmBackupStatus AS bs
-								WHERE (bs.Type = ''''L'''') AND (bs.IsCopyOnly = 0) AND (bs.IsDamaged = 0)
-							) AS bsRanked
-							WHERE (bsRanked._Rnk = 1)
-						) AS latestLog ON (d.DatabaseName = latestLog.DatabaseName)
+							GROUP BY bsRanked.DatabaseName
+						) AS latest ON (d.DatabaseName = latest.DatabaseName)
 					) AS a
 				) AS b;
 			'';
@@ -11681,7 +12143,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:BlocksAndDeadlocks.sql modified: 2025.05.04 14.57.26
+-- File part:BlocksAndDeadlocks.sql modified: 2025.05.25 16.16.24
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -11771,7 +12233,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.5'';
+		SET @version = ''2.6'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -11795,7 +12257,7 @@ ELSE BEGIN
 		RAISERROR(''!!!'', 0, 1) WITH NOWAIT;
 
 		--
-		-- We have to install empty views in order to satisfy the Power BI report
+		-- We have to install empty PBI views in order to satisfy the Power BI report
 		--
 		BEGIN
 			--
@@ -11811,16 +12273,14 @@ ELSE BEGIN
 				EXEC(@stmt);
 
 				SET @stmt = ''
-					ALTER VIEW  '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Blocked process'') + ''
+					ALTER VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Blocked process'') + ''
 					AS
 					SELECT
 						TOP (0)
-						CAST(NULL AS int) AS BlockedSPID
-						,CAST(NULL AS nvarchar(max)) AS BlockedStatement
-						,CAST(NULL AS int) AS BlockingSPID
-						,CAST(NULL AS nvarchar(max)) AS BlockingStatement
+						CAST(NULL AS nvarchar(16)) AS Type
+						,CAST(NULL AS int) AS SPID
+						,CAST(NULL AS nvarchar(max)) AS Statement
 						,CAST(NULL AS int) AS DataSet
-						,CAST(NULL AS bigint) AS SortOrder
 						,CAST(NULL AS datetime2(3)) AS EventTimestampUTC
 						,CAST(NULL AS date) AS Date
 						,CAST(NULL AS int) AS TimeKey
@@ -11858,14 +12318,14 @@ ELSE BEGIN
 				EXEC(@stmt);
 
 				SET @stmt = ''
-					ALTER VIEW  '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Deadlock'') + ''
+					ALTER VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Deadlock'') + ''
 					AS
 					SELECT
 						TOP (0)
 						CAST(NULL AS int) AS SPID
-						,CAST(NULL AS nvarchar(max)) AS Statement
+						,CAST(NULL AS nvarchar(max)) AS InputbufStatement
+						,CAST(NULL AS nvarchar(max)) AS FrameStatement
 						,CAST(NULL AS int) AS DataSet
-						,CAST(NULL AS bigint) AS SortOrder
 						,CAST(NULL AS datetime2(3)) AS EventTimestampUTC
 						,CAST(NULL AS date) AS Date
 						,CAST(NULL AS int) AS TimeKey
@@ -11903,7 +12363,7 @@ ELSE BEGIN
 				EXEC(@stmt);
 
 				SET @stmt = ''
-					ALTER VIEW  '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Blocks and deadlocks'') + ''
+					ALTER VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Blocks and deadlocks'') + ''
 					AS
 					SELECT
 						TOP (0)
@@ -11920,6 +12380,98 @@ ELSE BEGIN
 			--
 			BEGIN
 				SET @objectName = QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Blocks and deadlocks'');
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+			END;
+		END;
+
+		--
+		-- We have to install empty Info views in order to satisfy the documentation
+		--
+		BEGIN
+			--
+			-- Create info view dbo.fhsmInfoBlocks
+			--
+			BEGIN
+				SET @stmt = ''
+					IF OBJECT_ID(''''dbo.fhsmInfoBlocks'''', ''''V'''') IS NULL
+					BEGIN
+						EXEC(''''CREATE VIEW dbo.fhsmInfoBlocks AS SELECT ''''''''dummy'''''''' AS Txt'''');
+					END;
+				'';
+				EXEC(@stmt);
+
+				SET @stmt = ''
+					ALTER VIEW dbo.fhsmInfoBlocks
+					AS
+					SELECT
+						TOP (0)
+						CAST(NULL AS XML) AS BlockXML,
+						CAST(NULL AS datetime2(3)) AS EventTimestampUTC,
+						CAST(NULL AS datetime) AS Timestamp,
+						CAST(NULL AS datetime) AS TimestampUTC,
+						CAST(NULL AS nvarchar(260)) AS FileName,
+						CAST(NULL AS bigint) AS FileOffset,
+						CAST(NULL AS int) AS Id;
+				'';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Register extended properties on info view dbo.fhsmInfoBlocks
+			--
+			BEGIN
+				SET @objectName = ''dbo.fhsmInfoBlocks'';
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+			END;
+
+			--
+			-- Create info view dbo.fhsmInfoDeadlocks
+			--
+			BEGIN
+				SET @stmt = ''
+					IF OBJECT_ID(''''dbo.fhsmInfoDeadlocks'''', ''''V'''') IS NULL
+					BEGIN
+						EXEC(''''CREATE VIEW dbo.fhsmInfoDeadlocks AS SELECT ''''''''dummy'''''''' AS Txt'''');
+					END;
+				'';
+				EXEC(@stmt);
+
+				SET @stmt = ''
+					ALTER VIEW dbo.fhsmInfoDeadlocks
+					AS
+					SELECT
+						TOP (0)
+						CAST(NULL AS XML) AS DeadlockXML,
+						CAST(NULL AS XML) AS DeadlockGraph,
+						CAST(NULL AS datetime2(3)) AS EventTimestampUTC,
+						CAST(NULL AS datetime) AS Timestamp,
+						CAST(NULL AS datetime) AS TimestampUTC,
+						CAST(NULL AS nvarchar(260)) AS FileName,
+						CAST(NULL AS bigint) AS FileOffset,
+						CAST(NULL AS int) AS Id;
+				'';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Register extended properties on info view dbo.fhsmInfoDeadlocks
+			--
+			BEGIN
+				SET @objectName = ''dbo.fhsmInfoDeadlocks'';
 				SET @objName = PARSENAME(@objectName, 1);
 				SET @schName = PARSENAME(@objectName, 2);
 
@@ -12059,7 +12611,7 @@ ELSE BEGIN
 			END;
 
 			--
-			-- Create table dbo.fhsmBlocksAndDeadlocks if it not already exists
+			-- Create table dbo.fhsmBlocksAndDeadlocks and indexes if they not already exists
 			--
 			IF OBJECT_ID(''dbo.fhsmBlocksAndDeadlocks'', ''U'') IS NULL
 			BEGIN
@@ -12076,9 +12628,35 @@ ELSE BEGIN
 						,Timestamp datetime NOT NULL
 						,CONSTRAINT PK_fhsmBlocksAndDeadlocks PRIMARY KEY(Id)'' + @tableCompressionStmt + ''
 					);
+				'';
+				EXEC(@stmt);
+			END;
 
+			IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmBlocksAndDeadlocks'')) AND (i.name = ''NC_fhsmBlocksAndDeadlocks_EventTimestampUTC''))
+			BEGIN
+				RAISERROR(''Adding index [NC_fhsmBlocksAndDeadlocks_EventTimestampUTC] to table dbo.fhsmBlocksAndDeadlocks'', 0, 1) WITH NOWAIT;
+
+				SET @stmt = ''
 					CREATE NONCLUSTERED INDEX NC_fhsmBlocksAndDeadlocks_EventTimestampUTC ON dbo.fhsmBlocksAndDeadlocks(EventTimestampUTC)'' + @tableCompressionStmt + '';
+				'';
+				EXEC(@stmt);
+			END;
+
+			IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmBlocksAndDeadlocks'')) AND (i.name = ''NC_fhsmBlocksAndDeadlocks_TimestampUTC''))
+			BEGIN
+				RAISERROR(''Adding index [NC_fhsmBlocksAndDeadlocks_TimestampUTC] to table dbo.fhsmBlocksAndDeadlocks'', 0, 1) WITH NOWAIT;
+
+				SET @stmt = ''
 					CREATE NONCLUSTERED INDEX NC_fhsmBlocksAndDeadlocks_TimestampUTC ON dbo.fhsmBlocksAndDeadlocks(TimestampUTC)'' + @tableCompressionStmt + '';
+				'';
+				EXEC(@stmt);
+			END;
+
+			IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmBlocksAndDeadlocks'')) AND (i.name = ''NC_fhsmBlocksAndDeadlocks_Timestamp''))
+			BEGIN
+				RAISERROR(''Adding index [NC_fhsmBlocksAndDeadlocks_Timestamp] to table dbo.fhsmBlocksAndDeadlocks'', 0, 1) WITH NOWAIT;
+
+				SET @stmt = ''
 					CREATE NONCLUSTERED INDEX NC_fhsmBlocksAndDeadlocks_Timestamp ON dbo.fhsmBlocksAndDeadlocks(Timestamp)'' + @tableCompressionStmt + '';
 				'';
 				EXEC(@stmt);
@@ -12105,7 +12683,7 @@ ELSE BEGIN
 		--
 
 		--
-		-- Create views
+		-- Create PBI views
 		--
 		BEGIN
 			--
@@ -12121,15 +12699,13 @@ ELSE BEGIN
 				EXEC(@stmt);
 
 				SET @stmt = ''
-					ALTER VIEW  '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Blocked process'') + ''
+					ALTER VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Blocked process'') + ''
 					AS
 					SELECT
-						a.BlockedSPID
-						,a.BlockedStatement
-						,a.BlockingSPID
-						,a.BlockingStatement
+						CAST(a.Type AS nvarchar(16)) AS Type
+						,a.SPID
+						,CASE WHEN ASCII(LEFT(a.Statement, 1)) = 10 THEN SUBSTRING(a.Statement, 2, LEN(a.Statement)) ELSE a.Statement END AS Statement
 						,a.Id AS DataSet
-						,ROW_NUMBER() OVER(ORDER BY a.EventTimestampUTC, a.Id) AS SortOrder
 						,a.EventTimestampUTC
 						,CAST(a.EventTimestampUTC AS date) AS Date
 						,(DATEPART(HOUR, a.EventTimestampUTC) * 60 * 60) + (DATEPART(MINUTE, a.EventTimestampUTC) * 60) + (DATEPART(SECOND, a.EventTimestampUTC)) AS TimeKey
@@ -12137,23 +12713,39 @@ ELSE BEGIN
 						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(a.CurrentDBName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
 					FROM (
 						SELECT
-							f.EventData.query(''''(event/data[@name="blocked_process"]/value/blocked-process-report/blocked-process/process)[1]'''').value(''''(process/@hostname)[1]'''', ''''nvarchar(max)'''') AS HostName
-							,f.EventData.query(''''(event/data[@name="blocked_process"]/value/blocked-process-report/blocked-process/process)[1]'''').value(''''(process/@clientapp)[1]'''', ''''nvarchar(max)'''') AS ClientApp
-							,f.EventData.query(''''(event/data[@name="blocked_process"]/value/blocked-process-report/blocked-process/process)[1]'''').value(''''(process/@loginname)[1]'''', ''''nvarchar(max)'''') AS LoginName
-							,f.EventData.query(''''(event/data[@name="blocked_process"]/value/blocked-process-report/blocked-process/process)[1]'''').value(''''(process/@currentdbname)[1]'''', ''''nvarchar(max)'''') AS CurrentDBName
-							,CAST(f.EventData.query(''''(event/data[@name="blocked_process"]/value/blocked-process-report/blocked-process/process)[1]'''').value(''''(process/@spid)[1]'''', ''''nvarchar(max)'''') AS int) AS BlockedSPID
-							,f.EventData.query(''''(event/data[@name="blocked_process"]/value/blocked-process-report/blocked-process/process/inputbuf)[1]'''').value(''''(inputbuf/text())[1]'''', ''''nvarchar(max)'''') AS BlockedStatement
-							,CAST(f.EventData.query(''''(event/data[@name="blocked_process"]/value/blocked-process-report/blocking-process/process)[1]'''').value(''''(process/@spid)[1]'''', ''''nvarchar(max)'''') AS int) AS BlockingSPID
-							,f.EventData.query(''''(event/data[@name="blocked_process"]/value/blocked-process-report/blocking-process/process/inputbuf)[1]'''').value(''''(inputbuf/text())[1]'''', ''''nvarchar(max)'''') AS BlockingStatement
-							,CAST(f.EventData AS nvarchar(max)) AS EventDataText
-							,f.FileName
-							,f.FileOffset
-							,f.Id
-							,f.EventTimestampUTC
-						FROM dbo.fhsmBlocksAndDeadlocks AS f
-						WHERE (f.EventData.value(''''(event/@name)[1]'''', ''''nvarchar(max)'''') = ''''blocked_process_report'''')
+							CASE b.rootData.value(''''local-name(/*[1])'''', ''''nvarchar(max)'''')
+								WHEN ''''blocking-process'''' THEN ''''Blocking''''
+								WHEN ''''blocked-process'''' THEN ''''Blocked''''
+							END AS Type
+							,b.rootData.value(''''(*/process/@hostname)[1]'''', ''''nvarchar(max)'''') AS HostName
+							,b.rootData.value(''''(*/process/@clientapp)[1]'''', ''''nvarchar(max)'''') AS ClientApp
+							,b.rootData.value(''''(*/process/@loginname)[1]'''', ''''nvarchar(max)'''') AS LoginName
+							,b.rootData.value(''''(*/process/@currentdbname)[1]'''', ''''nvarchar(max)'''') AS CurrentDBName
+							,CAST(b.rootData.value(''''(*/process/@spid)[1]'''', ''''nvarchar(max)'''') AS int) AS SPID
+							,b.rootData.value(''''(*/process/inputbuf/text())[1]'''', ''''nvarchar(max)'''') AS Statement
+							,b.Id
+							,b.EventTimestampUTC
+						FROM (
+							SELECT
+								t.c.query(''''(.)[1]'''') AS rootData
+								,f.Id
+								,f.EventTimestampUTC
+							FROM (
+								SELECT
+									b.EventTimestampUTC
+									,b.EventData
+									,b.Id
+								FROM dbo.fhsmBlocksAndDeadlocks AS b
+								WHERE (b.EventData.value(''''(event/@name)[1]'''', ''''nvarchar(max)'''') = ''''blocked_process_report'''')
+									AND (
+										b.EventData.query(''''(event/data[@name="blocked_process"]/value/blocked-process-report/blocked-process/process)[1]'''').value(''''(process/@spid)[1]'''', ''''nvarchar(max)'''')
+										<>
+										b.EventData.query(''''(event/data[@name="blocked_process"]/value/blocked-process-report/blocking-process/process)[1]'''').value(''''(process/@spid)[1]'''', ''''nvarchar(max)'''')
+									)
+							) AS f
+							CROSS APPLY f.EventData.nodes(''''/event/data[@name="blocked_process"]/value/blocked-process-report/*'''') AS t(c)
+						) AS b
 					) AS a
-					WHERE (a.BlockedSPID <> a.BlockingSPID);
 				'';
 				EXEC(@stmt);
 			END;
@@ -12186,13 +12778,13 @@ ELSE BEGIN
 				EXEC(@stmt);
 
 				SET @stmt = ''
-					ALTER VIEW  '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Deadlock'') + ''
+					ALTER VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Deadlock'') + ''
 					AS
 					SELECT
 						a.SPID
-						,a.Statement
+						,CASE WHEN ASCII(LEFT(a.InputbufStatement, 1)) = 10 THEN SUBSTRING(a.InputbufStatement, 2, LEN(a.InputbufStatement)) ELSE a.InputbufStatement END AS InputbufStatement
+						,CASE WHEN ASCII(LEFT(a.FrameStatement,    1)) = 10 THEN SUBSTRING(a.FrameStatement,    2, LEN(a.FrameStatement))    ELSE a.FrameStatement    END AS FrameStatement
 						,a.Id AS DataSet
-						,ROW_NUMBER() OVER(ORDER BY a.EventTimestampUTC, a.Id, a.SPID DESC) AS SortOrder
 						,a.EventTimestampUTC
 						,CAST(a.EventTimestampUTC AS date) AS Date
 						,(DATEPART(HOUR, a.EventTimestampUTC) * 60 * 60) + (DATEPART(MINUTE, a.EventTimestampUTC) * 60) + (DATEPART(SECOND, a.EventTimestampUTC)) AS TimeKey
@@ -12200,28 +12792,34 @@ ELSE BEGIN
 						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(a.CurrentDBName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
 					FROM (
 						SELECT
-							t.c.query(''''(.)[1]'''').value(''''(process/@hostname)[1]'''', ''''nvarchar(max)'''') AS HostName
-							,t.c.query(''''(.)[1]'''').value(''''(process/@clientapp)[1]'''', ''''nvarchar(max)'''') AS ClientApp
-							,t.c.query(''''(.)[1]'''').value(''''(process/@loginname)[1]'''', ''''nvarchar(max)'''') AS LoginName
-							,t.c.query(''''(.)[1]'''').value(''''(process/@currentdbname)[1]'''', ''''nvarchar(max)'''') AS CurrentDBName
-							,CAST(t.c.query(''''(.)[1]'''').value(''''(process/@spid)[1]'''', ''''nvarchar(max)'''') AS int) AS SPID
-							,t.c.query(''''(inputbuf)[1]'''').value(''''(inputbuf/text())[1]'''', ''''nvarchar(max)'''') AS Statement
-							,CAST(f.EventData AS nvarchar(max)) AS EventDataText
-							,f.FileName
-							,f.FileOffset
-							,f.Id
-							,f.EventTimestampUTC
+							b.rootData.value(''''(process/@hostname)[1]'''', ''''nvarchar(max)'''') AS HostName
+							,b.rootData.value(''''(process/@clientapp)[1]'''', ''''nvarchar(max)'''') AS ClientApp
+							,b.rootData.value(''''(process/@loginname)[1]'''', ''''nvarchar(max)'''') AS LoginName
+							,b.rootData.value(''''(process/@currentdbname)[1]'''', ''''nvarchar(max)'''') AS CurrentDBName
+							,CAST(b.rootData.value(''''(process/@spid)[1]'''', ''''nvarchar(max)'''') AS int) AS SPID
+							,b.inputbufData.value(''''(inputbuf/text())[1]'''', ''''nvarchar(max)'''') AS InputbufStatement
+							,b.frameData.value(''''(frame/text())[1]'''', ''''nvarchar(max)'''') AS FrameStatement
+							,b.Id
+							,b.EventTimestampUTC
 						FROM (
 							SELECT
-								dl.EventTimestampUTC
-								,dl.FileName
-								,dl.FileOffset
-								,dl.EventData
-								,dl.Id
-							FROM dbo.fhsmBlocksAndDeadlocks AS dl
-							WHERE (dl.EventData.value(''''(event/@name)[1]'''', ''''nvarchar(max)'''') = ''''xml_deadlock_report'''')
-						) AS f
-						CROSS APPLY f.EventData.nodes(''''/event/data/value/deadlock/process-list/process'''') AS t(c)
+								t.c.query(''''(.)[1]'''') AS rootData
+								,t.c.query(''''(inputbuf)[1]'''') AS inputbufData
+								,t.c.query(''''(executionStack/frame)[1]'''') AS frameData
+								,f.Id
+								,f.EventTimestampUTC
+							FROM (
+								SELECT
+									dl.EventTimestampUTC
+									,dl.FileName
+									,dl.FileOffset
+									,dl.EventData
+									,dl.Id
+								FROM dbo.fhsmBlocksAndDeadlocks AS dl
+								WHERE (dl.EventData.value(''''(event/@name)[1]'''', ''''nvarchar(max)'''') = ''''xml_deadlock_report'''')
+							) AS f
+							CROSS APPLY f.EventData.nodes(''''/event/data/value/deadlock/process-list/process'''') AS t(c)
+						) AS b
 					) AS a;
 				'';
 				EXEC(@stmt);
@@ -12255,7 +12853,7 @@ ELSE BEGIN
 				EXEC(@stmt);
 
 				SET @stmt = ''
-					ALTER VIEW  '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Blocks and deadlocks'') + ''
+					ALTER VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Blocks and deadlocks'') + ''
 					AS
 					SELECT
 						a.ClientApp
@@ -12265,34 +12863,35 @@ ELSE BEGIN
 					FROM (
 						SELECT
 							DISTINCT
-							a.HostName
-							,a.ClientApp
-							,a.LoginName
+							b.blockedProcessData.value(''''(process/@hostname)[1]'''', ''''nvarchar(max)'''') AS HostName
+							,b.blockedProcessData.value(''''(process/@clientapp)[1]'''', ''''nvarchar(max)'''') AS ClientApp
+							,b.blockedProcessData.value(''''(process/@loginname)[1]'''', ''''nvarchar(max)'''') AS LoginName
 						FROM (
 							SELECT
-								f.EventData.query(''''(event/data[@name="blocked_process"]/value/blocked-process-report/blocked-process/process)[1]'''').value(''''(process/@hostname)[1]'''', ''''nvarchar(max)'''') AS HostName
-								,f.EventData.query(''''(event/data[@name="blocked_process"]/value/blocked-process-report/blocked-process/process)[1]'''').value(''''(process/@clientapp)[1]'''', ''''nvarchar(max)'''') AS ClientApp
-								,f.EventData.query(''''(event/data[@name="blocked_process"]/value/blocked-process-report/blocked-process/process)[1]'''').value(''''(process/@loginname)[1]'''', ''''nvarchar(max)'''') AS LoginName
-								,CAST(f.EventData.query(''''(event/data[@name="blocked_process"]/value/blocked-process-report/blocked-process/process)[1]'''').value(''''(process/@spid)[1]'''', ''''nvarchar(max)'''') AS int) AS BlockedSPID
-								,CAST(f.EventData.query(''''(event/data[@name="blocked_process"]/value/blocked-process-report/blocking-process/process)[1]'''').value(''''(process/@spid)[1]'''', ''''nvarchar(max)'''') AS int) AS BlockingSPID
+								f.EventData.query(''''(event/data[@name="blocked_process"]/value/blocked-process-report/blocked-process/process)[1]'''') AS blockedProcessData
+								,f.EventData.query(''''(event/data[@name="blocked_process"]/value/blocked-process-report/blocking-process/process)[1]'''') AS blockingProcessData
 							FROM dbo.fhsmBlocksAndDeadlocks AS f
 							WHERE (f.EventData.value(''''(event/@name)[1]'''', ''''nvarchar(max)'''') = ''''blocked_process_report'''')
-						) AS a
-						WHERE (a.BlockedSPID <> a.BlockingSPID)
+						) AS b
+						WHERE CAST(b.blockedProcessData.value(''''(process/@spid)[1]'''', ''''nvarchar(max)'''') AS int) <> CAST(b.blockingProcessData.value(''''(process/@spid)[1]'''', ''''nvarchar(max)'''') AS int)
 
 						UNION
 
 						SELECT
 							DISTINCT
-							t.c.query(''''(.)[1]'''').value(''''(process/@hostname)[1]'''', ''''nvarchar(max)'''') AS HostName
-							,t.c.query(''''(.)[1]'''').value(''''(process/@clientapp)[1]'''', ''''nvarchar(max)'''') AS ClientApp
-							,t.c.query(''''(.)[1]'''').value(''''(process/@loginname)[1]'''', ''''nvarchar(max)'''') AS LoginName
+							b.rootData.value(''''(process/@hostname)[1]'''', ''''nvarchar(max)'''') AS HostName
+							,b.rootData.value(''''(process/@clientapp)[1]'''', ''''nvarchar(max)'''') AS ClientApp
+							,b.rootData.value(''''(process/@loginname)[1]'''', ''''nvarchar(max)'''') AS LoginName
 						FROM (
-							SELECT dl.EventData
-							FROM dbo.fhsmBlocksAndDeadlocks AS dl
-							WHERE (dl.EventData.value(''''(event/@name)[1]'''', ''''nvarchar(max)'''') = ''''xml_deadlock_report'''')
-						) AS f
-						CROSS APPLY f.EventData.nodes(''''/event/data/value/deadlock/process-list/process'''') AS t(c)
+							SELECT
+								t.c.query(''''(.)[1]'''') AS rootData
+							FROM (
+								SELECT dl.EventData
+								FROM dbo.fhsmBlocksAndDeadlocks AS dl
+								WHERE (dl.EventData.value(''''(event/@name)[1]'''', ''''nvarchar(max)'''') = ''''xml_deadlock_report'''')
+							) AS f
+							CROSS APPLY f.EventData.nodes(''''/event/data/value/deadlock/process-list/process'''') AS t(c)
+						) AS b
 					) AS a;
 				'';
 				EXEC(@stmt);
@@ -12303,6 +12902,100 @@ ELSE BEGIN
 			--
 			BEGIN
 				SET @objectName = QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Blocks and deadlocks'');
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+			END;
+		END;
+
+		--
+		-- Create Info views
+		--
+		BEGIN
+			--
+			-- Create info view dbo.fhsmInfoBlocks
+			--
+			BEGIN
+				SET @stmt = ''
+					IF OBJECT_ID(''''dbo.fhsmInfoBlocks'''', ''''V'''') IS NULL
+					BEGIN
+						EXEC(''''CREATE VIEW dbo.fhsmInfoBlocks AS SELECT ''''''''dummy'''''''' AS Txt'''');
+					END;
+				'';
+				EXEC(@stmt);
+
+				SET @stmt = ''
+					ALTER VIEW dbo.fhsmInfoBlocks
+					AS
+					SELECT
+						EventData AS BlockXML,
+						EventTimestampUTC,
+						Timestamp,
+						TimestampUTC,
+						FileName,
+						FileOffset,
+						Id
+					FROM dbo.fhsmBlocksAndDeadlocks
+					WHERE (EventData.value(''''(event/@name)[1]'''', ''''nvarchar(max)'''') = ''''blocked_process_report'''');
+				'';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Register extended properties on info view dbo.fhsmInfoBlocks
+			--
+			BEGIN
+				SET @objectName = ''dbo.fhsmInfoBlocks'';
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+			END;
+
+			--
+			-- Create info view dbo.fhsmInfoDeadlocks
+			--
+			BEGIN
+				SET @stmt = ''
+					IF OBJECT_ID(''''dbo.fhsmInfoDeadlocks'''', ''''V'''') IS NULL
+					BEGIN
+						EXEC(''''CREATE VIEW dbo.fhsmInfoDeadlocks AS SELECT ''''''''dummy'''''''' AS Txt'''');
+					END;
+				'';
+				EXEC(@stmt);
+
+				SET @stmt = ''
+					ALTER VIEW dbo.fhsmInfoDeadlocks
+					AS
+					SELECT
+						EventData AS DeadlockXML,
+						EventData.query(''''(event/data/value/deadlock)[1]'''') AS DeadlockGraph,
+						EventTimestampUTC,
+						Timestamp,
+						TimestampUTC,
+						FileName,
+						FileOffset,
+						Id
+					FROM dbo.fhsmBlocksAndDeadlocks
+					WHERE (EventData.value(''''(event/@name)[1]'''', ''''nvarchar(max)'''') = ''''xml_deadlock_report'''');
+				'';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Register extended properties on info view dbo.fhsmInfoDeadlocks
+			--
+			BEGIN
+				SET @objectName = ''dbo.fhsmInfoDeadlocks'';
 				SET @objName = PARSENAME(@objectName, 1);
 				SET @schName = PARSENAME(@objectName, 2);
 
@@ -12669,7 +13362,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:Connections.sql modified: 2025.03.06 23.22.24
+-- File part:Connections.sql modified: 2025.05.23 16.26.12
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -12741,7 +13434,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.1'';
+		SET @version = ''2.6'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -12779,7 +13472,7 @@ ELSE BEGIN
 	--
 	BEGIN
 		--
-		-- Create table dbo.fhsmConnections if it not already exists
+		-- Create table dbo.fhsmConnections and indexes if they not already exists
 		--
 		IF OBJECT_ID(''dbo.fhsmConnections'', ''U'') IS NULL
 		BEGIN
@@ -12798,8 +13491,25 @@ ELSE BEGIN
 					,Timestamp datetime NOT NULL
 					,CONSTRAINT PK_Connections PRIMARY KEY(Id)'' + @tableCompressionStmt + ''
 				);
+			'';
+			EXEC(@stmt);
+		END;
 
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmConnections'')) AND (i.name = ''NC_fhsmConnections_TimestampUTC''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmConnections_TimestampUTC] to table dbo.fhsmConnections'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmConnections_TimestampUTC ON dbo.fhsmConnections(TimestampUTC)'' + @tableCompressionStmt + '';
+			'';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmConnections'')) AND (i.name = ''NC_fhsmConnections_Timestamp''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmConnections_Timestamp] to table dbo.fhsmConnections'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmConnections_Timestamp ON dbo.fhsmConnections(Timestamp)'' + @tableCompressionStmt + '';
 			'';
 			EXEC(@stmt);
@@ -13156,7 +13866,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:CPUUtilization.sql modified: 2025.03.06 23.22.48
+-- File part:CPUUtilization.sql modified: 2025.05.23 16.27.58
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -13228,7 +13938,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.1'';
+		SET @version = ''2.6'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -13266,7 +13976,7 @@ ELSE BEGIN
 	--
 	BEGIN
 		--
-		-- Create table dbo.fhsmCPUUtilization if it not already exists
+		-- Create table dbo.fhsmCPUUtilization and indexes if they not already exists
 		--
 		IF OBJECT_ID(''dbo.fhsmCPUUtilization'', ''U'') IS NULL
 		BEGIN
@@ -13284,8 +13994,25 @@ ELSE BEGIN
 					,Timestamp datetime NOT NULL
 					,CONSTRAINT PK_CPUUtilization PRIMARY KEY(Id)'' + @tableCompressionStmt + ''
 				);
+			'';
+			EXEC(@stmt);
+		END;
 
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmCPUUtilization'')) AND (i.name = ''NC_fhsmCPUUtilization_EventTimeUTC''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmCPUUtilization_EventTimeUTC] to table dbo.fhsmCPUUtilization'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmCPUUtilization_EventTimeUTC ON dbo.fhsmCPUUtilization(EventTimeUTC)'' + @tableCompressionStmt + '';
+			'';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmCPUUtilization'')) AND (i.name = ''NC_fhsmCPUUtilization_EventTime''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmCPUUtilization_EventTime] to table dbo.fhsmCPUUtilization'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmCPUUtilization_EventTime ON dbo.fhsmCPUUtilization(EventTime)'' + @tableCompressionStmt + '';
 			'';
 			EXEC(@stmt);
@@ -13307,6 +14034,7 @@ ELSE BEGIN
 		END;
 
 		--
+		-- Create table dbo.fhsmCPUPerDatabase and indexes if they not already exists
 		-- Create table dbo.fhsmCPUPerDatabase if it not already exists
 		--
 		IF OBJECT_ID(''dbo.fhsmCPUPerDatabase'', ''U'') IS NULL
@@ -13323,8 +14051,25 @@ ELSE BEGIN
 					,Timestamp datetime NOT NULL
 					,CONSTRAINT PK_CPUPerDatabase PRIMARY KEY(Id)'' + @tableCompressionStmt + ''
 				);
+			'';
+			EXEC(@stmt);
+		END;
 
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmCPUPerDatabase'')) AND (i.name = ''NC_fhsmCPUPerDatabase_TimestampUTC''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmCPUPerDatabase_TimestampUTC] to table dbo.fhsmCPUPerDatabase'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmCPUPerDatabase_TimestampUTC ON dbo.fhsmCPUPerDatabase(TimestampUTC)'' + @tableCompressionStmt + '';
+			'';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmCPUPerDatabase'')) AND (i.name = ''NC_fhsmCPUPerDatabase_Timestamp''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmCPUPerDatabase_Timestamp] to table dbo.fhsmCPUPerDatabase'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmCPUPerDatabase_Timestamp ON dbo.fhsmCPUPerDatabase(Timestamp)'' + @tableCompressionStmt + '';
 			'';
 			EXEC(@stmt);
@@ -13744,7 +14489,6 @@ ELSE BEGIN
 	-- Update dimensions based upon the fact tables
 	--
 	BEGIN
-		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmCPUUtilization'';
 		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmCPUPerDatabase'';
 	END;
 END;
@@ -13783,7 +14527,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:DatabaseIO.sql modified: 2025.04.17 16.42.49
+-- File part:DatabaseIO.sql modified: 2025.05.23 18.34.33
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -13855,7 +14599,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.5'';
+		SET @version = ''2.6'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -13893,7 +14637,7 @@ ELSE BEGIN
 	--
 	BEGIN
 		--
-		-- Create table dbo.fhsmDatabaseIO if it not already exists
+		-- Create table dbo.fhsmDatabaseIO and indexes if they not already exists
 		--
 		IF OBJECT_ID(''dbo.fhsmDatabaseIO'', ''U'') IS NULL
 		BEGIN
@@ -13920,9 +14664,35 @@ ELSE BEGIN
 					,Timestamp datetime NOT NULL
 					,CONSTRAINT PK_DatabaseIO PRIMARY KEY(Id)'' + @tableCompressionStmt + ''
 				);
+			'';
+			EXEC(@stmt);
+		END;
 
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmDatabaseIO'')) AND (i.name = ''NC_fhsmDatabaseIO_TimestampUTC''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmDatabaseIO_TimestampUTC] to table dbo.fhsmDatabaseIO'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmDatabaseIO_TimestampUTC ON dbo.fhsmDatabaseIO(TimestampUTC)'' + @tableCompressionStmt + '';
+			'';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmDatabaseIO'')) AND (i.name = ''NC_fhsmDatabaseIO_Timestamp''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmDatabaseIO_Timestamp] to table dbo.fhsmDatabaseIO'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmDatabaseIO_Timestamp ON dbo.fhsmDatabaseIO(Timestamp)'' + @tableCompressionStmt + '';
+			'';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmDatabaseIO'')) AND (i.name = ''NC_fhsmDatabaseIO_DatabaseName_LogicalName_Type''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmDatabaseIO_DatabaseName_LogicalName_Type] to table dbo.fhsmDatabaseIO'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmDatabaseIO_DatabaseName_LogicalName_Type ON dbo.fhsmDatabaseIO(DatabaseName, LogicalName, Type)'' + @tableCompressionStmt + '';
 			'';
 			EXEC(@stmt);
@@ -14009,11 +14779,12 @@ ELSE BEGIN
 						WHEN b.DeltaNumOfWrites = 0 THEN NULL
 						ELSE b.DeltaIOStallWriteMS / CAST(b.DeltaNumOfWrites AS decimal(12,1))
 					END AS WriteLatencyMS
+
 					,b.Timestamp
-					,b.Date
-					,b.TimeKey
-					,b.DatabaseKey
-					,b.DatabaseFileKey
+					,CAST(b.Timestamp AS date) AS Date
+					,(DATEPART(HOUR, b.Timestamp) * 60 * 60) + (DATEPART(MINUTE, b.Timestamp) * 60) + (DATEPART(SECOND, b.Timestamp)) AS TimeKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(b.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(b.DatabaseName, b.LogicalName, CASE b.Type WHEN 0 THEN ''''Data'''' WHEN 1 THEN ''''Log'''' WHEN 2 THEN ''''Filestream'''' END, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseFileKey
 			'';
 			SET @stmt += ''
 				FROM (
@@ -14063,11 +14834,11 @@ ELSE BEGIN
 							WHEN (a.PreviousIOStallQueuedWriteMS > a.IOStallQueuedWriteMS) OR (a.PreviousSampleMS > a.SampleMS) THEN a.IOStallQueuedWriteMS
 							ELSE a.IOStallQueuedWriteMS - a.PreviousIOStallQueuedWriteMS
 						END AS DeltaIOStallQueuedWriteMS
+
 						,a.Timestamp
-						,a.Date
-						,a.TimeKey
-						,a.DatabaseKey
-						,a.DatabaseFileKey
+						,a.DatabaseName
+						,a.LogicalName
+						,a.Type
 			'';
 			SET @stmt += ''
 					FROM (
@@ -14109,10 +14880,9 @@ ELSE BEGIN
 							,prevDio.IOStallQueuedWriteMS AS PreviousIOStallQueuedWriteMS
 
 							,dio.Timestamp
-							,CAST(dio.Timestamp AS date) AS Date
-							,(DATEPART(HOUR, dio.Timestamp) * 60 * 60) + (DATEPART(MINUTE, dio.Timestamp) * 60) + (DATEPART(SECOND, dio.Timestamp)) AS TimeKey
-							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(dio.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
-							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(dio.DatabaseName, dio.LogicalName, CASE dio.Type WHEN 0 THEN ''''Data'''' WHEN 1 THEN ''''Log'''' WHEN 2 THEN ''''Filestream'''' END, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseFileKey
+							,dio.DatabaseName
+							,dio.LogicalName
+							,dio.Type
 						FROM databaseIO AS dio
 						LEFT OUTER JOIN databaseIO AS prevDio ON
 							(prevDio.DatabaseName = dio.DatabaseName)
@@ -14128,29 +14898,38 @@ ELSE BEGIN
 						SELECT
 							dio.SampleMS
 							,LAG(dio.SampleMS) OVER(PARTITION BY dio.DatabaseName, dio.LogicalName, dio.Type ORDER BY dio.TimestampUTC) AS PreviousSampleMS
+
 							,dio.IOStall
 							,LAG(dio.IOStall) OVER(PARTITION BY dio.DatabaseName, dio.LogicalName, dio.Type ORDER BY dio.TimestampUTC) AS PreviousIOStall
+
 							,dio.NumOfReads
 							,LAG(dio.NumOfReads) OVER(PARTITION BY dio.DatabaseName, dio.LogicalName, dio.Type ORDER BY dio.TimestampUTC) AS PreviousNumOfReads
+
 							,dio.NumOfBytesRead
 							,LAG(dio.NumOfBytesRead) OVER(PARTITION BY dio.DatabaseName, dio.LogicalName, dio.Type ORDER BY dio.TimestampUTC) AS PreviousNumOfBytesRead
+
 							,dio.IOStallReadMS
 							,LAG(dio.IOStallReadMS) OVER(PARTITION BY dio.DatabaseName, dio.LogicalName, dio.Type ORDER BY dio.TimestampUTC) AS PreviousIOStallReadMS
+
 							,dio.IOStallQueuedReadMS
 							,LAG(dio.IOStallQueuedReadMS) OVER(PARTITION BY dio.DatabaseName, dio.LogicalName, dio.Type ORDER BY dio.TimestampUTC) AS PreviousIOStallQueuedReadMS
+
 							,dio.NumOfWrites
 							,LAG(dio.NumOfWrites) OVER(PARTITION BY dio.DatabaseName, dio.LogicalName, dio.Type ORDER BY dio.TimestampUTC) AS PreviousNumOfWrites
+
 							,dio.NumOfBytesWritten
 							,LAG(dio.NumOfBytesWritten) OVER(PARTITION BY dio.DatabaseName, dio.LogicalName, dio.Type ORDER BY dio.TimestampUTC) AS PreviousNumOfBytesWritten
+
 							,dio.IOStallWriteMS
 							,LAG(dio.IOStallWriteMS) OVER(PARTITION BY dio.DatabaseName, dio.LogicalName, dio.Type ORDER BY dio.TimestampUTC) AS PreviousIOStallWriteMS
+
 							,dio.IOStallQueuedWriteMS
 							,LAG(dio.IOStallQueuedWriteMS) OVER(PARTITION BY dio.DatabaseName, dio.LogicalName, dio.Type ORDER BY dio.TimestampUTC) AS PreviousIOStallQueuedWriteMS
+
 							,dio.Timestamp
-							,CAST(dio.Timestamp AS date) AS Date
-							,(DATEPART(HOUR, dio.Timestamp) * 60 * 60) + (DATEPART(MINUTE, dio.Timestamp) * 60) + (DATEPART(SECOND, dio.Timestamp)) AS TimeKey
-							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(dio.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
-							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(dio.DatabaseName, dio.LogicalName, CASE dio.Type WHEN 0 THEN ''''Data'''' WHEN 1 THEN ''''Log'''' WHEN 2 THEN ''''Filestream'''' END, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseFileKey
+							,dio.DatabaseName
+							,dio.LogicalName
+							,dio.Type
 						FROM dbo.fhsmDatabaseIO AS dio
 				'';
 			END;
@@ -14556,7 +15335,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:DatabaseSize.sql modified: 2025.04.17 17.10.10
+-- File part:DatabaseSize.sql modified: 2025.05.23 16.31.07
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -14628,7 +15407,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.5'';
+		SET @version = ''2.6'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -14666,7 +15445,7 @@ ELSE BEGIN
 	--
 	BEGIN
 		--
-		-- Create table dbo.fhsmDatabaseSize if it not already exists
+		-- Create table dbo.fhsmDatabaseSize and indexes if they not already exists
 		--
 		IF OBJECT_ID(''dbo.fhsmDatabaseSize'', ''U'') IS NULL
 		BEGIN
@@ -14684,9 +15463,35 @@ ELSE BEGIN
 					,Timestamp datetime NOT NULL
 					,CONSTRAINT PK_fhsmDatabaseSize PRIMARY KEY(Id)'' + @tableCompressionStmt + ''
 				);
+			'';
+			EXEC(@stmt);
+		END;
 
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmDatabaseSize'')) AND (i.name = ''NC_fhsmDatabaseSize_TimestampUTC''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmDatabaseSize_TimestampUTC] to table dbo.fhsmDatabaseSize'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmDatabaseSize_TimestampUTC ON dbo.fhsmDatabaseSize(TimestampUTC)'' + @tableCompressionStmt + '';
+			'';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmDatabaseSize'')) AND (i.name = ''NC_fhsmDatabaseSize_Timestamp''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmDatabaseSize_Timestamp] to table dbo.fhsmDatabaseSize'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmDatabaseSize_Timestamp ON dbo.fhsmDatabaseSize(Timestamp)'' + @tableCompressionStmt + '';
+			'';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmDatabaseSize'')) AND (i.name = ''NC_fhsmDatabaseSize_DatabaseName_LogicalName_Type''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmDatabaseSize_DatabaseName_LogicalName_Type] to table dbo.fhsmDatabaseSize'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmDatabaseSize_DatabaseName_LogicalName_Type ON dbo.fhsmDatabaseSize(DatabaseName, LogicalName, Type)'' + @tableCompressionStmt + '';
 			'';
 			EXEC(@stmt);
@@ -15110,7 +15915,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:IndexOperational.sql modified: 2025.04.17 16.50.35
+-- File part:IndexOperational.sql modified: 2025.05.23 16.34.17
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -15182,7 +15987,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.5'';
+		SET @version = ''2.6'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -15220,7 +16025,7 @@ ELSE BEGIN
 	--
 	BEGIN
 		--
-		-- Create table dbo.fhsmIndexOperational if it not already exists
+		-- Create table dbo.fhsmIndexOperational and indexes if they not already exists
 		--
 		IF OBJECT_ID(''dbo.fhsmIndexOperational'', ''U'') IS NULL
 		BEGIN
@@ -15284,9 +16089,35 @@ ELSE BEGIN
 					,Timestamp datetime NOT NULL
 					,CONSTRAINT PK_fhsmIndexOperational PRIMARY KEY(Id)'' + @tableCompressionStmt + ''
 				);
+			'';
+			EXEC(@stmt);
+		END;
 
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmIndexOperational'')) AND (i.name = ''NC_fhsmIndexOperational_TimestampUTC''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmIndexOperational_TimestampUTC] to table dbo.fhsmIndexOperational'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmIndexOperational_TimestampUTC ON dbo.fhsmIndexOperational(TimestampUTC)'' + @tableCompressionStmt + '';
+			'';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmIndexOperational'')) AND (i.name = ''NC_fhsmIndexOperational_Timestamp''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmIndexOperational_Timestamp] to table dbo.fhsmIndexOperational'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmIndexOperational_Timestamp ON dbo.fhsmIndexOperational(Timestamp)'' + @tableCompressionStmt + '';
+			'';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmIndexOperational'')) AND (i.name = ''NC_fhsmIndexOperational_DatabaseName_SchemaName_ObjectName_IndexName_TimestampUTC''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmIndexOperational_DatabaseName_SchemaName_ObjectName_IndexName_TimestampUTC] to table dbo.fhsmIndexOperational'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmIndexOperational_DatabaseName_SchemaName_ObjectName_IndexName_TimestampUTC ON dbo.fhsmIndexOperational(DatabaseName, SchemaName, ObjectName, IndexName, TimestampUTC)'' + @tableCompressionStmt + '';
 			'';
 			EXEC(@stmt);
@@ -16427,7 +17258,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:IndexPhysical.sql modified: 2025.04.17 17.55.44
+-- File part:IndexPhysical.sql modified: 2025.05.23 16.38.18
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -16499,7 +17330,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.5'';
+		SET @version = ''2.6'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -16537,7 +17368,7 @@ ELSE BEGIN
 	--
 	BEGIN
 		--
-		-- Create table dbo.fhsmIndexPhysical if it not already exists
+		-- Create table dbo.fhsmIndexPhysical and indexes if they not already exists
 		--
 		IF OBJECT_ID(''dbo.fhsmIndexPhysical'', ''U'') IS NULL
 		BEGIN
@@ -16592,8 +17423,35 @@ ELSE BEGIN
 				);
 
 				CREATE CLUSTERED INDEX CL_fhsmIndexPhysical_TimestampUTC ON dbo.fhsmIndexPhysical(TimestampUTC)'' + @tableCompressionStmt + '';
+			'';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmIndexPhysical'')) AND (i.name = ''NC_fhsmIndexPhysical_Timestamp''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmIndexPhysical_Timestamp] to table dbo.fhsmIndexPhysical'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmIndexPhysical_Timestamp ON dbo.fhsmIndexPhysical(Timestamp)'' + @tableCompressionStmt + '';
+			'';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmIndexPhysical'')) AND (i.name = ''NC_fhsmIndexPhysical_DatabaseKey_SchemaKey_ObjectKey_TimestampUTCDate_Mode''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmIndexPhysical_DatabaseKey_SchemaKey_ObjectKey_TimestampUTCDate_Mode] to table dbo.fhsmIndexPhysical'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmIndexPhysical_DatabaseKey_SchemaKey_ObjectKey_TimestampUTCDate_Mode ON dbo.fhsmIndexPhysical(DatabaseKey, SchemaKey, ObjectKey, TimestampUTCDate, Mode)'' + @tableCompressionStmt + '';
+			'';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmIndexPhysical'')) AND (i.name = ''NC_fhsmIndexPhysical_Mode''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmIndexPhysical_Mode] to table dbo.fhsmIndexPhysical'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmIndexPhysical_Mode ON dbo.fhsmIndexPhysical(Mode)'' + @tableCompressionStmt + '';
 			'';
 			EXEC(@stmt);
@@ -17440,7 +18298,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:IndexUsage.sql modified: 2025.05.04 17.10.46
+-- File part:IndexUsage.sql modified: 2025.05.23 19.59.44
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -17512,7 +18370,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.5'';
+		SET @version = ''2.6'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -17550,7 +18408,7 @@ ELSE BEGIN
 	--
 	BEGIN
 		--
-		-- Create table dbo.fhsmIndexUsage if it not already exists
+		-- Create table dbo.fhsmIndexUsage and indexes if they not already exists
 		--
 		IF OBJECT_ID(''dbo.fhsmIndexUsage'', ''U'') IS NULL
 		BEGIN
@@ -17590,10 +18448,46 @@ ELSE BEGIN
 					,Timestamp datetime NOT NULL
 					,CONSTRAINT PK_fhsmIndexUsage PRIMARY KEY(Id)'' + @tableCompressionStmt + ''
 				);
+			'';
+			EXEC(@stmt);
+		END;
 
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmIndexUsage'')) AND (i.name = ''NC_fhsmIndexUsage_TimestampUTC''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmIndexUsage_TimestampUTC] to table dbo.fhsmIndexUsage'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmIndexUsage_TimestampUTC ON dbo.fhsmIndexUsage(TimestampUTC)'' + @tableCompressionStmt + '';
+			'';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmIndexUsage'')) AND (i.name = ''NC_fhsmIndexUsage_Timestamp''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmIndexUsage_Timestamp] to table dbo.fhsmIndexUsage'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmIndexUsage_Timestamp ON dbo.fhsmIndexUsage(Timestamp)'' + @tableCompressionStmt + '';
-				CREATE NONCLUSTERED INDEX NC_fhsmIndexUsage_DatabaseName_SchemaName_ObjectName_IndexName ON dbo.fhsmIndexUsage(DatabaseName, SchemaName, ObjectName, IndexName)'' + @tableCompressionStmt + '';
+			'';
+			EXEC(@stmt);
+		END;
+
+		IF EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmIndexUsage'')) AND (i.name = ''NC_fhsmIndexUsage_DatabaseName_SchemaName_ObjectName_IndexName''))
+		BEGIN
+			RAISERROR(''Dropping index [NC_fhsmIndexUsage_DatabaseName_SchemaName_ObjectName_IndexName] on table dbo.fhsmIndexUsage'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
+				DROP INDEX NC_fhsmIndexUsage_DatabaseName_SchemaName_ObjectName_IndexName ON dbo.fhsmIndexUsage;
+			'';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmIndexUsage'')) AND (i.name = ''NC_fhsmIndexUsage_DatabaseName_SchemaName_ObjectName_IndexName_TimestampUTC''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmIndexUsage_DatabaseName_SchemaName_ObjectName_IndexName_TimestampUTC] to table dbo.fhsmIndexUsage'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
+				CREATE NONCLUSTERED INDEX NC_fhsmIndexUsage_DatabaseName_SchemaName_ObjectName_IndexName_TimestampUTC ON dbo.fhsmIndexUsage(DatabaseName, SchemaName, ObjectName, IndexName, TimestampUTC)'' + @tableCompressionStmt + '';
 			'';
 			EXEC(@stmt);
 		END;
@@ -17640,15 +18534,7 @@ ELSE BEGIN
 			'';
 			SET @stmt += ''
 				SELECT
-					CAST(COALESCE((
-						SELECT 1
-						FROM dbo.fhsmIndexUsage AS iuIsHeap
-						WHERE (iuIsHeap.TimestampUTC = iu.TimestampUTC)
-							AND (iuIsHeap.DatabaseName = iu.DatabaseName)
-							AND (iuIsHeap.SchemaName = iu.SchemaName)
-							AND (iuIsHeap.ObjectName = iu.ObjectName)
-							AND (iuIsHeap.IndexType = 0)
-					), 0) AS bit) AS TableIsHeap
+					CAST(COALESCE((tableIsHeap.IsHeap), 0) AS bit) AS TableIsHeap
 					,CASE iu.IndexType
 						WHEN 0 THEN ''''HEAP''''
 						WHEN 1 THEN ''''CL''''
@@ -17677,6 +18563,15 @@ ELSE BEGIN
 					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iu.DatabaseName, iu.SchemaName, iu.ObjectName, DEFAULT, DEFAULT, DEFAULT) AS k) AS ObjectKey
 					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iu.DatabaseName, iu.SchemaName, iu.ObjectName, COALESCE(iu.IndexName, ''''N.A.''''), DEFAULT, DEFAULT) AS k) AS IndexKey
 				FROM dbo.fhsmIndexUsage AS iu
+				OUTER APPLY (
+					SELECT 1 AS IsHeap
+					FROM dbo.fhsmIndexUsage AS iuIsHeap
+					WHERE (iuIsHeap.TimestampUTC = iu.TimestampUTC)
+						AND (iuIsHeap.DatabaseName = iu.DatabaseName)
+						AND (iuIsHeap.SchemaName = iu.SchemaName)
+						AND (iuIsHeap.ObjectName = iu.ObjectName)
+						AND (iuIsHeap.IndexType = 0)
+				) AS tableIsHeap
 				WHERE (iu.TimestampUTC = (
 					SELECT MAX(iuLatest.TimestampUTC)
 					FROM dbo.fhsmIndexUsage AS iuLatest
@@ -17770,12 +18665,12 @@ ELSE BEGIN
 					,b.DeltaUserUpdates AS UserUpdates
 					,b.LastUserUpdate
 					,b.Timestamp
-					,b.Date
-					,b.TimeKey
-					,b.DatabaseKey
-					,b.SchemaKey
-					,b.ObjectKey
-					,b.IndexKey
+					,CAST(b.Timestamp AS date) AS Date
+					,(DATEPART(HOUR, b.Timestamp) * 60 * 60) + (DATEPART(MINUTE, b.Timestamp) * 60) + (DATEPART(SECOND, b.Timestamp)) AS TimeKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(b.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(b.DatabaseName, b.SchemaName, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS SchemaKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(b.DatabaseName, b.SchemaName, b.ObjectName, DEFAULT, DEFAULT, DEFAULT) AS k) AS ObjectKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(b.DatabaseName, b.SchemaName, b.ObjectName, COALESCE(b.IndexName, ''''N.A.''''), DEFAULT, DEFAULT) AS k) AS IndexKey
 				FROM (
 			'';
 			SET @stmt += ''
@@ -17805,12 +18700,10 @@ ELSE BEGIN
 						END AS DeltaUserUpdates
 						,a.LastUserUpdate
 						,a.Timestamp
-						,a.Date
-						,a.TimeKey
-						,a.DatabaseKey
-						,a.SchemaKey
-						,a.ObjectKey
-						,a.IndexKey
+						,a.DatabaseName
+						,a.SchemaName
+						,a.ObjectName
+						,a.IndexName
 					FROM (
 			'';
 			IF (@productVersion1 <= 10)
@@ -17834,12 +18727,10 @@ ELSE BEGIN
 							,iu.LastSQLServiceRestart
 							,prevIU.LastSQLServiceRestart AS PreviousLastSQLServiceRestart
 							,iu.Timestamp
-							,CAST(iu.Timestamp AS date) AS Date
-							,(DATEPART(HOUR, iu.Timestamp) * 60 * 60) + (DATEPART(MINUTE, iu.Timestamp) * 60) + (DATEPART(SECOND, iu.Timestamp)) AS TimeKey
-							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iu.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
-							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iu.DatabaseName, iu.SchemaName, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS SchemaKey
-							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iu.DatabaseName, iu.SchemaName, iu.ObjectName, DEFAULT, DEFAULT, DEFAULT) AS k) AS ObjectKey
-							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iu.DatabaseName, iu.SchemaName, iu.ObjectName, COALESCE(iu.IndexName, ''''N.A.''''), DEFAULT, DEFAULT) AS k) AS IndexKey
+							,iu.DatabaseName
+							,iu.SchemaName
+							,iu.ObjectName
+							,iu.IndexName
 						FROM indexUsage AS iu
 						LEFT OUTER JOIN indexUsage AS prevIU ON
 							(prevIU.DatabaseName = iu.DatabaseName)
@@ -17869,12 +18760,10 @@ ELSE BEGIN
 							,iu.LastSQLServiceRestart
 							,LAG(iu.LastSQLServiceRestart) OVER(PARTITION BY iu.DatabaseName, iu.SchemaName, iu.ObjectName, iu.IndexName ORDER BY iu.TimestampUTC) AS PreviousLastSQLServiceRestart
 							,iu.Timestamp
-							,CAST(iu.Timestamp AS date) AS Date
-							,(DATEPART(HOUR, iu.Timestamp) * 60 * 60) + (DATEPART(MINUTE, iu.Timestamp) * 60) + (DATEPART(SECOND, iu.Timestamp)) AS TimeKey
-							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iu.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
-							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iu.DatabaseName, iu.SchemaName, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS SchemaKey
-							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iu.DatabaseName, iu.SchemaName, iu.ObjectName, DEFAULT, DEFAULT, DEFAULT) AS k) AS ObjectKey
-							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iu.DatabaseName, iu.SchemaName, iu.ObjectName, COALESCE(iu.IndexName, ''''N.A.''''), DEFAULT, DEFAULT) AS k) AS IndexKey
+							,iu.DatabaseName
+							,iu.SchemaName
+							,iu.ObjectName
+							,iu.IndexName
 						FROM (
 							SELECT
 								iu.DatabaseName
@@ -18369,7 +19258,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:InstanceState.sql modified: 2025.04.04 16.04.53
+-- File part:InstanceState.sql modified: 2025.05.23 16.44.59
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -18441,7 +19330,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.3'';
+		SET @version = ''2.6'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -18479,7 +19368,7 @@ ELSE BEGIN
 	--
 	BEGIN
 		--
-		-- Create table dbo.fhsmAgentAlerts if it not already exists
+		-- Create table dbo.fhsmAgentAlerts and indexes if they not already exists
 		--
 		IF OBJECT_ID(''dbo.fhsmAgentAlerts'', ''U'') IS NULL
 		BEGIN
@@ -18493,7 +19382,15 @@ ELSE BEGIN
 					,Description nvarchar(128) NOT NULL
 					,CONSTRAINT PK_fhsmAgentAlerts PRIMARY KEY(Id)'' + @tableCompressionStmt + ''
 				);
+			'';
+			EXEC(@stmt);
+		END;
 
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmAgentAlerts'')) AND (i.name = ''NC_fhsmAgentAlerts_MessageId_Severity''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmAgentAlerts_MessageId_Severity] to table dbo.fhsmAgentAlerts'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmAgentAlerts_MessageId_Severity ON dbo.fhsmAgentAlerts(MessageId, Severity)'' + @tableCompressionStmt + '';
 			'';
 			EXEC(@stmt);
@@ -18515,7 +19412,7 @@ ELSE BEGIN
 		END;
 
 		--
-		-- Create table dbo.fhsmDefaultConfigurations if it not already exists
+		-- Create table dbo.fhsmDefaultConfigurations and indexes if they not already exists
 		--
 		IF OBJECT_ID(''dbo.fhsmDefaultConfigurations'', ''U'') IS NULL
 		BEGIN
@@ -18530,7 +19427,15 @@ ELSE BEGIN
 					,Value int NOT NULL
 					,CONSTRAINT PK_fhsmDefaultConfigurations PRIMARY KEY(Id)'' + @tableCompressionStmt + ''
 				);
+			'';
+			EXEC(@stmt);
+		END;
 
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmDefaultConfigurations'')) AND (i.name = ''NC_fhsmDefaultConfigurations_ConfigurationId_ProductMajorVersion_ProductMinorVersion''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmDefaultConfigurations_ConfigurationId_ProductMajorVersion_ProductMinorVersion] to table dbo.fhsmDefaultConfigurations'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmDefaultConfigurations_ConfigurationId_ProductMajorVersion_ProductMinorVersion ON dbo.fhsmDefaultConfigurations(ConfigurationId, ProductMajorVersion, ProductMinorVersion)'' + @tableCompressionStmt + '';
 			'';
 			EXEC(@stmt);
@@ -18552,7 +19457,7 @@ ELSE BEGIN
 		END;
 
 		--
-		-- Create table dbo.fhsmInstanceConfigurations if it not already exists
+		-- Create table dbo.fhsmInstanceConfigurations and indexes if they not already exists
 		--
 		IF OBJECT_ID(''dbo.fhsmInstanceConfigurations'', ''U'') IS NULL
 		BEGIN
@@ -18568,7 +19473,15 @@ ELSE BEGIN
 					,Maximum int NOT NULL
 					,CONSTRAINT PK_fhsmInstanceConfigurations PRIMARY KEY(Id)'' + @tableCompressionStmt + ''
 				);
+			'';
+			EXEC(@stmt);
+		END;
 
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmInstanceConfigurations'')) AND (i.name = ''NC_fhsmInstanceConfigurations_ConfigurationId_ProductMajorVersion_ProductMinorVersion''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmInstanceConfigurations_ConfigurationId_ProductMajorVersion_ProductMinorVersion] to table dbo.fhsmInstanceConfigurations'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmInstanceConfigurations_ConfigurationId_ProductMajorVersion_ProductMinorVersion ON dbo.fhsmInstanceConfigurations(ConfigurationId, ProductMajorVersion, ProductMinorVersion)'' + @tableCompressionStmt + '';
 			'';
 			EXEC(@stmt);
@@ -18590,7 +19503,7 @@ ELSE BEGIN
 		END;
 
 		--
-		-- Create table dbo.fhsmInstanceState if it not already exists
+		-- Create table dbo.fhsmInstanceState and indexes if they not already exists
 		--
 		IF OBJECT_ID(''dbo.fhsmInstanceState'', ''U'') IS NULL
 		BEGIN
@@ -18609,11 +19522,56 @@ ELSE BEGIN
 					,Timestamp datetime NOT NULL
 					,CONSTRAINT PK_fhsmInstanceState PRIMARY KEY(Id)'' + @tableCompressionStmt + ''
 				);
+			'';
+			EXEC(@stmt);
+		END;
 
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmInstanceState'')) AND (i.name = ''NC_fhsmInstanceState_TimestampUTC''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmInstanceState_TimestampUTC] to table dbo.fhsmInstanceState'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmInstanceState_TimestampUTC ON dbo.fhsmInstanceState(TimestampUTC)'' + @tableCompressionStmt + '';
+			'';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmInstanceState'')) AND (i.name = ''NC_fhsmInstanceState_Timestamp''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmInstanceState_Timestamp] to table dbo.fhsmInstanceState'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmInstanceState_Timestamp ON dbo.fhsmInstanceState(Timestamp)'' + @tableCompressionStmt + '';
+			'';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmInstanceState'')) AND (i.name = ''NC_fhsmInstanceState_Query_Category_Key_ValidTo''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmInstanceState_Query_Category_Key_ValidTo] to table dbo.fhsmInstanceState'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmInstanceState_Query_Category_Key_ValidTo ON dbo.fhsmInstanceState(Query, Category, [Key], ValidTo) INCLUDE(Value)'' + @tableCompressionStmt + '';
+			'';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmInstanceState'')) AND (i.name = ''NC_fhsmInstanceState_ValidTo_Query_Category_key''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmInstanceState_ValidTo_Query_Category_key] to table dbo.fhsmInstanceState'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmInstanceState_ValidTo_Query_Category_key ON dbo.fhsmInstanceState(ValidTo, Query, Category, [Key]) INCLUDE(Value)'' + @tableCompressionStmt + '';
+			'';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmInstanceState'')) AND (i.name = ''NC_fhsmInstanceState_Category''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmInstanceState_Category] to table dbo.fhsmInstanceState'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
+				CREATE NONCLUSTERED INDEX NC_fhsmInstanceState_Category ON dbo.fhsmInstanceState(Category ASC) INCLUDE(Timestamp)'' + @tableCompressionStmt + '';
 			'';
 			EXEC(@stmt);
 		END;
@@ -18634,7 +19592,7 @@ ELSE BEGIN
 		END;
 
 		--
-		-- Create table dbo.fhsmTraceFlags if it not already exists
+		-- Create table dbo.fhsmTraceFlags and indexes if they not already exists
 		--
 		IF OBJECT_ID(''dbo.fhsmTraceFlags'', ''U'') IS NULL
 		BEGIN
@@ -18650,7 +19608,15 @@ ELSE BEGIN
 					,URL nvarchar(max) NULL
 					,CONSTRAINT PK_fhsmTraceFlags PRIMARY KEY(Id)'' + @tableCompressionStmt + ''
 				);
+			'';
+			EXEC(@stmt);
+		END;
 
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmTraceFlags'')) AND (i.name = ''NC_fhsmTraceFlags_TraceFlag_ProductMajorVersion_ProductMinorVersion''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmTraceFlags_TraceFlag_ProductMajorVersion_ProductMinorVersion] to table dbo.fhsmTraceFlags'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmTraceFlags_TraceFlag_ProductMajorVersion_ProductMinorVersion ON dbo.fhsmTraceFlags(TraceFlag, ProductMajorVersion, ProductMinorVersion)'' + @tableCompressionStmt + '';
 			'';
 			EXEC(@stmt);
@@ -22234,7 +23200,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:MissingIndexes.sql modified: 2025.05.04 17.14.26
+-- File part:MissingIndexes.sql modified: 2025.05.23 19.39.26
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -22306,7 +23272,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.5'';
+		SET @version = ''2.6'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -22353,7 +23319,7 @@ ELSE BEGIN
 	--
 	BEGIN
 		--
-		-- Create table dbo.fhsmMissingIndexes if it not already exists
+		-- Create table dbo.fhsmMissingIndexes and indexes if they not already exists
 		--
 		IF OBJECT_ID(''dbo.fhsmMissingIndexes'', ''U'') IS NULL
 		BEGIN
@@ -22387,10 +23353,6 @@ ELSE BEGIN
 					,Timestamp datetime NOT NULL
 					,CONSTRAINT PK_fhsmMissingIndexes PRIMARY KEY(Id)'' + @tableCompressionStmt + ''
 				);
-
-				CREATE NONCLUSTERED INDEX NC_fhsmMissingIndexes_TimestampUTC ON dbo.fhsmMissingIndexes(TimestampUTC)'' + @tableCompressionStmt + '';
-				CREATE NONCLUSTERED INDEX NC_fhsmMissingIndexes_Timestamp ON dbo.fhsmMissingIndexes(Timestamp)'' + @tableCompressionStmt + '';
-				CREATE NONCLUSTERED INDEX NC_fhsmMissingIndexes_DatabaseName_SchemaName_ObjectName ON dbo.fhsmMissingIndexes(DatabaseName, SchemaName, ObjectName)'' + @tableCompressionStmt + '';
 			'';
 			EXEC(@stmt);
 		END;
@@ -22398,8 +23360,7 @@ ELSE BEGIN
 		--
 		-- Adding column QueryHash to table dbo.fhsmMissingIndexes if it not already exists
 		--
-		IF OBJECT_ID(''dbo.fhsmMissingIndexes'', ''U'') IS NOT NULL
-			AND NOT EXISTS (SELECT * FROM sys.columns AS c WHERE (c.name = ''QueryHash'') AND (c.object_id = OBJECT_ID(''dbo.fhsmMissingIndexes'')))
+		IF NOT EXISTS (SELECT * FROM sys.columns AS c WHERE (c.object_id = OBJECT_ID(''dbo.fhsmMissingIndexes'')) AND (c.name = ''QueryHash''))
 		BEGIN
 			RAISERROR(''Adding column [QueryHash] to table dbo.fhsmMissingIndexes'', 0, 1) WITH NOWAIT;
 
@@ -22410,15 +23371,43 @@ ELSE BEGIN
 			EXEC(@stmt);
 		END;
 
-		--
-		-- Adding index NC_fhsmMissingIndexes_DatabaseName_QueryHash to table dbo.fhsmMissingIndexes if it not already exists
-		--
-		IF OBJECT_ID(''dbo.fhsmMissingIndexes'', ''U'') IS NOT NULL
-			AND NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.name = ''NC_fhsmMissingIndexes_DatabaseName_QueryHash'') AND (i.object_id = OBJECT_ID(''dbo.fhsmMissingIndexes'')))
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmMissingIndexes'')) AND (i.name = ''NC_fhsmMissingIndexes_TimestampUTC''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmMissingIndexes_TimestampUTC] to table dbo.fhsmMissingIndexes'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
+				CREATE NONCLUSTERED INDEX NC_fhsmMissingIndexes_TimestampUTC ON dbo.fhsmMissingIndexes(TimestampUTC)'' + @tableCompressionStmt + '';
+			'';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmMissingIndexes'')) AND (i.name = ''NC_fhsmMissingIndexes_Timestamp''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmMissingIndexes_Timestamp] to table dbo.fhsmMissingIndexes'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
+				CREATE NONCLUSTERED INDEX NC_fhsmMissingIndexes_Timestamp ON dbo.fhsmMissingIndexes(Timestamp)'' + @tableCompressionStmt + '';
+			'';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmMissingIndexes'')) AND (i.name = ''NC_fhsmMissingIndexes_DatabaseName_SchemaName_ObjectName''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmMissingIndexes_DatabaseName_SchemaName_ObjectName] to table dbo.fhsmMissingIndexes'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
+				CREATE NONCLUSTERED INDEX NC_fhsmMissingIndexes_DatabaseName_SchemaName_ObjectName ON dbo.fhsmMissingIndexes(DatabaseName, SchemaName, ObjectName)'' + @tableCompressionStmt + '';
+			'';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmMissingIndexes'')) AND (i.name = ''NC_fhsmMissingIndexes_DatabaseName_QueryHash''))
 		BEGIN
 			RAISERROR(''Adding index [NC_fhsmMissingIndexes_DatabaseName_QueryHash] to table dbo.fhsmMissingIndexes'', 0, 1) WITH NOWAIT;
 
-			SET @stmt = ''CREATE NONCLUSTERED INDEX NC_fhsmMissingIndexes_DatabaseName_QueryHash ON dbo.fhsmMissingIndexes(DatabaseName, QueryHash)'' + @tableCompressionStmt + '';'';
+			SET @stmt = ''
+				CREATE NONCLUSTERED INDEX NC_fhsmMissingIndexes_DatabaseName_QueryHash ON dbo.fhsmMissingIndexes(DatabaseName, QueryHash)'' + @tableCompressionStmt + '';
+			'';
 			EXEC(@stmt);
 		END;
 
@@ -22438,7 +23427,7 @@ ELSE BEGIN
 		END;
 
 		--
-		-- Create table dbo.fhsmMissingIndexesTemp if it not already exists
+		-- Create table dbo.fhsmMissingIndexesTemp and indexes if they not already exists
 		--
 		IF OBJECT_ID(''dbo.fhsmMissingIndexesTemp'', ''U'') IS NULL
 		BEGIN
@@ -22473,9 +23462,35 @@ ELSE BEGIN
 					,Timestamp datetime NOT NULL
 					,CONSTRAINT PK_fhsmMissingIndexesTemp PRIMARY KEY(Id)'' + @tableCompressionStmt + ''
 				);
+			'';
+			EXEC(@stmt);
+		END;
 
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmMissingIndexesTemp'')) AND (i.name = ''NC_fhsmMissingIndexesTemp_TimestampUTC''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmMissingIndexesTemp_TimestampUTC] to table dbo.fhsmMissingIndexesTemp'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmMissingIndexesTemp_TimestampUTC ON dbo.fhsmMissingIndexesTemp(TimestampUTC)'' + @tableCompressionStmt + '';
+			'';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmMissingIndexesTemp'')) AND (i.name = ''NC_fhsmMissingIndexesTemp_Timestamp''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmMissingIndexesTemp_Timestamp] to table dbo.fhsmMissingIndexesTemp'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmMissingIndexesTemp_Timestamp ON dbo.fhsmMissingIndexesTemp(Timestamp)'' + @tableCompressionStmt + '';
+			'';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmMissingIndexesTemp'')) AND (i.name = ''NC_fhsmMissingIndexesTemp_DatabaseName_SchemaName_ObjectName''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmMissingIndexesTemp_DatabaseName_SchemaName_ObjectName] to table dbo.fhsmMissingIndexesTemp'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmMissingIndexesTemp_DatabaseName_SchemaName_ObjectName ON dbo.fhsmMissingIndexesTemp(DatabaseName, SchemaName, ObjectName)'' + @tableCompressionStmt + '';
 			'';
 			EXEC(@stmt);
@@ -22497,7 +23512,7 @@ ELSE BEGIN
 		END;
 
 		--
-		-- Create table dbo.fhsmMissingIndexStatement if it not already exists
+		-- Create table dbo.fhsmMissingIndexStatement and indexes if they not already exists
 		--
 		IF OBJECT_ID(''dbo.fhsmMissingIndexStatement'', ''U'') IS NULL
 		BEGIN
@@ -22513,7 +23528,15 @@ ELSE BEGIN
 					,UpdateCount int NOT NULL
 					,CONSTRAINT PK_fhsmMissingIndexStatement PRIMARY KEY(Id)'' + @tableCompressionStmt + ''
 				);
+			'';
+			EXEC(@stmt);
+		END;
 
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmMissingIndexStatement'')) AND (i.name = ''NC_fhsmMissingIndexStatement_DatabaseName_QueryHash''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmMissingIndexStatement_DatabaseName_QueryHash] to table dbo.fhsmMissingIndexStatement'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmMissingIndexStatement_DatabaseName_QueryHash ON dbo.fhsmMissingIndexStatement(DatabaseName, QueryHash)'' + @tableCompressionStmt + '';
 			'';
 			EXEC(@stmt);
@@ -22617,14 +23640,15 @@ ELSE BEGIN
 					,b.LastSystemScan
 					,CASE WHEN (b.DeltaSystemSeeks <> 0) OR (b.DeltaSystemScans <> 0) THEN b.AvgTotalSystemCost ELSE 0 END AS AvgTotalSystemCost
 					,CASE WHEN (b.DeltaSystemSeeks <> 0) OR (b.DeltaSystemScans <> 0) THEN b.AvgSystemImpact ELSE 0 END AS AvgSystemImpact
-					,b.LastUserSeekDate
-					,b.LastUserSeekTimeKey
-					,b.Date
-					,b.TimeKey
-					,b.DatabaseKey
-					,b.SchemaKey
-					,b.ObjectKey
-					,b.MissingIndexStatementKey
+
+					,CAST(b.LastUserSeek AS date) AS LastUserSeekDate
+					,(DATEPART(HOUR, b.LastUserSeek) * 60 * 60) + (DATEPART(MINUTE, b.LastUserSeek) * 60) + (DATEPART(SECOND, b.LastUserSeek)) AS LastUserSeekTimeKey
+					,CAST(b.Timestamp AS date) AS Date
+					,(DATEPART(HOUR, b.Timestamp) * 60 * 60) + (DATEPART(MINUTE, b.Timestamp) * 60) + (DATEPART(SECOND, b.Timestamp)) AS TimeKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(b.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(b.DatabaseName, b.SchemaName, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS SchemaKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(b.DatabaseName, b.SchemaName, b.ObjectName, DEFAULT, DEFAULT, DEFAULT) AS k) AS ObjectKey
+					,(SELECT k.[Key] FROM FHSQLMonitor.dbo.fhsmFNGenerateKey(b.DatabaseName, CONVERT(nvarchar(18), b.QueryHash, 1), DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS MissingIndexStatementKey
 				FROM (
 			'';
 			SET @stmt += ''
@@ -22665,14 +23689,12 @@ ELSE BEGIN
 						,a.LastSystemScan
 						,a.AvgTotalSystemCost
 						,a.AvgSystemImpact
-						,a.LastUserSeekDate
-						,a.LastUserSeekTimeKey
-						,a.Date
-						,a.TimeKey
-						,a.DatabaseKey
-						,a.SchemaKey
-						,a.ObjectKey
-						,a.MissingIndexStatementKey
+
+						,a.Timestamp
+						,a.DatabaseName
+						,a.SchemaName
+						,a.ObjectName
+						,a.QueryHash
 					FROM (
 			'';
 			SET @stmt += ''
@@ -22707,14 +23729,12 @@ ELSE BEGIN
 							,mi.AvgSystemImpact
 							,mi.LastSQLServiceRestart
 							,prevMi.LastSQLServiceRestart AS PreviousLastSQLServiceRestart
-							,CAST(mi.LastUserSeek AS date) AS LastUserSeekDate
-							,(DATEPART(HOUR, mi.LastUserSeek) * 60 * 60) + (DATEPART(MINUTE, mi.LastUserSeek) * 60) + (DATEPART(SECOND, mi.LastUserSeek)) AS LastUserSeekTimeKey
-							,CAST(mi.Timestamp AS date) AS Date
-							,(DATEPART(HOUR, mi.Timestamp) * 60 * 60) + (DATEPART(MINUTE, mi.Timestamp) * 60) + (DATEPART(SECOND, mi.Timestamp)) AS TimeKey
-							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(mi.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
-							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(mi.DatabaseName, mi.SchemaName, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS SchemaKey
-							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(mi.DatabaseName, mi.SchemaName, mi.ObjectName, DEFAULT, DEFAULT, DEFAULT) AS k) AS ObjectKey
-							,(SELECT k.[Key] FROM FHSQLMonitor.dbo.fhsmFNGenerateKey(mi.DatabaseName, CONVERT(nvarchar(18), mi.QueryHash, 1), DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS MissingIndexStatementKey
+
+							,mi.Timestamp
+							,mi.DatabaseName
+							,mi.SchemaName
+							,mi.ObjectName
+							,mi.QueryHash
 						FROM missingIndexes AS mi
 						LEFT OUTER JOIN missingIndexes AS prevMi ON
 							(prevMi.DatabaseName = mi.DatabaseName)
@@ -22755,14 +23775,12 @@ ELSE BEGIN
 							,mi.AvgSystemImpact
 							,mi.LastSQLServiceRestart
 							,LAG(mi.LastSQLServiceRestart) OVER(PARTITION BY mi.DatabaseName, mi.SchemaName, mi.ObjectName, mi.QueryHash, mi.EqualityColumns, mi.InequalityColumns, mi.IncludedColumns ORDER BY mi.TimestampUTC) AS PreviousLastSQLServiceRestart
-							,CAST(mi.LastUserSeek AS date) AS LastUserSeekDate
-							,(DATEPART(HOUR, mi.LastUserSeek) * 60 * 60) + (DATEPART(MINUTE, mi.LastUserSeek) * 60) + (DATEPART(SECOND, mi.LastUserSeek)) AS LastUserSeekTimeKey
-							,CAST(mi.Timestamp AS date) AS Date
-							,(DATEPART(HOUR, mi.Timestamp) * 60 * 60) + (DATEPART(MINUTE, mi.Timestamp) * 60) + (DATEPART(SECOND, mi.Timestamp)) AS TimeKey
-							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(mi.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
-							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(mi.DatabaseName, mi.SchemaName, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS SchemaKey
-							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(mi.DatabaseName, mi.SchemaName, mi.ObjectName, DEFAULT, DEFAULT, DEFAULT) AS k) AS ObjectKey
-							,(SELECT k.[Key] FROM FHSQLMonitor.dbo.fhsmFNGenerateKey(mi.DatabaseName, CONVERT(nvarchar(18), mi.QueryHash, 1), DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS MissingIndexStatementKey
+
+							,mi.Timestamp
+							,mi.DatabaseName
+							,mi.SchemaName
+							,mi.ObjectName
+							,mi.QueryHash
 						FROM dbo.fhsmMissingIndexes AS mi
 						WHERE (
 								(mi.DatabaseName <> ''''<HeartBeat>'''')
@@ -23289,7 +24307,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:PartitionedIndexes.sql modified: 2025.04.17 17.52.18
+-- File part:PartitionedIndexes.sql modified: 2025.05.23 16.57.02
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -23361,7 +24379,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.5'';
+		SET @version = ''2.6'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -23399,7 +24417,7 @@ ELSE BEGIN
 	--
 	BEGIN
 		--
-		-- Create table dbo.fhsmPartitionedIndexes if it not already exists
+		-- Create table dbo.fhsmPartitionedIndexes and indexes if they not already exists
 		--
 		IF OBJECT_ID(''dbo.fhsmPartitionedIndexes'', ''U'') IS NULL
 		BEGIN
@@ -23428,9 +24446,35 @@ ELSE BEGIN
 					,Timestamp datetime NOT NULL
 					,CONSTRAINT PK_fhsmPartitionedIndexes PRIMARY KEY(Id)'' + @tableCompressionStmt + ''
 				);
+			'';
+			EXEC(@stmt);
+		END;
 
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmPartitionedIndexes'')) AND (i.name = ''NC_fhsmPartitionedIndexes_TimestampUTC''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmPartitionedIndexes_TimestampUTC] to table dbo.fhsmPartitionedIndexes'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmPartitionedIndexes_TimestampUTC ON dbo.fhsmPartitionedIndexes(TimestampUTC)'' + @tableCompressionStmt + '';
+			'';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmPartitionedIndexes'')) AND (i.name = ''NC_fhsmPartitionedIndexes_Timestamp''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmPartitionedIndexes_Timestamp] to table dbo.fhsmPartitionedIndexes'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmPartitionedIndexes_Timestamp ON dbo.fhsmPartitionedIndexes(Timestamp)'' + @tableCompressionStmt + '';
+			'';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmPartitionedIndexes'')) AND (i.name = ''NC_fhsmPartitionedIndexes_DatabaseName''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmPartitionedIndexes_DatabaseName] to table dbo.fhsmPartitionedIndexes'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmPartitionedIndexes_DatabaseName ON dbo.fhsmPartitionedIndexes(DatabaseName)'' + @tableCompressionStmt + '';
 			'';
 			EXEC(@stmt);
@@ -24041,7 +25085,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:PerformanceStatistics.sql modified: 2025.03.06 23.27.28
+-- File part:PerformanceStatistics.sql modified: 2025.05.23 17.01.12
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -24119,7 +25163,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.1'';
+		SET @version = ''2.6'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -24157,7 +25201,7 @@ ELSE BEGIN
 	--
 	BEGIN
 		--
-		-- Create table dbo.fhsmPerfmonCounters if it not already exists
+		-- Create table dbo.fhsmPerfmonCounters and indexes if they not already exists
 		--
 		IF OBJECT_ID(''dbo.fhsmPerfmonCounters'', ''U'') IS NULL
 		BEGIN
@@ -24171,7 +25215,15 @@ ELSE BEGIN
 					,InstanceName nvarchar(128) NULL
 					,CONSTRAINT PK_fhsmPerfmonCounters PRIMARY KEY(Id)'' + @tableCompressionStmt + ''
 				);
+			'';
+			EXEC(@stmt);
+		END;
 
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmPerfmonCounters'')) AND (i.name = ''NC_fhsmPerfmonCounters_ObjectName_CounterName_InstanceName_TimestampUTC''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmPerfmonCounters_ObjectName_CounterName_InstanceName_TimestampUTC] to table dbo.fhsmPerfmonCounters'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmPerfmonCounters_ObjectName_CounterName_InstanceName_TimestampUTC ON dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName)'' + @tableCompressionStmt + '';
 			'';
 			EXEC(@stmt);
@@ -24193,7 +25245,7 @@ ELSE BEGIN
 		END;
 
 		--
-		-- Create table dbo.fhsmPerfmonStatistics if it not already exists
+		-- Create table dbo.fhsmPerfmonStatistics and indexes if they not already exists
 		--
 		IF OBJECT_ID(''dbo.fhsmPerfmonStatistics'', ''U'') IS NULL
 		BEGIN
@@ -24212,9 +25264,35 @@ ELSE BEGIN
 					,Timestamp datetime NOT NULL
 					,CONSTRAINT PK_fhsmPerfmonStatistics PRIMARY KEY(Id)'' + @tableCompressionStmt + ''
 				);
+			'';
+			EXEC(@stmt);
+		END;
 
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmPerfmonStatistics'')) AND (i.name = ''NC_fhsmPerfmonStatistics_TimestampUTC''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmPerfmonStatistics_TimestampUTC] to table dbo.fhsmPerfmonStatistics'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmPerfmonStatistics_TimestampUTC ON dbo.fhsmPerfmonStatistics(TimestampUTC)'' + @tableCompressionStmt + '';
+			'';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmPerfmonStatistics'')) AND (i.name = ''NC_fhsmPerfmonStatistics_Timestamp''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmPerfmonStatistics_Timestamp] to table dbo.fhsmPerfmonStatistics'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmPerfmonStatistics_Timestamp ON dbo.fhsmPerfmonStatistics(Timestamp)'' + @tableCompressionStmt + '';
+			'';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmPerfmonStatistics'')) AND (i.name = ''NC_fhsmPerfmonStatistics_ObjectName_CounterName_InstanceName_TimestampUTC''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmPerfmonStatistics_ObjectName_CounterName_InstanceName_TimestampUTC] to table dbo.fhsmPerfmonStatistics'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmPerfmonStatistics_ObjectName_CounterName_InstanceName_TimestampUTC ON dbo.fhsmPerfmonStatistics(ObjectName, CounterName, InstanceName, TimestampUTC) INCLUDE(CounterValue)'' + @tableCompressionStmt + '';
 			'';
 			EXEC(@stmt);
@@ -24924,7 +26002,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:PlanCacheUsage.sql modified: 2025.03.06 23.27.44
+-- File part:PlanCacheUsage.sql modified: 2025.05.23 17.03.49
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -24996,7 +26074,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.1'';
+		SET @version = ''2.6'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -25034,7 +26112,7 @@ ELSE BEGIN
 	--
 	BEGIN
 		--
-		-- Create table dbo.fhsmPlanCacheUsage if it not already exists
+		-- Create table dbo.fhsmPlanCacheUsage and indexes if they not already exists
 		--
 		IF OBJECT_ID(''dbo.fhsmPlanCacheUsage'', ''U'') IS NULL
 		BEGIN
@@ -25049,8 +26127,25 @@ ELSE BEGIN
 					,Timestamp datetime NOT NULL
 					,CONSTRAINT PK_fhsmPlanCacheUsage PRIMARY KEY(Id)'' + @tableCompressionStmt + ''
 				);
+			'';
+			EXEC(@stmt);
+		END;
 
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmPlanCacheUsage'')) AND (i.name = ''NC_fhsmPlanCacheUsage_TimestampUTC''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmPlanCacheUsage_TimestampUTC] to table dbo.fhsmPlanCacheUsage'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmPlanCacheUsage_TimestampUTC ON dbo.fhsmPlanCacheUsage(TimestampUTC)'' + @tableCompressionStmt + '';
+			'';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmPlanCacheUsage'')) AND (i.name = ''NC_fhsmPlanCacheUsage_Timestamp''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmPlanCacheUsage_Timestamp] to table dbo.fhsmPlanCacheUsage'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmPlanCacheUsage_Timestamp ON dbo.fhsmPlanCacheUsage(Timestamp)'' + @tableCompressionStmt + '';
 			'';
 			EXEC(@stmt);
@@ -25295,7 +26390,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:PlanGuides.sql modified: 2025.04.17 17.03.30
+-- File part:PlanGuides.sql modified: 2025.05.23 17.06.16
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -25367,7 +26462,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.5'';
+		SET @version = ''2.6'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -25405,7 +26500,7 @@ ELSE BEGIN
 	--
 	BEGIN
 		--
-		-- Create table dbo.fhsmPlanGuides if it not already exists
+		-- Create table dbo.fhsmPlanGuides and indexes if they not already exists
 		--
 		IF OBJECT_ID(''dbo.fhsmPlanGuides'', ''U'') IS NULL
 		BEGIN
@@ -25435,9 +26530,35 @@ ELSE BEGIN
 					,Timestamp datetime NOT NULL
 					,CONSTRAINT PK_fhsmPlanGuides PRIMARY KEY(Id)'' + @tableCompressionStmt + ''
 				);
+			'';
+			EXEC(@stmt);
+		END;
 
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmPlanGuides'')) AND (i.name = ''NC_fhsmPlanGuides_TimestampUTC''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmPlanGuides_TimestampUTC] to table dbo.fhsmPlanGuides'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmPlanGuides_TimestampUTC ON dbo.fhsmPlanGuides(TimestampUTC)'' + @tableCompressionStmt + '';
+			'';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmPlanGuides'')) AND (i.name = ''NC_fhsmPlanGuides_Timestamp''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmPlanGuides_Timestamp] to table dbo.fhsmPlanGuides'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmPlanGuides_Timestamp ON dbo.fhsmPlanGuides(Timestamp)'' + @tableCompressionStmt + '';
+			'';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmPlanGuides'')) AND (i.name = ''NC_fhsmPlanGuides_DatabaseName''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmPlanGuides_DatabaseName] to table dbo.fhsmPlanGuides'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmPlanGuides_DatabaseName ON dbo.fhsmPlanGuides(DatabaseName)'' + @tableCompressionStmt + '';
 			'';
 			EXEC(@stmt);
@@ -25878,7 +26999,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:QueryStatistics.sql modified: 2025.05.04 17.15.25
+-- File part:QueryStatistics.sql modified: 2025.05.23 17.11.01
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -25950,7 +27071,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.3'';
+		SET @version = ''2.6'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -25997,7 +27118,7 @@ ELSE BEGIN
 	--
 	BEGIN
 		--
-		-- Create table dbo.fhsmQueryStatement if it not already exists
+		-- Create table dbo.fhsmQueryStatement and indexes if they not already exists
 		--
 		IF OBJECT_ID(''dbo.fhsmQueryStatement'', ''U'') IS NULL
 		BEGIN
@@ -26018,9 +27139,35 @@ ELSE BEGIN
 					,Timestamp datetime NOT NULL
 					,CONSTRAINT PK_fhsmQueryStatement PRIMARY KEY(Id)'' + @tableCompressionStmt + ''
 				);
+			'';
+			EXEC(@stmt);
+		END;
 
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmQueryStatement'')) AND (i.name = ''NC_fhsmQueryStatement_TimestampUTC''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmQueryStatement_TimestampUTC] to table dbo.fhsmQueryStatement'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmQueryStatement_TimestampUTC ON dbo.fhsmQueryStatement(TimestampUTC)'' + @tableCompressionStmt + '';
+			'';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmQueryStatement'')) AND (i.name = ''NC_fhsmQueryStatement_Timestamp''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmQueryStatement_Timestamp] to table dbo.fhsmQueryStatement'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmQueryStatement_Timestamp ON dbo.fhsmQueryStatement(Timestamp)'' + @tableCompressionStmt + '';
+			'';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmQueryStatement'')) AND (i.name = ''NC_fhsmQueryStatement_ObjectName_CounterName_InstanceName''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmQueryStatement_ObjectName_CounterName_InstanceName] to table dbo.fhsmQueryStatement'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmQueryStatement_ObjectName_CounterName_InstanceName ON dbo.fhsmQueryStatement(DatabaseName, QueryHash)'' + @tableCompressionStmt + '';
 			'';
 			EXEC(@stmt);
@@ -26042,7 +27189,7 @@ ELSE BEGIN
 		END;
 
 		--
-		-- Create table dbo.fhsmQueryStatistics if it not already exists
+		-- Create table dbo.fhsmQueryStatistics and indexes if they not already exists
 		--
 		IF OBJECT_ID(''dbo.fhsmQueryStatistics'', ''U'') IS NULL
 		BEGIN
@@ -26072,7 +27219,25 @@ ELSE BEGIN
 
 				CREATE CLUSTERED INDEX CL_fhsmQueryStatistics_TimestampUTC ON dbo.fhsmQueryStatistics(TimestampUTC)'' + @tableCompressionStmt + '';
 				ALTER TABLE dbo.fhsmQueryStatistics ADD CONSTRAINT NCPK_fhsmQueryStatistics PRIMARY KEY NONCLUSTERED(Id)'' + @tableCompressionStmt + '';
+			'';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmQueryStatistics'')) AND (i.name = ''NC_fhsmQueryStatistics_Timestamp''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmQueryStatistics_Timestamp] to table dbo.fhsmQueryStatistics'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmQueryStatistics_Timestamp ON dbo.fhsmQueryStatistics(Timestamp)'' + @tableCompressionStmt + '';
+			'';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmQueryStatistics'')) AND (i.name = ''NC_fhsmQueryStatistics_DatabaseName_QueryHash''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmQueryStatistics_DatabaseName_QueryHash] to table dbo.fhsmQueryStatistics'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmQueryStatistics_DatabaseName_QueryHash ON dbo.fhsmQueryStatistics(DatabaseName, QueryHash)'' + @tableCompressionStmt + '';
 			'';
 			EXEC(@stmt);
@@ -26940,7 +28105,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:TableSize.sql modified: 2025.04.17 17.44.31
+-- File part:TableSize.sql modified: 2025.05.23 17.14.20
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -27012,7 +28177,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.5'';
+		SET @version = ''2.6'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -27050,7 +28215,7 @@ ELSE BEGIN
 	--
 	BEGIN
 		--
-		-- Create table dbo.fhsmTableSize if it not already exists
+		-- Create table dbo.fhsmTableSize and indexes if they not already exists
 		--
 		IF OBJECT_ID(''dbo.fhsmTableSize'', ''U'') IS NULL
 		BEGIN
@@ -27074,9 +28239,35 @@ ELSE BEGIN
 					,Timestamp datetime NOT NULL
 					,CONSTRAINT PK_fhsmTableSize PRIMARY KEY(Id)'' + @tableCompressionStmt + ''
 				);
+			'';
+			EXEC(@stmt);
+		END;
 
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmTableSize'')) AND (i.name = ''NC_fhsmTableSize_TimestampUTC''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmTableSize_TimestampUTC] to table dbo.fhsmTableSize'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmTableSize_TimestampUTC ON dbo.fhsmTableSize(TimestampUTC)'' + @tableCompressionStmt + '';
+			'';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmTableSize'')) AND (i.name = ''NC_fhsmTableSize_Timestamp''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmTableSize_Timestamp] to table dbo.fhsmTableSize'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmTableSize_Timestamp ON dbo.fhsmTableSize(Timestamp)'' + @tableCompressionStmt + '';
+			'';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmTableSize'')) AND (i.name = ''NC_fhsmTableSize_DatabaseName_SchemaName_ObjectName_IndexName''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmTableSize_DatabaseName_SchemaName_ObjectName_IndexName] to table dbo.fhsmTableSize'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmTableSize_DatabaseName_SchemaName_ObjectName_IndexName ON dbo.fhsmTableSize(DatabaseName, SchemaName, ObjectName, IndexName)'' + @tableCompressionStmt + '';
 			'';
 			EXEC(@stmt);
@@ -27738,7 +28929,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:Triggers.sql modified: 2025.05.03 14.32.41
+-- File part:Triggers.sql modified: 2025.05.23 17.17.18
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -27810,7 +29001,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.5'';
+		SET @version = ''2.6'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -27848,7 +29039,7 @@ ELSE BEGIN
 	--
 	BEGIN
 		--
-		-- Create table dbo.fhsmTriggers if it not already exists
+		-- Create table dbo.fhsmTriggers and indexes if they not already exists
 		--
 		IF OBJECT_ID(''dbo.fhsmTriggers'', ''U'') IS NULL
 		BEGIN
@@ -27873,9 +29064,35 @@ ELSE BEGIN
 					,Timestamp datetime NOT NULL
 					,CONSTRAINT PK_fhsmTriggers PRIMARY KEY(Id)'' + @tableCompressionStmt + ''
 				);
+			'';
+			EXEC(@stmt);
+		END;
 
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmTriggers'')) AND (i.name = ''NC_fhsmTriggers_TimestampUTC''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmTriggers_TimestampUTC] to table dbo.fhsmTriggers'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmTriggers_TimestampUTC ON dbo.fhsmTriggers(TimestampUTC)'' + @tableCompressionStmt + '';
+			'';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmTriggers'')) AND (i.name = ''NC_fhsmTriggers_Timestamp''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmTriggers_Timestamp] to table dbo.fhsmTriggers'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmTriggers_Timestamp ON dbo.fhsmTriggers(Timestamp)'' + @tableCompressionStmt + '';
+			'';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmTriggers'')) AND (i.name = ''NC_fhsmTriggers_DatabaseName''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmTriggers_DatabaseName] to table dbo.fhsmTriggers'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmTriggers_DatabaseName ON dbo.fhsmTriggers(DatabaseName)'' + @tableCompressionStmt + '';
 			'';
 			EXEC(@stmt);
@@ -28323,7 +29540,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
 --
--- File part:WaitStatistics.sql modified: 2025.03.06 23.29.10
+-- File part:WaitStatistics.sql modified: 2025.05.23 19.52.44
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -28395,7 +29612,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.1'';
+		SET @version = ''2.6'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -28466,7 +29683,7 @@ ELSE BEGIN
 		END;
 
 		--
-		-- Create table dbo.fhsmWaitStatistics if it not already exists
+		-- Create table dbo.fhsmWaitStatistics and indexes if they not already exists
 		--
 		IF OBJECT_ID(''dbo.fhsmWaitStatistics'', ''U'') IS NULL
 		BEGIN
@@ -28484,9 +29701,35 @@ ELSE BEGIN
 					,Timestamp datetime NOT NULL
 					,CONSTRAINT PK_WaitStatistics PRIMARY KEY(Id)'' + @tableCompressionStmt + ''
 				);
+			'';
+			EXEC(@stmt);
+		END;
 
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmWaitStatistics'')) AND (i.name = ''NC_fhsmWaitStatistics_TimestampUTC''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmWaitStatistics_TimestampUTC] to table dbo.fhsmWaitStatistics'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmWaitStatistics_TimestampUTC ON dbo.fhsmWaitStatistics(TimestampUTC)'' + @tableCompressionStmt + '';
+			'';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmWaitStatistics'')) AND (i.name = ''NC_fhsmWaitStatistics_Timestamp''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmWaitStatistics_Timestamp] to table dbo.fhsmWaitStatistics'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmWaitStatistics_Timestamp ON dbo.fhsmWaitStatistics(Timestamp)'' + @tableCompressionStmt + '';
+			'';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmWaitStatistics'')) AND (i.name = ''NC_fhsmWaitStatistics_WaitType''))
+		BEGIN
+			RAISERROR(''Adding index [NC_fhsmWaitStatistics_WaitType] to table dbo.fhsmWaitStatistics'', 0, 1) WITH NOWAIT;
+
+			SET @stmt = ''
 				CREATE NONCLUSTERED INDEX NC_fhsmWaitStatistics_WaitType ON dbo.fhsmWaitStatistics(WaitType)'' + @tableCompressionStmt + '';
 			'';
 			EXEC(@stmt);
@@ -29092,10 +30335,11 @@ ELSE BEGIN
 					b.DeltaSumWaitTimeMS AS WaitTimeMS
 					,b.DeltaSumSignalWaitTimeMS AS SignalWaitTimeMS
 					,b.DeltaSumWaitingTasks AS WaitingTasks
+
 					,b.Timestamp
-					,b.Date
-					,b.TimeKey
-					,b.WaitKey
+					,CAST(b.Timestamp AS date) AS Date
+					,(DATEPART(HOUR, b.Timestamp) * 60 * 60) + (DATEPART(MINUTE, b.Timestamp) * 60) + (DATEPART(SECOND, b.Timestamp)) AS TimeKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(b.WaitType, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS WaitKey
 				FROM (
 					SELECT
 						CASE
@@ -29113,10 +30357,9 @@ ELSE BEGIN
 							WHEN (a.PreviousSumWaitingTasks > a.SumWaitingTasks) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.SumWaitingTasks
 							ELSE a.SumWaitingTasks - a.PreviousSumWaitingTasks
 						END AS DeltaSumWaitingTasks
+
 						,a.Timestamp
-						,a.Date
-						,a.TimeKey
-						,a.WaitKey
+						,a.WaitType
 					FROM (
 			'';
 			IF (@productVersion1 <= 10)
@@ -29135,10 +30378,9 @@ ELSE BEGIN
 							,prevWs.LastSQLServiceRestart AS PreviousLastSQLServiceRestart
 							,ws.TimestampUTC
 							,prevWs.TimestampUTC AS PreviousTimestampUTC
+
 							,ws.Timestamp
-							,CAST(ws.Timestamp AS date) AS Date
-							,(DATEPART(HOUR, ws.Timestamp) * 60 * 60) + (DATEPART(MINUTE, ws.Timestamp) * 60) + (DATEPART(SECOND, ws.Timestamp)) AS TimeKey
-							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ws.WaitType, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS WaitKey
+							,ws.WaitType
 						FROM waitStatistics AS ws
 						LEFT OUTER JOIN waitStatistics AS prevWs ON
 							(prevWs.WaitType = ws.WaitType)
@@ -29160,10 +30402,9 @@ ELSE BEGIN
 							,LAG(ws.LastSQLServiceRestart) OVER(PARTITION BY ws.WaitType ORDER BY ws.TimestampUTC) AS PreviousLastSQLServiceRestart
 							,ws.TimestampUTC
 							,LAG(ws.TimestampUTC) OVER(PARTITION BY ws.WaitType ORDER BY ws.TimestampUTC) AS PreviousTimestampUTC
+
 							,ws.Timestamp
-							,CAST(ws.Timestamp AS date) AS Date
-							,(DATEPART(HOUR, ws.Timestamp) * 60 * 60) + (DATEPART(MINUTE, ws.Timestamp) * 60) + (DATEPART(SECOND, ws.Timestamp)) AS TimeKey
-							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ws.WaitType, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS WaitKey
+							,ws.WaitType
 						FROM dbo.fhsmWaitStatistics AS ws
 				'';
 			END;
@@ -35608,5 +36849,5 @@ BEGIN
 END;
 
 RAISERROR('', 0, 1) WITH NOWAIT;
-SET @installationMsg = 'FHSQLMonitor in ' + @fhSQLMonitorDatabase + ' has been installed/upgraded to v2.5.0';
+SET @installationMsg = 'FHSQLMonitor in ' + @fhSQLMonitorDatabase + ' has been installed/upgraded to v2.6.0';
 RAISERROR(@installationMsg, 0, 1) WITH NOWAIT;

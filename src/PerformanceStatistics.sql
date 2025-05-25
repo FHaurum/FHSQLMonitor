@@ -72,7 +72,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.1';
+		SET @version = '2.6';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -110,7 +110,7 @@ ELSE BEGIN
 	--
 	BEGIN
 		--
-		-- Create table dbo.fhsmPerfmonCounters if it not already exists
+		-- Create table dbo.fhsmPerfmonCounters and indexes if they not already exists
 		--
 		IF OBJECT_ID('dbo.fhsmPerfmonCounters', 'U') IS NULL
 		BEGIN
@@ -124,7 +124,15 @@ ELSE BEGIN
 					,InstanceName nvarchar(128) NULL
 					,CONSTRAINT PK_fhsmPerfmonCounters PRIMARY KEY(Id)' + @tableCompressionStmt + '
 				);
+			';
+			EXEC(@stmt);
+		END;
 
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmPerfmonCounters')) AND (i.name = 'NC_fhsmPerfmonCounters_ObjectName_CounterName_InstanceName_TimestampUTC'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmPerfmonCounters_ObjectName_CounterName_InstanceName_TimestampUTC] to table dbo.fhsmPerfmonCounters', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmPerfmonCounters_ObjectName_CounterName_InstanceName_TimestampUTC ON dbo.fhsmPerfmonCounters(ObjectName, CounterName, InstanceName)' + @tableCompressionStmt + ';
 			';
 			EXEC(@stmt);
@@ -146,7 +154,7 @@ ELSE BEGIN
 		END;
 
 		--
-		-- Create table dbo.fhsmPerfmonStatistics if it not already exists
+		-- Create table dbo.fhsmPerfmonStatistics and indexes if they not already exists
 		--
 		IF OBJECT_ID('dbo.fhsmPerfmonStatistics', 'U') IS NULL
 		BEGIN
@@ -165,9 +173,35 @@ ELSE BEGIN
 					,Timestamp datetime NOT NULL
 					,CONSTRAINT PK_fhsmPerfmonStatistics PRIMARY KEY(Id)' + @tableCompressionStmt + '
 				);
+			';
+			EXEC(@stmt);
+		END;
 
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmPerfmonStatistics')) AND (i.name = 'NC_fhsmPerfmonStatistics_TimestampUTC'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmPerfmonStatistics_TimestampUTC] to table dbo.fhsmPerfmonStatistics', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmPerfmonStatistics_TimestampUTC ON dbo.fhsmPerfmonStatistics(TimestampUTC)' + @tableCompressionStmt + ';
+			';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmPerfmonStatistics')) AND (i.name = 'NC_fhsmPerfmonStatistics_Timestamp'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmPerfmonStatistics_Timestamp] to table dbo.fhsmPerfmonStatistics', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmPerfmonStatistics_Timestamp ON dbo.fhsmPerfmonStatistics(Timestamp)' + @tableCompressionStmt + ';
+			';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmPerfmonStatistics')) AND (i.name = 'NC_fhsmPerfmonStatistics_ObjectName_CounterName_InstanceName_TimestampUTC'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmPerfmonStatistics_ObjectName_CounterName_InstanceName_TimestampUTC] to table dbo.fhsmPerfmonStatistics', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmPerfmonStatistics_ObjectName_CounterName_InstanceName_TimestampUTC ON dbo.fhsmPerfmonStatistics(ObjectName, CounterName, InstanceName, TimestampUTC) INCLUDE(CounterValue)' + @tableCompressionStmt + ';
 			';
 			EXEC(@stmt);

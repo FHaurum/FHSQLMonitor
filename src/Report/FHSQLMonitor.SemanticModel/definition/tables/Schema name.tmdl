@@ -1,0 +1,23 @@
+table 'Schema name'
+	lineageTag: 73768a0a-e68f-43cf-898b-091ed7ed7421
+
+	column 'Schema name'
+		dataType: string
+		isHidden
+		lineageTag: 58784760-070f-4c7f-b6d5-f313c6250c08
+		summarizeBy: none
+		sourceColumn: Schema name
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Schema name' = m
+		mode: import
+		queryGroup: 'Connection parameters'
+		source = "FHSM" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Text
+

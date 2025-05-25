@@ -1,31 +1,6 @@
 table 'Blocked process'
 	lineageTag: 99935d5e-e88b-456b-9f14-b780416e8255
 
-	column 'Blocked statement'
-		dataType: string
-		lineageTag: 15beb503-d3e7-497c-86e9-1d6c435e9d84
-		summarizeBy: none
-		sourceColumn: Blocked statement
-
-		annotation SummarizationSetBy = Automatic
-
-	column 'Blocking statement'
-		dataType: string
-		lineageTag: 61401d3d-cdf6-465e-8241-53ccc1be0623
-		summarizeBy: none
-		sourceColumn: Blocking statement
-
-		annotation SummarizationSetBy = Automatic
-
-	column 'Sort order'
-		dataType: int64
-		formatString: #,0
-		lineageTag: ad5f24b5-f031-45fa-a2c6-90e9f3c91104
-		summarizeBy: none
-		sourceColumn: Sort order
-
-		annotation SummarizationSetBy = User
-
 	column 'Timestamp (UTC)'
 		dataType: dateTime
 		formatString: dd-mmm-yyyy hh:nn:ss
@@ -96,23 +71,39 @@ table 'Blocked process'
 
 		annotation SummarizationSetBy = Automatic
 
-	column 'Blocked SPID'
+	column 'Sort order'
 		dataType: int64
 		formatString: #,0
-		lineageTag: 88762e8e-42a9-4687-a4b1-b52202a34a6e
+		lineageTag: 097e4e29-e148-457b-9356-a1662dfe84d7
 		summarizeBy: none
-		sourceColumn: Blocked SPID
+		sourceColumn: Sort order
 
 		annotation SummarizationSetBy = User
 
-	column 'Blocking SPID'
+	column Type
+		dataType: string
+		lineageTag: fc1cac9d-8c69-45b6-ad22-5ace21cf46d4
+		summarizeBy: none
+		sourceColumn: Type
+
+		annotation SummarizationSetBy = Automatic
+
+	column SPID
 		dataType: int64
 		formatString: #,0
-		lineageTag: 5aaa43fb-548f-4f1c-8ab6-f1e9b3c331c1
+		lineageTag: c6922130-29f6-45b6-adf7-c31b45d6f9ce
 		summarizeBy: none
-		sourceColumn: Blocking SPID
+		sourceColumn: SPID
 
 		annotation SummarizationSetBy = User
+
+	column Statement
+		dataType: string
+		lineageTag: fb60ddaf-a01e-4a1f-8aa3-f75e500f297e
+		summarizeBy: none
+		sourceColumn: Statement
+
+		annotation SummarizationSetBy = Automatic
 
 	partition 'Blocked process' = m
 		mode: import
@@ -123,32 +114,34 @@ table 'Blocked process'
 				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Blocks and deadlocks")), 
 				    "DataLoad"
 				  ), 
-				  serverName = Record.Field(
-				    Table.First(Table.SelectRows(#"Connection parameters", each [Key] = "ServerName")), 
-				    "Value"
-				  ), 
-				  databaseName = Record.Field(
-				    Table.First(Table.SelectRows(#"Connection parameters", each [Key] = "DatabaseName")), 
-				    "Value"
-				  ), 
-				  schemaName = Record.Field(
-				    Table.First(Table.SelectRows(#"Connection parameters", each [Key] = "SchemaName")), 
-				    "Value"
-				  ), 
-				  dbList = Sql.Databases(serverName), 
-				  db     = dbList{[Name = databaseName]}[Data], 
-				  table  = db{[Schema = schemaName, Item = "Blocked process"]}[Data], 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db     = dbList{[Name = #"Database name"]}[Data], 
+				  table  = db{[Schema = #"Schema name", Item = "Blocked process"]}[Data], 
 				  emptyDataset = Table.FirstN(table, 0), 
 				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
-				  selectColumns = Table.SelectColumns(
+				  datasetSorted = Table.Sort(
 				    datasetToUse,
 				    {
-				      "BlockedSPID", 
-				      "BlockedStatement", 
-				      "BlockingSPID", 
-				      "BlockingStatement", 
+				      { "EventTimestampUTC", Order.Ascending },
+				      { "DataSet",           Order.Ascending },
+				      { "Type",              Order.Ascending }
+				    }
+				  ),
+				  addSortOrderColumn = Table.AddIndexColumn(
+				    datasetSorted,
+				    "LocalSortOrder",
+				    1,
+				    1,
+				    Int64.Type
+				  ),
+				  selectColumns = Table.SelectColumns(
+				    addSortOrderColumn,
+				    {
+				      "Type", 
+				      "SPID", 
+				      "Statement", 
 				      "DataSet", 
-				      "SortOrder", 
+				      "LocalSortOrder", 
 				      "EventTimestampUTC", 
 				      "Date", 
 				      "TimeKey", 
@@ -159,12 +152,8 @@ table 'Blocked process'
 				  renameColumns = Table.RenameColumns(
 				    selectColumns, 
 				    {
-				      {"BlockedSPID", "Blocked SPID"}, 
-				      {"BlockedStatement", "Blocked statement"},
-				      {"BlockingSPID", "Blocking SPID"}, 
-				      {"BlockingStatement", "Blocking statement"}, 
 				      {"DataSet", "Data set"}, 
-				      {"SortOrder", "Sort order"}, 
+				      {"LocalSortOrder", "Sort order"}, 
 				      {"EventTimestampUTC", "Timestamp (UTC)"}
 				    }
 				  )

@@ -1,0 +1,23 @@
+table 'Server name'
+	lineageTag: 576f0296-2d94-434b-a076-7a6a509432e4
+
+	column 'Server name'
+		dataType: string
+		isHidden
+		lineageTag: 4bb39807-c145-492a-af96-50dbcaf0bd4d
+		summarizeBy: none
+		sourceColumn: Server name
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Server name' = m
+		mode: import
+		queryGroup: 'Connection parameters'
+		source = "localhost" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Text
+

@@ -66,7 +66,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.1';
+		SET @version = '2.6';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -104,7 +104,7 @@ ELSE BEGIN
 	--
 	BEGIN
 		--
-		-- Create table dbo.fhsmBackupStatus if it not already exists
+		-- Create table dbo.fhsmBackupStatus and indexes if they not already exists
 		--
 		IF OBJECT_ID('dbo.fhsmBackupStatus', 'U') IS NULL
 		BEGIN
@@ -130,10 +130,46 @@ ELSE BEGIN
 					,Timestamp datetime NOT NULL
 					,CONSTRAINT PK_BackupStatus PRIMARY KEY(Id)' + @tableCompressionStmt + '
 				);
+			';
+			EXEC(@stmt);
+		END;
 
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmBackupStatus')) AND (i.name = 'NC_fhsmBackupStatus_TimestampUTC'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmBackupStatus_TimestampUTC] to table dbo.fhsmBackupStatus', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmBackupStatus_TimestampUTC ON dbo.fhsmBackupStatus(TimestampUTC)' + @tableCompressionStmt + ';
+			';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmBackupStatus')) AND (i.name = 'NC_fhsmBackupStatus_Timestamp'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmBackupStatus_Timestamp] to table dbo.fhsmBackupStatus', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmBackupStatus_Timestamp ON dbo.fhsmBackupStatus(Timestamp)' + @tableCompressionStmt + ';
+			';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmBackupStatus')) AND (i.name = 'NC_fhsmBackupStatus_DatabaseName_BackupStartDate'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmBackupStatus_DatabaseName_BackupStartDate] to table dbo.fhsmBackupStatus', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmBackupStatus_DatabaseName_BackupStartDate ON dbo.fhsmBackupStatus(DatabaseName, BackupStartDate)' + @tableCompressionStmt + ';
+			';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmBackupStatus')) AND (i.name = 'NC_fhsmBackupStatus_IsCopyOnly_IsDamaged'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmBackupStatus_IsCopyOnly_IsDamaged] to table dbo.fhsmBackupStatus', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
+				CREATE NONCLUSTERED INDEX NC_fhsmBackupStatus_IsCopyOnly_IsDamaged ON dbo.fhsmBackupStatus(IsCopyOnly ASC, IsDamaged ASC) INCLUDE(DatabaseName, BackupStartDate, Type)' + @tableCompressionStmt + ';
 			';
 			EXEC(@stmt);
 		END;
@@ -213,14 +249,14 @@ ELSE BEGIN
 							,d.TimestampUTC AS RecoveryModeChangeTimestampUTC
 							,d.Timestamp AS RecoveryModeChangeTimestamp
 							,CASE d.recovery_model
-								WHEN 1 THEN ''FULL''			-- Check for Database and Log
-								WHEN 2 THEN ''BULK_LOGGED''	-- Check for Database and Log
-								WHEN 3 THEN ''SIMPLE''		-- Check for Database
+								WHEN ''1'' THEN ''FULL''		-- Check for Database and Log
+								WHEN ''2'' THEN ''BULK_LOGGED''	-- Check for Database and Log
+								WHEN ''3'' THEN ''SIMPLE''		-- Check for Database
 								ELSE ''?:'' + d.recovery_model
 							END AS RecoveryModel
-							,latestFull.BackupStartDate AS LatestFullBackupStartDate
-							,latestDiff.BackupStartDate AS LatestDiffBackupStartDate
-							,latestLog.BackupStartDate AS LatestLogBackupStartDate
+							,latest.LatestFullBackupStartDate
+							,latest.LatestDiffBackupStartDate
+							,latest.LatestLogBackupStartDate
 						FROM (
 							SELECT dbState.DatabaseName, dbState.TimestampUTC, dbState.Timestamp, dbState.Value AS [recovery_model]
 							FROM dbo.fhsmDatabaseState AS dbState
@@ -233,47 +269,23 @@ ELSE BEGIN
 				';
 			SET @stmt += '
 						LEFT OUTER JOIN (
-							SELECT bsRanked.DatabaseName, bsRanked.BackupStartDate
+							SELECT
+								bsRanked.DatabaseName
+								,MAX(CASE WHEN (bsRanked.Type = ''D'') THEN bsRanked.BackupStartDate END) AS LatestFullBackupStartDate
+								,MAX(CASE WHEN (bsRanked.Type = ''I'') THEN bsRanked.BackupStartDate END) AS LatestDiffBackupStartDate
+								,MAX(CASE WHEN (bsRanked.Type = ''L'') THEN bsRanked.BackupStartDate END) AS LatestLogBackupStartDate
 							FROM (
 								SELECT
 									bs.DatabaseName
+									,bs.Type
 									,bs.BackupStartDate
-									,ROW_NUMBER() OVER(PARTITION BY bs.DatabaseName ORDER BY bs.BackupStartDate DESC) AS _Rnk
-									,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(bs.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
-									,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(1, bs.Type, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS BackupTypeJunkDimensionKey
+									,ROW_NUMBER() OVER(PARTITION BY bs.DatabaseName, bs.Type ORDER BY bs.BackupStartDate DESC) AS _Rnk
 								FROM dbo.fhsmBackupStatus AS bs
-								WHERE (bs.Type = ''D'') AND (bs.IsCopyOnly = 0) AND (bs.IsDamaged = 0)
+								WHERE (bs.IsCopyOnly = 0) AND (bs.IsDamaged = 0)
 							) AS bsRanked
 							WHERE (bsRanked._Rnk = 1)
-						) AS latestFull ON (d.DatabaseName = latestFull.DatabaseName)
-						LEFT OUTER JOIN (
-							SELECT bsRanked.DatabaseName, bsRanked.BackupStartDate
-							FROM (
-								SELECT
-									bs.DatabaseName
-									,bs.BackupStartDate
-									,ROW_NUMBER() OVER(PARTITION BY bs.DatabaseName ORDER BY bs.BackupStartDate DESC) AS _Rnk
-									,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(bs.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
-									,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(1, bs.Type, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS BackupTypeJunkDimensionKey
-								FROM dbo.fhsmBackupStatus AS bs
-								WHERE (bs.Type = ''I'') AND (bs.IsCopyOnly = 0) AND (bs.IsDamaged = 0)
-							) AS bsRanked
-							WHERE (bsRanked._Rnk = 1)
-						) AS latestDiff ON (d.DatabaseName = latestDiff.DatabaseName)
-						LEFT OUTER JOIN (
-							SELECT bsRanked.DatabaseName, bsRanked.BackupStartDate
-							FROM (
-								SELECT
-									bs.DatabaseName
-									,bs.BackupStartDate
-									,ROW_NUMBER() OVER(PARTITION BY bs.DatabaseName ORDER BY bs.BackupStartDate DESC) AS _Rnk
-									,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(bs.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
-									,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(1, bs.Type, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS BackupTypeJunkDimensionKey
-								FROM dbo.fhsmBackupStatus AS bs
-								WHERE (bs.Type = ''L'') AND (bs.IsCopyOnly = 0) AND (bs.IsDamaged = 0)
-							) AS bsRanked
-							WHERE (bsRanked._Rnk = 1)
-						) AS latestLog ON (d.DatabaseName = latestLog.DatabaseName)
+							GROUP BY bsRanked.DatabaseName
+						) AS latest ON (d.DatabaseName = latest.DatabaseName)
 					) AS a
 				) AS b;
 			';

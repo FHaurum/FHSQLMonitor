@@ -66,7 +66,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.3';
+		SET @version = '2.6';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -104,7 +104,7 @@ ELSE BEGIN
 	--
 	BEGIN
 		--
-		-- Create table dbo.fhsmAgentAlerts if it not already exists
+		-- Create table dbo.fhsmAgentAlerts and indexes if they not already exists
 		--
 		IF OBJECT_ID('dbo.fhsmAgentAlerts', 'U') IS NULL
 		BEGIN
@@ -118,7 +118,15 @@ ELSE BEGIN
 					,Description nvarchar(128) NOT NULL
 					,CONSTRAINT PK_fhsmAgentAlerts PRIMARY KEY(Id)' + @tableCompressionStmt + '
 				);
+			';
+			EXEC(@stmt);
+		END;
 
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmAgentAlerts')) AND (i.name = 'NC_fhsmAgentAlerts_MessageId_Severity'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmAgentAlerts_MessageId_Severity] to table dbo.fhsmAgentAlerts', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmAgentAlerts_MessageId_Severity ON dbo.fhsmAgentAlerts(MessageId, Severity)' + @tableCompressionStmt + ';
 			';
 			EXEC(@stmt);
@@ -140,7 +148,7 @@ ELSE BEGIN
 		END;
 
 		--
-		-- Create table dbo.fhsmDefaultConfigurations if it not already exists
+		-- Create table dbo.fhsmDefaultConfigurations and indexes if they not already exists
 		--
 		IF OBJECT_ID('dbo.fhsmDefaultConfigurations', 'U') IS NULL
 		BEGIN
@@ -155,7 +163,15 @@ ELSE BEGIN
 					,Value int NOT NULL
 					,CONSTRAINT PK_fhsmDefaultConfigurations PRIMARY KEY(Id)' + @tableCompressionStmt + '
 				);
+			';
+			EXEC(@stmt);
+		END;
 
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmDefaultConfigurations')) AND (i.name = 'NC_fhsmDefaultConfigurations_ConfigurationId_ProductMajorVersion_ProductMinorVersion'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmDefaultConfigurations_ConfigurationId_ProductMajorVersion_ProductMinorVersion] to table dbo.fhsmDefaultConfigurations', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmDefaultConfigurations_ConfigurationId_ProductMajorVersion_ProductMinorVersion ON dbo.fhsmDefaultConfigurations(ConfigurationId, ProductMajorVersion, ProductMinorVersion)' + @tableCompressionStmt + ';
 			';
 			EXEC(@stmt);
@@ -177,7 +193,7 @@ ELSE BEGIN
 		END;
 
 		--
-		-- Create table dbo.fhsmInstanceConfigurations if it not already exists
+		-- Create table dbo.fhsmInstanceConfigurations and indexes if they not already exists
 		--
 		IF OBJECT_ID('dbo.fhsmInstanceConfigurations', 'U') IS NULL
 		BEGIN
@@ -193,7 +209,15 @@ ELSE BEGIN
 					,Maximum int NOT NULL
 					,CONSTRAINT PK_fhsmInstanceConfigurations PRIMARY KEY(Id)' + @tableCompressionStmt + '
 				);
+			';
+			EXEC(@stmt);
+		END;
 
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmInstanceConfigurations')) AND (i.name = 'NC_fhsmInstanceConfigurations_ConfigurationId_ProductMajorVersion_ProductMinorVersion'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmInstanceConfigurations_ConfigurationId_ProductMajorVersion_ProductMinorVersion] to table dbo.fhsmInstanceConfigurations', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmInstanceConfigurations_ConfigurationId_ProductMajorVersion_ProductMinorVersion ON dbo.fhsmInstanceConfigurations(ConfigurationId, ProductMajorVersion, ProductMinorVersion)' + @tableCompressionStmt + ';
 			';
 			EXEC(@stmt);
@@ -215,7 +239,7 @@ ELSE BEGIN
 		END;
 
 		--
-		-- Create table dbo.fhsmInstanceState if it not already exists
+		-- Create table dbo.fhsmInstanceState and indexes if they not already exists
 		--
 		IF OBJECT_ID('dbo.fhsmInstanceState', 'U') IS NULL
 		BEGIN
@@ -234,11 +258,56 @@ ELSE BEGIN
 					,Timestamp datetime NOT NULL
 					,CONSTRAINT PK_fhsmInstanceState PRIMARY KEY(Id)' + @tableCompressionStmt + '
 				);
+			';
+			EXEC(@stmt);
+		END;
 
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmInstanceState')) AND (i.name = 'NC_fhsmInstanceState_TimestampUTC'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmInstanceState_TimestampUTC] to table dbo.fhsmInstanceState', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmInstanceState_TimestampUTC ON dbo.fhsmInstanceState(TimestampUTC)' + @tableCompressionStmt + ';
+			';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmInstanceState')) AND (i.name = 'NC_fhsmInstanceState_Timestamp'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmInstanceState_Timestamp] to table dbo.fhsmInstanceState', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmInstanceState_Timestamp ON dbo.fhsmInstanceState(Timestamp)' + @tableCompressionStmt + ';
+			';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmInstanceState')) AND (i.name = 'NC_fhsmInstanceState_Query_Category_Key_ValidTo'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmInstanceState_Query_Category_Key_ValidTo] to table dbo.fhsmInstanceState', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmInstanceState_Query_Category_Key_ValidTo ON dbo.fhsmInstanceState(Query, Category, [Key], ValidTo) INCLUDE(Value)' + @tableCompressionStmt + ';
+			';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmInstanceState')) AND (i.name = 'NC_fhsmInstanceState_ValidTo_Query_Category_key'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmInstanceState_ValidTo_Query_Category_key] to table dbo.fhsmInstanceState', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmInstanceState_ValidTo_Query_Category_key ON dbo.fhsmInstanceState(ValidTo, Query, Category, [Key]) INCLUDE(Value)' + @tableCompressionStmt + ';
+			';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmInstanceState')) AND (i.name = 'NC_fhsmInstanceState_Category'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmInstanceState_Category] to table dbo.fhsmInstanceState', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
+				CREATE NONCLUSTERED INDEX NC_fhsmInstanceState_Category ON dbo.fhsmInstanceState(Category ASC) INCLUDE(Timestamp)' + @tableCompressionStmt + ';
 			';
 			EXEC(@stmt);
 		END;
@@ -259,7 +328,7 @@ ELSE BEGIN
 		END;
 
 		--
-		-- Create table dbo.fhsmTraceFlags if it not already exists
+		-- Create table dbo.fhsmTraceFlags and indexes if they not already exists
 		--
 		IF OBJECT_ID('dbo.fhsmTraceFlags', 'U') IS NULL
 		BEGIN
@@ -275,7 +344,15 @@ ELSE BEGIN
 					,URL nvarchar(max) NULL
 					,CONSTRAINT PK_fhsmTraceFlags PRIMARY KEY(Id)' + @tableCompressionStmt + '
 				);
+			';
+			EXEC(@stmt);
+		END;
 
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmTraceFlags')) AND (i.name = 'NC_fhsmTraceFlags_TraceFlag_ProductMajorVersion_ProductMinorVersion'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmTraceFlags_TraceFlag_ProductMajorVersion_ProductMinorVersion] to table dbo.fhsmTraceFlags', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmTraceFlags_TraceFlag_ProductMajorVersion_ProductMinorVersion ON dbo.fhsmTraceFlags(TraceFlag, ProductMajorVersion, ProductMinorVersion)' + @tableCompressionStmt + ';
 			';
 			EXEC(@stmt);

@@ -66,7 +66,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.5';
+		SET @version = '2.6';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -104,7 +104,7 @@ ELSE BEGIN
 	--
 	BEGIN
 		--
-		-- Create table dbo.fhsmTableSize if it not already exists
+		-- Create table dbo.fhsmTableSize and indexes if they not already exists
 		--
 		IF OBJECT_ID('dbo.fhsmTableSize', 'U') IS NULL
 		BEGIN
@@ -128,9 +128,35 @@ ELSE BEGIN
 					,Timestamp datetime NOT NULL
 					,CONSTRAINT PK_fhsmTableSize PRIMARY KEY(Id)' + @tableCompressionStmt + '
 				);
+			';
+			EXEC(@stmt);
+		END;
 
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmTableSize')) AND (i.name = 'NC_fhsmTableSize_TimestampUTC'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmTableSize_TimestampUTC] to table dbo.fhsmTableSize', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmTableSize_TimestampUTC ON dbo.fhsmTableSize(TimestampUTC)' + @tableCompressionStmt + ';
+			';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmTableSize')) AND (i.name = 'NC_fhsmTableSize_Timestamp'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmTableSize_Timestamp] to table dbo.fhsmTableSize', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmTableSize_Timestamp ON dbo.fhsmTableSize(Timestamp)' + @tableCompressionStmt + ';
+			';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmTableSize')) AND (i.name = 'NC_fhsmTableSize_DatabaseName_SchemaName_ObjectName_IndexName'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmTableSize_DatabaseName_SchemaName_ObjectName_IndexName] to table dbo.fhsmTableSize', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmTableSize_DatabaseName_SchemaName_ObjectName_IndexName ON dbo.fhsmTableSize(DatabaseName, SchemaName, ObjectName, IndexName)' + @tableCompressionStmt + ';
 			';
 			EXEC(@stmt);

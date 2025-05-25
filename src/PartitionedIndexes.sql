@@ -66,7 +66,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.5';
+		SET @version = '2.6';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -104,7 +104,7 @@ ELSE BEGIN
 	--
 	BEGIN
 		--
-		-- Create table dbo.fhsmPartitionedIndexes if it not already exists
+		-- Create table dbo.fhsmPartitionedIndexes and indexes if they not already exists
 		--
 		IF OBJECT_ID('dbo.fhsmPartitionedIndexes', 'U') IS NULL
 		BEGIN
@@ -133,9 +133,35 @@ ELSE BEGIN
 					,Timestamp datetime NOT NULL
 					,CONSTRAINT PK_fhsmPartitionedIndexes PRIMARY KEY(Id)' + @tableCompressionStmt + '
 				);
+			';
+			EXEC(@stmt);
+		END;
 
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmPartitionedIndexes')) AND (i.name = 'NC_fhsmPartitionedIndexes_TimestampUTC'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmPartitionedIndexes_TimestampUTC] to table dbo.fhsmPartitionedIndexes', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmPartitionedIndexes_TimestampUTC ON dbo.fhsmPartitionedIndexes(TimestampUTC)' + @tableCompressionStmt + ';
+			';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmPartitionedIndexes')) AND (i.name = 'NC_fhsmPartitionedIndexes_Timestamp'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmPartitionedIndexes_Timestamp] to table dbo.fhsmPartitionedIndexes', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmPartitionedIndexes_Timestamp ON dbo.fhsmPartitionedIndexes(Timestamp)' + @tableCompressionStmt + ';
+			';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmPartitionedIndexes')) AND (i.name = 'NC_fhsmPartitionedIndexes_DatabaseName'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmPartitionedIndexes_DatabaseName] to table dbo.fhsmPartitionedIndexes', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmPartitionedIndexes_DatabaseName ON dbo.fhsmPartitionedIndexes(DatabaseName)' + @tableCompressionStmt + ';
 			';
 			EXEC(@stmt);

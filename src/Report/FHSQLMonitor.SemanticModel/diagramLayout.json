@@ -1307,16 +1307,45 @@
         },
         {
           "location": {
-            "x": 2759.7104897825698,
-            "y": 0
+            "x": 264.7751555486106,
+            "y": 1481.2596114607584
           },
-          "nodeIndex": "Connection parameters",
+          "nodeIndex": "Database name",
+          "nodeLineageTag": "1bfb8410-f371-4eaf-a8e7-429e4aea7244",
           "size": {
             "height": 72,
             "width": 234
           },
           "zIndex": 0,
-          "expandedHeight": 128
+          "expandedHeight": 104
+        },
+        {
+          "location": {
+            "x": 529.69968894722933,
+            "y": 1483.1111859750845
+          },
+          "nodeIndex": "Schema name",
+          "nodeLineageTag": "73768a0a-e68f-43cf-898b-091ed7ed7421",
+          "size": {
+            "height": 72,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 104
+        },
+        {
+          "location": {
+            "x": 0,
+            "y": 1481.2596114607586
+          },
+          "nodeIndex": "Server name",
+          "nodeLineageTag": "576f0296-2d94-434b-a076-7a6a509432e4",
+          "size": {
+            "height": 72,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 104
         }
       ],
       "name": "All tables",

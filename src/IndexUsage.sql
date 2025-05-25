@@ -66,7 +66,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.5';
+		SET @version = '2.6';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -104,7 +104,7 @@ ELSE BEGIN
 	--
 	BEGIN
 		--
-		-- Create table dbo.fhsmIndexUsage if it not already exists
+		-- Create table dbo.fhsmIndexUsage and indexes if they not already exists
 		--
 		IF OBJECT_ID('dbo.fhsmIndexUsage', 'U') IS NULL
 		BEGIN
@@ -144,10 +144,46 @@ ELSE BEGIN
 					,Timestamp datetime NOT NULL
 					,CONSTRAINT PK_fhsmIndexUsage PRIMARY KEY(Id)' + @tableCompressionStmt + '
 				);
+			';
+			EXEC(@stmt);
+		END;
 
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmIndexUsage')) AND (i.name = 'NC_fhsmIndexUsage_TimestampUTC'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmIndexUsage_TimestampUTC] to table dbo.fhsmIndexUsage', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmIndexUsage_TimestampUTC ON dbo.fhsmIndexUsage(TimestampUTC)' + @tableCompressionStmt + ';
+			';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmIndexUsage')) AND (i.name = 'NC_fhsmIndexUsage_Timestamp'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmIndexUsage_Timestamp] to table dbo.fhsmIndexUsage', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmIndexUsage_Timestamp ON dbo.fhsmIndexUsage(Timestamp)' + @tableCompressionStmt + ';
-				CREATE NONCLUSTERED INDEX NC_fhsmIndexUsage_DatabaseName_SchemaName_ObjectName_IndexName ON dbo.fhsmIndexUsage(DatabaseName, SchemaName, ObjectName, IndexName)' + @tableCompressionStmt + ';
+			';
+			EXEC(@stmt);
+		END;
+
+		IF EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmIndexUsage')) AND (i.name = 'NC_fhsmIndexUsage_DatabaseName_SchemaName_ObjectName_IndexName'))
+		BEGIN
+			RAISERROR('Dropping index [NC_fhsmIndexUsage_DatabaseName_SchemaName_ObjectName_IndexName] on table dbo.fhsmIndexUsage', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
+				DROP INDEX NC_fhsmIndexUsage_DatabaseName_SchemaName_ObjectName_IndexName ON dbo.fhsmIndexUsage;
+			';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmIndexUsage')) AND (i.name = 'NC_fhsmIndexUsage_DatabaseName_SchemaName_ObjectName_IndexName_TimestampUTC'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmIndexUsage_DatabaseName_SchemaName_ObjectName_IndexName_TimestampUTC] to table dbo.fhsmIndexUsage', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
+				CREATE NONCLUSTERED INDEX NC_fhsmIndexUsage_DatabaseName_SchemaName_ObjectName_IndexName_TimestampUTC ON dbo.fhsmIndexUsage(DatabaseName, SchemaName, ObjectName, IndexName, TimestampUTC)' + @tableCompressionStmt + ';
 			';
 			EXEC(@stmt);
 		END;
@@ -194,15 +230,7 @@ ELSE BEGIN
 			';
 			SET @stmt += '
 				SELECT
-					CAST(COALESCE((
-						SELECT 1
-						FROM dbo.fhsmIndexUsage AS iuIsHeap
-						WHERE (iuIsHeap.TimestampUTC = iu.TimestampUTC)
-							AND (iuIsHeap.DatabaseName = iu.DatabaseName)
-							AND (iuIsHeap.SchemaName = iu.SchemaName)
-							AND (iuIsHeap.ObjectName = iu.ObjectName)
-							AND (iuIsHeap.IndexType = 0)
-					), 0) AS bit) AS TableIsHeap
+					CAST(COALESCE((tableIsHeap.IsHeap), 0) AS bit) AS TableIsHeap
 					,CASE iu.IndexType
 						WHEN 0 THEN ''HEAP''
 						WHEN 1 THEN ''CL''
@@ -231,6 +259,15 @@ ELSE BEGIN
 					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iu.DatabaseName, iu.SchemaName, iu.ObjectName, DEFAULT, DEFAULT, DEFAULT) AS k) AS ObjectKey
 					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iu.DatabaseName, iu.SchemaName, iu.ObjectName, COALESCE(iu.IndexName, ''N.A.''), DEFAULT, DEFAULT) AS k) AS IndexKey
 				FROM dbo.fhsmIndexUsage AS iu
+				OUTER APPLY (
+					SELECT 1 AS IsHeap
+					FROM dbo.fhsmIndexUsage AS iuIsHeap
+					WHERE (iuIsHeap.TimestampUTC = iu.TimestampUTC)
+						AND (iuIsHeap.DatabaseName = iu.DatabaseName)
+						AND (iuIsHeap.SchemaName = iu.SchemaName)
+						AND (iuIsHeap.ObjectName = iu.ObjectName)
+						AND (iuIsHeap.IndexType = 0)
+				) AS tableIsHeap
 				WHERE (iu.TimestampUTC = (
 					SELECT MAX(iuLatest.TimestampUTC)
 					FROM dbo.fhsmIndexUsage AS iuLatest
@@ -324,12 +361,12 @@ ELSE BEGIN
 					,b.DeltaUserUpdates AS UserUpdates
 					,b.LastUserUpdate
 					,b.Timestamp
-					,b.Date
-					,b.TimeKey
-					,b.DatabaseKey
-					,b.SchemaKey
-					,b.ObjectKey
-					,b.IndexKey
+					,CAST(b.Timestamp AS date) AS Date
+					,(DATEPART(HOUR, b.Timestamp) * 60 * 60) + (DATEPART(MINUTE, b.Timestamp) * 60) + (DATEPART(SECOND, b.Timestamp)) AS TimeKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(b.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(b.DatabaseName, b.SchemaName, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS SchemaKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(b.DatabaseName, b.SchemaName, b.ObjectName, DEFAULT, DEFAULT, DEFAULT) AS k) AS ObjectKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(b.DatabaseName, b.SchemaName, b.ObjectName, COALESCE(b.IndexName, ''N.A.''), DEFAULT, DEFAULT) AS k) AS IndexKey
 				FROM (
 			';
 			SET @stmt += '
@@ -359,12 +396,10 @@ ELSE BEGIN
 						END AS DeltaUserUpdates
 						,a.LastUserUpdate
 						,a.Timestamp
-						,a.Date
-						,a.TimeKey
-						,a.DatabaseKey
-						,a.SchemaKey
-						,a.ObjectKey
-						,a.IndexKey
+						,a.DatabaseName
+						,a.SchemaName
+						,a.ObjectName
+						,a.IndexName
 					FROM (
 			';
 			IF (@productVersion1 <= 10)
@@ -388,12 +423,10 @@ ELSE BEGIN
 							,iu.LastSQLServiceRestart
 							,prevIU.LastSQLServiceRestart AS PreviousLastSQLServiceRestart
 							,iu.Timestamp
-							,CAST(iu.Timestamp AS date) AS Date
-							,(DATEPART(HOUR, iu.Timestamp) * 60 * 60) + (DATEPART(MINUTE, iu.Timestamp) * 60) + (DATEPART(SECOND, iu.Timestamp)) AS TimeKey
-							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iu.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
-							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iu.DatabaseName, iu.SchemaName, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS SchemaKey
-							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iu.DatabaseName, iu.SchemaName, iu.ObjectName, DEFAULT, DEFAULT, DEFAULT) AS k) AS ObjectKey
-							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iu.DatabaseName, iu.SchemaName, iu.ObjectName, COALESCE(iu.IndexName, ''N.A.''), DEFAULT, DEFAULT) AS k) AS IndexKey
+							,iu.DatabaseName
+							,iu.SchemaName
+							,iu.ObjectName
+							,iu.IndexName
 						FROM indexUsage AS iu
 						LEFT OUTER JOIN indexUsage AS prevIU ON
 							(prevIU.DatabaseName = iu.DatabaseName)
@@ -423,12 +456,10 @@ ELSE BEGIN
 							,iu.LastSQLServiceRestart
 							,LAG(iu.LastSQLServiceRestart) OVER(PARTITION BY iu.DatabaseName, iu.SchemaName, iu.ObjectName, iu.IndexName ORDER BY iu.TimestampUTC) AS PreviousLastSQLServiceRestart
 							,iu.Timestamp
-							,CAST(iu.Timestamp AS date) AS Date
-							,(DATEPART(HOUR, iu.Timestamp) * 60 * 60) + (DATEPART(MINUTE, iu.Timestamp) * 60) + (DATEPART(SECOND, iu.Timestamp)) AS TimeKey
-							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iu.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
-							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iu.DatabaseName, iu.SchemaName, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS SchemaKey
-							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iu.DatabaseName, iu.SchemaName, iu.ObjectName, DEFAULT, DEFAULT, DEFAULT) AS k) AS ObjectKey
-							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iu.DatabaseName, iu.SchemaName, iu.ObjectName, COALESCE(iu.IndexName, ''N.A.''), DEFAULT, DEFAULT) AS k) AS IndexKey
+							,iu.DatabaseName
+							,iu.SchemaName
+							,iu.ObjectName
+							,iu.IndexName
 						FROM (
 							SELECT
 								iu.DatabaseName

@@ -59919,48 +59919,6 @@ cultureInfo en-US
 			      },
 			      "State": "Generated"
 			    },
-			    "blocked_process.blocked_spid": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "Blocked process",
-			          "ConceptualProperty": "Blocked SPID"
-			        }
-			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "SPID": {
-			            "State": "Suggested",
-			            "Source": {
-			              "Type": "External",
-			              "Agent": "PowerBI.VisualColumnRename"
-			            },
-			            "Weight": 0.9
-			          }
-			        }
-			      ]
-			    },
-			    "blocked_process.blocking_spid": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "Blocked process",
-			          "ConceptualProperty": "Blocking SPID"
-			        }
-			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "SPID": {
-			            "State": "Suggested",
-			            "Source": {
-			              "Type": "External",
-			              "Agent": "PowerBI.VisualColumnRename"
-			            },
-			            "Weight": 0.9
-			          }
-			        }
-			      ]
-			    },
 			    "table_measures.blocked_process__blocks_and_deadlocks": {
 			      "Definition": {
 			        "Binding": {

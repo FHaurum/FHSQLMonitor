@@ -145,7 +145,7 @@ BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.5';
+		SET @version = '2.6';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -187,6 +187,8 @@ BEGIN
 		--
 		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.CommandLog')) AND (i.name = 'NC_CommandLog_StartTime'))
 		BEGIN
+			RAISERROR('Adding index [NC_CommandLog_StartTime] to table dbo.CommandLog', 0, 1) WITH NOWAIT;
+
 			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_CommandLog_StartTime ON dbo.CommandLog(StartTime ASC)' + @tableCompressionStmt + ';
 			';
@@ -198,6 +200,8 @@ BEGIN
 		--
 		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.CommandLog')) AND (i.name = 'NC_CommandLog_DatabaseName_SchemaName_ObjectName_IndexName'))
 		BEGIN
+			RAISERROR('Adding index [NC_CommandLog_DatabaseName_SchemaName_ObjectName_IndexName] to table dbo.CommandLog', 0, 1) WITH NOWAIT;
+
 			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_CommandLog_DatabaseName_SchemaName_ObjectName_IndexName ON dbo.CommandLog(DatabaseName, SchemaName, ObjectName, IndexName)' + @tableCompressionStmt + ';
 			';

@@ -66,7 +66,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.5';
+		SET @version = '2.6';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -104,7 +104,7 @@ ELSE BEGIN
 	--
 	BEGIN
 		--
-		-- Create table dbo.fhsmStatisticsAge if it not already exists
+		-- Create table dbo.fhsmStatisticsAge and indexes if they not already exists
 		--
 		IF OBJECT_ID('dbo.fhsmStatisticsAge', 'U') IS NULL
 		BEGIN
@@ -129,9 +129,35 @@ ELSE BEGIN
 					,Timestamp datetime NOT NULL
 					,CONSTRAINT PK_fhsmStatisticsAge PRIMARY KEY(Id)' + @tableCompressionStmt + '
 				);
+			';
+			EXEC(@stmt);
+		END;
 
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmStatisticsAge')) AND (i.name = 'NC_fhsmStatisticsAge_TimestampUTC'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmStatisticsAge_TimestampUTC] to table dbo.fhsmStatisticsAge', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmStatisticsAge_TimestampUTC ON dbo.fhsmStatisticsAge(TimestampUTC)' + @tableCompressionStmt + ';
+			';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmStatisticsAge')) AND (i.name = 'NC_fhsmStatisticsAge_Timestamp_LastUpdated'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmStatisticsAge_Timestamp_LastUpdated] to table dbo.fhsmStatisticsAge', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmStatisticsAge_Timestamp_LastUpdated ON dbo.fhsmStatisticsAge(Timestamp, LastUpdated) INCLUDE(DatabaseName, SchemaName, ObjectName, IndexName)' + @tableCompressionStmt + ';
+			';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmStatisticsAge')) AND (i.name = 'NC_fhsmStatisticsAge_DatabaseName_SchemaName_ObjectName_IndexName'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmStatisticsAge_DatabaseName_SchemaName_ObjectName_IndexName] to table dbo.fhsmStatisticsAge', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmStatisticsAge_DatabaseName_SchemaName_ObjectName_IndexName ON dbo.fhsmStatisticsAge(DatabaseName, SchemaName, ObjectName, IndexName)' + @tableCompressionStmt + ';
 			';
 			EXEC(@stmt);
@@ -153,7 +179,7 @@ ELSE BEGIN
 		END;
 
 		--
-		-- Create table dbo.fhsmStatisticsAgeIncremental if it not already exists
+		-- Create table dbo.fhsmStatisticsAgeIncremental and indexes if they not already exists
 		--
 		IF OBJECT_ID('dbo.fhsmStatisticsAgeIncremental', 'U') IS NULL
 		BEGIN
@@ -178,9 +204,35 @@ ELSE BEGIN
 					,Timestamp datetime NOT NULL
 					,CONSTRAINT PK_fhsmStatisticsAgeIncremental PRIMARY KEY(Id)' + @tableCompressionStmt + '
 				);
+			';
+			EXEC(@stmt);
+		END;
 
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmStatisticsAgeIncremental')) AND (i.name = 'NC_fhsmStatisticsAgeIncremental_TimestampUTC'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmStatisticsAgeIncremental_TimestampUTC] to table dbo.fhsmStatisticsAgeIncremental', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmStatisticsAgeIncremental_TimestampUTC ON dbo.fhsmStatisticsAgeIncremental(TimestampUTC)' + @tableCompressionStmt + ';
+			';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmStatisticsAgeIncremental')) AND (i.name = 'NC_fhsmStatisticsAgeIncremental_Timestamp_LastUpdated'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmStatisticsAgeIncremental_Timestamp_LastUpdated] to table dbo.fhsmStatisticsAgeIncremental', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmStatisticsAgeIncremental_Timestamp_LastUpdated ON dbo.fhsmStatisticsAgeIncremental(Timestamp, LastUpdated) INCLUDE(DatabaseName, SchemaName, ObjectName, IndexName)' + @tableCompressionStmt + ';
+			';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmStatisticsAgeIncremental')) AND (i.name = 'NC_fhsmStatisticsAgeIncremental_DatabaseName_SchemaName_ObjectName_IndexName'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmStatisticsAgeIncremental_DatabaseName_SchemaName_ObjectName_IndexName] to table dbo.fhsmStatisticsAgeIncremental', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmStatisticsAgeIncremental_DatabaseName_SchemaName_ObjectName_IndexName ON dbo.fhsmStatisticsAgeIncremental(DatabaseName, SchemaName, ObjectName, IndexName)' + @tableCompressionStmt + ';
 			';
 			EXEC(@stmt);

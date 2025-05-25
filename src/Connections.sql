@@ -66,7 +66,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.1';
+		SET @version = '2.6';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -104,7 +104,7 @@ ELSE BEGIN
 	--
 	BEGIN
 		--
-		-- Create table dbo.fhsmConnections if it not already exists
+		-- Create table dbo.fhsmConnections and indexes if they not already exists
 		--
 		IF OBJECT_ID('dbo.fhsmConnections', 'U') IS NULL
 		BEGIN
@@ -123,8 +123,25 @@ ELSE BEGIN
 					,Timestamp datetime NOT NULL
 					,CONSTRAINT PK_Connections PRIMARY KEY(Id)' + @tableCompressionStmt + '
 				);
+			';
+			EXEC(@stmt);
+		END;
 
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmConnections')) AND (i.name = 'NC_fhsmConnections_TimestampUTC'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmConnections_TimestampUTC] to table dbo.fhsmConnections', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmConnections_TimestampUTC ON dbo.fhsmConnections(TimestampUTC)' + @tableCompressionStmt + ';
+			';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmConnections')) AND (i.name = 'NC_fhsmConnections_Timestamp'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmConnections_Timestamp] to table dbo.fhsmConnections', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmConnections_Timestamp ON dbo.fhsmConnections(Timestamp)' + @tableCompressionStmt + ';
 			';
 			EXEC(@stmt);

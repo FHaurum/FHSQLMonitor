@@ -66,7 +66,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.5';
+		SET @version = '2.6';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -104,7 +104,7 @@ ELSE BEGIN
 	--
 	BEGIN
 		--
-		-- Create table dbo.fhsmIndexPhysical if it not already exists
+		-- Create table dbo.fhsmIndexPhysical and indexes if they not already exists
 		--
 		IF OBJECT_ID('dbo.fhsmIndexPhysical', 'U') IS NULL
 		BEGIN
@@ -159,8 +159,35 @@ ELSE BEGIN
 				);
 
 				CREATE CLUSTERED INDEX CL_fhsmIndexPhysical_TimestampUTC ON dbo.fhsmIndexPhysical(TimestampUTC)' + @tableCompressionStmt + ';
+			';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmIndexPhysical')) AND (i.name = 'NC_fhsmIndexPhysical_Timestamp'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmIndexPhysical_Timestamp] to table dbo.fhsmIndexPhysical', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmIndexPhysical_Timestamp ON dbo.fhsmIndexPhysical(Timestamp)' + @tableCompressionStmt + ';
+			';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmIndexPhysical')) AND (i.name = 'NC_fhsmIndexPhysical_DatabaseKey_SchemaKey_ObjectKey_TimestampUTCDate_Mode'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmIndexPhysical_DatabaseKey_SchemaKey_ObjectKey_TimestampUTCDate_Mode] to table dbo.fhsmIndexPhysical', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmIndexPhysical_DatabaseKey_SchemaKey_ObjectKey_TimestampUTCDate_Mode ON dbo.fhsmIndexPhysical(DatabaseKey, SchemaKey, ObjectKey, TimestampUTCDate, Mode)' + @tableCompressionStmt + ';
+			';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmIndexPhysical')) AND (i.name = 'NC_fhsmIndexPhysical_Mode'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmIndexPhysical_Mode] to table dbo.fhsmIndexPhysical', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmIndexPhysical_Mode ON dbo.fhsmIndexPhysical(Mode)' + @tableCompressionStmt + ';
 			';
 			EXEC(@stmt);

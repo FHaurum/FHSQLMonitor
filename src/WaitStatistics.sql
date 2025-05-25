@@ -66,7 +66,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.1';
+		SET @version = '2.6';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -137,7 +137,7 @@ ELSE BEGIN
 		END;
 
 		--
-		-- Create table dbo.fhsmWaitStatistics if it not already exists
+		-- Create table dbo.fhsmWaitStatistics and indexes if they not already exists
 		--
 		IF OBJECT_ID('dbo.fhsmWaitStatistics', 'U') IS NULL
 		BEGIN
@@ -155,9 +155,35 @@ ELSE BEGIN
 					,Timestamp datetime NOT NULL
 					,CONSTRAINT PK_WaitStatistics PRIMARY KEY(Id)' + @tableCompressionStmt + '
 				);
+			';
+			EXEC(@stmt);
+		END;
 
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmWaitStatistics')) AND (i.name = 'NC_fhsmWaitStatistics_TimestampUTC'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmWaitStatistics_TimestampUTC] to table dbo.fhsmWaitStatistics', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmWaitStatistics_TimestampUTC ON dbo.fhsmWaitStatistics(TimestampUTC)' + @tableCompressionStmt + ';
+			';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmWaitStatistics')) AND (i.name = 'NC_fhsmWaitStatistics_Timestamp'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmWaitStatistics_Timestamp] to table dbo.fhsmWaitStatistics', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmWaitStatistics_Timestamp ON dbo.fhsmWaitStatistics(Timestamp)' + @tableCompressionStmt + ';
+			';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmWaitStatistics')) AND (i.name = 'NC_fhsmWaitStatistics_WaitType'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmWaitStatistics_WaitType] to table dbo.fhsmWaitStatistics', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmWaitStatistics_WaitType ON dbo.fhsmWaitStatistics(WaitType)' + @tableCompressionStmt + ';
 			';
 			EXEC(@stmt);
@@ -763,10 +789,11 @@ ELSE BEGIN
 					b.DeltaSumWaitTimeMS AS WaitTimeMS
 					,b.DeltaSumSignalWaitTimeMS AS SignalWaitTimeMS
 					,b.DeltaSumWaitingTasks AS WaitingTasks
+
 					,b.Timestamp
-					,b.Date
-					,b.TimeKey
-					,b.WaitKey
+					,CAST(b.Timestamp AS date) AS Date
+					,(DATEPART(HOUR, b.Timestamp) * 60 * 60) + (DATEPART(MINUTE, b.Timestamp) * 60) + (DATEPART(SECOND, b.Timestamp)) AS TimeKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(b.WaitType, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS WaitKey
 				FROM (
 					SELECT
 						CASE
@@ -784,10 +811,9 @@ ELSE BEGIN
 							WHEN (a.PreviousSumWaitingTasks > a.SumWaitingTasks) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.SumWaitingTasks
 							ELSE a.SumWaitingTasks - a.PreviousSumWaitingTasks
 						END AS DeltaSumWaitingTasks
+
 						,a.Timestamp
-						,a.Date
-						,a.TimeKey
-						,a.WaitKey
+						,a.WaitType
 					FROM (
 			';
 			IF (@productVersion1 <= 10)
@@ -806,10 +832,9 @@ ELSE BEGIN
 							,prevWs.LastSQLServiceRestart AS PreviousLastSQLServiceRestart
 							,ws.TimestampUTC
 							,prevWs.TimestampUTC AS PreviousTimestampUTC
+
 							,ws.Timestamp
-							,CAST(ws.Timestamp AS date) AS Date
-							,(DATEPART(HOUR, ws.Timestamp) * 60 * 60) + (DATEPART(MINUTE, ws.Timestamp) * 60) + (DATEPART(SECOND, ws.Timestamp)) AS TimeKey
-							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ws.WaitType, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS WaitKey
+							,ws.WaitType
 						FROM waitStatistics AS ws
 						LEFT OUTER JOIN waitStatistics AS prevWs ON
 							(prevWs.WaitType = ws.WaitType)
@@ -831,10 +856,9 @@ ELSE BEGIN
 							,LAG(ws.LastSQLServiceRestart) OVER(PARTITION BY ws.WaitType ORDER BY ws.TimestampUTC) AS PreviousLastSQLServiceRestart
 							,ws.TimestampUTC
 							,LAG(ws.TimestampUTC) OVER(PARTITION BY ws.WaitType ORDER BY ws.TimestampUTC) AS PreviousTimestampUTC
+
 							,ws.Timestamp
-							,CAST(ws.Timestamp AS date) AS Date
-							,(DATEPART(HOUR, ws.Timestamp) * 60 * 60) + (DATEPART(MINUTE, ws.Timestamp) * 60) + (DATEPART(SECOND, ws.Timestamp)) AS TimeKey
-							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ws.WaitType, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS WaitKey
+							,ws.WaitType
 						FROM dbo.fhsmWaitStatistics AS ws
 				';
 			END;

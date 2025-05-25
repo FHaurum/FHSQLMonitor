@@ -57,21 +57,9 @@ table 'Blocks and deadlocks'
 				      "No"
 				    else
 				      Record.Field(loadConfigFirstMatch, "DataLoad"), 
-				  serverName = Record.Field(
-				    Table.First(Table.SelectRows(#"Connection parameters", each [Key] = "ServerName")), 
-				    "Value"
-				  ), 
-				  databaseName = Record.Field(
-				    Table.First(Table.SelectRows(#"Connection parameters", each [Key] = "DatabaseName")), 
-				    "Value"
-				  ), 
-				  schemaName = Record.Field(
-				    Table.First(Table.SelectRows(#"Connection parameters", each [Key] = "SchemaName")), 
-				    "Value"
-				  ), 
-				  dbList = Sql.Databases(serverName), 
-				  db     = dbList{[Name = databaseName]}[Data], 
-				  table  = db{[Schema = schemaName, Item = "Blocks and deadlocks"]}[Data], 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db     = dbList{[Name = #"Database name"]}[Data], 
+				  table  = db{[Schema = #"Schema name", Item = "Blocks and deadlocks"]}[Data], 
 				  emptyDataset = Table.FirstN(table, 0), 
 				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset,
 				  renameColumns = Table.RenameColumns(

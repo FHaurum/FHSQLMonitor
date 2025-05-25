@@ -66,7 +66,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.1';
+		SET @version = '2.6';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -104,7 +104,7 @@ ELSE BEGIN
 	--
 	BEGIN
 		--
-		-- Create table dbo.fhsmAgentJobs if it not already exists
+		-- Create table dbo.fhsmAgentJobs and indexes if they not already exists
 		--
 		IF OBJECT_ID('dbo.fhsmAgentJobs', 'U') IS NULL
 		BEGIN
@@ -136,8 +136,25 @@ ELSE BEGIN
 					,Timestamp datetime NOT NULL
 					,CONSTRAINT PK_fhsmAgentJobs PRIMARY KEY(Id)' + @tableCompressionStmt + '
 				);
+			';
+			EXEC(@stmt);
+		END;
 
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmAgentJobs')) AND (i.name = 'NC_fhsmAgentJobs_TimestampUTC'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmAgentJobs_TimestampUTC] to table dbo.fhsmAgentJobs', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmAgentJobs_TimestampUTC ON dbo.fhsmAgentJobs(TimestampUTC)' + @tableCompressionStmt + ';
+			';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmAgentJobs')) AND (i.name = 'NC_fhsmAgentJobs_Timestamp'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmAgentJobs_Timestamp] to table dbo.fhsmAgentJobs', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmAgentJobs_Timestamp ON dbo.fhsmAgentJobs(Timestamp)' + @tableCompressionStmt + ';
 			';
 			EXEC(@stmt);

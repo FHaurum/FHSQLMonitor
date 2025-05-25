@@ -1047,20 +1047,11 @@ table _Measures
 	measure 'Front page parameters text' =
 			
 			VAR _serverName =
-			    CALCULATE (
-			        MAX ( 'Connection parameters'[Value] ),
-			        'Connection parameters'[Key] = "ServerName"
-			    )
+			    MAX ( 'Server name'[Server name] )
 			VAR _databaseName =
-			    CALCULATE (
-			        MAX ( 'Connection parameters'[Value] ),
-			        'Connection parameters'[Key] = "DatabaseName"
-			    )
+			    MAX ( 'Database name'[Database name] )
 			VAR _schemaName =
-			    CALCULATE (
-			        MAX ( 'Connection parameters'[Value] ),
-			        'Connection parameters'[Key] = "SchemaName"
-			    )
+			    MAX ( 'Schema name'[Schema name] )
 			VAR _text =
 			    "Server: " & _serverName
 			        & UNICHAR ( 10 ) & "Database: " & _databaseName
@@ -1074,7 +1065,7 @@ table _Measures
 	measure 'Front page version text' =
 			
 			[Info text] & UNICHAR ( 10 ) & " "
-			    & UNICHAR ( 10 ) & "Developed using Power BI Desktop version: 2.142.928.0 64-bit (April 2025)"
+			    & UNICHAR ( 10 ) & "Developed using Power BI Desktop version: 2.143.878.0 64-bit (May 2025)"
 		displayFolder: Common
 		lineageTag: e74236c7-2bcf-4409-b8d2-ddb49a83e10b
 
@@ -2150,7 +2141,7 @@ table _Measures
 
 	measure 'Version number' =
 			
-			"2.5.0"
+			"2.6.0"
 		isHidden
 		displayFolder: Common
 		lineageTag: 39428edf-bb47-48d0-a60e-f025984fd1ba
@@ -9505,7 +9496,7 @@ table _Measures
 
 	measure '# Blocked process - Blocks and deadlocks' =
 			
-			COUNTROWS ( 'Blocked process' )
+			DISTINCTCOUNT ( 'Blocked process'[Data set] )
 		formatString: #,0
 		displayFolder: Blocks and deadlocks
 		lineageTag: 13aa6c76-f5b3-4598-9b9c-fb6d4015dca8
@@ -9567,7 +9558,7 @@ table _Measures
 	measure 'Backups # - Backup status' =
 			
 			COUNTROWS ( 'Backup status' ) + 0
-		formatString: 0
+		formatString: #,0
 		displayFolder: Backup\Backup status
 		lineageTag: 0dc0de14-2756-4397-8469-6de5ab6c0129
 
@@ -9590,6 +9581,48 @@ table _Measures
 		formatString: #,0
 		displayFolder: Backup\Backup status
 		lineageTag: 0a15e2ef-72f7-4673-83ee-a8397e23050d
+
+	measure 'Data set - Blocks details' =
+			
+			"Data set is " & FORMAT ( MAX ( 'Blocked process'[Data set] ), "#,0" )
+		displayFolder: Blocks and deadlocks\Block details
+		lineageTag: 7e58c956-7044-4638-8f4b-f2e64e539ca1
+
+	measure 'Data set info - Blocks details' =
+			
+			"Execute query to get details like XML data:"
+			    & " SELECT * FROM"
+			    & " [" & MAX ( 'Database name'[Database name] ) & "]" & ".dbo.fhsmInfoBlocks"
+			    & " WHERE Id = " & MAX ( 'Blocked process'[Data set] ) & ";"
+		displayFolder: Blocks and deadlocks\Block details
+		lineageTag: 5df9469b-7c6a-4841-967a-31d6b9ec9732
+
+	measure 'Title Blocks - Blocks and deadlocks' =
+			
+			"Blocks " & [Drill-through symbol]
+		displayFolder: Blocks and deadlocks
+		lineageTag: 3b69bcc6-54de-4939-ac10-d63ab6b6a4f1
+
+	measure 'Data set - Deadlock details' =
+			
+			"Data set is " & FORMAT ( MAX ( Deadlock[Data set] ), "#,0" )
+		displayFolder: Blocks and deadlocks\Deadlock details
+		lineageTag: 82fd8b8f-3c70-4a07-a80a-a967fe4a690e
+
+	measure 'Data set info - Deadlock details' =
+			
+			"Execute query to get details like XML and XDL (Deadlock graph) data:"
+			    & " SELECT * FROM"
+			    & " [" & MAX ( 'Database name'[Database name] ) & "]" & ".dbo.fhsmInfoDeadlocks"
+			    & " WHERE Id = " & MAX ( Deadlock[Data set] ) & ";"
+		displayFolder: Blocks and deadlocks\Deadlock details
+		lineageTag: 5e38634c-4d48-489e-b468-1e6061973717
+
+	measure 'Title Deadlocks - Blocks and deadlocks' =
+			
+			"Deadlocks " & [Drill-through symbol]
+		displayFolder: Blocks and deadlocks
+		lineageTag: 52a7b3d4-1dcc-4ceb-9428-9cb4495aae3a
 
 	partition _Measures = m
 		mode: import

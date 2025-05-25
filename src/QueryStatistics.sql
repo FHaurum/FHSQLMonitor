@@ -66,7 +66,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.3';
+		SET @version = '2.6';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -113,7 +113,7 @@ ELSE BEGIN
 	--
 	BEGIN
 		--
-		-- Create table dbo.fhsmQueryStatement if it not already exists
+		-- Create table dbo.fhsmQueryStatement and indexes if they not already exists
 		--
 		IF OBJECT_ID('dbo.fhsmQueryStatement', 'U') IS NULL
 		BEGIN
@@ -134,9 +134,35 @@ ELSE BEGIN
 					,Timestamp datetime NOT NULL
 					,CONSTRAINT PK_fhsmQueryStatement PRIMARY KEY(Id)' + @tableCompressionStmt + '
 				);
+			';
+			EXEC(@stmt);
+		END;
 
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmQueryStatement')) AND (i.name = 'NC_fhsmQueryStatement_TimestampUTC'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmQueryStatement_TimestampUTC] to table dbo.fhsmQueryStatement', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmQueryStatement_TimestampUTC ON dbo.fhsmQueryStatement(TimestampUTC)' + @tableCompressionStmt + ';
+			';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmQueryStatement')) AND (i.name = 'NC_fhsmQueryStatement_Timestamp'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmQueryStatement_Timestamp] to table dbo.fhsmQueryStatement', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmQueryStatement_Timestamp ON dbo.fhsmQueryStatement(Timestamp)' + @tableCompressionStmt + ';
+			';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmQueryStatement')) AND (i.name = 'NC_fhsmQueryStatement_ObjectName_CounterName_InstanceName'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmQueryStatement_ObjectName_CounterName_InstanceName] to table dbo.fhsmQueryStatement', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmQueryStatement_ObjectName_CounterName_InstanceName ON dbo.fhsmQueryStatement(DatabaseName, QueryHash)' + @tableCompressionStmt + ';
 			';
 			EXEC(@stmt);
@@ -158,7 +184,7 @@ ELSE BEGIN
 		END;
 
 		--
-		-- Create table dbo.fhsmQueryStatistics if it not already exists
+		-- Create table dbo.fhsmQueryStatistics and indexes if they not already exists
 		--
 		IF OBJECT_ID('dbo.fhsmQueryStatistics', 'U') IS NULL
 		BEGIN
@@ -188,7 +214,25 @@ ELSE BEGIN
 
 				CREATE CLUSTERED INDEX CL_fhsmQueryStatistics_TimestampUTC ON dbo.fhsmQueryStatistics(TimestampUTC)' + @tableCompressionStmt + ';
 				ALTER TABLE dbo.fhsmQueryStatistics ADD CONSTRAINT NCPK_fhsmQueryStatistics PRIMARY KEY NONCLUSTERED(Id)' + @tableCompressionStmt + ';
+			';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmQueryStatistics')) AND (i.name = 'NC_fhsmQueryStatistics_Timestamp'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmQueryStatistics_Timestamp] to table dbo.fhsmQueryStatistics', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmQueryStatistics_Timestamp ON dbo.fhsmQueryStatistics(Timestamp)' + @tableCompressionStmt + ';
+			';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmQueryStatistics')) AND (i.name = 'NC_fhsmQueryStatistics_DatabaseName_QueryHash'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmQueryStatistics_DatabaseName_QueryHash] to table dbo.fhsmQueryStatistics', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmQueryStatistics_DatabaseName_QueryHash ON dbo.fhsmQueryStatistics(DatabaseName, QueryHash)' + @tableCompressionStmt + ';
 			';
 			EXEC(@stmt);

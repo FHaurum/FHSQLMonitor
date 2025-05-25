@@ -153,21 +153,9 @@ table 'Plan guides'
 				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Plan guides")), 
 				    "DataLoad"
 				  ), 
-				  serverName = Record.Field(
-				    Table.First(Table.SelectRows(#"Connection parameters", each [Key] = "ServerName")), 
-				    "Value"
-				  ), 
-				  databaseName = Record.Field(
-				    Table.First(Table.SelectRows(#"Connection parameters", each [Key] = "DatabaseName")), 
-				    "Value"
-				  ), 
-				  schemaName = Record.Field(
-				    Table.First(Table.SelectRows(#"Connection parameters", each [Key] = "SchemaName")), 
-				    "Value"
-				  ), 
-				  dbList = Sql.Databases(serverName), 
-				  db     = dbList{[Name = databaseName]}[Data], 
-				  table  = db{[Schema = schemaName, Item = "Plan guides"]}[Data], 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db     = dbList{[Name = #"Database name"]}[Data], 
+				  table  = db{[Schema = #"Schema name", Item = "Plan guides"]}[Data], 
 				  emptyDataset = Table.FirstN(table, 0), 
 				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
 				  renameColumns = Table.RenameColumns(

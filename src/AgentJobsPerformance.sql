@@ -66,7 +66,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.5';
+		SET @version = '2.6';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -104,7 +104,7 @@ ELSE BEGIN
 	--
 	BEGIN
 		--
-		-- Create table dbo.fhsmAgentJobsPerformance if it not already exists
+		-- Create table dbo.fhsmAgentJobsPerformance and indexes if they not already exists
 		--
 		IF OBJECT_ID('dbo.fhsmAgentJobsPerformance', 'U') IS NULL
 		BEGIN
@@ -124,8 +124,25 @@ ELSE BEGIN
 					,MaxDurationSeconds int NOT NULL
 					,CONSTRAINT PK_fhsmAgentJobsPerformance PRIMARY KEY(Id)' + @tableCompressionStmt + '
 				);
+			';
+			EXEC(@stmt);
+		END;
 
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmAgentJobsPerformance')) AND (i.name = 'NC_fhsmAgentJobsPerformance_Date_Name'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmAgentJobsPerformance_Date_Name] to table dbo.fhsmAgentJobsPerformance', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmAgentJobsPerformance_Date_Name ON dbo.fhsmAgentJobsPerformance(Date, Name)' + @tableCompressionStmt + ';
+			';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmAgentJobsPerformance')) AND (i.name = 'NC_fhsmAgentJobsPerformance_Name_Date'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmAgentJobsPerformance_Name_Date] to table dbo.fhsmAgentJobsPerformance', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmAgentJobsPerformance_Name_Date ON dbo.fhsmAgentJobsPerformance(Name, Date)' + @tableCompressionStmt + ';
 			';
 			EXEC(@stmt);
@@ -147,7 +164,7 @@ ELSE BEGIN
 		END;
 
 		--
-		-- Create table dbo.fhsmAgentJobsPerformanceDelta if it not already exists
+		-- Create table dbo.fhsmAgentJobsPerformanceDelta and indexes if they not already exists
 		--
 		IF OBJECT_ID('dbo.fhsmAgentJobsPerformanceDelta', 'U') IS NULL
 		BEGIN
@@ -165,9 +182,35 @@ ELSE BEGIN
 					,Timestamp datetime NOT NULL
 					,CONSTRAINT PK_fhsmAgentJobsPerformanceDelta PRIMARY KEY(Id)' + @tableCompressionStmt + '
 				);
+			';
+			EXEC(@stmt);
+		END;
 
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmAgentJobsPerformanceDelta')) AND (i.name = 'NC_fhsmAgentJobsPerformanceDelta_TimestampUTC'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmAgentJobsPerformanceDelta_TimestampUTC] to table dbo.fhsmAgentJobsPerformanceDelta', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmAgentJobsPerformanceDelta_TimestampUTC ON dbo.fhsmAgentJobsPerformanceDelta(TimestampUTC)' + @tableCompressionStmt + ';
+			';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmAgentJobsPerformanceDelta')) AND (i.name = 'NC_fhsmAgentJobsPerformanceDelta_Timestamp'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmAgentJobsPerformanceDelta_Timestamp] to table dbo.fhsmAgentJobsPerformanceDelta', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmAgentJobsPerformanceDelta_Timestamp ON dbo.fhsmAgentJobsPerformanceDelta(Timestamp)' + @tableCompressionStmt + ';
+			';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmAgentJobsPerformanceDelta')) AND (i.name = 'NC_fhsmAgentJobsPerformanceDelta_Name_TimestampUTC'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmAgentJobsPerformanceDelta_Name_TimestampUTC] to table dbo.fhsmAgentJobsPerformanceDelta', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmAgentJobsPerformanceDelta_Name_TimestampUTC ON dbo.fhsmAgentJobsPerformanceDelta(Name, TimestampUTC)' + @tableCompressionStmt + ';
 			';
 			EXEC(@stmt);
@@ -189,7 +232,7 @@ ELSE BEGIN
 		END;
 
 		--
-		-- Create table dbo.fhsmAgentJobsPerformanceLatest if it not already exists
+		-- Create table dbo.fhsmAgentJobsPerformanceLatest and indexes if they not already exists
 		--
 		IF OBJECT_ID('dbo.fhsmAgentJobsPerformanceLatest', 'U') IS NULL
 		BEGIN
@@ -208,9 +251,35 @@ ELSE BEGIN
 					,Timestamp datetime NOT NULL
 					,CONSTRAINT PK_fhsmAgentJobsPerformanceLatest PRIMARY KEY(Id)' + @tableCompressionStmt + '
 				);
+			';
+			EXEC(@stmt);
+		END;
 
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmAgentJobsPerformanceLatest')) AND (i.name = 'NC_fhsmAgentJobsPerformanceLatest_TimestampUTC'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmAgentJobsPerformanceLatest_TimestampUTC] to table dbo.fhsmAgentJobsPerformanceLatest', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmAgentJobsPerformanceLatest_TimestampUTC ON dbo.fhsmAgentJobsPerformanceLatest(TimestampUTC)' + @tableCompressionStmt + ';
+			';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmAgentJobsPerformanceLatest')) AND (i.name = 'NC_fhsmAgentJobsPerformanceLatest_Timestamp'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmAgentJobsPerformanceLatest_Timestamp] to table dbo.fhsmAgentJobsPerformanceLatest', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmAgentJobsPerformanceLatest_Timestamp ON dbo.fhsmAgentJobsPerformanceLatest(Timestamp)' + @tableCompressionStmt + ';
+			';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmAgentJobsPerformanceLatest')) AND (i.name = 'NC_fhsmAgentJobsPerformanceLatest_Name_TimestampUTC'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmAgentJobsPerformanceLatest_Name_TimestampUTC] to table dbo.fhsmAgentJobsPerformanceLatest', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmAgentJobsPerformanceLatest_Name_TimestampUTC ON dbo.fhsmAgentJobsPerformanceLatest(Name, TimestampUTC)' + @tableCompressionStmt + ';
 			';
 			EXEC(@stmt);
@@ -232,7 +301,7 @@ ELSE BEGIN
 		END;
 
 		--
-		-- Create table dbo.fhsmAgentJobsPerformanceErrorDelta if it not already exists
+		-- Create table dbo.fhsmAgentJobsPerformanceErrorDelta and indexes if they not already exists
 		--
 		IF OBJECT_ID('dbo.fhsmAgentJobsPerformanceErrorDelta', 'U') IS NULL
 		BEGIN
@@ -255,9 +324,35 @@ ELSE BEGIN
 					,Timestamp datetime NOT NULL
 					,CONSTRAINT PK_fhsmAgentJobsPerformanceErrorDelta PRIMARY KEY(Id)' + @tableCompressionStmt + '
 				);
+			';
+			EXEC(@stmt);
+		END;
 
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmAgentJobsPerformanceErrorDelta')) AND (i.name = 'NC_fhsmAgentJobsPerformanceErrorDelta_TimestampUTC'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmAgentJobsPerformanceErrorDelta_TimestampUTC] to table dbo.fhsmAgentJobsPerformanceErrorDelta', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmAgentJobsPerformanceErrorDelta_TimestampUTC ON dbo.fhsmAgentJobsPerformanceErrorDelta(TimestampUTC)' + @tableCompressionStmt + ';
+			';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmAgentJobsPerformanceErrorDelta')) AND (i.name = 'NC_fhsmAgentJobsPerformanceErrorDelta_Timestamp'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmAgentJobsPerformanceErrorDelta_Timestamp] to table dbo.fhsmAgentJobsPerformanceErrorDelta', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmAgentJobsPerformanceErrorDelta_Timestamp ON dbo.fhsmAgentJobsPerformanceErrorDelta(Timestamp)' + @tableCompressionStmt + ';
+			';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmAgentJobsPerformanceErrorDelta')) AND (i.name = 'NC_fhsmAgentJobsPerformanceErrorDelta_Name_TimestampUTC'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmAgentJobsPerformanceErrorDelta_Name_TimestampUTC] to table dbo.fhsmAgentJobsPerformanceErrorDelta', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmAgentJobsPerformanceErrorDelta_Name_TimestampUTC ON dbo.fhsmAgentJobsPerformanceErrorDelta(Name, TimestampUTC)' + @tableCompressionStmt + ';
 			';
 			EXEC(@stmt);
@@ -279,7 +374,7 @@ ELSE BEGIN
 		END;
 
 		--
-		-- Create table dbo.fhsmAgentJobsPerformanceLatestError if it not already exists
+		-- Create table dbo.fhsmAgentJobsPerformanceLatestError and indexes if they not already exists
 		--
 		IF OBJECT_ID('dbo.fhsmAgentJobsPerformanceLatestError', 'U') IS NULL
 		BEGIN
@@ -302,9 +397,35 @@ ELSE BEGIN
 					,Timestamp datetime NOT NULL
 					,CONSTRAINT PK_fhsmAgentJobsPerformanceLatestError PRIMARY KEY(Id)' + @tableCompressionStmt + '
 				);
+			';
+			EXEC(@stmt);
+		END;
 
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmAgentJobsPerformanceLatestError')) AND (i.name = 'NC_fhsmAgentJobsPerformanceLatestError_TimestampUTC'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmAgentJobsPerformanceLatestError_TimestampUTC] to table dbo.fhsmAgentJobsPerformanceLatestError', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmAgentJobsPerformanceLatestError_TimestampUTC ON dbo.fhsmAgentJobsPerformanceLatestError(TimestampUTC)' + @tableCompressionStmt + ';
+			';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmAgentJobsPerformanceLatestError')) AND (i.name = 'NC_fhsmAgentJobsPerformanceLatestError_Timestamp'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmAgentJobsPerformanceLatestError_Timestamp] to table dbo.fhsmAgentJobsPerformanceLatestError', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmAgentJobsPerformanceLatestError_Timestamp ON dbo.fhsmAgentJobsPerformanceLatestError(Timestamp)' + @tableCompressionStmt + ';
+			';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmAgentJobsPerformanceLatestError')) AND (i.name = 'NC_fhsmAgentJobsPerformanceLatestError_Name_TimestampUTC'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmAgentJobsPerformanceLatestError_Name_TimestampUTC] to table dbo.fhsmAgentJobsPerformanceLatestError', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmAgentJobsPerformanceLatestError_Name_TimestampUTC ON dbo.fhsmAgentJobsPerformanceLatestError(Name, TimestampUTC)' + @tableCompressionStmt + ';
 			';
 			EXEC(@stmt);

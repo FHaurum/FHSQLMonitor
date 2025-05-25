@@ -66,7 +66,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.1';
+		SET @version = '2.6';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -104,7 +104,7 @@ ELSE BEGIN
 	--
 	BEGIN
 		--
-		-- Create table dbo.fhsmDatabaseState if it not already exists
+		-- Create table dbo.fhsmDatabaseState and indexes if they not already exists
 		--
 		IF OBJECT_ID('dbo.fhsmDatabaseState', 'U') IS NULL
 		BEGIN
@@ -123,10 +123,45 @@ ELSE BEGIN
 					,Timestamp datetime NOT NULL
 					,CONSTRAINT PK_fhsmDatabaseState PRIMARY KEY(Id)' + @tableCompressionStmt + '
 				);
+			';
+			EXEC(@stmt);
+		END;
 
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmDatabaseState')) AND (i.name = 'NC_fhsmDatabaseState_TimestampUTC'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmDatabaseState_TimestampUTC] to table dbo.fhsmDatabaseState', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmDatabaseState_TimestampUTC ON dbo.fhsmDatabaseState(TimestampUTC)' + @tableCompressionStmt + ';
+			';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmDatabaseState')) AND (i.name = 'NC_fhsmDatabaseState_Timestamp'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmDatabaseState_Timestamp] to table dbo.fhsmDatabaseState', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmDatabaseState_Timestamp ON dbo.fhsmDatabaseState(Timestamp)' + @tableCompressionStmt + ';
+			';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmDatabaseState')) AND (i.name = 'NC_fhsmDatabaseState_Query_DatabaseName_Key_ValidTo'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmDatabaseState_Query_DatabaseName_Key_ValidTo] to table dbo.fhsmDatabaseState', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmDatabaseState_Query_DatabaseName_Key_ValidTo ON dbo.fhsmDatabaseState(Query, DatabaseName, [Key], ValidTo) INCLUDE(Value)' + @tableCompressionStmt + ';
+			';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmDatabaseState')) AND (i.name = 'NC_fhsmDatabaseState_ValidTo_Query_DatabaseName_key'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmDatabaseState_ValidTo_Query_DatabaseName_key] to table dbo.fhsmDatabaseState', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
 				CREATE NONCLUSTERED INDEX NC_fhsmDatabaseState_ValidTo_Query_DatabaseName_key ON dbo.fhsmDatabaseState(ValidTo, Query, DatabaseName, [Key]) INCLUDE(Value)' + @tableCompressionStmt + ';
 			';
 			EXEC(@stmt);

@@ -40,7 +40,7 @@ BEGIN
 	SET @myUserName = SUSER_NAME();
 	SET @nowUTC = SYSUTCDATETIME();
 	SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
-	SET @version = '2.5.0';
+	SET @version = '2.6.0';
 END;
 
 --
@@ -268,6 +268,112 @@ ELSE BEGIN
 	END;
 
 	--
+	-- Create or alter function dbo.fhsmFNParseDimensionColumn
+	--
+	BEGIN
+		SET @stmt = '
+			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
+
+			DECLARE @stmt nvarchar(max);
+
+			IF OBJECT_ID(''dbo.fhsmFNParseDimensionColumn'', ''FN'') IS NULL
+			BEGIN
+				RAISERROR(''Creating stub function dbo.fhsmFNParseDimensionColumn'', 0, 1) WITH NOWAIT;
+
+				EXEC(''CREATE FUNCTION dbo.fhsmFNParseDimensionColumn() RETURNS nvarchar(128) AS BEGIN RETURN NULL; END;'');
+			END;
+
+			--
+			-- Alter dbo.fhsmFNParseDimensionColumn
+			--
+			BEGIN
+				RAISERROR(''Alter function dbo.fhsmFNParseDimensionColumn'', 0, 1) WITH NOWAIT;
+
+				SET @stmt = ''
+					ALTER FUNCTION dbo.fhsmFNParseDimensionColumn(@column nvarchar(128))
+					RETURNS nvarchar(128)
+					AS
+					BEGIN
+						DECLARE @pos1 int;
+						DECLARE @pos2 int;
+						DECLARE @token nvarchar(128);
+
+						SET @token = ''''CASE '''';
+						IF (LEFT(@column, LEN(@token)) = @token)
+						BEGIN
+							SET @pos1 = CHARINDEX('''' '''', @column);
+							SET @pos2 = CHARINDEX('''' '''', @column, @pos1 + 1);
+
+							SET @column = SUBSTRING(@column, @pos1 + 1, @pos2 - @pos1 - 1);
+						END;
+
+						SET @token = ''''CAST('''';
+						IF (LEFT(@column, LEN(@token)) = @token)
+						BEGIN
+							SET @pos1 = CHARINDEX('''' '''', @column);
+
+							SET @column = SUBSTRING(@column, LEN(@token) + 1, @pos1 - LEN(@token) - 1);
+						END;
+
+						SET @token = ''''COALESCE('''';
+						IF (LEFT(@column, LEN(@token)) = @token)
+						BEGIN
+							SET @pos1 = CHARINDEX('''','''', @column);
+
+							SET @column = SUBSTRING(@column, LEN(@token) + 1, @pos1 - LEN(@token) - 1);
+						END;
+
+						SET @token = ''''CONVERT('''';
+						IF (LEFT(@column, LEN(@token)) = @token)
+						BEGIN
+							SET @pos1 = CHARINDEX('''','''', @column);
+							SET @pos2 = CHARINDEX('''','''', @column, @pos1 + 1);
+
+							SET @column = SUBSTRING(@column, @pos1 + 1, @pos2 - @pos1 - 1);
+						END;
+
+						SET @column = LTRIM(RTRIM(@column));
+
+						RETURN @column;
+					END;
+				'';
+				EXEC(@stmt);
+			END;
+		';
+		EXEC(@stmt);
+	END;
+
+	--
+	-- Register extended properties on the function dbo.fhsmFNParseDimensionColumn
+	--
+	BEGIN
+		SET @objectName = 'dbo.fhsmFNParseDimensionColumn';
+
+		SET @stmt = '
+			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
+			
+			DECLARE @objName nvarchar(128);
+			DECLARE @schName nvarchar(128);
+
+			SET @objName = PARSENAME(@objectName, 1);
+			SET @schName = PARSENAME(@objectName, 2);
+
+			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+		';
+		EXEC sp_executesql
+			@stmt
+			,N'@objectName nvarchar(128), @version sql_variant, @nowUTCStr sql_variant, @myUserName sql_variant'
+			,@objectName = @objectName
+			,@version = @version
+			,@nowUTCStr = @nowUTCStr
+			,@myUserName = @myUserName;
+	END;
+
+	--
 	-- Create or alter function dbo.fhsmFNTryParseAsInt
 	--
 	BEGIN
@@ -422,7 +528,7 @@ ELSE BEGIN
 	END;
 
 	--
-	-- Create table dbo.fhsmConfigurations if it not already exists
+	-- Create table dbo.fhsmConfigurations and indexes if they not already exists
 	--
 	BEGIN
 		SET @stmt = '
@@ -438,7 +544,10 @@ ELSE BEGIN
 					,Value nvarchar(128) NOT NULL
 					,CONSTRAINT PK_fhsmConfigurations PRIMARY KEY([Key])' + @tableCompressionStmt + '
 				);
+			END;
 
+			IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmConfigurations'')) AND (i.name = ''NC_fhsmConfigurations_Id''))
+			BEGIN
 				CREATE NONCLUSTERED INDEX NC_fhsmConfigurations_Id ON dbo.fhsmConfigurations(Id)' + @tableCompressionStmt + ';
 			END;
 		';
@@ -585,7 +694,7 @@ ELSE BEGIN
 	END;
 
 	--
-	-- Create table dbo.fhsmRetentions if it not already exists
+	-- Create table dbo.fhsmRetentions and indexes if they not already exists
 	--
 	BEGIN
 		SET @stmt = '
@@ -609,7 +718,10 @@ ELSE BEGIN
 					,CONSTRAINT PK_fhsmRetentions PRIMARY KEY(Id)' + @tableCompressionStmt + '
 					,CONSTRAINT UQ_fhsmRetentions_TableName_Sequence UNIQUE(TableName, Sequence)' + @tableCompressionStmt + '
 				);
+			END;
 
+			IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmRetentions'')) AND (i.name = ''NC_fhsmRetentions_Enabled_TableName_Sequence''))
+			BEGIN
 				CREATE NONCLUSTERED INDEX NC_fhsmRetentions_Enabled_TableName_Sequence ON dbo.fhsmRetentions(Enabled, TableName, Sequence)' + @tableCompressionStmt + ';
 			END;
 		';
@@ -647,7 +759,7 @@ ELSE BEGIN
 	END;
 
 	--
-	-- Create table dbo.fhsmLog if it not already exists
+	-- Create table dbo.fhsmLog and indexes if they not already exists
 	--
 	BEGIN
 		SET @stmt = '
@@ -668,9 +780,20 @@ ELSE BEGIN
 					,Timestamp datetime NOT NULL CONSTRAINT DEF_fhsmLog_Timestamp DEFAULT (SYSDATETIME())
 					,CONSTRAINT PK_fhsmLog PRIMARY KEY(Id)' + @tableCompressionStmt + '
 				);
+			END;
 
+			IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmLog'')) AND (i.name = ''NC_fhsmLog_TimestampUTC''))
+			BEGIN
 				CREATE NONCLUSTERED INDEX NC_fhsmLog_TimestampUTC ON dbo.fhsmLog(TimestampUTC)' + @tableCompressionStmt + ';
+			END;
+
+			IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmLog'')) AND (i.name = ''NC_fhsmLog_Timestamp''))
+			BEGIN
 				CREATE NONCLUSTERED INDEX NC_fhsmLog_Timestamp ON dbo.fhsmLog(Timestamp)' + @tableCompressionStmt + ';
+			END;
+
+			IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmLog'')) AND (i.name = ''NC_fhsmLog_Type_Timestamp''))
+			BEGIN
 				CREATE NONCLUSTERED INDEX NC_fhsmLog_Type_Timestamp ON dbo.fhsmLog(Type, Timestamp)' + @tableCompressionStmt + ';
 			END;
 		';
@@ -736,7 +859,7 @@ ELSE BEGIN
 	END;
 
 	--
-	-- Create table dbo.fhsmSchedules if it not already exists
+	-- Create table dbo.fhsmSchedules and indexes if they not already exists
 	--
 	BEGIN
 		SET @stmt = '
@@ -768,7 +891,10 @@ ELSE BEGIN
 					,CONSTRAINT PK_fhsmSchedules PRIMARY KEY(Id)' + @tableCompressionStmt + '
 					,CONSTRAINT UQ_fhsmSchedules_Name UNIQUE(Name)' + @tableCompressionStmt + '
 				);
+			END;
 
+			IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmSchedules'')) AND (i.name = ''NC_fhsmSchedules_Enabled_Name''))
+			BEGIN
 				CREATE NONCLUSTERED INDEX NC_fhsmSchedules_Enabled_Name ON dbo.fhsmSchedules(Enabled, Name)' + @tableCompressionStmt + ';
 			END;
 		';
@@ -1309,7 +1435,7 @@ ELSE BEGIN
 										''''fhsmConfigurations'''', ''''fhsmDimensions'''', ''''fhsmLog'''', ''''fhsmRetentions'''', ''''fhsmSchedules''''
 										,''''fhsmSPCleanup'''', ''''fhsmSPExtendedProperties'''', ''''fhsmSPLog'''', ''''fhsmSPSchedules'''', ''''fhsmSPUpdateDimensions''''
 										,''''fhsmFNAgentJobTime'''', ''''fhsmFNGenerateKey'''', ''''fhsmFNGetConfiguration'''', ''''fhsmFNGetExecutionDelaySec'''', ''''fhsmFNGetTaskParameter''''
-										,''''fhsmFNParseDatabasesStr'''', ''''fhsmFNSplitLines'''', ''''fhsmFNSplitString'''', ''''fhsmFNTryParseAsInt''''
+										,''''fhsmFNParseDatabasesStr'''', ''''fhsmFNParseDimensionColumn'''', ''''fhsmFNSplitString'''', ''''fhsmFNTryParseAsInt''''
 									))
 							) AS a
 						);
@@ -1618,103 +1744,6 @@ ELSE BEGIN
 	--
 	BEGIN
 		SET @objectName = 'dbo.fhsmFNSplitString';
-
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-			
-			DECLARE @objName nvarchar(128);
-			DECLARE @schName nvarchar(128);
-
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
-		';
-		EXEC sp_executesql
-			@stmt
-			,N'@objectName nvarchar(128), @version sql_variant, @nowUTCStr sql_variant, @myUserName sql_variant'
-			,@objectName = @objectName
-			,@version = @version
-			,@nowUTCStr = @nowUTCStr
-			,@myUserName = @myUserName;
-	END;
-
-	--
-	-- Create or alter function dbo.fhsmFNSplitLines
-	--
-	BEGIN
-		SET @stmt = '
-			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
-
-			DECLARE @stmt nvarchar(max);
-
-			IF OBJECT_ID(''dbo.fhsmFNSplitLines'', ''FN'') IS NULL
-			BEGIN
-				RAISERROR(''Creating stub function dbo.fhsmFNSplitLines'', 0, 1) WITH NOWAIT;
-
-				EXEC(''CREATE FUNCTION dbo.fhsmFNSplitLines() RETURNS bit AS BEGIN RETURN 0; END;'');
-			END;
-
-			--
-			-- Alter dbo.fhsmFNSplitLines
-			--
-			BEGIN
-				RAISERROR(''Alter function dbo.fhsmFNSplitLines'', 0, 1) WITH NOWAIT;
-
-				SET @stmt = ''
-					ALTER FUNCTION dbo.fhsmFNSplitLines(
-						@val nvarchar(max),
-						@lineLen int
-					)
-					RETURNS nvarchar(max)
-					AS
-					BEGIN
-						DECLARE @c nvarchar(1);
-						DECLARE @curLen int = 0;
-						DECLARE @i int = 0;
-						DECLARE @rv nvarchar(max) = '''''''';
-
-						WHILE (@i <= len(@val))
-						BEGIN
-							SET @c = SUBSTRING(@val, @i, 1);
-							SET @curlen = @curlen + 1;
-
-							SET @rv = @rv + @c;
-
-							IF (@c IN (CHAR(10), CHAR(13)))
-							BEGIN
-								SET @curLen = 0;
-							END
-							ELSE IF (@curlen >= @lineLen)
-							BEGIN
-								IF (@c IN (N'''' '''', N'''',''''))
-								BEGIN
-									SET @rv = @rv + char(10);
-									SET @curlen = 0;
-								END
-							END
-
-							SET @i = @i + 1;
-						END;
-
-						RETURN @rv;
-					END;
-				'';
-				EXEC(@stmt);
-			END;
-		';
-		EXEC(@stmt);
-	END;
-
-	--
-	-- Register extended properties on the function dbo.fhsmFNSplitLines
-	--
-	BEGIN
-		SET @objectName = 'dbo.fhsmFNSplitLines';
 
 		SET @stmt = '
 			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
@@ -2287,7 +2316,10 @@ ELSE BEGIN
 						DECLARE @dimensionKey nvarchar(128);
 						DECLARE @dimensionName nvarchar(128);
 						DECLARE @dimensionStmt nvarchar(max);
+						DECLARE @edition nvarchar(128);
 						DECLARE @firstTable bit;
+						DECLARE @indexName nvarchar(128);
+						DECLARE @indexStmt nvarchar(max);
 						DECLARE @myUserName nvarchar(128);
 						DECLARE @nowUTC datetime;
 						DECLARE @nowUTCStr nvarchar(128);
@@ -2298,6 +2330,12 @@ ELSE BEGIN
 						DECLARE @outputColumn5 nvarchar(128);
 						DECLARE @outputColumn6 nvarchar(128);
 						DECLARE @pbiSchema nvarchar(128);
+						DECLARE @productEndPos int;
+						DECLARE @productStartPos int;
+						DECLARE @productVersion nvarchar(128);
+						DECLARE @productVersion1 int;
+						DECLARE @productVersion2 int;
+						DECLARE @productVersion3 int;
 						DECLARE @srcAlias nvarchar(128);
 						DECLARE @srcColumn1 nvarchar(128);
 						DECLARE @srcColumn2 nvarchar(128);
@@ -2308,6 +2346,7 @@ ELSE BEGIN
 						DECLARE @srcDateColumn nvarchar(128);
 						DECLARE @srcTable nvarchar(128);
 						DECLARE @srcWhere nvarchar(max);
+						DECLARE @tableCompressionStmt nvarchar(max);
 						DECLARE @version nvarchar(128);
 
 						SET @myUserName = SUSER_NAME();
@@ -2315,10 +2354,189 @@ ELSE BEGIN
 						SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 						SET @version = ''''' + @version + ''''';
 
+						SET @productVersion = CAST(SERVERPROPERTY(''''ProductVersion'''') AS nvarchar);
+						SET @productStartPos = 1;
+						SET @productEndPos = CHARINDEX(''''.'''', @productVersion, @productStartPos);
+						SET @productVersion1 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+						SET @productStartPos = @productEndPos + 1;
+						SET @productEndPos = CHARINDEX(''''.'''', @productVersion, @productStartPos);
+						SET @productVersion2 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+						SET @productStartPos = @productEndPos + 1;
+						SET @productEndPos = CHARINDEX(''''.'''', @productVersion, @productStartPos);
+						SET @productVersion3 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+
 						SET @pbiSchema = dbo.fhsmFNGetConfiguration(''''PBISchema'''');
 		';
 		SET @stmt += '
+						--
+						-- Check if SQL version allows to use data compression
+						--
+						BEGIN
+							SET @tableCompressionStmt = '''''''';
 
+							SET @edition = CAST(SERVERPROPERTY(''''Edition'''') AS nvarchar);
+
+							IF (@edition = ''''SQL Azure'''')
+								OR (SUBSTRING(@edition, 1, CHARINDEX('''' '''', @edition)) = ''''Developer'''')
+								OR (SUBSTRING(@edition, 1, CHARINDEX('''' '''', @edition)) = ''''Enterprise'''')
+								OR (@productVersion1 > 13)
+								OR ((@productVersion1 = 13) AND (@productVersion2 >= 1))
+								OR ((@productVersion1 = 13) AND (@productVersion2 = 0) AND (@productVersion3 >= 4001))
+							BEGIN
+								SET @tableCompressionStmt = '''' WITH (DATA_COMPRESSION = PAGE)'''';
+							END;
+						END;
+		';
+		SET @stmt += '
+						--
+						-- Create indexes based upon dbo.fhsmDimensions
+						--
+						BEGIN
+							DECLARE dCur CURSOR LOCAL READ_ONLY FAST_FORWARD FOR
+							SELECT DISTINCT d.SrcTable, d.SrcColumn1, d.SrcColumn2, d.SrcColumn3, d.SrcColumn4, d.SrcColumn5, d.SrcColumn6
+							FROM dbo.fhsmDimensions AS d
+							INNER JOIN (
+								SELECT DISTINCT d.DimensionName
+								FROM dbo.fhsmDimensions AS d
+							) AS modifiedSrcTables ON (modifiedSrcTables.DimensionName = d.DimensionName)
+							ORDER BY d.SrcTable, d.SrcColumn6 DESC, d.SrcColumn5 DESC, d.SrcColumn4 DESC, d.SrcColumn3 DESC, d.SrcColumn2 DESC, d.SrcColumn1 DESC;
+
+							OPEN dCur;
+
+							SET @currentDimensionName = '''';
+							SET @dimensionStmt = '''';
+							SET @firstTable = 1;
+
+							WHILE (1 = 1)
+							BEGIN
+								FETCH NEXT FROM dCur
+								INTO @srcTable, @srcColumn1, @srcColumn2, @srcColumn3, @srcColumn4, @srcColumn5, @srcColumn6
+
+								IF (@@FETCH_STATUS <> 0)
+								BEGIN
+									BREAK;
+								END;
+
+								SET @srcColumn1 = dbo.[fhsmFNParseDimensionColumn](@srcColumn1);
+								SET @srcColumn2 = dbo.[fhsmFNParseDimensionColumn](@srcColumn2);
+								SET @srcColumn3 = dbo.[fhsmFNParseDimensionColumn](@srcColumn3);
+								SET @srcColumn4 = dbo.[fhsmFNParseDimensionColumn](@srcColumn4);
+								SET @srcColumn5 = dbo.[fhsmFNParseDimensionColumn](@srcColumn5);
+								SET @srcColumn6 = dbo.[fhsmFNParseDimensionColumn](@srcColumn6);
+
+								SET @indexName =
+									''''NCAuto_'''' + PARSENAME(@srcTable, 1) + ''''_''''
+										+ PARSENAME(@srcColumn1, 1)
+										+ COALESCE(''''_'''' + PARSENAME(@srcColumn2, 1), '''''''')
+										+ COALESCE(''''_'''' + PARSENAME(@srcColumn3, 1), '''''''')
+										+ COALESCE(''''_'''' + PARSENAME(@srcColumn4, 1), '''''''')
+										+ COALESCE(''''_'''' + PARSENAME(@srcColumn5, 1), '''''''')
+										+ COALESCE(''''_'''' + PARSENAME(@srcColumn6, 1), '''''''');
+
+								SET @indexStmt = ''''
+									SET ANSI_WARNINGS OFF;
+
+									DECLARE @coveringIndexExists int;
+									DECLARE @indexName nvarchar(128);
+									DECLARE @stmt nvarchar(max);
+		';
+		SET @stmt += '
+									DECLARE iCur CURSOR LOCAL READ_ONLY FAST_FORWARD FOR
+									SELECT i.name AS IndexName
+									FROM '''' + COALESCE(QUOTENAME(PARSENAME(@srcTable, 3)) + ''''.'''', '''''''') + ''''sys.indexes AS i
+									INNER JOIN '''' + COALESCE(QUOTENAME(PARSENAME(@srcTable, 3)) + ''''.'''', '''''''') + ''''sys.objects AS o ON (o.object_id = i.object_id)
+									INNER JOIN '''' + COALESCE(QUOTENAME(PARSENAME(@srcTable, 3)) + ''''.'''', '''''''') + ''''sys.schemas AS sch ON (sch.schema_id = o.schema_id)
+									WHERE (sch.name = '''''''''''' + PARSENAME(@srcTable, 2) + '''''''''''') AND (o.name = '''''''''''' + PARSENAME(@srcTable, 1) + '''''''''''')
+									ORDER BY i.name;
+
+									OPEN iCur;
+
+									SET @coveringIndexExists = 0;
+
+									WHILE (1 = 1)
+									BEGIN
+										FETCH NEXT FROM iCur
+										INTO @indexName;
+
+										IF (@@FETCH_STATUS <> 0)
+										BEGIN
+											BREAK;
+										END;
+
+										IF EXISTS (
+											SELECT *
+											FROM (
+												SELECT
+													i.name,
+													MAX(CASE WHEN (ic.key_ordinal = 1) THEN c.name END) AS Column1,
+													MAX(CASE WHEN (ic.key_ordinal = 2) THEN c.name END) AS Column2,
+													MAX(CASE WHEN (ic.key_ordinal = 3) THEN c.name END) AS Column3,
+													MAX(CASE WHEN (ic.key_ordinal = 4) THEN c.name END) AS Column4,
+													MAX(CASE WHEN (ic.key_ordinal = 5) THEN c.name END) AS Column5,
+													MAX(CASE WHEN (ic.key_ordinal = 6) THEN c.name END) AS Column6
+													  FROM '''' + COALESCE(QUOTENAME(PARSENAME(@srcTable, 3)) + ''''.'''', '''''''') + ''''sys.indexes AS i
+												INNER JOIN '''' + COALESCE(QUOTENAME(PARSENAME(@srcTable, 3)) + ''''.'''', '''''''') + ''''sys.index_columns AS ic ON (ic.object_id = i.object_id) AND (ic.index_id = i.index_id)
+												INNER JOIN '''' + COALESCE(QUOTENAME(PARSENAME(@srcTable, 3)) + ''''.'''', '''''''') + ''''sys.columns AS c ON (c.object_id = ic.object_id) AND (c.column_id = ic.column_id)
+												INNER JOIN '''' + COALESCE(QUOTENAME(PARSENAME(@srcTable, 3)) + ''''.'''', '''''''') + ''''sys.objects AS o ON (o.object_id = c.object_id)
+												INNER JOIN '''' + COALESCE(QUOTENAME(PARSENAME(@srcTable, 3)) + ''''.'''', '''''''') + ''''sys.schemas AS sch ON (sch.schema_id = o.schema_id)
+												WHERE (sch.name = '''''''''''' + PARSENAME(@srcTable, 2) + '''''''''''') AND (o.name = '''''''''''' + PARSENAME(@srcTable, 1) + '''''''''''') AND (i.name = @indexName)
+												GROUP BY i.name
+											) AS a
+											WHERE (1 = 1)
+												AND (a.Column1 = PARSENAME(@srcColumn1, 1))
+												AND ((a.Column2 = PARSENAME(@srcColumn2, 1)) OR (PARSENAME(@srcColumn2, 1) IS NULL))
+												AND ((a.Column3 = PARSENAME(@srcColumn3, 1)) OR (PARSENAME(@srcColumn3, 1) IS NULL))
+												AND ((a.Column4 = PARSENAME(@srcColumn4, 1)) OR (PARSENAME(@srcColumn4, 1) IS NULL))
+												AND ((a.Column5 = PARSENAME(@srcColumn5, 1)) OR (PARSENAME(@srcColumn5, 1) IS NULL))
+												AND ((a.Column6 = PARSENAME(@srcColumn6, 1)) OR (PARSENAME(@srcColumn6, 1) IS NULL))
+										)
+										BEGIN
+											SET @coveringIndexExists = 1;
+											BREAK;
+										END;
+									END;
+
+									CLOSE iCur;
+									DEALLOCATE iCur;
+		';
+		SET @stmt += '
+									IF (@coveringIndexExists = 0)
+									BEGIN
+										SET @stmt = ''''''''Adding index ['''' + @indexName + ''''] to table '''' + @srcTable + '''''''''''';
+										RAISERROR(@stmt, 0, 1) WITH NOWAIT;
+
+										SET @stmt = ''''''''
+											CREATE NONCLUSTERED INDEX ''''
+											+ ''''['''' + @indexName + ''''] ON '''' + @srcTable
+											+ ''''(''''
+												+ PARSENAME(@srcColumn1, 1)
+												+ COALESCE('''', '''' + PARSENAME(@srcColumn2, 1), '''''''')
+												+ COALESCE('''', '''' + PARSENAME(@srcColumn3, 1), '''''''')
+												+ COALESCE('''', '''' + PARSENAME(@srcColumn4, 1), '''''''')
+												+ COALESCE('''', '''' + PARSENAME(@srcColumn5, 1), '''''''')
+												+ COALESCE('''', '''' + PARSENAME(@srcColumn6, 1), '''''''')
+											+ '''')'''' + @tableCompressionStmt + '''';
+										'''''''';
+										EXEC(@stmt);
+									END;
+								'''';
+
+								EXEC sp_executesql
+									@indexStmt
+									,N''''@srcColumn1 nvarchar(128), @srcColumn2 nvarchar(128), @srcColumn3 nvarchar(128), @srcColumn4 nvarchar(128), @srcColumn5 nvarchar(128), @srcColumn6 nvarchar(128)''''
+									,@srcColumn1 = @srcColumn1
+									,@srcColumn2 = @srcColumn2
+									,@srcColumn3 = @srcColumn3
+									,@srcColumn4 = @srcColumn4
+									,@srcColumn5 = @srcColumn5
+									,@srcColumn6 = @srcColumn6;
+							END;
+
+							CLOSE dCur;
+							DEALLOCATE dCur;
+						END;
+		';
+		SET @stmt += '
 						--
 						-- Create Time dimension if it does not exist
 						--
