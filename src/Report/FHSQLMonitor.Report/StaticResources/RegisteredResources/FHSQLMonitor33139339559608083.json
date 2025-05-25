@@ -1088,11 +1088,6 @@
             "textSize": 12
           }
         ],
-        "selection": [
-          {
-            "selectAllCheckboxEnabled": true
-          }
-        ],
         "visualHeader": [
           {
             "show": false

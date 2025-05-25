@@ -2141,7 +2141,7 @@ table _Measures
 
 	measure 'Version number' =
 			
-			"2.6.0"
+			"2.6.1"
 		isHidden
 		displayFolder: Common
 		lineageTag: 39428edf-bb47-48d0-a60e-f025984fd1ba
