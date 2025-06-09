@@ -114,7 +114,7 @@
           "nodeIndex": "Log",
           "nodeLineageTag": "bf1208e0-9ba5-435b-bbe1-7c267e454794",
           "size": {
-            "height": 72,
+            "height": 152,
             "width": 234
           },
           "zIndex": 48,
@@ -1346,10 +1346,38 @@
           },
           "zIndex": 0,
           "expandedHeight": 104
+        },
+        {
+          "location": {
+            "x": 2772.9514088503415,
+            "y": 0
+          },
+          "nodeIndex": "Log type",
+          "nodeLineageTag": "c9332421-86e7-4ba3-80be-47dda5431773",
+          "size": {
+            "height": 72,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 200
+        },
+        {
+          "location": {
+            "x": 588.44683614167752,
+            "y": 746.83917015680822
+          },
+          "nodeIndex": "LogTaskName",
+          "nodeLineageTag": "dca84af5-de77-433e-8e82-b526958267f5",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 152
         }
       ],
       "name": "All tables",
-      "zoomValue": 69.4468925660047,
+      "zoomValue": 64.270865693776884,
       "pinKeyFieldsToTop": false,
       "showExtraHeaderInfo": false,
       "hideKeyFieldsWhenCollapsed": false,
@@ -2946,6 +2974,77 @@
       "nodes": [
         {
           "location": {
+            "x": 298,
+            "y": 191
+          },
+          "nodeIndex": "Log",
+          "nodeLineageTag": "bf1208e0-9ba5-435b-bbe1-7c267e454794",
+          "size": {
+            "height": 152,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 300
+        },
+        {
+          "location": {
+            "x": 0,
+            "y": 0
+          },
+          "nodeIndex": "Date",
+          "nodeLineageTag": "66406d91-b832-4567-b6e4-a3786a0597bb",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 224
+        },
+        {
+          "location": {
+            "x": 300,
+            "y": 0
+          },
+          "nodeIndex": "Time",
+          "nodeLineageTag": "544922c4-f043-457f-b0e4-e98e212a0454",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 176
+        },
+        {
+          "location": {
+            "x": 598,
+            "y": 0
+          },
+          "nodeIndex": "LogTaskName",
+          "nodeLineageTag": "dca84af5-de77-433e-8e82-b526958267f5",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 152
+        }
+      ],
+      "name": "Monitor status",
+      "zoomValue": 100,
+      "pinKeyFieldsToTop": false,
+      "showExtraHeaderInfo": false,
+      "hideKeyFieldsWhenCollapsed": false,
+      "tablesLocked": false
+    },
+    {
+      "ordinal": 19,
+      "scrollPosition": {
+        "x": 0,
+        "y": 0
+      },
+      "nodes": [
+        {
+          "location": {
             "x": 128,
             "y": 215
           },
@@ -2995,7 +3094,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 19,
+      "ordinal": 20,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -3066,7 +3165,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 20,
+      "ordinal": 21,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -3123,7 +3222,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 21,
+      "ordinal": 22,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -3166,7 +3265,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 22,
+      "ordinal": 23,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -3251,7 +3350,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 23,
+      "ordinal": 24,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -3322,7 +3421,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 24,
+      "ordinal": 25,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -3365,7 +3464,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 25,
+      "ordinal": 26,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -3450,7 +3549,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 26,
+      "ordinal": 27,
       "scrollPosition": {
         "x": 0,
         "y": 0

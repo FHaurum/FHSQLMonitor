@@ -28,4 +28,5 @@ Triggers.sql
 WaitStatistics.sql
 WhoIsActive-001-AdamMachanic-12.00-sp_WhoIsActive.sql
 WhoIsActive-002.sql
+_PostInstall-FHSQLMonitor.sql
 CleanupAfterInstallationAndUpgrade.sql

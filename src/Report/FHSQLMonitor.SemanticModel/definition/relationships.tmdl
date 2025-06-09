@@ -328,3 +328,15 @@ relationship 97cbeb76-f69e-d5ae-9ba9-5951ef7f9049
 	fromColumn: 'Blocked process'.BlocksAndDeadlocksKey
 	toColumn: 'Blocks and deadlocks'.BlocksAndDeadlocksKey
 
+relationship 71304b2f-05dc-5124-db5d-fe8b33f2c04f
+	fromColumn: Log.Date
+	toColumn: Date.Date
+
+relationship 0553b358-f98e-0e02-e233-3f7e0832a98a
+	fromColumn: Log.TimeKey
+	toColumn: Time.TimeKey
+
+relationship d554dcd5-41ae-cbb7-8437-560ce00346b6
+	fromColumn: Log.LogTaskNameKey
+	toColumn: LogTaskName.LogTaskNameKey
+

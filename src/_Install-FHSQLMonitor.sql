@@ -40,7 +40,7 @@ BEGIN
 	SET @myUserName = SUSER_NAME();
 	SET @nowUTC = SYSUTCDATETIME();
 	SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
-	SET @version = '2.6.0';
+	SET @version = '2.7.0';
 END;
 
 --
@@ -834,7 +834,6 @@ ELSE BEGIN
 	-- Register retention for dbo.fhsmLog
 	--
 	BEGIN
-		-- Every day between 23:00 and 24:00
 		SET @stmt = '
 			USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
 
@@ -3074,6 +3073,9 @@ ELSE BEGIN
 						,l.Message
 						,l.Version
 						,l.TimestampUTC, l.Timestamp
+						,CAST(l.Timestamp AS date) AS Date
+						,(DATEPART(HOUR, l.Timestamp) * 60 * 60) + (DATEPART(MINUTE, l.Timestamp) * 60) + (DATEPART(SECOND, l.Timestamp)) AS TimeKey
+						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(l.Task, l.Name, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS LogTaskNameKey
 					FROM dbo.fhsmLog AS l
 					WHERE (l.TimestampUTC > DATEADD(DAY, -1, (SELECT MAX(lMax.TimestampUTC) FROM dbo.fhsmLog AS lMax)));
 				'';

@@ -1,6 +1,6 @@
 ﻿$outputFile = "..\build\FHSQLMonitor.sql"
 
-$versionNumber = "v2.6.0"
+$versionNumber = "v2.7.0"
 
 $timeStr = (Get-Date).ToString("yyyy:MM:dd HH:mm:ss")
 
@@ -75,6 +75,10 @@ Add-Content $outputFile "DECLARE @installationWaitCnt int;"
 Add-Content $outputFile ""
 Add-Content $outputFile "SET @installationJobName = 'FHSQLMonitor in ' + @fhSQLMonitorDatabase;"
 Add-Content $outputFile ""
+Add-Content $outputFile "RAISERROR('', 0, 1) WITH NOWAIT;"
+Add-Content $outputFile ("SET @installationMsg = 'Install/upgarde FHSQLMonitor in ' + @fhSQLMonitorDatabase + ' to " + $versionNumber + "';")
+Add-Content $outputFile "RAISERROR(@installationMsg, 0, 1) WITH NOWAIT;"
+Add-Content $outputFile ""
 Add-Content $outputFile "--"
 Add-Content $outputFile "-- Get job enabled status"
 Add-Content $outputFile "--"
@@ -91,6 +95,7 @@ Add-Content $outputFile "		);"
 Add-Content $outputFile ""
 Add-Content $outputFile "	IF (@installationJobStatus IN (0, 1))"
 Add-Content $outputFile "	BEGIN"
+Add-Content $outputFile "       RAISERROR('', 0, 1) WITH NOWAIT;"
 Add-Content $outputFile "		SET @installationMsg = 'Agent job ' + QUOTENAME(@installationJobName) + ' is ' + CASE @installationJobStatus WHEN 1 THEN 'enabled' WHEN 0 THEN 'disable' END;"
 Add-Content $outputFile "		RAISERROR(@installationMsg, 0, 1) WITH NOWAIT;"
 Add-Content $outputFile "	END;"
@@ -101,6 +106,7 @@ Add-Content $outputFile "-- Disable job if enabled"
 Add-Content $outputFile "--"
 Add-Content $outputFile "IF (@installationJobStatus = 1)"
 Add-Content $outputFile "BEGIN"
+Add-Content $outputFile "   RAISERROR('', 0, 1) WITH NOWAIT;"
 Add-Content $outputFile "	SET @installationMsg = 'Disabling job ' + QUOTENAME(@installationJobName);"
 Add-Content $outputFile "	RAISERROR(@installationMsg, 0, 1) WITH NOWAIT;"
 Add-Content $outputFile ""
@@ -161,7 +167,6 @@ Add-Content $outputFile "			WAITFOR DELAY '00:00:05';"
 Add-Content $outputFile "		END;"
 Add-Content $outputFile "	END;"
 Add-Content $outputFile "END;"
-Add-Content $outputFile ""
 
 $filenames = Get-Content InstallationFileNames.txt
 foreach ($file in $filenames) {
@@ -173,6 +178,7 @@ foreach ($file in $filenames) {
     $content = Get-Content $file -Raw
     $content = $content.Replace('''', '''''')
 
+    Add-Content $outputFile ""
     Add-Content $outputFile "--"
     Add-Content $outputFile ("-- File part:" + $file + " modified: " + $fileLastWriteTimeStr)
     Add-Content $outputFile "--"
@@ -186,7 +192,7 @@ foreach ($file in $filenames) {
     Add-Content $outputFile $content
     Add-Content $outputFile "';"
 
-    if ($file -eq "_Install-FHSQLMonitor.sql") {
+    if (($file -eq "_Install-FHSQLMonitor.sql") -or ($file -eq "_PostInstall-FHSQLMonitor.sql")) {
         Add-Content $outputFile "SET @stmt = REPLACE(@stmt, 'SET @createSQLAgentJob = 1;',                   'SET @createSQLAgentJob = ' + CAST(@createSQLAgentJob AS nvarchar) + ';');"
         Add-Content $outputFile "SET @stmt = REPLACE(@stmt, 'SET @fhSQLMonitorDatabase = ''FHSQLMonitor'';', 'SET @fhSQLMonitorDatabase = ''' + @fhSQLMonitorDatabase + ''';');"
         Add-Content $outputFile "SET @stmt = REPLACE(@stmt, 'SET @pbiSchema = ''FHSM'';',                    'SET @pbiSchema = ''' + @pbiSchema + ''';');"
@@ -235,7 +241,6 @@ Add-Content $outputFile "--"
 Add-Content $outputFile "IF (@installationJobStatus = 1)"
 Add-Content $outputFile "BEGIN"
 Add-Content $outputFile "	RAISERROR('', 0, 1) WITH NOWAIT;"
-Add-Content $outputFile ""
 Add-Content $outputFile "	SET @installationMsg = 'Enabling job ' + QUOTENAME(@installationJobName);"
 Add-Content $outputFile "	RAISERROR(@installationMsg, 0, 1) WITH NOWAIT;"
 Add-Content $outputFile ""

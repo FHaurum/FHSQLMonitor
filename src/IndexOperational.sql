@@ -66,7 +66,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.6';
+		SET @version = '2.7';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -663,7 +663,7 @@ ELSE BEGIN
 							END
 							ELSE BEGIN
 								SET @message = ''Database '''''' + @database + '''''' is member of a replica but this server is not the primary node'';
-								EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''Warning'', @message = @message;
+								EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''Debug'', @message = @message;
 							END;
 						END;
 

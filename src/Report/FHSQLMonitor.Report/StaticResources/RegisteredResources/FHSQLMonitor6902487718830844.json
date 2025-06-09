@@ -1081,85 +1081,16 @@
           {
             "background": {
               "solid": {
-                "color": "#FFFFFF"
+                "color": "#F0FFFF"
               }
             },
             "fontFamily": "Segoe UI",
             "textSize": 12
           }
         ],
-        "visualHeader": [
+        "selection": [
           {
-            "show": false
-          }
-        ]
-      }
-    },
-    "textSlicer": {
-      "*": {
-        "applyButton": [
-          {
-            "iconSize": 12
-          }
-        ],
-        "background": [
-          {
-            "color": {
-              "solid": {
-                "color": "#BCD9FF"
-              }
-            },
-            "transparency": 70
-          }
-        ],
-        "border": [
-          {
-            "color": {
-              "solid": {
-                "color": "#BCD9FF"
-              }
-            },
-            "radius": 10,
-            "show": true
-          }
-        ],
-        "header": [
-          {
-            "bold": true,
-            "fontFamily": "Segoe UI",
-            "textSize": 12
-          }
-        ],
-        "inputText": [
-          {
-            "dismissSize": 12,
-            "fontSize": 12,
-            "fontTransparency": 20
-          }
-        ],
-        "inputTextBox": [
-          {
-            "accentBarShow": false,
-            "paddingBottom": 2,
-            "paddingLeft": 2,
-            "paddingRight": 2,
-            "paddingTop": 2
-          }
-        ],
-        "padding": [
-          {
-            "bottom": 3,
-            "left": 5,
-            "right": 5,
-            "top": 3
-          }
-        ],
-        "title": [
-          {
-            "bold": true,
-            "fontFamily": "Segoe UI",
-            "fontSize": 12,
-            "show": false
+            "selectAllCheckboxEnabled": true
           }
         ],
         "visualHeader": [
@@ -1242,6 +1173,85 @@
         "*": [
           {
             "fontSize": 10
+          }
+        ]
+      }
+    },
+    "textSlicer": {
+      "*": {
+        "applyButton": [
+          {
+            "iconSize": 12
+          }
+        ],
+        "background": [
+          {
+            "color": {
+              "solid": {
+                "color": "#BCD9FF"
+              }
+            },
+            "transparency": 70
+          }
+        ],
+        "border": [
+          {
+            "color": {
+              "solid": {
+                "color": "#BCD9FF"
+              }
+            },
+            "radius": 10,
+            "show": true
+          }
+        ],
+        "header": [
+          {
+            "bold": true,
+            "fontFamily": "Segoe UI",
+            "textSize": 12
+          }
+        ],
+        "inputText": [
+          {
+            "dismissSize": 12,
+            "fontSize": 12,
+            "fontTransparency": 20
+          }
+        ],
+        "inputTextBox": [
+          {
+            "accentBarShow": false,
+            "backColor": {
+              "solid": {
+                "color": "#F0FFFF"
+              }
+            },
+            "paddingBottom": 2,
+            "paddingLeft": 2,
+            "paddingRight": 2,
+            "paddingTop": 2
+          }
+        ],
+        "padding": [
+          {
+            "bottom": 3,
+            "left": 5,
+            "right": 5,
+            "top": 3
+          }
+        ],
+        "title": [
+          {
+            "bold": true,
+            "fontFamily": "Segoe UI",
+            "fontSize": 12,
+            "show": false
+          }
+        ],
+        "visualHeader": [
+          {
+            "show": false
           }
         ]
       }

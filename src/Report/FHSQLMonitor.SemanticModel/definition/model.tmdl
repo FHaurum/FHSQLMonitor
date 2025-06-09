@@ -28,11 +28,11 @@ queryGroup 'Connection parameters'
 
 annotation __PBI_TimeIntelligenceEnabled = 0
 
-annotation PBIDesktopVersion = 2.143.878.0 (25.05)+b20aa3b866ec1b70879135a4e60e4b1301c75b21
+annotation PBIDesktopVersion = 2.143.1378.0 (25.05)+4e1de9c957866bc5336e0d250838314aa54ff3a8
 
 annotation PBI_ProTooling = ["DevMode"]
 
-annotation PBI_QueryOrder = ["Agent job","Agent job status","Blocks and deadlocks","Connection info","Database","Database file","Agent alerts","Agent jobs","Agent jobs - grid","Agent jobs - list","Agent jobs performance","Agent jobs performance errors","Backup age","Backup status","Blocked process","Connections","CPU per database","CPU utilization","Database IO","Database size","Database state","Database state history","Deadlock","Index configuration","Index operational","Index optimize","Index physical","Index usage","Instance configurations","Instance configurations history","Instance dump files","Instance hardware","Instance hardware history","Instance services","Instance SQL agent properties","Instance SQL agent properties history","Instance suspect pages","Missing indexes","Missing indexes - Index details","OH errors","Partitioned indexes","Performance statistics","Plan cache usage","Plan guides","Query statements","Query statistics","Resource governor configuration","Resource governor external resource pool affinity","Resource governor external resource pools","Resource governor resource pool affinity","Resource governor resource pools","Resource governor workload groups","Statistics age","Statistics age incremental","Date","Index","Index alloc type","Junk dimensions","Missing index statement","_Measures","Server name","Database name","Schema name","Data load list","Configurations","Data load","LastRefresh","Log","Retentions","Schedules","Table size","Trace flags","Trace flags history","Triggers","Object","Object partition","Performance counter","Query statistic","Time","Wait type","Wait statistics","Who is active"]
+annotation PBI_QueryOrder = ["Agent job","Agent job status","Blocks and deadlocks","Connection info","Database","Database file","Agent alerts","Agent jobs","Agent jobs - grid","Agent jobs - list","Agent jobs performance","Agent jobs performance errors","Backup age","Backup status","Blocked process","Connections","CPU per database","CPU utilization","Database IO","Database size","Database state","Database state history","Deadlock","Index configuration","Index operational","Index optimize","Index physical","Index usage","Instance configurations","Instance configurations history","Instance dump files","Instance hardware","Instance hardware history","Instance services","Instance SQL agent properties","Instance SQL agent properties history","Instance suspect pages","Missing indexes","Missing indexes - Index details","OH errors","Partitioned indexes","Performance statistics","Plan cache usage","Plan guides","Query statements","Query statistics","Resource governor configuration","Resource governor external resource pool affinity","Resource governor external resource pools","Resource governor resource pool affinity","Resource governor resource pools","Resource governor workload groups","Statistics age","Statistics age incremental","Date","Index","Index alloc type","Junk dimensions","Missing index statement","_Measures","Server name","Database name","Schema name","Data load list","Configurations","Data load","LastRefresh","Log","LogTaskName","Retentions","Schedules","Table size","Trace flags","Trace flags history","Triggers","Object","Object partition","Performance counter","Query statistic","Time","Wait type","Wait statistics","Who is active"]
 
 annotation __TEdtr = 1
 
@@ -132,6 +132,8 @@ ref table 'Blocks and deadlocks'
 ref table 'Server name'
 ref table 'Database name'
 ref table 'Schema name'
+ref table 'Log type'
+ref table LogTaskName
 
 ref cultureInfo en-US
 

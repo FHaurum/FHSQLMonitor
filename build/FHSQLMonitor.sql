@@ -1,7 +1,7 @@
 USE master;
 
 --
--- FHSQLMonitor v2.6.0 - 2025.05.25 17.53.15
+-- FHSQLMonitor v2.7.0 - 2025.06.09 11.13.55
 --
 
 BEGIN
@@ -65,6 +65,10 @@ DECLARE @installationWaitCnt int;
 
 SET @installationJobName = 'FHSQLMonitor in ' + @fhSQLMonitorDatabase;
 
+RAISERROR('', 0, 1) WITH NOWAIT;
+SET @installationMsg = 'Install/upgarde FHSQLMonitor in ' + @fhSQLMonitorDatabase + ' to v2.7.0';
+RAISERROR(@installationMsg, 0, 1) WITH NOWAIT;
+
 --
 -- Get job enabled status
 --
@@ -81,6 +85,7 @@ BEGIN
 
 	IF (@installationJobStatus IN (0, 1))
 	BEGIN
+       RAISERROR('', 0, 1) WITH NOWAIT;
 		SET @installationMsg = 'Agent job ' + QUOTENAME(@installationJobName) + ' is ' + CASE @installationJobStatus WHEN 1 THEN 'enabled' WHEN 0 THEN 'disable' END;
 		RAISERROR(@installationMsg, 0, 1) WITH NOWAIT;
 	END;
@@ -91,6 +96,7 @@ END;
 --
 IF (@installationJobStatus = 1)
 BEGIN
+   RAISERROR('', 0, 1) WITH NOWAIT;
 	SET @installationMsg = 'Disabling job ' + QUOTENAME(@installationJobName);
 	RAISERROR(@installationMsg, 0, 1) WITH NOWAIT;
 
@@ -153,7 +159,7 @@ BEGIN
 END;
 
 --
--- File part:_Install-FHSQLMonitor.sql modified: 2025.05.25 17.51.06
+-- File part:_Install-FHSQLMonitor.sql modified: 2025.06.09 11.11.12
 --
 SET @stmt = '
 SET NOCOUNT ON;
@@ -198,7 +204,7 @@ BEGIN
 	SET @myUserName = SUSER_NAME();
 	SET @nowUTC = SYSUTCDATETIME();
 	SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
-	SET @version = ''2.6.0'';
+	SET @version = ''2.7.0'';
 END;
 
 --
@@ -992,7 +998,6 @@ ELSE BEGIN
 	-- Register retention for dbo.fhsmLog
 	--
 	BEGIN
-		-- Every day between 23:00 and 24:00
 		SET @stmt = ''
 			USE '' + QUOTENAME(@fhSQLMonitorDatabase) + '';
 
@@ -3232,6 +3237,9 @@ ELSE BEGIN
 						,l.Message
 						,l.Version
 						,l.TimestampUTC, l.Timestamp
+						,CAST(l.Timestamp AS date) AS Date
+						,(DATEPART(HOUR, l.Timestamp) * 60 * 60) + (DATEPART(MINUTE, l.Timestamp) * 60) + (DATEPART(SECOND, l.Timestamp)) AS TimeKey
+						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(l.Task, l.Name, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS LogTaskNameKey
 					FROM dbo.fhsmLog AS l
 					WHERE (l.TimestampUTC > DATEADD(DAY, -1, (SELECT MAX(lMax.TimestampUTC) FROM dbo.fhsmLog AS lMax)));
 				'''';
@@ -3568,6 +3576,7 @@ SET @stmt = REPLACE(@stmt, 'SET @createSQLAgentJob = 1;',                   'SET
 SET @stmt = REPLACE(@stmt, 'SET @fhSQLMonitorDatabase = ''FHSQLMonitor'';', 'SET @fhSQLMonitorDatabase = ''' + @fhSQLMonitorDatabase + ''';');
 SET @stmt = REPLACE(@stmt, 'SET @pbiSchema = ''FHSM'';',                    'SET @pbiSchema = ''' + @pbiSchema + ''';');
 EXEC(@stmt);
+
 --
 -- File part:IndexOptimize-001-OlaHallengren-CommandLog.sql modified: 2025.02.22 17.12.56
 --
@@ -3712,6 +3721,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableIndexReorganize = 0;',          'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @enableUpdateAllStatistics = '      + CAST(@enableUpdateAllStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
+
 --
 -- File part:IndexOptimize-002-OlaHallengren-CommandExecute.sql modified: 2025.02.17 18.44.49
 --
@@ -4077,6 +4087,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableIndexReorganize = 0;',          'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @enableUpdateAllStatistics = '      + CAST(@enableUpdateAllStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
+
 --
 -- File part:IndexOptimize-003-OlaHallengren-IndexOptimize.sql modified: 2025.02.17 18.45.22
 --
@@ -6641,6 +6652,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableIndexReorganize = 0;',          'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @enableUpdateAllStatistics = '      + CAST(@enableUpdateAllStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
+
 --
 -- File part:IndexOptimize-004.sql modified: 2025.05.23 16.36.34
 --
@@ -7279,6 +7291,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableIndexReorganize = 0;',          'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @enableUpdateAllStatistics = '      + CAST(@enableUpdateAllStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
+
 --
 -- File part:DatabaseState.sql modified: 2025.05.23 16.32.49
 --
@@ -8583,6 +8596,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableIndexReorganize = 0;',          'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @enableUpdateAllStatistics = '      + CAST(@enableUpdateAllStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
+
 --
 -- File part:AgentJobs.sql modified: 2025.05.23 16.12.52
 --
@@ -9322,6 +9336,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableIndexReorganize = 0;',          'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @enableUpdateAllStatistics = '      + CAST(@enableUpdateAllStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
+
 --
 -- File part:AgentJobsPerformance.sql modified: 2025.05.23 16.18.44
 --
@@ -10576,8 +10591,9 @@ SET @stmt = REPLACE(@stmt, 'SET @enableIndexReorganize = 0;',          'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @enableUpdateAllStatistics = '      + CAST(@enableUpdateAllStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
+
 --
--- File part:AgeOfStatistics.sql modified: 2025.05.23 16.21.18
+-- File part:AgeOfStatistics.sql modified: 2025.06.07 09.05.54
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -10649,7 +10665,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.6'';
+		SET @version = ''2.7'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -11271,7 +11287,7 @@ ELSE BEGIN
 							END
 							ELSE BEGIN
 								SET @message = ''''Database '''''''''''' + @database + '''''''''''' is member of a replica but this server is not the primary node'''';
-								EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''''Warning'''', @message = @message;
+								EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''''Debug'''', @message = @message;
 							END;
 						END;
 
@@ -11514,6 +11530,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableIndexReorganize = 0;',          'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @enableUpdateAllStatistics = '      + CAST(@enableUpdateAllStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
+
 --
 -- File part:BackupStatus.sql modified: 2025.05.23 16.23.15
 --
@@ -12142,6 +12159,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableIndexReorganize = 0;',          'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @enableUpdateAllStatistics = '      + CAST(@enableUpdateAllStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
+
 --
 -- File part:BlocksAndDeadlocks.sql modified: 2025.05.25 16.16.24
 --
@@ -13361,6 +13379,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableIndexReorganize = 0;',          'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @enableUpdateAllStatistics = '      + CAST(@enableUpdateAllStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
+
 --
 -- File part:Connections.sql modified: 2025.05.23 16.26.12
 --
@@ -13865,6 +13884,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableIndexReorganize = 0;',          'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @enableUpdateAllStatistics = '      + CAST(@enableUpdateAllStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
+
 --
 -- File part:CPUUtilization.sql modified: 2025.05.23 16.27.58
 --
@@ -14526,8 +14546,9 @@ SET @stmt = REPLACE(@stmt, 'SET @enableIndexReorganize = 0;',          'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @enableUpdateAllStatistics = '      + CAST(@enableUpdateAllStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
+
 --
--- File part:DatabaseIO.sql modified: 2025.05.23 18.34.33
+-- File part:DatabaseIO.sql modified: 2025.06.07 08.52.01
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -14599,7 +14620,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.6'';
+		SET @version = ''2.7'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -14784,7 +14805,15 @@ ELSE BEGIN
 					,CAST(b.Timestamp AS date) AS Date
 					,(DATEPART(HOUR, b.Timestamp) * 60 * 60) + (DATEPART(MINUTE, b.Timestamp) * 60) + (DATEPART(SECOND, b.Timestamp)) AS TimeKey
 					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(b.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(b.DatabaseName, b.LogicalName, CASE b.Type WHEN 0 THEN ''''Data'''' WHEN 1 THEN ''''Log'''' WHEN 2 THEN ''''Filestream'''' END, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseFileKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(b.DatabaseName, b.LogicalName,
+						CASE b.Type
+							WHEN 0 THEN ''''Data''''
+							WHEN 1 THEN ''''Log''''
+							WHEN 2 THEN ''''Filestream''''
+							WHEN 4 THEN ''''Fulltext''''
+							ELSE ''''Other''''
+						END,
+					DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseFileKey
 			'';
 			SET @stmt += ''
 				FROM (
@@ -15155,7 +15184,7 @@ ELSE BEGIN
 							END
 							ELSE BEGIN
 								SET @message = ''''Database '''''''''''' + @database + '''''''''''' is member of a replica but this server is not the primary node'''';
-								EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''''Warning'''', @message = @message;
+								EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''''Debug'''', @message = @message;
 							END;
 						END;
 
@@ -15260,7 +15289,7 @@ ELSE BEGIN
 				,''src'' AS SrcAlias
 				,NULL AS SrcWhere
 				,''src.[Timestamp]'' AS SrcDateColumn
-				,''src.[DatabaseName]'', ''src.[LogicalName]'', ''CASE src.[Type] WHEN 0 THEN ''''Data'''' WHEN 1 THEN ''''Log'''' WHEN 2 THEN ''''Filestream'''' END''
+				,''src.[DatabaseName]'', ''src.[LogicalName]'', ''CASE src.[Type] WHEN 0 THEN ''''Data'''' WHEN 1 THEN ''''Log'''' WHEN 2 THEN ''''Filestream'''' WHEN 4 THEN ''''Fulltext'''' ELSE ''''Other'''' END''
 				,''Database name'', ''Logical name'', ''Type''
 		)
 		MERGE dbo.fhsmDimensions AS tgt
@@ -15334,8 +15363,9 @@ SET @stmt = REPLACE(@stmt, 'SET @enableIndexReorganize = 0;',          'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @enableUpdateAllStatistics = '      + CAST(@enableUpdateAllStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
+
 --
--- File part:DatabaseSize.sql modified: 2025.05.23 16.31.07
+-- File part:DatabaseSize.sql modified: 2025.06.07 08.53.38
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -15407,7 +15437,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.6'';
+		SET @version = ''2.7'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -15541,7 +15571,15 @@ ELSE BEGIN
 					,ds.UsedSize
 					,CAST(ds.Timestamp AS date) AS Date
 					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ds.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ds.DatabaseName, ds.LogicalName, CASE ds.Type WHEN 0 THEN ''''Data'''' WHEN 1 THEN ''''Log'''' WHEN 2 THEN ''''Filestream'''' END, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseFileKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ds.DatabaseName, ds.LogicalName,
+						CASE ds.Type
+							WHEN 0 THEN ''''Data''''
+							WHEN 1 THEN ''''Log''''
+							WHEN 2 THEN ''''Filestream''''
+							WHEN 4 THEN ''''Fulltext''''
+							ELSE ''''Other''''
+						END,
+					DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseFileKey
 				FROM dbo.fhsmDatabaseSize AS ds
 				WHERE (ds.Timestamp IN (
 					SELECT a.Timestamp
@@ -15735,7 +15773,7 @@ ELSE BEGIN
 							END
 							ELSE BEGIN
 								SET @message = ''''Database '''''''''''' + @database + '''''''''''' is member of a replica but this server is not the primary node'''';
-								EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''''Warning'''', @message = @message;
+								EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''''Debug'''', @message = @message;
 							END;
 						END;
 
@@ -15840,7 +15878,7 @@ ELSE BEGIN
 				,''src'' AS SrcAlias
 				,NULL AS SrcWhere
 				,''src.[Timestamp]'' AS SrcDateColumn
-				,''src.[DatabaseName]'', ''src.[LogicalName]'', ''CASE src.[Type] WHEN 0 THEN ''''Data'''' WHEN 1 THEN ''''Log'''' WHEN 2 THEN ''''Filestream'''' END''
+				,''src.[DatabaseName]'', ''src.[LogicalName]'', ''CASE src.[Type] WHEN 0 THEN ''''Data'''' WHEN 1 THEN ''''Log'''' WHEN 2 THEN ''''Filestream'''' WHEN 4 THEN ''''Fulltext'''' ELSE ''''Other'''' END''
 				,''Database name'', ''Logical name'', ''Type''
 		)
 		MERGE dbo.fhsmDimensions AS tgt
@@ -15914,8 +15952,9 @@ SET @stmt = REPLACE(@stmt, 'SET @enableIndexReorganize = 0;',          'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @enableUpdateAllStatistics = '      + CAST(@enableUpdateAllStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
+
 --
--- File part:IndexOperational.sql modified: 2025.05.23 16.34.17
+-- File part:IndexOperational.sql modified: 2025.06.07 08.59.52
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -15987,7 +16026,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.6'';
+		SET @version = ''2.7'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -16584,7 +16623,7 @@ ELSE BEGIN
 							END
 							ELSE BEGIN
 								SET @message = ''''Database '''''''''''' + @database + '''''''''''' is member of a replica but this server is not the primary node'''';
-								EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''''Warning'''', @message = @message;
+								EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''''Debug'''', @message = @message;
 							END;
 						END;
 
@@ -17257,8 +17296,9 @@ SET @stmt = REPLACE(@stmt, 'SET @enableIndexReorganize = 0;',          'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @enableUpdateAllStatistics = '      + CAST(@enableUpdateAllStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
+
 --
--- File part:IndexPhysical.sql modified: 2025.05.23 16.38.18
+-- File part:IndexPhysical.sql modified: 2025.06.07 09.00.57
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -17330,7 +17370,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.6'';
+		SET @version = ''2.7'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -18064,7 +18104,7 @@ ELSE BEGIN
 							END
 							ELSE BEGIN
 								SET @message = ''''Database '''''''''''' + @database + '''''''''''' is member of a replica but this server is not the primary node'''';
-								EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''''Warning'''', @message = @message;
+								EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''''Debug'''', @message = @message;
 							END;
 						END;
 
@@ -18297,8 +18337,9 @@ SET @stmt = REPLACE(@stmt, 'SET @enableIndexReorganize = 0;',          'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @enableUpdateAllStatistics = '      + CAST(@enableUpdateAllStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
+
 --
--- File part:IndexUsage.sql modified: 2025.05.23 19.59.44
+-- File part:IndexUsage.sql modified: 2025.06.07 09.01.46
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -18370,7 +18411,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.6'';
+		SET @version = ''2.7'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -19052,7 +19093,7 @@ ELSE BEGIN
 							END
 							ELSE BEGIN
 								SET @message = ''''Database '''''''''''' + @database + '''''''''''' is member of a replica but this server is not the primary node'''';
-								EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''''Warning'''', @message = @message;
+								EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''''Debug'''', @message = @message;
 							END;
 						END;
 
@@ -19257,6 +19298,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableIndexReorganize = 0;',          'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @enableUpdateAllStatistics = '      + CAST(@enableUpdateAllStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
+
 --
 -- File part:InstanceState.sql modified: 2025.05.23 16.44.59
 --
@@ -23199,6 +23241,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableIndexReorganize = 0;',          'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @enableUpdateAllStatistics = '      + CAST(@enableUpdateAllStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
+
 --
 -- File part:MissingIndexes.sql modified: 2025.05.23 19.39.26
 --
@@ -24306,8 +24349,9 @@ SET @stmt = REPLACE(@stmt, 'SET @enableIndexReorganize = 0;',          'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @enableUpdateAllStatistics = '      + CAST(@enableUpdateAllStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
+
 --
--- File part:PartitionedIndexes.sql modified: 2025.05.23 16.57.02
+-- File part:PartitionedIndexes.sql modified: 2025.06.07 09.02.40
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -24379,7 +24423,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.6'';
+		SET @version = ''2.7'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -24877,7 +24921,7 @@ ELSE BEGIN
 							END
 							ELSE BEGIN
 								SET @message = ''''Database '''''''''''' + @database + '''''''''''' is member of a replica but this server is not the primary node'''';
-								EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''''Warning'''', @message = @message;
+								EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''''Debug'''', @message = @message;
 							END;
 						END;
 
@@ -25084,6 +25128,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableIndexReorganize = 0;',          'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @enableUpdateAllStatistics = '      + CAST(@enableUpdateAllStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
+
 --
 -- File part:PerformanceStatistics.sql modified: 2025.05.23 17.01.12
 --
@@ -26001,6 +26046,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableIndexReorganize = 0;',          'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @enableUpdateAllStatistics = '      + CAST(@enableUpdateAllStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
+
 --
 -- File part:PlanCacheUsage.sql modified: 2025.05.23 17.03.49
 --
@@ -26389,8 +26435,9 @@ SET @stmt = REPLACE(@stmt, 'SET @enableIndexReorganize = 0;',          'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @enableUpdateAllStatistics = '      + CAST(@enableUpdateAllStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
+
 --
--- File part:PlanGuides.sql modified: 2025.05.23 17.06.16
+-- File part:PlanGuides.sql modified: 2025.06.07 09.04.56
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -26462,7 +26509,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.6'';
+		SET @version = ''2.7'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -26829,7 +26876,7 @@ ELSE BEGIN
 							END
 							ELSE BEGIN
 								SET @message = ''''Database '''''''''''' + @database + '''''''''''' is member of a replica but this server is not the primary node'''';
-								EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''''Warning'''', @message = @message;
+								EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''''Debug'''', @message = @message;
 							END;
 						END;
 
@@ -26998,6 +27045,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableIndexReorganize = 0;',          'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @enableUpdateAllStatistics = '      + CAST(@enableUpdateAllStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
+
 --
 -- File part:QueryStatistics.sql modified: 2025.05.23 17.11.01
 --
@@ -28104,8 +28152,9 @@ SET @stmt = REPLACE(@stmt, 'SET @enableIndexReorganize = 0;',          'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @enableUpdateAllStatistics = '      + CAST(@enableUpdateAllStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
+
 --
--- File part:TableSize.sql modified: 2025.05.23 17.14.20
+-- File part:TableSize.sql modified: 2025.06.07 09.06.45
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -28177,7 +28226,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.6'';
+		SET @version = ''2.7'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -28697,7 +28746,7 @@ ELSE BEGIN
 							END
 							ELSE BEGIN
 								SET @message = ''''Database '''''''''''' + @database + '''''''''''' is member of a replica but this server is not the primary node'''';
-								EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''''Warning'''', @message = @message;
+								EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''''Debug'''', @message = @message;
 							END;
 						END;
 
@@ -28928,8 +28977,9 @@ SET @stmt = REPLACE(@stmt, 'SET @enableIndexReorganize = 0;',          'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @enableUpdateAllStatistics = '      + CAST(@enableUpdateAllStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
+
 --
--- File part:Triggers.sql modified: 2025.05.23 17.17.18
+-- File part:Triggers.sql modified: 2025.06.07 09.07.33
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -29001,7 +29051,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.6'';
+		SET @version = ''2.7'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -29370,7 +29420,7 @@ ELSE BEGIN
 							END
 							ELSE BEGIN
 								SET @message = ''''Database '''''''''''' + @database + '''''''''''' is member of a replica but this server is not the primary node'''';
-								EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''''Warning'''', @message = @message;
+								EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''''Debug'''', @message = @message;
 							END;
 						END;
 
@@ -29539,6 +29589,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableIndexReorganize = 0;',          'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @enableUpdateAllStatistics = '      + CAST(@enableUpdateAllStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
+
 --
 -- File part:WaitStatistics.sql modified: 2025.05.23 19.52.44
 --
@@ -30687,6 +30738,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableIndexReorganize = 0;',          'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @enableUpdateAllStatistics = '      + CAST(@enableUpdateAllStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
+
 --
 -- File part:WhoIsActive-001-AdamMachanic-12.00-sp_WhoIsActive.sql modified: 2025.02.17 18.45.42
 --
@@ -36252,6 +36304,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableIndexReorganize = 0;',          'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @enableUpdateAllStatistics = '      + CAST(@enableUpdateAllStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
+
 --
 -- File part:WhoIsActive-002.sql modified: 2025.05.04 17.16.10
 --
@@ -36717,6 +36770,113 @@ SET @stmt = REPLACE(@stmt, 'SET @enableIndexReorganize = 0;',          'SET @ena
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateAllStatistics = 0;',      'SET @enableUpdateAllStatistics = '      + CAST(@enableUpdateAllStatistics AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @enableUpdateModifiedStatistics = ' + CAST(@enableUpdateModifiedStatistics AS nvarchar) + ';');
 EXEC(@stmt);
+
+--
+-- File part:_PostInstall-FHSQLMonitor.sql modified: 2025.06.08 07.59.23
+--
+SET @stmt = '
+USE [' + @fhSQLMonitorDatabase + '];
+SET NOCOUNT ON;
+
+--
+-- Default installations parameters
+--
+BEGIN
+	DECLARE @fhSQLMonitorDatabase nvarchar(128);
+
+	SET @fhSQLMonitorDatabase = ''FHSQLMonitor'';
+END;
+--
+-- Print out start message
+--
+BEGIN
+	RAISERROR('''', 0, 1) WITH NOWAIT;
+	RAISERROR(''Post-installing FHSQLMonitor main'', 0, 1) WITH NOWAIT;
+END;
+
+--
+-- Declare variables
+--
+BEGIN
+	DECLARE @stmt nvarchar(max);
+END;
+
+--
+-- Register dimensions for dbo.fhsmLog
+--
+BEGIN
+	SET @stmt = ''
+		USE '' + QUOTENAME(@fhSQLMonitorDatabase) + '';
+
+		WITH
+		dimensions(
+			DimensionName, DimensionKey
+			,SrcTable, SrcAlias, SrcWhere, SrcDateColumn
+			,SrcColumn1, SrcColumn2, SrcColumn3, SrcColumn4
+			,OutputColumn1, OutputColumn2, OutputColumn3, OutputColumn4
+		) AS (
+			SELECT
+				''''LogTaskName'''' AS DimensionName
+				,''''LogTaskNameKey'''' AS DimensionKey
+				,''''dbo.fhsmLog'''' AS SrcTable
+				,''''src'''' AS SrcAlias
+				,NULL AS SrcWhere
+				,''''src.[Timestamp]'''' AS SrcDateColumn
+				,''''src.[Task]'''', ''''src.[Name]'''', NULL, NULL
+				,''''Task'''', ''''Name'''', NULL, NULL
+		)
+		MERGE dbo.fhsmDimensions AS tgt
+		USING dimensions AS src ON (src.DimensionName = tgt.DimensionName) AND (src.SrcTable = tgt.SrcTable)
+		WHEN MATCHED
+			THEN UPDATE SET
+				tgt.DimensionKey = src.DimensionKey
+				,tgt.SrcTable = src.SrcTable
+				,tgt.SrcAlias = src.SrcAlias
+				,tgt.SrcWhere = src.SrcWhere
+				,tgt.SrcDateColumn = src.SrcDateColumn
+				,tgt.SrcColumn1 = src.SrcColumn1
+				,tgt.SrcColumn2 = src.SrcColumn2
+				,tgt.SrcColumn3 = src.SrcColumn3
+				,tgt.SrcColumn4 = src.SrcColumn4
+				,tgt.OutputColumn1 = src.OutputColumn1
+				,tgt.OutputColumn2 = src.OutputColumn2
+				,tgt.OutputColumn3 = src.OutputColumn3
+				,tgt.OutputColumn4 = src.OutputColumn4
+		WHEN NOT MATCHED BY TARGET
+			THEN INSERT(
+				DimensionName, DimensionKey
+				,SrcTable, SrcAlias, SrcWhere, SrcDateColumn
+				,SrcColumn1, SrcColumn2, SrcColumn3, SrcColumn4
+				,OutputColumn1, OutputColumn2, OutputColumn3, OutputColumn4
+			)
+			VALUES(
+				src.DimensionName, src.DimensionKey
+				,src.SrcTable, src.SrcAlias, src.SrcWhere, src.SrcDateColumn
+				,src.SrcColumn1, src.SrcColumn2, src.SrcColumn3, src.SrcColumn4
+				,src.OutputColumn1, src.OutputColumn2, src.OutputColumn3, src.OutputColumn4
+			);
+	'';
+	EXEC(@stmt);
+END;
+
+--
+-- Update dimensions based upon the fact table dbo.fhsmLog
+--
+BEGIN
+	SET @stmt = ''
+		USE '' + QUOTENAME(@fhSQLMonitorDatabase) + '';
+
+		EXEC dbo.fhsmSPUpdateDimensions @table = ''''dbo.fhsmLog'''';
+	'';
+	EXEC(@stmt);
+END;
+
+';
+SET @stmt = REPLACE(@stmt, 'SET @createSQLAgentJob = 1;',                   'SET @createSQLAgentJob = ' + CAST(@createSQLAgentJob AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @fhSQLMonitorDatabase = ''FHSQLMonitor'';', 'SET @fhSQLMonitorDatabase = ''' + @fhSQLMonitorDatabase + ''';');
+SET @stmt = REPLACE(@stmt, 'SET @pbiSchema = ''FHSM'';',                    'SET @pbiSchema = ''' + @pbiSchema + ''';');
+EXEC(@stmt);
+
 --
 -- File part:CleanupAfterInstallationAndUpgrade.sql modified: 2025.05.04 17.18.19
 --
@@ -36839,7 +36999,6 @@ EXEC(@stmt);
 IF (@installationJobStatus = 1)
 BEGIN
 	RAISERROR('', 0, 1) WITH NOWAIT;
-
 	SET @installationMsg = 'Enabling job ' + QUOTENAME(@installationJobName);
 	RAISERROR(@installationMsg, 0, 1) WITH NOWAIT;
 
@@ -36849,5 +37008,5 @@ BEGIN
 END;
 
 RAISERROR('', 0, 1) WITH NOWAIT;
-SET @installationMsg = 'FHSQLMonitor in ' + @fhSQLMonitorDatabase + ' has been installed/upgraded to v2.6.0';
+SET @installationMsg = 'FHSQLMonitor in ' + @fhSQLMonitorDatabase + ' has been installed/upgraded to v2.7.0';
 RAISERROR(@installationMsg, 0, 1) WITH NOWAIT;

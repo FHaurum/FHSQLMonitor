@@ -66,7 +66,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.6';
+		SET @version = '2.7';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -200,7 +200,15 @@ ELSE BEGIN
 					,ds.UsedSize
 					,CAST(ds.Timestamp AS date) AS Date
 					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ds.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ds.DatabaseName, ds.LogicalName, CASE ds.Type WHEN 0 THEN ''Data'' WHEN 1 THEN ''Log'' WHEN 2 THEN ''Filestream'' END, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseFileKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ds.DatabaseName, ds.LogicalName,
+						CASE ds.Type
+							WHEN 0 THEN ''Data''
+							WHEN 1 THEN ''Log''
+							WHEN 2 THEN ''Filestream''
+							WHEN 4 THEN ''Fulltext''
+							ELSE ''Other''
+						END,
+					DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseFileKey
 				FROM dbo.fhsmDatabaseSize AS ds
 				WHERE (ds.Timestamp IN (
 					SELECT a.Timestamp
@@ -394,7 +402,7 @@ ELSE BEGIN
 							END
 							ELSE BEGIN
 								SET @message = ''Database '''''' + @database + '''''' is member of a replica but this server is not the primary node'';
-								EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''Warning'', @message = @message;
+								EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''Debug'', @message = @message;
 							END;
 						END;
 
@@ -499,7 +507,7 @@ ELSE BEGIN
 				,'src' AS SrcAlias
 				,NULL AS SrcWhere
 				,'src.[Timestamp]' AS SrcDateColumn
-				,'src.[DatabaseName]', 'src.[LogicalName]', 'CASE src.[Type] WHEN 0 THEN ''Data'' WHEN 1 THEN ''Log'' WHEN 2 THEN ''Filestream'' END'
+				,'src.[DatabaseName]', 'src.[LogicalName]', 'CASE src.[Type] WHEN 0 THEN ''Data'' WHEN 1 THEN ''Log'' WHEN 2 THEN ''Filestream'' WHEN 4 THEN ''Fulltext'' ELSE ''Other'' END'
 				,'Database name', 'Logical name', 'Type'
 		)
 		MERGE dbo.fhsmDimensions AS tgt

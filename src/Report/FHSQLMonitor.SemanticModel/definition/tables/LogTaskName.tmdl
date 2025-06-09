@@ -1,0 +1,47 @@
+table LogTaskName
+	lineageTag: dca84af5-de77-433e-8e82-b526958267f5
+
+	column Task
+		dataType: string
+		lineageTag: 149ecf3b-8233-4ad2-b645-97791550ec7f
+		summarizeBy: none
+		sourceColumn: Task
+
+		annotation SummarizationSetBy = Automatic
+
+	column Name
+		dataType: string
+		lineageTag: 07660002-d3ec-40c4-9daf-9207729f2346
+		summarizeBy: none
+		sourceColumn: Name
+
+		annotation SummarizationSetBy = Automatic
+
+	column LogTaskNameKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 8b02097f-2de6-4b5f-94d8-9a2e0aebac35
+		summarizeBy: none
+		sourceColumn: LogTaskNameKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition LogTaskName = m
+		mode: import
+		queryGroup: Framework
+		source = ```
+				let
+				  dbList = Sql.Databases(#"Server name"), 
+				  db     = dbList{[Name = #"Database name"]}[Data], 
+				  table  = db{[Schema = #"Schema name", Item = "LogTaskName"]}[Data]
+				in
+				  table
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

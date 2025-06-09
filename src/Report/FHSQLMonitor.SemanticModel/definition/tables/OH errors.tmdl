@@ -1,23 +1,23 @@
 table 'OH errors'
 	lineageTag: 24e1bfc3-a60e-436f-98d3-43078b1be9f8
 
-	column StartTime
+	column 'Start time'
 		dataType: dateTime
 		formatString: dd-mmm-yyyy hh:nn:ss
 		lineageTag: 19955da6-d601-486e-9311-f6212ee51b44
 		summarizeBy: none
-		sourceColumn: StartTime
+		sourceColumn: Start time
 
 		annotation SummarizationSetBy = Automatic
 
 		annotation PBI_FormatHint = {"isCustom":true}
 
-	column EndTime
+	column 'End time'
 		dataType: dateTime
 		formatString: dd-mmm-yyyy hh:nn:ss
 		lineageTag: 848313b9-7fb6-4343-af83-408e527f0f3d
 		summarizeBy: none
-		sourceColumn: EndTime
+		sourceColumn: End time
 
 		annotation SummarizationSetBy = Automatic
 
@@ -40,11 +40,11 @@ table 'OH errors'
 
 		annotation SummarizationSetBy = Automatic
 
-	column ErrorMessage
+	column 'Error msg.'
 		dataType: string
 		lineageTag: d513d58c-35fd-4617-bb4d-1556295cc565
 		summarizeBy: none
-		sourceColumn: ErrorMessage
+		sourceColumn: Error msg.
 
 		annotation SummarizationSetBy = Automatic
 
@@ -74,6 +74,15 @@ table 'OH errors'
 
 		annotation SummarizationSetBy = Automatic
 
+	column 'Error no.'
+		dataType: int64
+		formatString: #,0
+		lineageTag: b67f0c2c-0448-447c-b0b9-bb908ff2de21
+		summarizeBy: none
+		sourceColumn: Error no.
+
+		annotation SummarizationSetBy = User
+
 	partition 'OH errors' = m
 		mode: import
 		queryGroup: Facts
@@ -89,19 +98,29 @@ table 'OH errors'
 				  emptyDataset = Table.FirstN(table, 0), 
 				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
 				  selectColumns = Table.SelectColumns(
-				    datasetToUse, 
+				    datasetToUse,
 				    {
 				      "StartTime", 
 				      "EndTime", 
 				      "Duration", 
 				      "Command", 
+				      "ErrorNumber", 
 				      "ErrorMessage", 
 				      "Date", 
 				      "IndexKey"
 				    }
+				  ),
+				  renamedColumns = Table.RenameColumns(
+				    selectColumns,
+				    {
+				      {"StartTime", "Start time"}, 
+				      {"EndTime", "End time"}, 
+				      {"ErrorNumber", "Error no."}, 
+				      {"ErrorMessage", "Error msg."}
+				    }
 				  )
 				in
-				  selectColumns
+				  renamedColumns
 				```
 
 	annotation PBI_NavigationStepName = Navigation

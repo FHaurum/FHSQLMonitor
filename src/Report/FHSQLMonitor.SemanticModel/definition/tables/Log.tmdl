@@ -72,6 +72,44 @@ table Log
 
 		annotation PBI_FormatHint = {"isCustom":true}
 
+	column Date
+		dataType: dateTime
+		isHidden
+		formatString: Long Date
+		lineageTag: 6e682593-11e2-44b1-8104-2574daae7e76
+		summarizeBy: none
+		sourceColumn: Date
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column TimeKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: e56fd1bf-e2a8-4559-beac-95fc7609d49c
+		summarizeBy: none
+		sourceColumn: TimeKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column LogTaskNameKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 80b9633f-8b79-481d-8d48-d36f5baf6af2
+		summarizeBy: none
+		sourceColumn: LogTaskNameKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
 	partition Log = m
 		mode: import
 		queryGroup: Framework

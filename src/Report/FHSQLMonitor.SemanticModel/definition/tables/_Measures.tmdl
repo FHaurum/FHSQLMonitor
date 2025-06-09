@@ -420,37 +420,48 @@ table _Measures
 			    [Filters are applied text],
 			    [Filters are not applied]
 			)
-		displayFolder: Database size
+		displayFolder: Database size\Filter panel
 		lineageTag: 0d099bd5-10cd-4e9e-9bca-65ec6f1c3266
 
-	measure 'Show filters Headers - Database size' =
+	measure 'Show filters Headers - Database size' = ```
 			
 			IF (
 			    ISFILTERED ( 'Database file'[Database] ),
-			    "Database:" & UNICHAR ( 127 )
-			        & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Database file'[Database] ) ) )
+			    VAR _cnt = 
+			        COUNTROWS ( FILTER ( VALUES ( 'Database file'[Database] ), [VLF Filter - Database size] <> BLANK () ) )
+			    RETURN
+			        IF ( _cnt > 0, "Database:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			)
 			    & IF (
 			        ISFILTERED ( 'Date'[Year] ),
-			        "Year:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Year] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Year] ), [VLF Filter - Database size] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Year:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Month] ),
-			        "Month:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Month] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Month] ), [VLF Filter - Database size] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Month:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day] ),
-			        "Day:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Day] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Day] ), [VLF Filter - Database size] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Day:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day index] ),
-			        "Day index:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Day index] ) ) )
-			    )
-		displayFolder: Database size
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Day index] ), [VLF Filter - Database size] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Day index:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
+				)
+			```
+		displayFolder: Database size\Filter panel
 		lineageTag: a5e1f6e1-58c8-4d0d-ab3a-6be894f25dbc
 
 	measure 'Show filters - Database size' =
@@ -458,49 +469,49 @@ table _Measures
 			IF (
 			    ISFILTERED ( 'Database file'[Database] ),
 			    VAR _items =
-			        VALUES ( 'Database file'[Database] )
+			        FILTER ( VALUES ( 'Database file'[Database] ), [VLF Filter - Database size] <> BLANK () )
 			    VAR _itemsCombined =
-			        CONCATENATEX ( _items, 'Database file'[Database], UNICHAR ( 10 ) )
+			        CONCATENATEX ( _items, 'Database file'[Database], UNICHAR ( 10 ), 'Database file'[Database], ASC )
 			    RETURN
 			        _itemsCombined & UNICHAR ( 10 )
 			)
 			    & IF (
 			        ISFILTERED ( 'Date'[Year] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Year] )
+			            FILTER ( VALUES ( 'Date'[Year] ), [VLF Filter - Database size] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Year], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Date'[Year], UNICHAR ( 10 ), 'Date'[Year], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Month] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Month] )
+			            DISTINCT ( SELECTCOLUMNS ( FILTER ( 'Date', [VLF Filter - Database size] <> BLANK () ), "Month", 'Date'[Month], "MonthNumber", 'Date'[MonthNumber] ) )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Month], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, [Month], UNICHAR ( 10 ), [MonthNumber], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Day] )
+			            FILTER ( VALUES ( 'Date'[Day] ), [VLF Filter - Database size] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Day], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Date'[Day], UNICHAR ( 10 ), 'Date'[Day], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day index] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Day index] )
+			            FILTER ( VALUES ( 'Date'[Day index] ), [VLF Filter - Database size] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Day index], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Date'[Day index], UNICHAR ( 10 ), 'Date'[Day index], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
-		displayFolder: Database size
+		displayFolder: Database size\Filter panel
 		lineageTag: 72e94344-93c4-4881-b7c0-cad9855a02f3
 
 	measure 'Data range - Table size' =
@@ -844,44 +855,59 @@ table _Measures
 		displayFolder: Table size
 		lineageTag: 7d3705ef-64c5-4dce-93a5-93d673c2c94e
 
-	measure 'Show filters Headers - Table size' =
+	measure 'Show filters Headers - Table size' = ```
 			
 			IF (
 			    ISFILTERED ( 'Object'[Database] ),
-			    "Database:" & UNICHAR ( 127 )
-			        & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Object'[Database] ) ) )
+			    VAR _cnt = 
+			        COUNTROWS ( FILTER ( VALUES ( 'Object'[Database] ), [VLF Filter - Table size] <> BLANK () ) )
+			    RETURN
+			        IF ( _cnt > 0, "Database:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			)
 			    & IF (
 			        ISFILTERED ( 'Object'[Schema] ),
-			        "Schema:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Object'[Schema] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Object'[Schema] ), [VLF Filter - Table size] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Schema:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Object'[Object] ),
-			        "Object:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Object'[Object] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Object'[Object] ), [VLF Filter - Table size] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Object:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Year] ),
-			        "Year:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Year] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Year] ), [VLF Filter - Table size] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Year:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Month] ),
-			        "Month:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Month] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Month] ), [VLF Filter - Table size] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Month:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day] ),
-			        "Day:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Day] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Day] ), [VLF Filter - Table size] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Day:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day index] ),
-			        "Day index:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Day index] ) ) )
-			    )
-		displayFolder: Table size
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Day index] ), [VLF Filter - Table size] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Day index:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
+				)
+			```
+		displayFolder: Table size\Filter panel
 		lineageTag: 398e5835-a74c-42cb-b967-79afa5ad1dd5
 
 	measure 'Show filters - Table size' =
@@ -889,67 +915,67 @@ table _Measures
 			IF (
 			    ISFILTERED ( 'Object'[Database] ),
 			    VAR _items =
-			        VALUES ( 'Object'[Database] )
+			        FILTER ( VALUES ( 'Object'[Database] ), [VLF Filter - Table size] <> BLANK () )
 			    VAR _itemsCombined =
-			        CONCATENATEX ( _items, 'Object'[Database], UNICHAR ( 10 ) )
+			        CONCATENATEX ( _items, 'Object'[Database], UNICHAR ( 10 ), 'Object'[Database], ASC )
 			    RETURN
 			        _itemsCombined & UNICHAR ( 10 )
 			)
 			    & IF (
 			        ISFILTERED ( 'Object'[Schema] ),
 			        VAR _items =
-			            VALUES ( 'Object'[Schema] )
+			            FILTER ( VALUES ( 'Object'[Schema] ), [VLF Filter - Table size] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Object'[Schema], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Object'[Schema], UNICHAR ( 10 ), 'Object'[Schema], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Object'[Object] ),
 			        VAR _items =
-			            VALUES ( 'Object'[Object] )
+			            FILTER ( VALUES ( 'Object'[Object] ), [VLF Filter - Table size] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Object'[Object], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Object'[Object], UNICHAR ( 10 ), 'Object'[Object], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Year] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Year] )
+			            FILTER ( VALUES ( 'Date'[Year] ), [VLF Filter - Table size] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Year], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Date'[Year], UNICHAR ( 10 ), 'Date'[Year], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Month] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Month] )
+			            DISTINCT ( SELECTCOLUMNS ( FILTER ( 'Date', [VLF Filter - Table size] <> BLANK () ), "Month", 'Date'[Month], "MonthNumber", 'Date'[MonthNumber] ) )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Month], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, [Month], UNICHAR ( 10 ), [MonthNumber], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Day] )
+			            FILTER ( VALUES ( 'Date'[Day] ), [VLF Filter - Table size] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Day], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Date'[Day], UNICHAR ( 10 ), 'Date'[Day], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day index] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Day index] )
+			            FILTER ( VALUES ( 'Date'[Day index] ), [VLF Filter - Table size] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Day index], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Date'[Day index], UNICHAR ( 10 ), 'Date'[Day index], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
-		displayFolder: Table size
+		displayFolder: Table size\Filter panel
 		lineageTag: 544d33d0-d6fb-40dc-a274-e47be99bf182
 
 	measure 'Open filter button tooltip - Table size' =
@@ -959,7 +985,7 @@ table _Measures
 			    [Filters are applied text],
 			    [Filters are not applied]
 			)
-		displayFolder: Table size
+		displayFolder: Table size\Filter panel
 		lineageTag: d1336b8f-be57-4fb6-b505-2da821e4534d
 
 	measure 'Is filters applied - Database size' =
@@ -973,7 +999,7 @@ table _Measures
 			    0
 			)
 		formatString: 0
-		displayFolder: Database size
+		displayFolder: Database size\Filter panel
 		lineageTag: 0f5db300-88b0-4e4d-8587-e3d47294c6d2
 
 	measure 'Is filters applied - Table size' =
@@ -989,7 +1015,7 @@ table _Measures
 			    0
 			)
 		formatString: 0
-		displayFolder: Table size
+		displayFolder: Table size\Filter panel
 		lineageTag: 852caeed-d47a-4780-87ea-bc55417c7236
 
 	measure 'Past rows # - Table size' =
@@ -1065,7 +1091,7 @@ table _Measures
 	measure 'Front page version text' =
 			
 			[Info text] & UNICHAR ( 10 ) & " "
-			    & UNICHAR ( 10 ) & "Developed using Power BI Desktop version: 2.143.878.0 64-bit (May 2025)"
+			    & UNICHAR ( 10 ) & "Developed using Power BI Desktop version: 2.143.1378.0 64-bit (May 2025)"
 		displayFolder: Common
 		lineageTag: e74236c7-2bcf-4409-b8d2-ddb49a83e10b
 
@@ -1492,8 +1518,8 @@ table _Measures
 			
 			IF (
 			    ISFILTERED ( 'Connection info'[Database] )
-			        || ISFILTERED ( 'Connection info'[Host] )
 			        || ISFILTERED ( 'Connection info'[Program] )
+			        || ISFILTERED ( 'Connection info'[Host] )
 			        || ISFILTERED ( 'Date'[Year] )
 			        || ISFILTERED ( 'Date'[Month] )
 			        || ISFILTERED ( 'Date'[Day] )
@@ -1503,7 +1529,7 @@ table _Measures
 			    0
 			)
 		formatString: 0
-		displayFolder: Connections
+		displayFolder: Connections\Filter panel
 		lineageTag: 5d0b9a89-a8ab-4261-a3b1-577300691726
 
 	measure 'Open filter button tooltip - Connections' =
@@ -1513,52 +1539,69 @@ table _Measures
 			    [Filters are applied text],
 			    [Filters are not applied]
 			)
-		displayFolder: Connections
+		displayFolder: Connections\Filter panel
 		lineageTag: bbe802ba-e847-4dda-b8bc-42bf983903fa
 
-	measure 'Show filters Headers - Connections' =
+	measure 'Show filters Headers - Connections' = ```
 			
 			IF (
 			    ISFILTERED ( 'Connection info'[Database] ),
-			    "Database:" & UNICHAR ( 127 )
-			        & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Connection info'[Database] ) ) )
+			    VAR _cnt = 
+			        COUNTROWS ( FILTER ( VALUES ( 'Connection info'[Database] ), [VLF Filter - Connections] <> BLANK () ) )
+			    RETURN
+			        IF ( _cnt > 0, "Database:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			)
 			    & IF (
 			        ISFILTERED ( 'Connection info'[Program] ),
-			        "Program:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Connection info'[Program] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Connection info'[Program] ), [VLF Filter - Connections] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Program:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Connection info'[Host] ),
-			        "Host:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Connection info'[Host] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Connection info'[Host] ), [VLF Filter - Connections] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Host:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Year] ),
-			        "Year:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Year] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Year] ), [VLF Filter - Connections] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Year:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Month] ),
-			        "Month:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Month] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Month] ), [VLF Filter - Connections] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Month:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day] ),
-			        "Day:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Day] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Day] ), [VLF Filter - Connections] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Day:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day index] ),
-			        "Day index:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Day index] ) ) )
-			    )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Day index] ), [VLF Filter - Connections] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Day index:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
+				)
 			    & IF (
 			        ISFILTERED ( 'Time'[Hour] ),
-			        "Hour:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Time'[Hour] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Time'[Hour] ), [VLF Filter - Connections] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Hour:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
-		displayFolder: Connections
+			```
+		displayFolder: Connections\Filter panel
 		lineageTag: 361536ac-1bcd-49aa-92db-373463d2b795
 
 	measure 'Show filters - Connections' =
@@ -1566,76 +1609,76 @@ table _Measures
 			IF (
 			    ISFILTERED ( 'Connection info'[Database] ),
 			    VAR _items =
-			        VALUES ( 'Connection info'[Database] )
+			        FILTER ( VALUES ( 'Connection info'[Database] ), [VLF Filter - Connections] <> BLANK () )
 			    VAR _itemsCombined =
-			        CONCATENATEX ( _items, 'Connection info'[Database], UNICHAR ( 10 ) )
+			        CONCATENATEX ( _items, 'Connection info'[Database], UNICHAR ( 10 ), 'Connection info'[Database], ASC )
 			    RETURN
 			        _itemsCombined & UNICHAR ( 10 )
 			)
 			    & IF (
 			        ISFILTERED ( 'Connection info'[Program] ),
 			        VAR _items =
-			            VALUES ( 'Connection info'[Program] )
+			            FILTER ( VALUES ( 'Connection info'[Program] ), [VLF Filter - Connections] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Connection info'[Program], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Connection info'[Program], UNICHAR ( 10 ), 'Connection info'[Program], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Connection info'[Host] ),
 			        VAR _items =
-			            VALUES ( 'Connection info'[Host] )
+			            FILTER ( VALUES ( 'Connection info'[Host] ), [VLF Filter - Connections] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Connection info'[Host], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Connection info'[Host], UNICHAR ( 10 ), 'Connection info'[Host], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Year] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Year] )
+			            FILTER ( VALUES ( 'Date'[Year] ), [VLF Filter - Connections] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Year], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Date'[Year], UNICHAR ( 10 ), 'Date'[Year], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Month] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Month] )
+			            DISTINCT ( SELECTCOLUMNS ( FILTER ( 'Date', [VLF Filter - Connections] <> BLANK () ), "Month", 'Date'[Month], "MonthNumber", 'Date'[MonthNumber] ) )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Month], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, [Month], UNICHAR ( 10 ), [MonthNumber], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Day] )
+			            FILTER ( VALUES ( 'Date'[Day] ), [VLF Filter - Connections] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Day], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Date'[Day], UNICHAR ( 10 ), 'Date'[Day], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day index] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Day index] )
+			            FILTER ( VALUES ( 'Date'[Day index] ), [VLF Filter - Connections] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Day index], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Date'[Day index], UNICHAR ( 10 ), 'Date'[Day index], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Time'[Hour] ),
 			        VAR _items =
-			            VALUES ( 'Time'[Hour] )
+			            FILTER ( VALUES ( 'Time'[Hour] ), [VLF Filter - Connections] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Time'[Hour], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Time'[Hour], UNICHAR ( 10 ), 'Time'[Hour], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
-		displayFolder: Connections
+		displayFolder: Connections\Filter panel
 		lineageTag: c8f71f39-7750-4808-aa1c-dd434c033efb
 
 	measure 'Latest sessions - Connections' =
@@ -2020,98 +2063,111 @@ table _Measures
 		displayFolder: CPU
 		lineageTag: 42bd3699-ac22-466f-bfa2-1c0a2c34a3d5
 
-	measure 'Show filters Headers - CPU' =
+	measure 'Show filters Headers - CPU' = ```
 			
 			IF (
-			    ISFILTERED ( 'Database'[Database] ),
-			    "Database:" & UNICHAR ( 127 )
-			        & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Database'[Database] ) ) )
+			    ISFILTERED ( Database[Database] ),
+			    VAR _cnt = 
+			        COUNTROWS ( FILTER ( VALUES ( Database[Database] ), [VLF Filter - CPU] <> BLANK () ) )
+			    RETURN
+			        IF ( _cnt > 0, "Database:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			)
 			    & IF (
 			        ISFILTERED ( 'Date'[Year] ),
-			        "Year:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Year] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Year] ), [VLF Filter - CPU] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Year:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Month] ),
-			        "Month:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Month] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Month] ), [VLF Filter - CPU] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Month:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day] ),
-			        "Day:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Day] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Day] ), [VLF Filter - CPU] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Day:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day index] ),
-			        "Day index:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Day index] ) ) )
-			    )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Day index] ), [VLF Filter - CPU] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Day index:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
+				)
 			    & IF (
 			        ISFILTERED ( 'Time'[Hour] ),
-			        "Hour:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Time'[Hour] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Time'[Hour] ), [VLF Filter - CPU] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Hour:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
-		displayFolder: CPU
+			```
+		displayFolder: CPU\Filter panel
 		lineageTag: d434c5c4-342a-4f29-a178-4a4ca590d7c3
 
 	measure 'Show filters - CPU' =
 			
 			IF (
-			    ISFILTERED ( 'Database'[Database] ),
+			    ISFILTERED ( Database[Database] ),
 			    VAR _items =
-			        VALUES ( 'Database'[Database] )
+			        FILTER ( VALUES ( Database[Database] ), [VLF Filter - CPU] <> BLANK () )
 			    VAR _itemsCombined =
-			        CONCATENATEX ( _items, 'Database'[Database], UNICHAR ( 10 ) )
+			        CONCATENATEX ( _items, Database[Database], UNICHAR ( 10 ), Database[Database], ASC )
 			    RETURN
 			        _itemsCombined & UNICHAR ( 10 )
 			)
 			    & IF (
 			        ISFILTERED ( 'Date'[Year] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Year] )
+			            FILTER ( VALUES ( 'Date'[Year] ), [VLF Filter - CPU] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Year], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Date'[Year], UNICHAR ( 10 ), 'Date'[Year], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Month] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Month] )
+			            DISTINCT ( SELECTCOLUMNS ( FILTER ( 'Date', [VLF Filter - CPU] <> BLANK () ), "Month", 'Date'[Month], "MonthNumber", 'Date'[MonthNumber] ) )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Month], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, [Month], UNICHAR ( 10 ), [MonthNumber], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Day] )
+			            FILTER ( VALUES ( 'Date'[Day] ), [VLF Filter - CPU] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Day], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Date'[Day], UNICHAR ( 10 ), 'Date'[Day], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day index] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Day index] )
+			            FILTER ( VALUES ( 'Date'[Day index] ), [VLF Filter - CPU] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Day index], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Date'[Day index], UNICHAR ( 10 ), 'Date'[Day index], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Time'[Hour] ),
 			        VAR _items =
-			            VALUES ( 'Time'[Hour] )
+			            FILTER ( VALUES ( 'Time'[Hour] ), [VLF Filter - CPU] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Time'[Hour], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Time'[Hour], UNICHAR ( 10 ), 'Time'[Hour], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
-		displayFolder: CPU
+		displayFolder: CPU\Filter panel
 		lineageTag: 9670af23-3063-489c-a88c-1fe67d9ff389
 
 	measure 'Is filters applied - CPU' =
@@ -2126,7 +2182,7 @@ table _Measures
 			    0
 			)
 		formatString: 0
-		displayFolder: CPU
+		displayFolder: CPU\Filter panel
 		lineageTag: af23f7f9-f689-4ee5-ae94-01f6f76a58da
 
 	measure 'Open filter button tooltip - CPU' =
@@ -2136,12 +2192,12 @@ table _Measures
 			    [Filters are applied text],
 			    [Filters are not applied]
 			)
-		displayFolder: CPU
+		displayFolder: CPU\Filter panel
 		lineageTag: 0f59b28f-b0bd-45c7-a839-19b33a8e7eb5
 
 	measure 'Version number' =
 			
-			"2.6.1"
+			"2.7.0"
 		isHidden
 		displayFolder: Common
 		lineageTag: 39428edf-bb47-48d0-a60e-f025984fd1ba
@@ -2160,7 +2216,7 @@ table _Measures
 			    0
 			)
 		formatString: 0
-		displayFolder: Database IO
+		displayFolder: Database IO\Filter panel
 		lineageTag: 0b0bd31f-35bc-45b2-ad6b-b1153140f483
 
 	measure 'Open filter button tooltip - Database IO' =
@@ -2170,7 +2226,7 @@ table _Measures
 			    [Filters are applied text],
 			    [Filters are not applied]
 			)
-		displayFolder: Database IO
+		displayFolder: Database IO\Filter panel
 		lineageTag: e27c9a40-d4fc-45ff-b77b-972f3765d8d3
 
 	measure 'Show filters - Database IO' =
@@ -2178,93 +2234,106 @@ table _Measures
 			IF (
 			    ISFILTERED ( 'Database file'[Database] ),
 			    VAR _items =
-			        VALUES ( 'Database file'[Database] )
+			        FILTER ( VALUES ( 'Database file'[Database] ), [VLF Filter - Database IO] <> BLANK () )
 			    VAR _itemsCombined =
-			        CONCATENATEX ( _items, 'Database file'[Database], UNICHAR ( 10 ) )
+			        CONCATENATEX ( _items, 'Database file'[Database], UNICHAR ( 10 ), 'Database file'[Database], ASC )
 			    RETURN
 			        _itemsCombined & UNICHAR ( 10 )
 			)
 			    & IF (
 			        ISFILTERED ( 'Date'[Year] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Year] )
+			            FILTER ( VALUES ( 'Date'[Year] ), [VLF Filter - Database IO] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Year], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Date'[Year], UNICHAR ( 10 ), 'Date'[Year], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Month] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Month] )
+			            DISTINCT ( SELECTCOLUMNS ( FILTER ( 'Date', [VLF Filter - Database IO] <> BLANK () ), "Month", 'Date'[Month], "MonthNumber", 'Date'[MonthNumber] ) )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Month], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, [Month], UNICHAR ( 10 ), [MonthNumber], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Day] )
+			            FILTER ( VALUES ( 'Date'[Day] ), [VLF Filter - Database IO] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Day], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Date'[Day], UNICHAR ( 10 ), 'Date'[Day], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day index] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Day index] )
+			            FILTER ( VALUES ( 'Date'[Day index] ), [VLF Filter - Database IO] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Day index], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Date'[Day index], UNICHAR ( 10 ), 'Date'[Day index], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Time'[Hour] ),
 			        VAR _items =
-			            VALUES ( 'Time'[Hour] )
+			            FILTER ( VALUES ( 'Time'[Hour] ), [VLF Filter - Database IO] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Time'[Hour], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Time'[Hour], UNICHAR ( 10 ), 'Time'[Hour], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
-		displayFolder: Database IO
+		displayFolder: Database IO\Filter panel
 		lineageTag: 74b80b85-dd5e-4c9d-b869-4fc327975aaa
 
-	measure 'Show filters Headers - Database IO' =
+	measure 'Show filters Headers - Database IO' = ```
 			
 			IF (
 			    ISFILTERED ( 'Database file'[Database] ),
-			    "Database:" & UNICHAR ( 127 )
-			        & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Database file'[Database] ) ) )
+			    VAR _cnt = 
+			        COUNTROWS ( FILTER ( VALUES ( 'Database file'[Database] ), [VLF Filter - Database IO] <> BLANK () ) )
+			    RETURN
+			        IF ( _cnt > 0, "Database:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			)
 			    & IF (
 			        ISFILTERED ( 'Date'[Year] ),
-			        "Year:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Year] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Year] ), [VLF Filter - Database IO] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Year:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Month] ),
-			        "Month:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Month] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Month] ), [VLF Filter - Database IO] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Month:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day] ),
-			        "Day:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Day] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Day] ), [VLF Filter - Database IO] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Day:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day index] ),
-			        "Day index:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Day index] ) ) )
-			    )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Day index] ), [VLF Filter - Database IO] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Day index:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
+				)
 			    & IF (
 			        ISFILTERED ( 'Time'[Hour] ),
-			        "Hour:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Time'[Hour] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Time'[Hour] ), [VLF Filter - Database IO] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Hour:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
-		displayFolder: Database IO
+			```
+		displayFolder: Database IO\Filter panel
 		lineageTag: d80c2666-4ba3-43b0-8c96-607b7f6ea64d
 
 	measure 'Number of bytes read MB - Database IO' =
@@ -2657,34 +2726,45 @@ table _Measures
 		displayFolder: Performance statistics (ps)
 		lineageTag: f79a480c-e99b-44da-9b1d-53fc6a488638
 
-	measure 'Show filters Headers - Resource Governor' =
+	measure 'Show filters Headers - Resource Governor' = ```
 			
 			IF (
 			    ISFILTERED ( 'Date'[Year] ),
-			    "Year:" & UNICHAR ( 127 )
-			        & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Year] ) ) )
+			    VAR _cnt = 
+			        COUNTROWS ( FILTER ( VALUES ( 'Date'[Year] ), [VLF Filter - Resource Governor] <> BLANK () ) )
+			    RETURN
+			        IF ( _cnt > 0, "Year:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			)
 			    & IF (
 			        ISFILTERED ( 'Date'[Month] ),
-			        "Month:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Month] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Month] ), [VLF Filter - Resource Governor] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Month:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day] ),
-			        "Day:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Day] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Day] ), [VLF Filter - Resource Governor] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Day:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day index] ),
-			        "Day index:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Day index] ) ) )
-			    )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Day index] ), [VLF Filter - Resource Governor] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Day index:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
+				)
 			    & IF (
 			        ISFILTERED ( 'Time'[Hour] ),
-			        "Hour:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Time'[Hour] ) ) )
-			    )
-		displayFolder: Resource Governor (using ps)
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Time'[Hour] ), [VLF Filter - Resource Governor] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Hour:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
+				)
+			```
+		displayFolder: Resource Governor (using ps)\Filter panel
 		lineageTag: 9abff7ca-eb0f-46d1-b015-f598558ee934
 
 	measure 'Show filters - Resource Governor' =
@@ -2692,49 +2772,49 @@ table _Measures
 			IF (
 			    ISFILTERED ( 'Date'[Year] ),
 			    VAR _items =
-			        VALUES ( 'Date'[Year] )
+			        FILTER ( VALUES ( 'Date'[Year] ), [VLF Filter - Resource Governor] <> BLANK () )
 			    VAR _itemsCombined =
-			        CONCATENATEX ( _items, 'Date'[Year], UNICHAR ( 10 ) )
+			        CONCATENATEX ( _items, 'Date'[Year], UNICHAR ( 10 ), 'Date'[Year], ASC )
 			    RETURN
 			        _itemsCombined & UNICHAR ( 10 )
 			)
 			    & IF (
 			        ISFILTERED ( 'Date'[Month] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Month] )
+			            DISTINCT ( SELECTCOLUMNS ( FILTER ( 'Date', [VLF Filter - Resource Governor] <> BLANK () ), "Month", 'Date'[Month], "MonthNumber", 'Date'[MonthNumber] ) )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Month], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, [Month], UNICHAR ( 10 ), [MonthNumber], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Day] )
+			            FILTER ( VALUES ( 'Date'[Day] ), [VLF Filter - Resource Governor] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Day], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Date'[Day], UNICHAR ( 10 ), 'Date'[Day], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day index] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Day index] )
+			            FILTER ( VALUES ( 'Date'[Day index] ), [VLF Filter - Resource Governor] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Day index], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Date'[Day index], UNICHAR ( 10 ), 'Date'[Day index], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Time'[Hour] ),
 			        VAR _items =
-			            VALUES ( 'Time'[Hour] )
+			            FILTER ( VALUES ( 'Time'[Hour] ), [VLF Filter - Resource Governor] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Time'[Hour], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Time'[Hour], UNICHAR ( 10 ), 'Time'[Hour], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
-		displayFolder: Resource Governor (using ps)
+		displayFolder: Resource Governor (using ps)\Filter panel
 		lineageTag: e2815e60-0d46-47b8-9375-5c5db7542d0d
 
 	measure 'Is filters applied - Resource Governor' =
@@ -2748,7 +2828,7 @@ table _Measures
 			    0
 			)
 		formatString: 0
-		displayFolder: Resource Governor (using ps)
+		displayFolder: Resource Governor (using ps)\Filter panel
 		lineageTag: 91721eaf-de9b-4487-8bd6-fba3ef15416d
 
 	measure 'Open filter button tooltip - Resource Governor' =
@@ -2758,7 +2838,7 @@ table _Measures
 			    [Filters are applied text],
 			    [Filters are not applied]
 			)
-		displayFolder: Resource Governor (using ps)
+		displayFolder: Resource Governor (using ps)\Filter panel
 		lineageTag: 52086a71-11d5-481d-8526-f59816b1ef54
 
 	measure 'Data range - Index optimize' =
@@ -2797,7 +2877,7 @@ table _Measures
 			    0
 			)
 		formatString: 0
-		displayFolder: Index optimize
+		displayFolder: Index optimize\Filter panel
 		lineageTag: 5c70181d-a458-4370-af6c-ad2fb669507d
 
 	measure 'Open filter button tooltip - Index optimize' =
@@ -2807,52 +2887,69 @@ table _Measures
 			    [Filters are applied text],
 			    [Filters are not applied]
 			)
-		displayFolder: Index optimize
+		displayFolder: Index optimize\Filter panel
 		lineageTag: d26d5e72-b1ae-49a4-af3f-a5e0a628ba0c
 
-	measure 'Show filters Headers - Index optimize' =
+	measure 'Show filters Headers - Index optimize' = ```
 			
 			IF (
 			    ISFILTERED ( 'Index'[Database] ),
-			    "Database:" & UNICHAR ( 127 )
-			        & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Index'[Database] ) ) )
+			    VAR _cnt = 
+			        COUNTROWS ( FILTER ( VALUES ( 'Index'[Database] ), [VLF Filter - Index optimize] <> BLANK () ) )
+			    RETURN
+			        IF ( _cnt > 0, "Database:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			)
 			    & IF (
 			        ISFILTERED ( 'Index'[Schema] ),
-			        "Schema:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Index'[Schema] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Index'[Schema] ), [VLF Filter - Index optimize] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Schema:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Index'[Object] ),
-			        "Object:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Index'[Object] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Index'[Object] ), [VLF Filter - Index optimize] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Object:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Index'[Index] ),
-			        "Index:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Index'[Index] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Index'[Index] ), [VLF Filter - Index optimize] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Index:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Year] ),
-			        "Year:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Year] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Year] ), [VLF Filter - Index optimize] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Year:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Month] ),
-			        "Month:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Month] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Month] ), [VLF Filter - Index optimize] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Month:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day] ),
-			        "Day:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Day] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Day] ), [VLF Filter - Index optimize] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Day:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day index] ),
-			        "Day index:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Day index] ) ) )
-			    )
-		displayFolder: Index optimize
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Day index] ), [VLF Filter - Index optimize] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Day index:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
+				)
+			```
+		displayFolder: Index optimize\Filter panel
 		lineageTag: 4a6e2e1b-11f6-4de5-8d7b-0b64630be014
 
 	measure 'Show filters - Index optimize' =
@@ -2860,76 +2957,76 @@ table _Measures
 			IF (
 			    ISFILTERED ( 'Index'[Database] ),
 			    VAR _items =
-			        VALUES ( 'Index'[Database] )
+			        FILTER ( VALUES ( 'Index'[Database] ), [VLF Filter - Index optimize] <> BLANK () )
 			    VAR _itemsCombined =
-			        CONCATENATEX ( _items, 'Index'[Database], UNICHAR ( 10 ) )
+			        CONCATENATEX ( _items, 'Index'[Database], UNICHAR ( 10 ), 'Index'[Database], ASC )
 			    RETURN
 			        _itemsCombined & UNICHAR ( 10 )
 			)
 			    & IF (
 			        ISFILTERED ( 'Index'[Schema] ),
 			        VAR _items =
-			            VALUES ( 'Index'[Schema] )
+			            FILTER ( VALUES ( 'Index'[Schema] ), [VLF Filter - Index optimize] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Index'[Schema], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Index'[Schema], UNICHAR ( 10 ), 'Index'[Schema], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Index'[Object] ),
 			        VAR _items =
-			            VALUES ( 'Index'[Object] )
+			            FILTER ( VALUES ( 'Index'[Object] ), [VLF Filter - Index optimize] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Index'[Object], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Index'[Object], UNICHAR ( 10 ), 'Index'[Object], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Index'[Index] ),
 			        VAR _items =
-			            VALUES ( 'Index'[Index] )
+			            FILTER ( VALUES ( 'Index'[Index] ), [VLF Filter - Index optimize] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Index'[Index], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Index'[Index], UNICHAR ( 10 ), 'Index'[Index], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Year] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Year] )
+			            FILTER ( VALUES ( 'Date'[Year] ), [VLF Filter - Index optimize] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Year], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Date'[Year], UNICHAR ( 10 ), 'Date'[Year], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Month] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Month] )
+			            DISTINCT ( SELECTCOLUMNS ( FILTER ( 'Date', [VLF Filter - Index optimize] <> BLANK () ), "Month", 'Date'[Month], "MonthNumber", 'Date'[MonthNumber] ) )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Month], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, [Month], UNICHAR ( 10 ), [MonthNumber], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Day] )
+			            FILTER ( VALUES ( 'Date'[Day] ), [VLF Filter - Index optimize] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Day], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Date'[Day], UNICHAR ( 10 ), 'Date'[Day], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day index] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Day index] )
+			            FILTER ( VALUES ( 'Date'[Day index] ), [VLF Filter - Index optimize] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Day index], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Date'[Day index], UNICHAR ( 10 ), 'Date'[Day index], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
-		displayFolder: Index optimize
+		displayFolder: Index optimize\Filter panel
 		lineageTag: 0c15076b-d027-4716-9dda-1be039546066
 
 	measure 'Number of index rebuild - Index optimize' =
@@ -3402,7 +3499,7 @@ table _Measures
 			    0
 			)
 		formatString: 0
-		displayFolder: Always On traffic (using ps)
+		displayFolder: Always On traffic (using ps)\Filter panel
 		lineageTag: 96fdf35a-67c4-4806-85fd-2613947b73a9
 
 	measure 'Open filter button tooltip - Always On traffic' =
@@ -3412,7 +3509,7 @@ table _Measures
 			    [Filters are applied text],
 			    [Filters are not applied]
 			)
-		displayFolder: Always On traffic (using ps)
+		displayFolder: Always On traffic (using ps)\Filter panel
 		lineageTag: 521df29b-343a-46fb-9f66-8336d1a091ce
 
 	measure 'Avg Bytes Sent to Replica - Always On traffic' =
@@ -3501,7 +3598,7 @@ table _Measures
 			    0
 			)
 		formatString: 0
-		displayFolder: Index usage
+		displayFolder: Index usage\Filter panel
 		lineageTag: 584aeb52-1d26-4e43-b8e0-ff9a74a6ef85
 
 	measure 'Show filters - Always On traffic' =
@@ -3509,124 +3606,151 @@ table _Measures
 			IF (
 			    ISFILTERED ( 'Date'[Year] ),
 			    VAR _items =
-			        VALUES ( 'Date'[Year] )
+			        FILTER ( VALUES ( 'Date'[Year] ), [VLF Filter - Always On traffic] <> BLANK () )
 			    VAR _itemsCombined =
-			        CONCATENATEX ( _items, 'Date'[Year], UNICHAR ( 10 ) )
+			        CONCATENATEX ( _items, 'Date'[Year], UNICHAR ( 10 ), 'Date'[Year], ASC )
 			    RETURN
 			        _itemsCombined & UNICHAR ( 10 )
 			)
 			    & IF (
 			        ISFILTERED ( 'Date'[Month] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Month] )
+			            DISTINCT ( SELECTCOLUMNS ( FILTER ( 'Date', [VLF Filter - Always On traffic] <> BLANK () ), "Month", 'Date'[Month], "MonthNumber", 'Date'[MonthNumber] ) )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Month], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, [Month], UNICHAR ( 10 ), [MonthNumber], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Day] )
+			            FILTER ( VALUES ( 'Date'[Day] ), [VLF Filter - Always On traffic] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Day], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Date'[Day], UNICHAR ( 10 ), 'Date'[Day], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day index] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Day index] )
+			            FILTER ( VALUES ( 'Date'[Day index] ), [VLF Filter - Always On traffic] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Day index], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Date'[Day index], UNICHAR ( 10 ), 'Date'[Day index], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Time'[Hour] ),
 			        VAR _items =
-			            VALUES ( 'Time'[Hour] )
+			            FILTER ( VALUES ( 'Time'[Hour] ), [VLF Filter - Always On traffic] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Time'[Hour], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Time'[Hour], UNICHAR ( 10 ), 'Time'[Hour], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
-		displayFolder: Always On traffic (using ps)
+		displayFolder: Always On traffic (using ps)\Filter panel
 		lineageTag: 04bec479-171e-4b87-86b2-a9d034961450
 
-	measure 'Show filters Headers - Always On traffic' =
+	measure 'Show filters Headers - Always On traffic' = ```
 			
 			IF (
 			    ISFILTERED ( 'Date'[Year] ),
-			    "Year:" & UNICHAR ( 127 )
-			        & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Year] ) ) )
+			    VAR _cnt = 
+			        COUNTROWS ( FILTER ( VALUES ( 'Date'[Year] ), [VLF Filter - Always On traffic] <> BLANK () ) )
+			    RETURN
+			        IF ( _cnt > 0, "Year:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			)
 			    & IF (
 			        ISFILTERED ( 'Date'[Month] ),
-			        "Month:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Month] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Month] ), [VLF Filter - Always On traffic] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Month:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day] ),
-			        "Day:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Day] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Day] ), [VLF Filter - Always On traffic] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Day:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day index] ),
-			        "Day index:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Day index] ) ) )
-			    )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Day index] ), [VLF Filter - Always On traffic] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Day index:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    & IF (
 			        ISFILTERED ( 'Time'[Hour] ),
-			        "Hour: " & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Time'[Hour] ) ) )
-			    )
-		displayFolder: Always On traffic (using ps)
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Time'[Hour] ), [VLF Filter - Always On traffic] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Hour:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
+			    ))
+			```
+		displayFolder: Always On traffic (using ps)\Filter panel
 		lineageTag: ca07261a-22bf-47aa-b44c-d27ac9f86218
 
-	measure 'Show filters Headers - Index usage' =
+	measure 'Show filters Headers - Index usage' = ```
 			
 			IF (
 			    ISFILTERED ( 'Index'[Database] ),
-			    "Database:" & UNICHAR ( 127 )
-			        & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Index'[Database] ) ) )
+			    VAR _cnt = 
+			        COUNTROWS ( FILTER ( VALUES ( 'Index'[Database] ), [VLF Filter - Index usage] <> BLANK () ) )
+			    RETURN
+			        IF ( _cnt > 0, "Database:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			)
 			    & IF (
 			        ISFILTERED ( 'Index'[Schema] ),
-			        "Schema:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Index'[Schema] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Index'[Schema] ), [VLF Filter - Index usage] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Schema:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Index'[Object] ),
-			        "Object:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Index'[Object] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Index'[Object] ), [VLF Filter - Index usage] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Object:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Index'[Index] ),
-			        "Index:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Index'[Index] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Index'[Index] ), [VLF Filter - Index usage] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Index:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Year] ),
-			        "Year:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Year] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Year] ), [VLF Filter - Index usage] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Year:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Month] ),
-			        "Month:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Month] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Month] ), [VLF Filter - Index usage] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Month:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day] ),
-			        "Day:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Day] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Day] ), [VLF Filter - Index usage] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Day:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day index] ),
-			        "Day index:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Day index] ) ) )
-			    )
-		displayFolder: Index usage
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Day index] ), [VLF Filter - Index usage] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Day index:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
+				)
+			```
+		displayFolder: Index usage\Filter panel
 		lineageTag: 3b9595fd-48f9-438e-b080-439ad963b915
 
 	measure 'Show filters - Index usage' =
@@ -3634,76 +3758,76 @@ table _Measures
 			IF (
 			    ISFILTERED ( 'Index'[Database] ),
 			    VAR _items =
-			        VALUES ( 'Index'[Database] )
+			        FILTER ( VALUES ( 'Index'[Database] ), [VLF Filter - Index usage] <> BLANK () )
 			    VAR _itemsCombined =
-			        CONCATENATEX ( _items, 'Index'[Database], UNICHAR ( 10 ) )
+			        CONCATENATEX ( _items, 'Index'[Database], UNICHAR ( 10 ), 'Index'[Database], ASC )
 			    RETURN
 			        _itemsCombined & UNICHAR ( 10 )
 			)
 			    & IF (
 			        ISFILTERED ( 'Index'[Schema] ),
 			        VAR _items =
-			            VALUES ( 'Index'[Schema] )
+			            FILTER ( VALUES ( 'Index'[Schema] ), [VLF Filter - Index usage] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Index'[Schema], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Index'[Schema], UNICHAR ( 10 ), 'Index'[Schema], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Index'[Object] ),
 			        VAR _items =
-			            VALUES ( 'Index'[Object] )
+			            FILTER ( VALUES ( 'Index'[Object] ), [VLF Filter - Index usage] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Index'[Object], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Index'[Object], UNICHAR ( 10 ), 'Index'[Object], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Index'[Index] ),
 			        VAR _items =
-			            VALUES ( 'Index'[Index] )
+			            FILTER ( VALUES ( 'Index'[Index] ), [VLF Filter - Index usage] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Index'[Index], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Index'[Index], UNICHAR ( 10 ), 'Index'[Index], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Year] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Year] )
+			            FILTER ( VALUES ( 'Date'[Year] ), [VLF Filter - Index usage] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Year], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Date'[Year], UNICHAR ( 10 ), 'Date'[Year], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Month] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Month] )
+			            DISTINCT ( SELECTCOLUMNS ( FILTER ( 'Date', [VLF Filter - Index usage] <> BLANK () ), "Month", 'Date'[Month], "MonthNumber", 'Date'[MonthNumber] ) )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Month], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, [Month], UNICHAR ( 10 ), [MonthNumber], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Day] )
+			            FILTER ( VALUES ( 'Date'[Day] ), [VLF Filter - Index usage] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Day], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Date'[Day], UNICHAR ( 10 ), 'Date'[Day], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day index] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Day index] )
+			            FILTER ( VALUES ( 'Date'[Day index] ), [VLF Filter - Index usage] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Day index], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Date'[Day index], UNICHAR ( 10 ), 'Date'[Day index], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
-		displayFolder: Index usage
+		displayFolder: Index usage\Filter panel
 		lineageTag: 2f855e7e-6c91-4331-a6e2-47bbefdafe0b
 
 	measure 'Open filter button tooltip - Index usage' =
@@ -3713,14 +3837,14 @@ table _Measures
 			    [Filters are applied text],
 			    [Filters are not applied]
 			)
-		displayFolder: Index usage
+		displayFolder: Index usage\Filter panel
 		lineageTag: 8fb72c54-6c4f-4cb2-aa29-73206eb481f4
 
-	measure 'VLF - Index usage' =
+	measure 'VLF Filter - Index usage' =
 			
 			[User lookups - Index usage] + [User scans - Index usage] + [User seeks - Index usage] + [User updates - Index usage]
 		formatString: 0
-		displayFolder: Index usage
+		displayFolder: Index usage\Filter panel
 		lineageTag: 78827a00-409f-4b4b-80cd-1d5c6fb069b2
 
 	measure 'Latest number of lookups - Index usage' = ```
@@ -4185,34 +4309,45 @@ table _Measures
 		displayFolder: Database IO
 		lineageTag: ed3a8a50-0273-4b1f-bcb9-55477e2b5e68
 
-	measure 'Show filters Headers - Performance statistics' =
+	measure 'Show filters Headers - Performance statistics' = ```
 			
 			IF (
 			    ISFILTERED ( 'Date'[Year] ),
-			    "Year:" & UNICHAR ( 127 )
-			        & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Year] ) ) )
+			    VAR _cnt = 
+			        COUNTROWS ( FILTER ( VALUES ( 'Date'[Year] ), [VLF Filter - Performance statistics] <> BLANK () ) )
+			    RETURN
+			        IF ( _cnt > 0, "Year:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			)
 			    & IF (
 			        ISFILTERED ( 'Date'[Month] ),
-			        "Month:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Month] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Month] ), [VLF Filter - Performance statistics] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Month:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day] ),
-			        "Day:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Day] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Day] ), [VLF Filter - Performance statistics] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Day:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day index] ),
-			        "Day index:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Day index] ) ) )
-			    )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Day index] ), [VLF Filter - Performance statistics] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Day index:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
+				)
 			    & IF (
 			        ISFILTERED ( 'Time'[Hour] ),
-			        "Hour:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Time'[Hour] ) ) )
-			    )
-		displayFolder: Performance statistics (using ps)
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Time'[Hour] ), [VLF Filter - Performance statistics] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Hour:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
+				)
+			```
+		displayFolder: Performance statistics (using ps)\Filter panel
 		lineageTag: b2c6e16a-0729-4c3e-bf0f-e3114e143665
 
 	measure 'Show filters - Performance statistics' =
@@ -4220,49 +4355,49 @@ table _Measures
 			IF (
 			    ISFILTERED ( 'Date'[Year] ),
 			    VAR _items =
-			        VALUES ( 'Date'[Year] )
+			        FILTER ( VALUES ( 'Date'[Year] ), [VLF Filter - Performance statistics] <> BLANK () )
 			    VAR _itemsCombined =
-			        CONCATENATEX ( _items, 'Date'[Year], UNICHAR ( 10 ) )
+			        CONCATENATEX ( _items, 'Date'[Year], UNICHAR ( 10 ), 'Date'[Year], ASC )
 			    RETURN
 			        _itemsCombined & UNICHAR ( 10 )
 			)
 			    & IF (
 			        ISFILTERED ( 'Date'[Month] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Month] )
+			            DISTINCT ( SELECTCOLUMNS ( FILTER ( 'Date', [VLF Filter - Performance statistics] <> BLANK () ), "Month", 'Date'[Month], "MonthNumber", 'Date'[MonthNumber] ) )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Month], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, [Month], UNICHAR ( 10 ), [MonthNumber], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Day] )
+			            FILTER ( VALUES ( 'Date'[Day] ), [VLF Filter - Performance statistics] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Day], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Date'[Day], UNICHAR ( 10 ), 'Date'[Day], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day index] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Day index] )
+			            FILTER ( VALUES ( 'Date'[Day index] ), [VLF Filter - Performance statistics] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Day index], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Date'[Day index], UNICHAR ( 10 ), 'Date'[Day index], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Time'[Hour] ),
 			        VAR _items =
-			            VALUES ( 'Time'[Hour] )
+			            FILTER ( VALUES ( 'Time'[Hour] ), [VLF Filter - Performance statistics] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Time'[Hour], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Time'[Hour], UNICHAR ( 10 ), 'Time'[Hour], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
-		displayFolder: Performance statistics (using ps)
+		displayFolder: Performance statistics (using ps)\Filter panel
 		lineageTag: bd6bf937-71e5-49be-9843-87f2b330995a
 
 	measure 'Avg batch requests/sec - Performance statistics' =
@@ -4375,7 +4510,7 @@ table _Measures
 			    0
 			)
 		formatString: 0
-		displayFolder: Performance statistics (using ps)
+		displayFolder: Performance statistics (using ps)\Filter panel
 		lineageTag: 64f75127-ca7b-44ca-8392-ce61f7f38880
 
 	measure 'Open filter button tooltip - Performance statistics' =
@@ -4385,7 +4520,7 @@ table _Measures
 			    [Filters are applied text],
 			    [Filters are not applied]
 			)
-		displayFolder: Performance statistics (using ps)
+		displayFolder: Performance statistics (using ps)\Filter panel
 		lineageTag: 9d175e70-603f-4033-9b02-37ee330ba7a9
 
 	measure 'Data range - Index operational' =
@@ -4452,11 +4587,11 @@ table _Measures
 		displayFolder: Lock statistics (using io)
 		lineageTag: 9c42e853-4b39-448c-bbc9-c8c93a48a6b1
 
-	measure 'VLF - Lock statistics' =
+	measure 'VLF Filter - Lock statistics' =
 			
 			[Page lock count - Lock statistics] + [Page lock wait count - Lock statistics] + [Page lock wait in mS - Lock statistics] + [Row lock count - Lock statistics] + [Row lock wait count - Lock statistics] + [Row lock wait in mS - Lock statistics]
 		formatString: 0
-		displayFolder: Lock statistics (using io)
+		displayFolder: Lock statistics (using io)\Filter panel
 		lineageTag: cf3f9dd8-2148-482f-96ea-5a15e4271cd2
 
 	measure 'Is filters applied - Lock statistics' =
@@ -4473,52 +4608,69 @@ table _Measures
 			    0
 			)
 		formatString: 0
-		displayFolder: Lock statistics (using io)
+		displayFolder: Lock statistics (using io)\Filter panel
 		lineageTag: bb9b3a92-d7e3-49a6-8fd6-3664c7722ba9
 
-	measure 'Show filters Headers - Lock statistics' =
+	measure 'Show filters Headers - Lock statistics' = ```
 			
 			IF (
 			    ISFILTERED ( 'Index'[Database] ),
-			    "Database:" & UNICHAR ( 127 )
-			        & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Index'[Database] ) ) )
+			    VAR _cnt = 
+			        COUNTROWS ( FILTER ( VALUES ( 'Index'[Database] ), [VLF Filter - Lock statistics] <> BLANK () ) )
+			    RETURN
+			        IF ( _cnt > 0, "Database:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			)
 			    & IF (
 			        ISFILTERED ( 'Index'[Schema] ),
-			        "Schema:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Index'[Schema] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Index'[Schema] ), [VLF Filter - Lock statistics] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Schema:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Index'[Object] ),
-			        "Object:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Index'[Object] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Index'[Object] ), [VLF Filter - Lock statistics] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Object:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Index'[Index] ),
-			        "Index:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Index'[Index] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Index'[Index] ), [VLF Filter - Lock statistics] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Index:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Year] ),
-			        "Year:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Year] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Year] ), [VLF Filter - Lock statistics] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Year:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Month] ),
-			        "Month:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Month] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Month] ), [VLF Filter - Lock statistics] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Month:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day] ),
-			        "Day:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Day] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Day] ), [VLF Filter - Lock statistics] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Day:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day index] ),
-			        "Day index:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Day index] ) ) )
-			    )
-		displayFolder: Lock statistics (using io)
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Day index] ), [VLF Filter - Lock statistics] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Day index:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
+				)
+			```
+		displayFolder: Lock statistics (using io)\Filter panel
 		lineageTag: 3d869950-367c-43f8-8286-aecfb5abd885
 
 	measure 'Show filters - Lock statistics' =
@@ -4526,76 +4678,76 @@ table _Measures
 			IF (
 			    ISFILTERED ( 'Index'[Database] ),
 			    VAR _items =
-			        VALUES ( 'Index'[Database] )
+			        FILTER ( VALUES ( 'Index'[Database] ), [VLF Filter - Lock statistics] <> BLANK () )
 			    VAR _itemsCombined =
-			        CONCATENATEX ( _items, 'Index'[Database], UNICHAR ( 10 ) )
+			        CONCATENATEX ( _items, 'Index'[Database], UNICHAR ( 10 ), 'Index'[Database], ASC )
 			    RETURN
 			        _itemsCombined & UNICHAR ( 10 )
 			)
 			    & IF (
 			        ISFILTERED ( 'Index'[Schema] ),
 			        VAR _items =
-			            VALUES ( 'Index'[Schema] )
+			            FILTER ( VALUES ( 'Index'[Schema] ), [VLF Filter - Lock statistics] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Index'[Schema], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Index'[Schema], UNICHAR ( 10 ), 'Index'[Schema], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Index'[Object] ),
 			        VAR _items =
-			            VALUES ( 'Index'[Object] )
+			            FILTER ( VALUES ( 'Index'[Object] ), [VLF Filter - Lock statistics] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Index'[Object], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Index'[Object], UNICHAR ( 10 ), 'Index'[Object], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Index'[Index] ),
 			        VAR _items =
-			            VALUES ( 'Index'[Index] )
+			            FILTER ( VALUES ( 'Index'[Index] ), [VLF Filter - Lock statistics] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Index'[Index], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Index'[Index], UNICHAR ( 10 ), 'Index'[Index], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Year] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Year] )
+			            FILTER ( VALUES ( 'Date'[Year] ), [VLF Filter - Lock statistics] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Year], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Date'[Year], UNICHAR ( 10 ), 'Date'[Year], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Month] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Month] )
+			            DISTINCT ( SELECTCOLUMNS ( FILTER ( 'Date', [VLF Filter - Lock statistics] <> BLANK () ), "Month", 'Date'[Month], "MonthNumber", 'Date'[MonthNumber] ) )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Month], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, [Month], UNICHAR ( 10 ), [MonthNumber], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Day] )
+			            FILTER ( VALUES ( 'Date'[Day] ), [VLF Filter - Lock statistics] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Day], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Date'[Day], UNICHAR ( 10 ), 'Date'[Day], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day index] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Day index] )
+			            FILTER ( VALUES ( 'Date'[Day index] ), [VLF Filter - Lock statistics] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Day index], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Date'[Day index], UNICHAR ( 10 ), 'Date'[Day index], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
-		displayFolder: Lock statistics (using io)
+		displayFolder: Lock statistics (using io)\Filter panel
 		lineageTag: 0329a62a-291e-4fd8-bf3a-1054128fc9d8
 
 	measure 'Open filter button tooltip - Lock statistics' =
@@ -4605,7 +4757,7 @@ table _Measures
 			    [Filters are applied text],
 			    [Filters are not applied]
 			)
-		displayFolder: Lock statistics (using io)
+		displayFolder: Lock statistics (using io)\Filter panel
 		lineageTag: f093ad42-08f1-4faa-918e-41b917f809e8
 
 	measure 'Latest day page lock count - Lock statistics' = ```
@@ -4996,79 +5148,90 @@ table _Measures
 			IF (
 			    ISFILTERED ( 'Wait type'[Wait type] ),
 			    VAR _items =
-			        VALUES ( 'Wait type'[Wait type] )
+			        FILTER ( VALUES ( 'Wait type'[Wait type] ), [VLF Filter - Wait statistics] <> BLANK () )
 			    VAR _itemsCombined =
-			        CONCATENATEX ( _items, 'Wait type'[Wait type], UNICHAR ( 10 ) )
+			        CONCATENATEX ( _items, 'Wait type'[Wait type], UNICHAR ( 10 ), 'Wait type'[Wait type], ASC )
 			    RETURN
 			        _itemsCombined & UNICHAR ( 10 )
 			)
 			    & IF (
 			        ISFILTERED ( 'Date'[Year] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Year] )
+			            FILTER ( VALUES ( 'Date'[Year] ), [VLF Filter - Wait statistics] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Year], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Date'[Year], UNICHAR ( 10 ), 'Date'[Year], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Month] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Month] )
+			            DISTINCT ( SELECTCOLUMNS ( FILTER ( 'Date', [VLF Filter - Wait statistics] <> BLANK () ), "Month", 'Date'[Month], "MonthNumber", 'Date'[MonthNumber] ) )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Month], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, [Month], UNICHAR ( 10 ), [MonthNumber], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Day] )
+			            FILTER ( VALUES ( 'Date'[Day] ), [VLF Filter - Wait statistics] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Day], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Date'[Day], UNICHAR ( 10 ), 'Date'[Day], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day index] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Day index] )
+			            FILTER ( VALUES ( 'Date'[Day index] ), [VLF Filter - Wait statistics] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Day index], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Date'[Day index], UNICHAR ( 10 ), 'Date'[Day index], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
-		displayFolder: Wait statistics
+		displayFolder: Wait statistics\Filter panel
 		lineageTag: 02be0f7d-8401-48ed-93ad-b1585cff9597
 
-	measure 'Show filters Headers - Wait statistics' =
+	measure 'Show filters Headers - Wait statistics' = ```
 			
 			IF (
 			    ISFILTERED ( 'Wait type'[Wait type] ),
-			    "Wait type:" & UNICHAR ( 127 )
-			        & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Wait type'[Wait type] ) ) )
+			    VAR _cnt = 
+			        COUNTROWS ( FILTER ( VALUES ( 'Wait type'[Wait type] ), [VLF Filter - Wait statistics] <> BLANK () ) )
+			    RETURN
+			        IF ( _cnt > 0, "Wait type:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			)
 			    & IF (
 			        ISFILTERED ( 'Date'[Year] ),
-			        "Year:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Year] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Year] ), [VLF Filter - Wait statistics] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Year:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Month] ),
-			        "Month:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Month] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Month] ), [VLF Filter - Wait statistics] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Month:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day] ),
-			        "Day:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Day] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Day] ), [VLF Filter - Wait statistics] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Day:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day index] ),
-			        "Day index:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Day index] ) ) )
-			    )
-		displayFolder: Wait statistics
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Day index] ), [VLF Filter - Wait statistics] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Day index:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
+				)
+			```
+		displayFolder: Wait statistics\Filter panel
 		lineageTag: c26691ee-af5f-47d1-8e87-a2af34d3ac11
 
 	measure 'Is filters applied - Wait statistics' =
@@ -5082,7 +5245,7 @@ table _Measures
 			    0
 			)
 		formatString: 0
-		displayFolder: Wait statistics
+		displayFolder: Wait statistics\Filter panel
 		lineageTag: 60e65f7e-3cdb-429b-aa25-7cbbe7f1ae7c
 
 	measure 'Open filter button tooltip - Wait statistics' =
@@ -5092,7 +5255,7 @@ table _Measures
 			    [Filters are applied text],
 			    [Filters are not applied]
 			)
-		displayFolder: Wait statistics
+		displayFolder: Wait statistics\Filter panel
 		lineageTag: a02ecb55-9d6e-4555-a1b8-9c9ace05712c
 
 	measure 'Latest date - Wait statistics' =
@@ -5580,11 +5743,11 @@ table _Measures
 		displayFolder: Index leaf statistics (using io)
 		lineageTag: da2a1a10-6653-41d1-8d2d-973e9ce25cf1
 
-	measure 'VLF - Index leaf statistics' =
+	measure 'VLF Filter - Index leaf statistics' =
 			
 			[Leaf allocation count - Index leaf statistics] + [Leaf delete count - Index leaf statistics] + [Leaf ghost count - Index leaf statistics] + [Leaf insert count - Index leaf statistics] + [Leaf page merge count - Index leaf statistics] + [Leaf update count - Index leaf statistics] + [Nonleaf allocation count - Index leaf statistics] + [Nonleaf delete count - Index leaf statistics] + [Nonleaf insert count - Index leaf statistics] + [Nonleaf page merge count - Index leaf statistics] + [Nonleaf update count - Index leaf statistics]
 		formatString: 0
-		displayFolder: Index leaf statistics (using io)
+		displayFolder: Index leaf statistics (using io)\Filter panel
 		lineageTag: 8dfff28d-4c6d-435d-a963-540e201f71a4
 
 	measure 'Is filters applied - Index leaf statistics' =
@@ -5601,7 +5764,7 @@ table _Measures
 			    0
 			)
 		formatString: 0
-		displayFolder: Index leaf statistics (using io)
+		displayFolder: Index leaf statistics (using io)\Filter panel
 		lineageTag: 9e4f6983-6628-4197-a8bc-68497b9c9921
 
 	measure 'Open filter button tooltip - Index leaf statistics' =
@@ -5611,7 +5774,7 @@ table _Measures
 			    [Filters are applied text],
 			    [Filters are not applied]
 			)
-		displayFolder: Index leaf statistics (using io)
+		displayFolder: Index leaf statistics (using io)\Filter panel
 		lineageTag: bc5dedd3-5e9e-413f-a1dd-ca28e29ccda1
 
 	measure 'Show filters - Index leaf statistics' =
@@ -5619,121 +5782,138 @@ table _Measures
 			IF (
 			    ISFILTERED ( 'Index'[Database] ),
 			    VAR _items =
-			        VALUES ( 'Index'[Database] )
+			        FILTER ( VALUES ( 'Index'[Database] ), [VLF Filter - Index leaf statistics] <> BLANK () )
 			    VAR _itemsCombined =
-			        CONCATENATEX ( _items, 'Index'[Database], UNICHAR ( 10 ) )
+			        CONCATENATEX ( _items, 'Index'[Database], UNICHAR ( 10 ), 'Index'[Database], ASC )
 			    RETURN
 			        _itemsCombined & UNICHAR ( 10 )
 			)
 			    & IF (
 			        ISFILTERED ( 'Index'[Schema] ),
 			        VAR _items =
-			            VALUES ( 'Index'[Schema] )
+			            FILTER ( VALUES ( 'Index'[Schema] ), [VLF Filter - Index leaf statistics] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Index'[Schema], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Index'[Schema], UNICHAR ( 10 ), 'Index'[Schema], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Index'[Object] ),
 			        VAR _items =
-			            VALUES ( 'Index'[Object] )
+			            FILTER ( VALUES ( 'Index'[Object] ), [VLF Filter - Index leaf statistics] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Index'[Object], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Index'[Object], UNICHAR ( 10 ), 'Index'[Object], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Index'[Index] ),
 			        VAR _items =
-			            VALUES ( 'Index'[Index] )
+			            FILTER ( VALUES ( 'Index'[Index] ), [VLF Filter - Index leaf statistics] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Index'[Index], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Index'[Index], UNICHAR ( 10 ), 'Index'[Index], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Year] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Year] )
+			            FILTER ( VALUES ( 'Date'[Year] ), [VLF Filter - Index leaf statistics] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Year], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Date'[Year], UNICHAR ( 10 ), 'Date'[Year], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Month] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Month] )
+			            DISTINCT ( SELECTCOLUMNS ( FILTER ( 'Date', [VLF Filter - Index leaf statistics] <> BLANK () ), "Month", 'Date'[Month], "MonthNumber", 'Date'[MonthNumber] ) )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Month], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, [Month], UNICHAR ( 10 ), [MonthNumber], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Day] )
+			            FILTER ( VALUES ( 'Date'[Day] ), [VLF Filter - Index leaf statistics] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Day], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Date'[Day], UNICHAR ( 10 ), 'Date'[Day], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day index] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Day index] )
+			            FILTER ( VALUES ( 'Date'[Day index] ), [VLF Filter - Index leaf statistics] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Day index], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Date'[Day index], UNICHAR ( 10 ), 'Date'[Day index], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
-		displayFolder: Index leaf statistics (using io)
+		displayFolder: Index leaf statistics (using io)\Filter panel
 		lineageTag: 68084c27-0127-45d2-91da-4de0604c9a82
 
-	measure 'Show filters Headers - Index leaf statistics' =
+	measure 'Show filters Headers - Index leaf statistics' = ```
 			
 			IF (
 			    ISFILTERED ( 'Index'[Database] ),
-			    "Database:" & UNICHAR ( 127 )
-			        & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Index'[Database] ) ) )
+			    VAR _cnt = 
+			        COUNTROWS ( FILTER ( VALUES ( 'Index'[Database] ), [VLF Filter - Index leaf statistics] <> BLANK () ) )
+			    RETURN
+			        IF ( _cnt > 0, "Database:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			)
 			    & IF (
 			        ISFILTERED ( 'Index'[Schema] ),
-			        "Schema:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Index'[Schema] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Index'[Schema] ), [VLF Filter - Index leaf statistics] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Schema:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Index'[Object] ),
-			        "Object:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Index'[Object] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Index'[Object] ), [VLF Filter - Index leaf statistics] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Object:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Index'[Index] ),
-			        "Index:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Index'[Index] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Index'[Index] ), [VLF Filter - Index leaf statistics] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Index:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Year] ),
-			        "Year:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Year] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Year] ), [VLF Filter - Index leaf statistics] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Year:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Month] ),
-			        "Month:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Month] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Month] ), [VLF Filter - Index leaf statistics] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Month:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day] ),
-			        "Day:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Day] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Day] ), [VLF Filter - Index leaf statistics] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Day:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day index] ),
-			        "Day index:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Day index] ) ) )
-			    )
-		displayFolder: Index leaf statistics (using io)
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Day index] ), [VLF Filter - Index leaf statistics] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Day index:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
+				)
+			```
+		displayFolder: Index leaf statistics (using io)\Filter panel
 		lineageTag: 09c18538-8067-4061-ac4d-ddc5356176eb
 
 	measure 'Latest nonleaf allocation count - Index leaf statistics' = ```
@@ -6201,39 +6381,52 @@ table _Measures
 		displayFolder: Query statistics
 		lineageTag: fc12739c-4c90-4a54-83ed-7ee29255898a
 
-	measure 'Show filters Headers - Query statistics' =
+	measure 'Show filters Headers - Query statistics' = ```
 			
 			IF (
 			    ISFILTERED ( 'Query statistic'[Database] ),
-			    "Database:" & UNICHAR ( 127 )
-			        & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Query statistic'[Database] ) ) )
+			    VAR _cnt = 
+			        COUNTROWS ( FILTER ( VALUES ( 'Query statistic'[Database] ), [VLF Filter - Query statistics] <> BLANK () ) )
+			    RETURN
+			        IF ( _cnt > 0, "Database:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			)
 			    & IF (
 			        ISFILTERED ( 'Query statements'[Statement] ),
-			        "Schema:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Query statements'[Statement] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Query statements'[Statement] ), [VLF Filter - Query statistics] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Statement:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Year] ),
-			        "Year:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Year] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Year] ), [VLF Filter - Query statistics] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Year:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Month] ),
-			        "Month:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Month] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Month] ), [VLF Filter - Query statistics] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Month:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day] ),
-			        "Day:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Day] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Day] ), [VLF Filter - Query statistics] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Day:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day index] ),
-			        "Day index:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Day index] ) ) )
-			    )
-		displayFolder: Query statistics
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Day index] ), [VLF Filter - Query statistics] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Day index:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
+				)
+			```
+		displayFolder: Query statistics\Filter panel
 		lineageTag: 58ba8ec6-4dcd-46a6-a5e2-30529c970bc7
 
 	measure 'Show filters - Query statistics' =
@@ -6241,58 +6434,58 @@ table _Measures
 			IF (
 			    ISFILTERED ( 'Query statistic'[Database] ),
 			    VAR _items =
-			        VALUES ( 'Query statistic'[Database] )
+			        FILTER ( VALUES ( 'Query statistic'[Database] ), [VLF Filter - Query statistics] <> BLANK () )
 			    VAR _itemsCombined =
-			        CONCATENATEX ( _items, 'Query statistic'[Database], UNICHAR ( 10 ) )
+			        CONCATENATEX ( _items, 'Query statistic'[Database], UNICHAR ( 10 ), 'Query statistic'[Database], ASC )
 			    RETURN
 			        _itemsCombined & UNICHAR ( 10 )
 			)
 			    & IF (
 			        ISFILTERED ( 'Query statements'[Statement] ),
 			        VAR _items =
-			            VALUES ( 'Query statements'[Statement] )
+			            FILTER ( VALUES ( 'Query statements'[Statement] ), [VLF Filter - Query statistics] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Query statements'[Statement], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Query statements'[Statement], UNICHAR ( 10 ), 'Query statements'[Statement], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Year] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Year] )
+			            FILTER ( VALUES ( 'Date'[Year] ), [VLF Filter - Query statistics] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Year], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Date'[Year], UNICHAR ( 10 ), 'Date'[Year], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Month] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Month] )
+			            DISTINCT ( SELECTCOLUMNS ( FILTER ( 'Date', [VLF Filter - Query statistics] <> BLANK () ), "Month", 'Date'[Month], "MonthNumber", 'Date'[MonthNumber] ) )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Month], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, [Month], UNICHAR ( 10 ), [MonthNumber], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Day] )
+			            FILTER ( VALUES ( 'Date'[Day] ), [VLF Filter - Query statistics] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Day], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Date'[Day], UNICHAR ( 10 ), 'Date'[Day], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day index] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Day index] )
+			            FILTER ( VALUES ( 'Date'[Day index] ), [VLF Filter - Query statistics] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Day index], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Date'[Day index], UNICHAR ( 10 ), 'Date'[Day index], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
-		displayFolder: Query statistics
+		displayFolder: Query statistics\Filter panel
 		lineageTag: 2353e087-754c-4c62-8428-92df29f5a203
 
 	measure 'Is filters applied - Query statistics' =
@@ -6308,7 +6501,7 @@ table _Measures
 			    0
 			)
 		formatString: 0
-		displayFolder: Query statistics
+		displayFolder: Query statistics\Filter panel
 		lineageTag: 1c804bef-8fdb-4cbe-9e27-b8ff5071eb38
 
 	measure 'Open filter button tooltip - Query statistics' =
@@ -6318,7 +6511,7 @@ table _Measures
 			    [Filters are applied text],
 			    [Filters are not applied]
 			)
-		displayFolder: Query statistics
+		displayFolder: Query statistics\Filter panel
 		lineageTag: 2a0d9e51-3181-4259-b82e-248863d120e1
 
 	measure 'All logs title - Monitor status' =
@@ -6476,72 +6669,81 @@ table _Measures
 			IF (
 			    ISFILTERED ( 'Index'[Database] ),
 			    VAR _items =
-			        VALUES ( 'Index'[Database] )
+			        FILTER ( VALUES ( 'Index'[Database] ), [VLF Filter - Statistics] <> BLANK () )
 			    VAR _itemsCombined =
-			        CONCATENATEX ( _items, 'Index'[Database], UNICHAR ( 10 ) )
+			        CONCATENATEX ( _items, 'Index'[Database], UNICHAR ( 10 ), 'Index'[Database], ASC )
 			    RETURN
 			        _itemsCombined & UNICHAR ( 10 )
 			)
 			    & IF (
 			        ISFILTERED ( 'Index'[Schema] ),
 			        VAR _items =
-			            VALUES ( 'Index'[Schema] )
+			            FILTER ( VALUES ( 'Index'[Schema] ), [VLF Filter - Statistics] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Index'[Schema], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Index'[Schema], UNICHAR ( 10 ), 'Index'[Schema], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Index'[Object] ),
 			        VAR _items =
-			            VALUES ( 'Index'[Object] )
+			            FILTER ( VALUES ( 'Index'[Object] ), [VLF Filter - Statistics] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Index'[Object], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Index'[Object], UNICHAR ( 10 ), 'Index'[Object], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Index'[Index] ),
 			        VAR _items =
-			            VALUES ( 'Index'[Index] )
+			            FILTER ( VALUES ( 'Index'[Index] ), [VLF Filter - Statistics] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Index'[Index], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Index'[Index], UNICHAR ( 10 ), 'Index'[Index], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
-		displayFolder: Statistics
+		displayFolder: Statistics\Filter panel
 		lineageTag: ac31080b-f895-4b79-93ad-1d2c39373299
 
-	measure 'Show filters Headers - Statistics' =
+	measure 'Show filters Headers - Statistics' = ```
 			
 			IF (
 			    ISFILTERED ( 'Index'[Database] ),
-			    "Database:" & UNICHAR ( 127 )
-			        & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Index'[Database] ) ) )
+			    VAR _cnt = 
+			        COUNTROWS ( FILTER ( VALUES ( 'Index'[Database] ), [VLF Filter - Statistics] <> BLANK () ) )
+			    RETURN
+			        IF ( _cnt > 0, "Database:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			)
 			    & IF (
 			        ISFILTERED ( 'Index'[Schema] ),
-			        "Schema:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Index'[Schema] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Index'[Schema] ), [VLF Filter - Statistics] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Schema:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Index'[Object] ),
-			        "Object:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Index'[Object] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Index'[Object] ), [VLF Filter - Statistics] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Object:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Index'[Index] ),
-			        "Index:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Index'[Index] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Index'[Index] ), [VLF Filter - Statistics] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Index:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
-		displayFolder: Statistics
+			```
+		displayFolder: Statistics\Filter panel
 		lineageTag: 5c917117-73c0-4789-a53e-d28b5710798c
 
-	measure 'VLF - Statistics' =
+	measure 'VLF Filter - Statistics' =
 			
-			[Age filtered - Statistics age] + [Age filtered - Statistics age incremental]
+			COUNTROWS ( 'Statistics age' )
 		formatString: 0
-		displayFolder: Statistics
+		displayFolder: Statistics\Filter panel
 		lineageTag: ae23ed6a-5c5f-44fd-951e-8d6c651611c4
 
 	measure 'Open filter button tooltip - Statistics' =
@@ -6551,7 +6753,7 @@ table _Measures
 			    [Filters are applied text],
 			    [Filters are not applied]
 			)
-		displayFolder: Statistics
+		displayFolder: Statistics\Filter panel
 		lineageTag: 570b8771-b5b5-438e-a710-6bba29b2b055
 
 	measure 'Is filters applied - Statistics' =
@@ -6564,14 +6766,14 @@ table _Measures
 			    0
 			)
 		formatString: 0
-		displayFolder: Statistics
+		displayFolder: Statistics\Filter panel
 		lineageTag: c4859339-525a-4f9b-b72c-24240505e60a
 
 	measure 'Is filters applied - Triggers' =
 			
 			IF ( ISFILTERED ( 'Database'[Database] ), 1, 0 )
 		formatString: 0
-		displayFolder: Triggers
+		displayFolder: Triggers\Filter panel
 		lineageTag: de4cd514-17dc-44ea-bef2-30ed0fabd99c
 
 	measure 'Open filter button tooltip - Triggers' =
@@ -6581,7 +6783,7 @@ table _Measures
 			    [Filters are applied text],
 			    [Filters are not applied]
 			)
-		displayFolder: Triggers
+		displayFolder: Triggers\Filter panel
 		lineageTag: f54e63a4-2a45-4aaa-9d7d-c0c182d7ee35
 
 	measure 'Show filters - Triggers' =
@@ -6589,23 +6791,26 @@ table _Measures
 			IF (
 			    ISFILTERED ( 'Database'[Database] ),
 			    VAR _items =
-			        VALUES ( 'Database'[Database] )
+			        FILTER ( VALUES ( 'Database'[Database] ), [VLF Filter - Triggers] <> BLANK () )
 			    VAR _itemsCombined =
-			        CONCATENATEX ( _items, 'Database'[Database], UNICHAR ( 10 ) )
+			        CONCATENATEX ( _items, 'Database'[Database], UNICHAR ( 10 ), 'Database'[Database], ASC )
 			    RETURN
 			        _itemsCombined & UNICHAR ( 10 )
 			)
-		displayFolder: Triggers
+		displayFolder: Triggers\Filter panel
 		lineageTag: b452dbf5-3fe3-4aa9-a07a-19b9f048d95e
 
-	measure 'Show filters Headers - Triggers' =
+	measure 'Show filters Headers - Triggers' = ```
 			
 			IF (
 			    ISFILTERED ( 'Database'[Database] ),
-			    "Database:" & UNICHAR ( 127 )
-			        & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Database'[Database] ) ) )
+			    VAR _cnt = 
+			        COUNTROWS ( FILTER ( VALUES ( 'Database'[Database] ), [VLF Filter - Triggers] <> BLANK () ) )
+			    RETURN
+			        IF ( _cnt > 0, "Database:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			)
-		displayFolder: Triggers
+			```
+		displayFolder: Triggers\Filter panel
 		lineageTag: 2992bd60-8ca1-4133-8d47-df98b280ead0
 
 	measure 'Triggers # - Triggers' =
@@ -6654,7 +6859,7 @@ table _Measures
 			
 			IF ( ISFILTERED ( 'Database'[Database] ), 1, 0 )
 		formatString: 0
-		displayFolder: Plan guides
+		displayFolder: Plan guides\Filter panel
 		lineageTag: c53d82ec-7e34-492e-9e6d-8887d31a19be
 
 	measure 'Open filter button tooltip - Plan guides' =
@@ -6664,7 +6869,7 @@ table _Measures
 			    [Filters are applied text],
 			    [Filters are not applied]
 			)
-		displayFolder: Plan guides
+		displayFolder: Plan guides\Filter panel
 		lineageTag: e911cf32-cd4d-46d5-9491-7a71b2960ccd
 
 	measure 'Show filters - Plan guides' =
@@ -6672,23 +6877,26 @@ table _Measures
 			IF (
 			    ISFILTERED ( 'Database'[Database] ),
 			    VAR _items =
-			        VALUES ( 'Database'[Database] )
+			        FILTER ( VALUES ( 'Database'[Database] ), [VLF Filter - Plan guides] <> BLANK () )
 			    VAR _itemsCombined =
-			        CONCATENATEX ( _items, 'Database'[Database], UNICHAR ( 10 ) )
+			        CONCATENATEX ( _items, 'Database'[Database], UNICHAR ( 10 ), 'Database'[Database], ASC )
 			    RETURN
 			        _itemsCombined & UNICHAR ( 10 )
 			)
-		displayFolder: Plan guides
+		displayFolder: Plan guides\Filter panel
 		lineageTag: c8672c94-e9fd-46ca-90b3-c233778bc9cb
 
-	measure 'Show filters Headers - Plan guides' =
+	measure 'Show filters Headers - Plan guides' = ```
 			
 			IF (
 			    ISFILTERED ( 'Database'[Database] ),
-			    "Database:" & UNICHAR ( 127 )
-			        & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Database'[Database] ) ) )
+			    VAR _cnt = 
+			        COUNTROWS ( FILTER ( VALUES ( 'Database'[Database] ), [VLF Filter - Plan guides] <> BLANK () ) )
+			    RETURN
+			        IF ( _cnt > 0, "Database:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			)
-		displayFolder: Plan guides
+			```
+		displayFolder: Plan guides\Filter panel
 		lineageTag: 8911f1cd-2789-43ca-a83b-58f2f890d579
 
 	measure 'Avg. total user cost - Missing indexes' =
@@ -6738,12 +6946,16 @@ table _Measures
 			
 			IF (
 			    ISFILTERED ( 'Object'[Database] ) || ISFILTERED ( 'Object'[Schema] )
-			        || ISFILTERED ( 'Object'[Object] ),
+			        || ISFILTERED ( 'Object'[Object] )
+			        || ISFILTERED ( 'Date'[Year] )
+			        || ISFILTERED ( 'Date'[Month] )
+			        || ISFILTERED ( 'Date'[Day] )
+			        || ISFILTERED ( 'Date'[Day index] ),
 			    1,
 			    0
 			)
 		formatString: 0
-		displayFolder: Missing indexes
+		displayFolder: Missing indexes\Filter panel
 		lineageTag: 867c19d1-e037-4cfe-bc20-d20e9823aeb3
 
 	measure 'Open filter button tooltip - Missing indexes' =
@@ -6753,7 +6965,7 @@ table _Measures
 			    [Filters are applied text],
 			    [Filters are not applied]
 			)
-		displayFolder: Missing indexes
+		displayFolder: Missing indexes\Filter panel
 		lineageTag: 09ab0590-4ba9-4973-8e96-74fe443d93a6
 
 	measure 'Show filters - Missing indexes' =
@@ -6761,51 +6973,122 @@ table _Measures
 			IF (
 			    ISFILTERED ( 'Object'[Database] ),
 			    VAR _items =
-			        VALUES ( 'Object'[Database] )
+			        FILTER ( VALUES ( 'Object'[Database] ), [VLF Filter - Missing indexes] <> BLANK () )
 			    VAR _itemsCombined =
-			        CONCATENATEX ( _items, 'Object'[Database], UNICHAR ( 10 ) )
+			        CONCATENATEX ( _items, 'Object'[Database], UNICHAR ( 10 ), 'Object'[Database], ASC )
 			    RETURN
 			        _itemsCombined & UNICHAR ( 10 )
 			)
 			    & IF (
 			        ISFILTERED ( 'Object'[Schema] ),
 			        VAR _items =
-			            VALUES ( 'Object'[Schema] )
+			            FILTER ( VALUES ( 'Object'[Schema] ), [VLF Filter - Missing indexes] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Object'[Schema], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Object'[Schema], UNICHAR ( 10 ), 'Object'[Schema], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Object'[Object] ),
 			        VAR _items =
-			            VALUES ( 'Object'[Object] )
+			            FILTER ( VALUES ( 'Object'[Object] ), [VLF Filter - Missing indexes] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Object'[Object], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Object'[Object], UNICHAR ( 10 ), 'Object'[Object], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
-		displayFolder: Missing indexes
+			    & IF (
+			        ISFILTERED ( 'Date'[Year] ),
+			        VAR _items =
+			            FILTER ( VALUES ( 'Date'[Year] ), [VLF Filter - Missing indexes] <> BLANK () )
+			        VAR _itemsCombined =
+			            CONCATENATEX ( _items, 'Date'[Year], UNICHAR ( 10 ), 'Date'[Year], ASC )
+			        RETURN
+			            _itemsCombined & UNICHAR ( 10 )
+			    )
+			    & IF (
+			        ISFILTERED ( 'Date'[Month] ),
+			        VAR _items =
+			            DISTINCT ( SELECTCOLUMNS ( FILTER ( 'Date', [VLF Filter - Missing indexes] <> BLANK () ), "Month", 'Date'[Month], "MonthNumber", 'Date'[MonthNumber] ) )
+			        VAR _itemsCombined =
+			            CONCATENATEX ( _items, [Month], UNICHAR ( 10 ), [MonthNumber], ASC )
+			        RETURN
+			            _itemsCombined & UNICHAR ( 10 )
+			    )
+			    & IF (
+			        ISFILTERED ( 'Date'[Day] ),
+			        VAR _items =
+			            FILTER ( VALUES ( 'Date'[Day] ), [VLF Filter - Missing indexes] <> BLANK () )
+			        VAR _itemsCombined =
+			            CONCATENATEX ( _items, 'Date'[Day], UNICHAR ( 10 ), 'Date'[Day], ASC )
+			        RETURN
+			            _itemsCombined & UNICHAR ( 10 )
+			    )
+			    & IF (
+			        ISFILTERED ( 'Date'[Day index] ),
+			        VAR _items =
+			            FILTER ( VALUES ( 'Date'[Day index] ), [VLF Filter - Missing indexes] <> BLANK () )
+			        VAR _itemsCombined =
+			            CONCATENATEX ( _items, 'Date'[Day index], UNICHAR ( 10 ), 'Date'[Day index], ASC )
+			        RETURN
+			            _itemsCombined & UNICHAR ( 10 )
+			    )
+		displayFolder: Missing indexes\Filter panel
 		lineageTag: da1af2db-4da3-4693-a91d-3b553fdcc164
 
-	measure 'Show filters Headers - Missing indexes' =
+	measure 'Show filters Headers - Missing indexes' = ```
 			
 			IF (
 			    ISFILTERED ( 'Object'[Database] ),
-			    "Database:" & UNICHAR ( 127 )
-			        & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Object'[Database] ) ) )
+			    VAR _cnt = 
+			        COUNTROWS ( FILTER ( VALUES ( 'Object'[Database] ), [VLF Filter - Missing indexes] <> BLANK () ) )
+			    RETURN
+			        IF ( _cnt > 0, "Database:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			)
 			    & IF (
 			        ISFILTERED ( 'Object'[Schema] ),
-			        "Schema:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Object'[Schema] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Object'[Schema] ), [VLF Filter - Missing indexes] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Schema:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Object'[Object] ),
-			        "Object:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Object'[Object] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Object'[Object] ), [VLF Filter - Missing indexes] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Object:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
-		displayFolder: Missing indexes
+			    & IF (
+			        ISFILTERED ( 'Date'[Year] ),
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Year] ), [VLF Filter - Missing indexes] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Year:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
+			    )
+			    & IF (
+			        ISFILTERED ( 'Date'[Month] ),
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Month] ), [VLF Filter - Missing indexes] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Month:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
+			    )
+			    & IF (
+			        ISFILTERED ( 'Date'[Day] ),
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Day] ), [VLF Filter - Missing indexes] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Day:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
+			    )
+			    & IF (
+			        ISFILTERED ( 'Date'[Day index] ),
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Day index] ), [VLF Filter - Missing indexes] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Day index:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
+				)
+			```
+		displayFolder: Missing indexes\Filter panel
 		lineageTag: 404b5f55-39aa-4024-88d3-a8e1af06600c
 
 	measure 'Title - Missing indexes' = ```
@@ -6887,7 +7170,7 @@ table _Measures
 			    0
 			)
 		formatString: 0
-		displayFolder: Index physical
+		displayFolder: Index physical\Filter panel
 		lineageTag: ba9cb675-22be-4cdb-bff4-d06c50180b9c
 
 	measure 'Open filter button tooltip - Index physical' =
@@ -6897,7 +7180,7 @@ table _Measures
 			    [Filters are applied text],
 			    [Filters are not applied]
 			)
-		displayFolder: Index physical
+		displayFolder: Index physical\Filter panel
 		lineageTag: 149002a1-bd20-4d14-b62c-47212024f8f1
 
 	measure 'Show filters - Index physical' =
@@ -6905,96 +7188,106 @@ table _Measures
 			IF (
 			    ISFILTERED ( 'Index alloc type'[Database] ),
 			    VAR _items =
-			        VALUES ( 'Index alloc type'[Database] )
+			        FILTER ( VALUES ( 'Index alloc type'[Database] ), [VLF Filter - Index physical] <> BLANK () )
 			    VAR _itemsCombined =
-			        CONCATENATEX ( _items, 'Index alloc type'[Database], UNICHAR ( 10 ) )
+			        CONCATENATEX ( _items, 'Index alloc type'[Database], UNICHAR ( 10 ), 'Index alloc type'[Database], ASC )
 			    RETURN
 			        _itemsCombined & UNICHAR ( 10 )
 			)
 			    & IF (
 			        ISFILTERED ( 'Index alloc type'[Schema] ),
 			        VAR _items =
-			            VALUES ( 'Index alloc type'[Schema] )
+			            FILTER ( VALUES ( 'Index alloc type'[Schema] ), [VLF Filter - Index physical] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Index alloc type'[Schema], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Index alloc type'[Schema], UNICHAR ( 10 ), 'Index alloc type'[Schema], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Index alloc type'[Object] ),
 			        VAR _items =
-			            VALUES ( 'Index alloc type'[Object] )
+			            FILTER ( VALUES ( 'Index alloc type'[Object] ), [VLF Filter - Index physical] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Index alloc type'[Object], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Index alloc type'[Object], UNICHAR ( 10 ), 'Index alloc type'[Object], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Index alloc type'[Index] ),
 			        VAR _items =
-			            VALUES ( 'Index alloc type'[Index] )
+			            FILTER ( VALUES ( 'Index alloc type'[Index] ), [VLF Filter - Index physical] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Index alloc type'[Index], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Index alloc type'[Index], UNICHAR ( 10 ), 'Index alloc type'[Index], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Index alloc type'[Index type] ),
 			        VAR _items =
-			            VALUES ( 'Index alloc type'[Index type] )
+			            FILTER ( VALUES ( 'Index alloc type'[Index type] ), [VLF Filter - Index physical] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Index alloc type'[Index type], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Index alloc type'[Index type], UNICHAR ( 10 ), 'Index alloc type'[Index type], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Index alloc type'[Alloc. unit type] ),
 			        VAR _items =
-			            VALUES ( 'Index alloc type'[Alloc. unit type] )
+			            FILTER ( VALUES ( 'Index alloc type'[Alloc. unit type] ), [VLF Filter - Index physical] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Index alloc type'[Alloc. unit type], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Index alloc type'[Alloc. unit type], UNICHAR ( 10 ), 'Index alloc type'[Alloc. unit type], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
-		displayFolder: Index physical
+		displayFolder: Index physical\Filter panel
 		lineageTag: 350b7cf0-a385-4e4c-8b09-d703e86ad8a0
 
-	measure 'Show filters Headers - Index physical' =
+	measure 'Show filters Headers - Index physical' = ```
 			
 			IF (
 			    ISFILTERED ( 'Index alloc type'[Database] ),
-			    "Database:" & UNICHAR ( 127 )
-			        & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Index alloc type'[Database] ) ) )
+			    VAR _cnt = 
+			        COUNTROWS ( FILTER ( VALUES ( 'Index alloc type'[Database] ), [VLF Filter - Index physical] <> BLANK () ) )
+			    RETURN
+			        IF ( _cnt > 0, "Database:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			)
 			    & IF (
 			        ISFILTERED ( 'Index alloc type'[Schema] ),
-			        "Schema:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Index alloc type'[Schema] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Index alloc type'[Schema] ), [VLF Filter - Index physical] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Schema:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Index alloc type'[Object] ),
-			        "Object:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Index alloc type'[Object] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Index alloc type'[Object] ), [VLF Filter - Index physical] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Object:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Index alloc type'[Index] ),
-			        "Index:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Index alloc type'[Index] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Index alloc type'[Index] ), [VLF Filter - Index physical] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Index:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Index alloc type'[Index type] ),
-			        "Index type:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Index alloc type'[Index type] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Index alloc type'[Index type] ), [VLF Filter - Index physical] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Index type:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Index alloc type'[Alloc. unit type] ),
-			        "Alloc. type:" & UNICHAR ( 127 )
-			            & REPT (
-			                UNICHAR ( 10 ),
-			                COUNTROWS ( VALUES ( 'Index alloc type'[Alloc. unit type] ) )
-			            )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Index alloc type'[Alloc. unit type] ), [VLF Filter - Index physical] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Alloc. unit type:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
-		displayFolder: Index physical
+			```
+		displayFolder: Index physical\Filter panel
 		lineageTag: 5a167d38-6cd0-4890-ae8b-41897d4820f1
 
 	measure 'Title - Index physical' =
@@ -7020,7 +7313,7 @@ table _Measures
 			    0
 			)
 		formatString: 0
-		displayFolder: OH errors
+		displayFolder: OH errors\Filter panel
 		lineageTag: c9fb545f-dc38-4072-a080-22ed1482722c
 
 	measure 'Open filter button tooltip - OH errors' =
@@ -7030,7 +7323,7 @@ table _Measures
 			    [Filters are applied text],
 			    [Filters are not applied]
 			)
-		displayFolder: OH errors
+		displayFolder: OH errors\Filter panel
 		lineageTag: e9b4529b-1737-4b9e-9a0f-36a20ebea3c7
 
 	measure 'Show filters - OH errors' =
@@ -7038,128 +7331,145 @@ table _Measures
 			IF (
 			    ISFILTERED ( 'Index'[Database] ),
 			    VAR _items =
-			        VALUES ( 'Index'[Database] )
+			        FILTER ( VALUES ( 'Index'[Database] ), [VLF Filter - OH errors] <> BLANK () )
 			    VAR _itemsCombined =
-			        CONCATENATEX ( _items, 'Index'[Database], UNICHAR ( 10 ) )
+			        CONCATENATEX ( _items, 'Index'[Database], UNICHAR ( 10 ), 'Index'[Database], ASC )
 			    RETURN
 			        _itemsCombined & UNICHAR ( 10 )
 			)
 			    & IF (
 			        ISFILTERED ( 'Index'[Schema] ),
 			        VAR _items =
-			            VALUES ( 'Index'[Schema] )
+			            FILTER ( VALUES ( 'Index'[Schema] ), [VLF Filter - OH errors] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Index'[Schema], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Index'[Schema], UNICHAR ( 10 ), 'Index'[Schema], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Index'[Object] ),
 			        VAR _items =
-			            VALUES ( 'Index'[Object] )
+			            FILTER ( VALUES ( 'Index'[Object] ), [VLF Filter - OH errors] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Index'[Object], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Index'[Object], UNICHAR ( 10 ), 'Index'[Object], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Index'[Index] ),
 			        VAR _items =
-			            VALUES ( 'Index'[Index] )
+			            FILTER ( VALUES ( 'Index'[Index] ), [VLF Filter - OH errors] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Index'[Index], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Index'[Index], UNICHAR ( 10 ), 'Index'[Index], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Year] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Year] )
+			            FILTER ( VALUES ( 'Date'[Year] ), [VLF Filter - OH errors] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Year], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Date'[Year], UNICHAR ( 10 ), 'Date'[Year], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Month] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Month] )
+			            DISTINCT ( SELECTCOLUMNS ( FILTER ( 'Date', [VLF Filter - OH errors] <> BLANK () ), "Month", 'Date'[Month], "MonthNumber", 'Date'[MonthNumber] ) )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Month], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, [Month], UNICHAR ( 10 ), [MonthNumber], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Day] )
+			            FILTER ( VALUES ( 'Date'[Day] ), [VLF Filter - OH errors] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Day], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Date'[Day], UNICHAR ( 10 ), 'Date'[Day], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day index] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Day index] )
+			            FILTER ( VALUES ( 'Date'[Day index] ), [VLF Filter - OH errors] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Day index], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Date'[Day index], UNICHAR ( 10 ), 'Date'[Day index], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
-		displayFolder: OH errors
+		displayFolder: OH errors\Filter panel
 		lineageTag: d22fe2a4-4d91-4afa-876c-812ca4fa6149
 
-	measure 'Show filters Headers - OH errors' =
+	measure 'Show filters Headers - OH errors' = ```
 			
 			IF (
 			    ISFILTERED ( 'Index'[Database] ),
-			    "Database:" & UNICHAR ( 127 )
-			        & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Index'[Database] ) ) )
+			    VAR _cnt = 
+			        COUNTROWS ( FILTER ( VALUES ( 'Index'[Database] ), [VLF Filter - OH errors] <> BLANK () ) )
+			    RETURN
+			        IF ( _cnt > 0, "Database:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			)
 			    & IF (
 			        ISFILTERED ( 'Index'[Schema] ),
-			        "Schema:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Index'[Schema] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Index'[Schema] ), [VLF Filter - OH errors] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Schema:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Index'[Object] ),
-			        "Object:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Index'[Object] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Index'[Object] ), [VLF Filter - OH errors] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Object:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Index'[Index] ),
-			        "Index:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Index'[Index] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Index'[Index] ), [VLF Filter - OH errors] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Index:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Year] ),
-			        "Year:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Year] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Year] ), [VLF Filter - OH errors] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Year:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Month] ),
-			        "Month:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Month] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Month] ), [VLF Filter - OH errors] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Month:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day] ),
-			        "Day:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Day] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Day] ), [VLF Filter - OH errors] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Day:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day index] ),
-			        "Day index:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Day index] ) ) )
-			    )
-		displayFolder: OH errors
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Day index] ), [VLF Filter - OH errors] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Day index:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
+				)
+			```
+		displayFolder: OH errors\Filter panel
 		lineageTag: 89b10d3a-7d80-4693-9a4d-d63b17ee7591
 
-	measure 'VLF - OH errors' =
+	measure 'VLF Filter - OH errors' =
 			
-			SUM ( 'OH errors'[Duration] )
+			COUNTROWS ( 'OH errors' )
 		formatString: 0
-		displayFolder: OH errors
+		displayFolder: OH errors\Filter panel
 		lineageTag: ce3b60dc-34e2-4a92-af4e-3bcf4e5a26cf
 
 	measure 'Title - OH errors' =
@@ -7264,7 +7574,7 @@ table _Measures
 			    0
 			)
 		formatString: 0
-		displayFolder: Backup
+		displayFolder: Backup\Filter panel
 		lineageTag: 0f501953-bcdb-47a1-adaa-0662b62bdf9a
 
 	measure 'Open filter button tooltip - Backup' =
@@ -7274,7 +7584,7 @@ table _Measures
 			    [Filters are applied text],
 			    [Filters are not applied]
 			)
-		displayFolder: Backup
+		displayFolder: Backup\Filter panel
 		lineageTag: 1ee7ba08-bd13-44d3-b1cd-4e01fde94482
 
 	measure 'Show filters - Backup' =
@@ -7282,37 +7592,42 @@ table _Measures
 			IF (
 			    ISFILTERED ( 'Database'[Database] ),
 			    VAR _items =
-			        VALUES ( 'Database'[Database] )
+			        FILTER ( VALUES ( 'Database'[Database] ), [VLF Filter - Backup] <> BLANK () )
 			    VAR _itemsCombined =
-			        CONCATENATEX ( _items, 'Database'[Database], UNICHAR ( 10 ) )
+			        CONCATENATEX ( _items, 'Database'[Database], UNICHAR ( 10 ), 'Database'[Database], ASC )
 			    RETURN
 			        _itemsCombined & UNICHAR ( 10 )
 			)
 			    & IF (
 			        ISFILTERED ( 'Junk dimensions'[Name] ),
 			        VAR _items =
-			            VALUES ( 'Junk dimensions'[Name] )
+			            FILTER ( VALUES ( 'Junk dimensions'[Name] ), [VLF Filter - Backup] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Junk dimensions'[Name], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Junk dimensions'[Name], UNICHAR ( 10 ), 'Junk dimensions'[Name], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
-		displayFolder: Backup
+		displayFolder: Backup\Filter panel
 		lineageTag: 63c01f75-750c-4f06-9a7d-29bffa5ca838
 
-	measure 'Show filters Headers - Backup' =
+	measure 'Show filters Headers - Backup' = ```
 			
 			IF (
 			    ISFILTERED ( 'Database'[Database] ),
-			    "Database:" & UNICHAR ( 127 )
-			        & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Database'[Database] ) ) )
+			    VAR _cnt = 
+			        COUNTROWS ( FILTER ( VALUES ( 'Database'[Database] ), [VLF Filter - Backup] <> BLANK () ) )
+			    RETURN
+			        IF ( _cnt > 0, "Database:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			)
 			    & IF (
 			        ISFILTERED ( 'Junk dimensions'[Name] ),
-			        "Type:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Junk dimensions'[Name] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Junk dimensions'[Name] ), [VLF Filter - Backup] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Type:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
-		displayFolder: Backup
+			```
+		displayFolder: Backup\Filter panel
 		lineageTag: 845f5f96-0f40-4235-9fe3-e375783c4c5b
 
 	measure 'Compressed backup size - Backup status' =
@@ -7449,7 +7764,7 @@ table _Measures
 			
 			IF ( ISFILTERED ( 'Database'[Database] ), 1, 0 )
 		formatString: 0
-		displayFolder: Database configuration
+		displayFolder: Database configuration\Filter panel
 		lineageTag: 6c189adb-bb2f-4795-b447-6b1189167492
 
 	measure 'Open filter button tooltip - Database configuration' =
@@ -7459,7 +7774,7 @@ table _Measures
 			    [Filters are applied text],
 			    [Filters are not applied]
 			)
-		displayFolder: Database configuration
+		displayFolder: Database configuration\Filter panel
 		lineageTag: 054cada7-c9c2-4991-86c5-761b7bcc603a
 
 	measure 'Show filters - Database configuration' =
@@ -7467,23 +7782,26 @@ table _Measures
 			IF (
 			    ISFILTERED ( 'Database'[Database] ),
 			    VAR _items =
-			        VALUES ( 'Database'[Database] )
+			        FILTER ( VALUES ( 'Database'[Database] ), [VLF Filter - Database configuration] <> BLANK () )
 			    VAR _itemsCombined =
-			        CONCATENATEX ( _items, 'Database'[Database], UNICHAR ( 10 ) )
+			        CONCATENATEX ( _items, 'Database'[Database], UNICHAR ( 10 ), 'Database'[Database], ASC )
 			    RETURN
 			        _itemsCombined & UNICHAR ( 10 )
 			)
-		displayFolder: Database configuration
+		displayFolder: Database configuration\Filter panel
 		lineageTag: 9c97103a-cd97-4829-95a9-ca36fd686bf9
 
-	measure 'Show filters Headers - Database configuration' =
+	measure 'Show filters Headers - Database configuration' = ```
 			
 			IF (
 			    ISFILTERED ( 'Database'[Database] ),
-			    "Database:" & UNICHAR ( 127 )
-			        & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Database'[Database] ) ) )
+			    VAR _cnt = 
+			        COUNTROWS ( FILTER ( VALUES ( 'Database'[Database] ), [VLF Filter - Database configuration] <> BLANK () ) )
+			    RETURN
+			        IF ( _cnt > 0, "Database:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			)
-		displayFolder: Database configuration
+			```
+		displayFolder: Database configuration\Filter panel
 		lineageTag: 324c394e-1e9d-4ad4-809e-88a01f5b90bd
 
 	measure 'Data range - Agent job configuration' =
@@ -8017,7 +8335,7 @@ table _Measures
 			    0
 			)
 		formatString: 0
-		displayFolder: Partitioned indexes
+		displayFolder: Partitioned indexes\Filter panel
 		lineageTag: d4ddf18c-92ff-4617-9b87-8c4285c62924
 
 	measure 'Open filter button tooltip - Partitioned indexes' =
@@ -8027,7 +8345,7 @@ table _Measures
 			    [Filters are applied text],
 			    [Filters are not applied]
 			)
-		displayFolder: Partitioned indexes
+		displayFolder: Partitioned indexes\Filter panel
 		lineageTag: 94cfc06f-4c9e-4cb4-a9aa-11ca9d43d8ae
 
 	measure 'Show filters - Partitioned indexes' =
@@ -8035,121 +8353,138 @@ table _Measures
 			IF (
 			    ISFILTERED ( 'Index'[Database] ),
 			    VAR _items =
-			        VALUES ( 'Index'[Database] )
+			        FILTER ( VALUES ( 'Index'[Database] ), [VLF Filter - Partitioned indexes] <> BLANK () )
 			    VAR _itemsCombined =
-			        CONCATENATEX ( _items, 'Index'[Database], UNICHAR ( 10 ) )
+			        CONCATENATEX ( _items, 'Index'[Database], UNICHAR ( 10 ), 'Index'[Database], ASC )
 			    RETURN
 			        _itemsCombined & UNICHAR ( 10 )
 			)
 			    & IF (
 			        ISFILTERED ( 'Index'[Schema] ),
 			        VAR _items =
-			            VALUES ( 'Index'[Schema] )
+			            FILTER ( VALUES ( 'Index'[Schema] ), [VLF Filter - Partitioned indexes] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Index'[Schema], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Index'[Schema], UNICHAR ( 10 ), 'Index'[Schema], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Index'[Object] ),
 			        VAR _items =
-			            VALUES ( 'Index'[Object] )
+			            FILTER ( VALUES ( 'Index'[Object] ), [VLF Filter - Partitioned indexes] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Index'[Object], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Index'[Object], UNICHAR ( 10 ), 'Index'[Object], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Index'[Index] ),
 			        VAR _items =
-			            VALUES ( 'Index'[Index] )
+			            FILTER ( VALUES ( 'Index'[Index] ), [VLF Filter - Partitioned indexes] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Index'[Index], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Index'[Index], UNICHAR ( 10 ), 'Index'[Index], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Year] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Year] )
+			            FILTER ( VALUES ( 'Date'[Year] ), [VLF Filter - Partitioned indexes] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Year], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Date'[Year], UNICHAR ( 10 ), 'Date'[Year], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Month] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Month] )
+			            DISTINCT ( SELECTCOLUMNS ( FILTER ( 'Date', [VLF Filter - Partitioned indexes] <> BLANK () ), "Month", 'Date'[Month], "MonthNumber", 'Date'[MonthNumber] ) )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Month], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, [Month], UNICHAR ( 10 ), [MonthNumber], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Day] )
+			            FILTER ( VALUES ( 'Date'[Day] ), [VLF Filter - Partitioned indexes] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Day], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Date'[Day], UNICHAR ( 10 ), 'Date'[Day], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day index] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Day index] )
+			            FILTER ( VALUES ( 'Date'[Day index] ), [VLF Filter - Partitioned indexes] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Day index], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Date'[Day index], UNICHAR ( 10 ), 'Date'[Day index], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
-		displayFolder: Partitioned indexes
+		displayFolder: Partitioned indexes\Filter panel
 		lineageTag: ddb77875-4ed5-466b-b0e1-aca034e99358
 
-	measure 'Show filters Headers - Partitioned indexes' =
+	measure 'Show filters Headers - Partitioned indexes' = ```
 			
 			IF (
 			    ISFILTERED ( 'Index'[Database] ),
-			    "Database:" & UNICHAR ( 127 )
-			        & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Index'[Database] ) ) )
+			    VAR _cnt = 
+			        COUNTROWS ( FILTER ( VALUES ( 'Index'[Database] ), [VLF Filter - Partitioned indexes] <> BLANK () ) )
+			    RETURN
+			        IF ( _cnt > 0, "Database:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			)
 			    & IF (
 			        ISFILTERED ( 'Index'[Schema] ),
-			        "Schema:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Index'[Schema] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Index'[Schema] ), [VLF Filter - Partitioned indexes] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Schema:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Index'[Object] ),
-			        "Object:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Index'[Object] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Index'[Object] ), [VLF Filter - Partitioned indexes] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Object:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Index'[Index] ),
-			        "Index:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Index'[Index] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Index'[Index] ), [VLF Filter - Partitioned indexes] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Index:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Year] ),
-			        "Year:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Year] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Year] ), [VLF Filter - Partitioned indexes] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Year:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Month] ),
-			        "Month:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Month] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Month] ), [VLF Filter - Partitioned indexes] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Month:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day] ),
-			        "Day:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Day] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Day] ), [VLF Filter - Partitioned indexes] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Day:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day index] ),
-			        "Day index:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Day index] ) ) )
-			    )
-		displayFolder: Partitioned indexes
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Day index] ), [VLF Filter - Partitioned indexes] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Day index:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
+				)
+			```
+		displayFolder: Partitioned indexes\Filter panel
 		lineageTag: 9187fdf7-f152-40aa-bc5d-f42ce554f3e0
 
 	measure 'Rows # - Partitioned indexes' =
@@ -8601,65 +8936,74 @@ table _Measures
 			IF (
 			    ISFILTERED ( 'Index'[Database] ),
 			    VAR _items =
-			        VALUES ( 'Index'[Database] )
+			        FILTER ( VALUES ( 'Index'[Database] ), [VLF Filter - Index configuration] <> BLANK () )
 			    VAR _itemsCombined =
-			        CONCATENATEX ( _items, 'Index'[Database], UNICHAR ( 10 ) )
+			        CONCATENATEX ( _items, 'Index'[Database], UNICHAR ( 10 ), 'Index'[Database], ASC )
 			    RETURN
 			        _itemsCombined & UNICHAR ( 10 )
 			)
 			    & IF (
 			        ISFILTERED ( 'Index'[Schema] ),
 			        VAR _items =
-			            VALUES ( 'Index'[Schema] )
+			            FILTER ( VALUES ( 'Index'[Schema] ), [VLF Filter - Index configuration] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Index'[Schema], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Index'[Schema], UNICHAR ( 10 ), 'Index'[Schema], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Index'[Object] ),
 			        VAR _items =
-			            VALUES ( 'Index'[Object] )
+			            FILTER ( VALUES ( 'Index'[Object] ), [VLF Filter - Index configuration] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Index'[Object], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Index'[Object], UNICHAR ( 10 ), 'Index'[Object], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Index'[Index] ),
 			        VAR _items =
-			            VALUES ( 'Index'[Index] )
+			            FILTER ( VALUES ( 'Index'[Index] ), [VLF Filter - Index configuration] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Index'[Index], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Index'[Index], UNICHAR ( 10 ), 'Index'[Index], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
-		displayFolder: Index configuration
+		displayFolder: Index configuration\Filter panel
 		lineageTag: f81459ec-cdab-44ae-aa5e-9c5755be5c71
 
-	measure 'Show filters Headers - Index configuration' =
+	measure 'Show filters Headers - Index configuration' = ```
 			
 			IF (
 			    ISFILTERED ( 'Index'[Database] ),
-			    "Database:" & UNICHAR ( 127 )
-			        & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Index'[Database] ) ) )
+			    VAR _cnt = 
+			        COUNTROWS ( FILTER ( VALUES ( 'Index'[Database] ), [VLF Filter - Index configuration] <> BLANK () ) )
+			    RETURN
+			        IF ( _cnt > 0, "Database:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			)
 			    & IF (
 			        ISFILTERED ( 'Index'[Schema] ),
-			        "Schema:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Index'[Schema] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Index'[Schema] ), [VLF Filter - Index configuration] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Schema:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Index'[Object] ),
-			        "Object:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Index'[Object] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Index'[Object] ), [VLF Filter - Index configuration] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Object:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Index'[Index] ),
-			        "Index:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Index'[Index] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Index'[Index] ), [VLF Filter - Index configuration] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Index:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
-		displayFolder: Index configuration
+			```
+		displayFolder: Index configuration\Filter panel
 		lineageTag: 841fd212-02ec-4305-abc7-c84ca682432e
 
 	measure 'Is filters applied - Index configuration' =
@@ -8672,7 +9016,7 @@ table _Measures
 			    0
 			)
 		formatString: 0
-		displayFolder: Index configuration
+		displayFolder: Index configuration\Filter panel
 		lineageTag: e8e4c495-07b2-47f6-95ff-b6535fba80c3
 
 	measure 'Open filter button tooltip - Index configuration' =
@@ -8682,7 +9026,7 @@ table _Measures
 			    [Filters are applied text],
 			    [Filters are not applied]
 			)
-		displayFolder: Index configuration
+		displayFolder: Index configuration\Filter panel
 		lineageTag: db4460c5-1449-43a8-bd6a-86694b85656d
 
 	measure 'Rows - Index configuration' =
@@ -8808,39 +9152,52 @@ table _Measures
 		displayFolder: Common
 		lineageTag: e1e544dc-5db0-45f4-ad63-697c0507f069
 
-	measure 'Show filters Headers - Agent jobs performance' =
+	measure 'Show filters Headers - Agent jobs performance' = ```
 			
 			IF (
 			    ISFILTERED ( 'Agent job status'[Status] ),
-			    "Status:" & UNICHAR ( 127 )
-			        & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Agent job status'[Status] ) ) )
+			    VAR _cnt = 
+			        COUNTROWS ( FILTER ( VALUES ( 'Agent job status'[Status] ), [VLF Filter - Agent jobs performance] <> BLANK () ) )
+			    RETURN
+			        IF ( _cnt > 0, "Status:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			)
 			    & IF (
 			        ISFILTERED ( 'Agent job'[Job name] ),
-			        "Job:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Agent job'[Job name] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Agent job'[Job name] ), [VLF Filter - Agent jobs performance] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Job:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Year] ),
-			        "Year:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Year] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Year] ), [VLF Filter - Agent jobs performance] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Year:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Month] ),
-			        "Month:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Month] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Month] ), [VLF Filter - Agent jobs performance] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Month:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day] ),
-			        "Day:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Day] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Day] ), [VLF Filter - Agent jobs performance] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Day:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day index] ),
-			        "Day index:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Day index] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Day index] ), [VLF Filter - Agent jobs performance] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Day index:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
-		displayFolder: Agent jobs performance
+			```
+		displayFolder: Agent jobs performance\Filter panel
 		lineageTag: b71d87f4-1711-4153-b135-96f5c92d389e
 
 	measure 'Show filters - Agent jobs performance' =
@@ -8848,58 +9205,58 @@ table _Measures
 			IF (
 			    ISFILTERED ( 'Agent job status'[Status] ),
 			    VAR _items =
-			        VALUES ( 'Agent job status'[Status] )
+			        DISTINCT ( SELECTCOLUMNS ( FILTER ( 'Agent job status', [VLF Filter - Agent jobs performance] <> BLANK () ), "Status", 'Agent job status'[Status], "SortOrder", 'Agent job status'[SortOrder] ) )
 			    VAR _itemsCombined =
-			        CONCATENATEX ( _items, 'Agent job status'[Status], UNICHAR ( 10 ) )
+			        CONCATENATEX ( _items, [Status], UNICHAR ( 10 ), [SortOrder], ASC )
 			    RETURN
 			        _itemsCombined & UNICHAR ( 10 )
 			)
 			    & IF (
 			        ISFILTERED ( 'Agent job'[Job name] ),
 			        VAR _items =
-			            VALUES ( 'Agent job'[Job name] )
+			            FILTER ( VALUES ( 'Agent job'[Job name] ), [VLF Filter - Agent jobs performance] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Agent job'[Job name], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Agent job'[Job name], UNICHAR ( 10 ), 'Agent job'[Job name], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Year] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Year] )
+			            FILTER ( VALUES ( 'Date'[Year] ), [VLF Filter - Agent jobs performance] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Year], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Date'[Year], UNICHAR ( 10 ), 'Date'[Year], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Month] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Month] )
+			            DISTINCT ( SELECTCOLUMNS ( FILTER ( 'Date', [VLF Filter - Agent jobs performance] <> BLANK () ), "Month", 'Date'[Month], "MonthNumber", 'Date'[MonthNumber] ) )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Month], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, [Month], UNICHAR ( 10 ), [MonthNumber], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Day] )
+			            FILTER ( VALUES ( 'Date'[Day] ), [VLF Filter - Agent jobs performance] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Day], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Date'[Day], UNICHAR ( 10 ), 'Date'[Day], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day index] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Day index] )
+			            FILTER ( VALUES ( 'Date'[Day index] ), [VLF Filter - Agent jobs performance] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Day index], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Date'[Day index], UNICHAR ( 10 ), 'Date'[Day index], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
-		displayFolder: Agent jobs performance
+		displayFolder: Agent jobs performance\Filter panel
 		lineageTag: ec8d059b-116e-4f02-98b6-0a4c996ac777
 
 	measure 'Is filters applied - Agent jobs performance' =
@@ -8914,7 +9271,7 @@ table _Measures
 			    0
 			)
 		formatString: 0
-		displayFolder: Agent jobs performance
+		displayFolder: Agent jobs performance\Filter panel
 		lineageTag: 386d86c9-c86b-446c-9b8b-35c0c60c8870
 
 	measure 'Open filter button tooltip - Agent jobs performance' =
@@ -8924,7 +9281,7 @@ table _Measures
 			    [Filters are applied text],
 			    [Filters are not applied]
 			)
-		displayFolder: Agent jobs performance
+		displayFolder: Agent jobs performance\Filter panel
 		lineageTag: 07fc4c58-2425-4f6c-a324-3619b57cb9e6
 
 	measure 'Data range - Agent jobs performance' =
@@ -9391,107 +9748,122 @@ table _Measures
 			IF (
 			    ISFILTERED ( 'Blocks and deadlocks'[Client application] ),
 			    VAR _items =
-			        VALUES ( 'Blocks and deadlocks'[Client application] )
+			        FILTER ( VALUES ( 'Blocks and deadlocks'[Client application] ), [VLF Filter - Blocks and deadlocks] <> BLANK () )
 			    VAR _itemsCombined =
-			        CONCATENATEX ( _items, 'Blocks and deadlocks'[Client application], UNICHAR ( 10 ) )
+			        CONCATENATEX ( _items, 'Blocks and deadlocks'[Client application], UNICHAR ( 10 ), 'Blocks and deadlocks'[Client application], ASC )
 			    RETURN
 			        _itemsCombined & UNICHAR ( 10 )
 			)
 			    & IF (
 			        ISFILTERED ( 'Blocks and deadlocks'[Host name] ),
 			        VAR _items =
-			            VALUES ( 'Blocks and deadlocks'[Host name] )
+			            FILTER ( VALUES ( 'Blocks and deadlocks'[Host name] ), [VLF Filter - Blocks and deadlocks] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Blocks and deadlocks'[Host name], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Blocks and deadlocks'[Host name], UNICHAR ( 10 ), 'Blocks and deadlocks'[Host name], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Blocks and deadlocks'[Login name] ),
 			        VAR _items =
-			            VALUES ( 'Blocks and deadlocks'[Login name] )
+			            FILTER ( VALUES ( 'Blocks and deadlocks'[Login name] ), [VLF Filter - Blocks and deadlocks] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Blocks and deadlocks'[Login name], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Blocks and deadlocks'[Login name], UNICHAR ( 10 ), 'Blocks and deadlocks'[Login name], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Year] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Year] )
+			            FILTER ( VALUES ( 'Date'[Year] ), [VLF Filter - Blocks and deadlocks] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Year], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Date'[Year], UNICHAR ( 10 ), 'Date'[Year], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Month] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Month] )
+			            DISTINCT ( SELECTCOLUMNS ( FILTER ( 'Date', [VLF Filter - Blocks and deadlocks] <> BLANK () ), "Month", 'Date'[Month], "MonthNumber", 'Date'[MonthNumber] ) )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Month], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, [Month], UNICHAR ( 10 ), [MonthNumber], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Day] )
+			            FILTER ( VALUES ( 'Date'[Day] ), [VLF Filter - Blocks and deadlocks] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Day], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Date'[Day], UNICHAR ( 10 ), 'Date'[Day], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day index] ),
 			        VAR _items =
-			            VALUES ( 'Date'[Day index] )
+			            FILTER ( VALUES ( 'Date'[Day index] ), [VLF Filter - Blocks and deadlocks] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, 'Date'[Day index], UNICHAR ( 10 ) )
+			            CONCATENATEX ( _items, 'Date'[Day index], UNICHAR ( 10 ), 'Date'[Day index], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
-		displayFolder: Blocks and deadlocks
+		displayFolder: Blocks and deadlocks\Filter panel
 		lineageTag: 22236592-c406-499b-b014-0525e8ffb672
 
-	measure 'Show filters Headers - Blocks and deadlocks' =
+	measure 'Show filters Headers - Blocks and deadlocks' = ```
 			
 			IF (
 			    ISFILTERED ( 'Blocks and deadlocks'[Client application] ),
-			    "Client app.:" & UNICHAR ( 127 )
-			        & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Blocks and deadlocks'[Client application] ) ) )
+			    VAR _cnt = 
+			        COUNTROWS ( FILTER ( VALUES ( 'Blocks and deadlocks'[Client application] ), [VLF Filter - Blocks and deadlocks] <> BLANK () ) )
+			    RETURN
+			        IF ( _cnt > 0, "Client app.:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			)
 			    & IF (
 			        ISFILTERED ( 'Blocks and deadlocks'[Host name] ),
-			        "Host name:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Blocks and deadlocks'[Host name] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Blocks and deadlocks'[Host name] ), [VLF Filter - Blocks and deadlocks] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Host name:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Blocks and deadlocks'[Login name] ),
-			        "Login name:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Blocks and deadlocks'[Login name] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Blocks and deadlocks'[Login name] ), [VLF Filter - Blocks and deadlocks] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Login name:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Year] ),
-			        "Year:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Year] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Year] ), [VLF Filter - Blocks and deadlocks] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Year:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Month] ),
-			        "Month:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Month] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Month] ), [VLF Filter - Blocks and deadlocks] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Month:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day] ),
-			        "Day:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Day] ) ) )
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Day] ), [VLF Filter - Blocks and deadlocks] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Day:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day index] ),
-			        "Day index:" & UNICHAR ( 127 )
-			            & REPT ( UNICHAR ( 10 ), COUNTROWS ( VALUES ( 'Date'[Day index] ) ) )
-			    )
-		displayFolder: Blocks and deadlocks
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Day index] ), [VLF Filter - Blocks and deadlocks] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Day index:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
+				)
+			```
+		displayFolder: Blocks and deadlocks\Filter panel
 		lineageTag: c7b37e4f-ccde-4295-acbc-4cd1df213df3
 
 	measure '# Blocked process - Blocks and deadlocks' =
@@ -9508,11 +9880,11 @@ table _Measures
 		displayFolder: Blocks and deadlocks
 		lineageTag: 250ffbc6-6b55-4ca3-b748-00592015c56e
 
-	measure 'VLF - Blocks and deadlocks' =
+	measure 'VLF Filter - Blocks and deadlocks' =
 			
 			[# Blocked process - Blocks and deadlocks] + [# Deadlock - Blocks and deadlocks]
 		formatString: 0
-		displayFolder: Blocks and deadlocks
+		displayFolder: Blocks and deadlocks\Filter panel
 		lineageTag: ff9831d2-c0f6-4a12-a17e-25b0f4c876dc
 
 	measure 'Is filters applied - Blocks and deadlocks' =
@@ -9528,7 +9900,7 @@ table _Measures
 			    0
 			)
 		formatString: 0
-		displayFolder: Blocks and deadlocks
+		displayFolder: Blocks and deadlocks\Filter panel
 		lineageTag: b5b66304-1783-48bb-8766-197b05f4949a
 
 	measure 'Open filter button tooltip - Blocks and deadlocks' =
@@ -9538,7 +9910,7 @@ table _Measures
 			    [Filters are applied text],
 			    [Filters are not applied]
 			)
-		displayFolder: Blocks and deadlocks
+		displayFolder: Blocks and deadlocks\Filter panel
 		lineageTag: a8ec7265-3df7-4a45-b8ed-d8bbb6c4a77f
 
 	measure 'Copy only flag - Backup status' =
@@ -9590,8 +9962,7 @@ table _Measures
 
 	measure 'Data set info - Blocks details' =
 			
-			"Execute query to get details like XML data:"
-			    & " SELECT * FROM"
+			"SELECT * FROM"
 			    & " [" & MAX ( 'Database name'[Database name] ) & "]" & ".dbo.fhsmInfoBlocks"
 			    & " WHERE Id = " & MAX ( 'Blocked process'[Data set] ) & ";"
 		displayFolder: Blocks and deadlocks\Block details
@@ -9611,8 +9982,7 @@ table _Measures
 
 	measure 'Data set info - Deadlock details' =
 			
-			"Execute query to get details like XML and XDL (Deadlock graph) data:"
-			    & " SELECT * FROM"
+			"SELECT * FROM"
 			    & " [" & MAX ( 'Database name'[Database name] ) & "]" & ".dbo.fhsmInfoDeadlocks"
 			    & " WHERE Id = " & MAX ( Deadlock[Data set] ) & ";"
 		displayFolder: Blocks and deadlocks\Deadlock details
@@ -9623,6 +9993,444 @@ table _Measures
 			"Deadlocks " & [Drill-through symbol]
 		displayFolder: Blocks and deadlocks
 		lineageTag: 52a7b3d4-1dcc-4ceb-9428-9cb4495aae3a
+
+	measure 'Type selected - Monitor status' =
+			
+			VAR _typesSelected =
+			    VALUES ( 'Log type'[Type] )
+			VAR _logType =
+			    MAX ( 'Log'[Type] )
+			VAR _showLog =
+			    IF ( _logType IN _typesSelected, 1, 0 )
+			VAR _result = _showLog
+			RETURN
+			    _result
+		formatString: 0
+		displayFolder: Monitor status
+		lineageTag: 36e1612f-7e03-4a66-b7b3-afd2e205d26a
+
+	measure 'VLF Filter - Monitor status' =
+			
+			COUNTROWS ( 'Log' )
+		formatString: 0
+		displayFolder: Monitor status\Filter panel
+		lineageTag: 0afe85a6-4945-4d9d-94ce-1416ac49a4ef
+
+	measure 'Is filters applied - Monitor status' =
+			
+			IF (
+			    ISFILTERED ( LogTaskName[Name] ) || ISFILTERED ( LogTaskName[Task] )
+			        || ISFILTERED ( 'Date'[Year] )
+			        || ISFILTERED ( 'Date'[Month] )
+			        || ISFILTERED ( 'Date'[Day] )
+			        || ISFILTERED ( 'Date'[Day index] )
+			        || ISFILTERED ( 'Time'[Hour] ),
+			    1,
+			    0
+			)
+		formatString: 0
+		displayFolder: Monitor status\Filter panel
+		lineageTag: 524bf2e9-fe17-40f8-a4d5-f737153cb08c
+
+	measure 'Open filter button tooltip - Monitor status' =
+			
+			IF (
+			    [Is filters applied - Monitor status] = 1,
+			    [Filters are applied text],
+			    [Filters are not applied]
+			)
+		displayFolder: Monitor status\Filter panel
+		lineageTag: 9dc538f2-dac1-4599-b22b-1a2ef9beb0f0
+
+	measure 'Show filters - Monitor status' =
+			
+			IF (
+			    ISFILTERED ( LogTaskName[Name] ),
+			    VAR _items =
+			        FILTER ( VALUES ( LogTaskName[Name] ), [VLF Filter - Monitor status] <> BLANK () )
+			    VAR _itemsCombined =
+			        CONCATENATEX ( _items, LogTaskName[Name], UNICHAR ( 10 ), LogTaskName[Name], ASC )
+			    RETURN
+			        _itemsCombined & UNICHAR ( 10 )
+			)
+			    & IF (
+			        ISFILTERED ( LogTaskName[Task] ),
+			        VAR _items =
+			            FILTER ( VALUES ( LogTaskName[Task] ), [VLF Filter - Monitor status] <> BLANK () )
+			        VAR _itemsCombined =
+			            CONCATENATEX ( _items, LogTaskName[Task], UNICHAR ( 10 ), LogTaskName[Task], ASC )
+			        RETURN
+			            _itemsCombined & UNICHAR ( 10 )
+			    )
+			    & IF (
+			        ISFILTERED ( 'Date'[Year] ),
+			        VAR _items =
+			            FILTER ( VALUES ( 'Date'[Year] ), [VLF Filter - Monitor status] <> BLANK () )
+			        VAR _itemsCombined =
+			            CONCATENATEX ( _items, 'Date'[Year], UNICHAR ( 10 ), 'Date'[Year], ASC )
+			        RETURN
+			            _itemsCombined & UNICHAR ( 10 )
+			    )
+			    & IF (
+			        ISFILTERED ( 'Date'[Month] ),
+			        VAR _items =
+			            DISTINCT ( SELECTCOLUMNS ( FILTER ( 'Date', [VLF Filter - Monitor status] <> BLANK () ), "Month", 'Date'[Month], "MonthNumber", 'Date'[MonthNumber] ) )
+			        VAR _itemsCombined =
+			            CONCATENATEX ( _items, [Month], UNICHAR ( 10 ), [MonthNumber], ASC )
+			        RETURN
+			            _itemsCombined & UNICHAR ( 10 )
+			    )
+			    & IF (
+			        ISFILTERED ( 'Date'[Day] ),
+			        VAR _items =
+			            FILTER ( VALUES ( 'Date'[Day] ), [VLF Filter - Monitor status] <> BLANK () )
+			        VAR _itemsCombined =
+			            CONCATENATEX ( _items, 'Date'[Day], UNICHAR ( 10 ), 'Date'[Day], ASC )
+			        RETURN
+			            _itemsCombined & UNICHAR ( 10 )
+			    )
+			    & IF (
+			        ISFILTERED ( 'Date'[Day index] ),
+			        VAR _items =
+			            FILTER ( VALUES ( 'Date'[Day index] ), [VLF Filter - Monitor status] <> BLANK () )
+			        VAR _itemsCombined =
+			            CONCATENATEX ( _items, 'Date'[Day index], UNICHAR ( 10 ), 'Date'[Day index], ASC )
+			        RETURN
+			            _itemsCombined & UNICHAR ( 10 )
+			    )
+			    & IF (
+			        ISFILTERED ( 'Time'[Hour] ),
+			        VAR _items =
+			            FILTER ( VALUES ( 'Time'[Hour] ), [VLF Filter - Monitor status] <> BLANK () )
+			        VAR _itemsCombined =
+			            CONCATENATEX ( _items, 'Time'[Hour], UNICHAR ( 10 ), 'Time'[Hour], ASC )
+			        RETURN
+			            _itemsCombined & UNICHAR ( 10 )
+			    )
+		displayFolder: Monitor status\Filter panel
+		lineageTag: baa0edb3-c598-469d-9cdd-3911c8743dba
+
+	measure 'Show filters Headers - Monitor status' = ```
+			
+			IF (
+			    ISFILTERED ( LogTaskName[Name] ),
+			    VAR _cnt = 
+			        COUNTROWS ( FILTER ( VALUES ( LogTaskName[Name] ), [VLF Filter - Monitor status] <> BLANK () ) )
+			    RETURN
+			        IF ( _cnt > 0, "Name:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
+			)
+			    & IF (
+			        ISFILTERED ( LogTaskName[Task] ),
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( LogTaskName[Task] ), [VLF Filter - Monitor status] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Task:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
+			    )
+			    & IF (
+			        ISFILTERED ( 'Date'[Year] ),
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Year] ), [VLF Filter - Monitor status] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Year:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
+			    )
+			    & IF (
+			        ISFILTERED ( 'Date'[Month] ),
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Month] ), [VLF Filter - Monitor status] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Month:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
+			    )
+			    & IF (
+			        ISFILTERED ( 'Date'[Day] ),
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Day] ), [VLF Filter - Monitor status] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Day:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
+			    )
+			    & IF (
+			        ISFILTERED ( 'Date'[Day index] ),
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Day index] ), [VLF Filter - Monitor status] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Day index:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
+				)
+			    & IF (
+			        ISFILTERED ( 'Time'[Hour] ),
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Time'[Hour] ), [VLF Filter - Monitor status] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Hour:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
+			    )
+			```
+		displayFolder: Monitor status\Filter panel
+		lineageTag: ce2a15d1-8e01-4c51-8394-67d3482e8884
+
+	measure 'VLF Filter - Connections' =
+			
+			[Latest sessions - Connections]
+		formatString: 0
+		displayFolder: Connections\Filter panel
+		lineageTag: 4e07df51-8c69-406d-8e69-779fd0c885c3
+
+	measure 'VLF Filter - Agent jobs performance' =
+			
+			[Executions - Agent jobs performance]
+		formatString: 0
+		displayFolder: Agent jobs performance\Filter panel
+		lineageTag: 95c2bf44-ba73-4e33-9f85-bc917661a8b2
+
+	measure 'VLF Filter - Always On traffic' =
+			
+			[Avg perf. value - Performance statistics]
+		displayFolder: Always On traffic (using ps)\Filter panel
+		lineageTag: a6eda3db-2004-4970-8558-58032538a694
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'VLF Filter - Backup' =
+			
+			[Backup size - Backup status]
+		formatString: 0
+		displayFolder: Backup\Filter panel
+		lineageTag: 994159a6-000e-4bb9-95cf-37c3a70706ff
+
+	measure 'VLF Filter - CPU' =
+			
+			[CPU minutes - CPU per database]
+		displayFolder: CPU\Filter panel
+		lineageTag: 95548a9e-f186-4c6a-ad9b-6fe49accebd2
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'VLF Filter - Database configuration' =
+			
+			COUNTROWS ( 'Database state' )
+		formatString: 0
+		displayFolder: Database configuration\Filter panel
+		lineageTag: 5e575f61-a351-4d4d-99f7-1f3925d3eb82
+
+	measure 'VLF Filter - Database IO' =
+			
+			[Number of bytes read MB - Database IO]
+		displayFolder: Database IO\Filter panel
+		lineageTag: 7a6647d3-f078-4bf2-97fb-ed70040225d1
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'VLF Filter - Database size' =
+			
+			[Data size MB - Database size]
+		formatString: 0
+		displayFolder: Database size\Filter panel
+		lineageTag: df1f5e69-6f5d-4fee-8bf7-9c82315c10da
+
+	measure 'VLF Filter - Index configuration' =
+			
+			COUNTROWS ( 'Index configuration' )
+		formatString: 0
+		displayFolder: Index configuration\Filter panel
+		lineageTag: b3d844ea-f1bc-4c61-bb10-e9932fe2db48
+
+	measure 'VLF Filter - Index optimize' =
+			
+			[Number of index optimize - Index optimize]
+		formatString: 0
+		displayFolder: Index optimize\Filter panel
+		lineageTag: 1a464ec5-f25c-4f7e-bfe8-5266ea184861
+
+	measure 'VLF Filter - Index physical' =
+			
+			COUNTROWS ( 'Index physical' )
+		formatString: 0
+		displayFolder: Index physical\Filter panel
+		lineageTag: a013ad43-81cd-495f-8dc2-2f5f439d7bd5
+
+	measure 'VLF Filter - Missing indexes' =
+			
+			COUNTROWS ( 'Missing indexes' )
+		formatString: 0
+		displayFolder: Missing indexes\Filter panel
+		lineageTag: 22c556b6-e1ec-46e7-8d58-59b659143fa3
+
+	measure 'VLF Filter - Partitioned indexes' =
+			
+			COUNTROWS ( 'Partitioned indexes' )
+		formatString: 0
+		displayFolder: Partitioned indexes\Filter panel
+		lineageTag: eafb19fc-a695-4439-9c07-b53c9ae5290f
+
+	measure 'VLF Filter - Performance statistics' =
+			
+			[Avg perf. value - Performance statistics]
+		displayFolder: Performance statistics (using ps)\Filter panel
+		lineageTag: 8f6ffe5f-6c8f-4d2d-8b7b-c1c0c0eef84f
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'VLF Filter - Plan cache usage' =
+			
+			COUNTROWS ( 'Plan cache usage' )
+		formatString: 0
+		displayFolder: Plan cache usage\Filter panel
+		lineageTag: 1ffa93c7-155a-41ef-b835-f082b4bd5a8e
+
+	measure 'Show filters Headers - Plan cache usage' = ```
+			
+			IF (
+			    ISFILTERED ( 'Date'[Year] ),
+			    VAR _cnt = 
+			        COUNTROWS ( FILTER ( VALUES ( 'Date'[Year] ), [VLF Filter - Plan cache usage] <> BLANK () ) )
+			    RETURN
+			        IF ( _cnt > 0, "Year:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
+			)
+			    & IF (
+			        ISFILTERED ( 'Date'[Month] ),
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Month] ), [VLF Filter - Plan cache usage] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Month:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
+			    )
+			    & IF (
+			        ISFILTERED ( 'Date'[Day] ),
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Day] ), [VLF Filter - Plan cache usage] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Day:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
+			    )
+			    & IF (
+			        ISFILTERED ( 'Date'[Day index] ),
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Day index] ), [VLF Filter - Plan cache usage] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Day index:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
+				)
+			    & IF (
+			        ISFILTERED ( 'Time'[Hour] ),
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Time'[Hour] ), [VLF Filter - Plan cache usage] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Hour:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
+				)
+			```
+		displayFolder: Plan cache usage\Filter panel
+		lineageTag: 47f94cdd-1038-4b42-bc47-87da1b10e1fe
+
+	measure 'Show filters - Plan cache usage' =
+			
+			IF (
+			    ISFILTERED ( 'Date'[Year] ),
+			    VAR _items =
+			        FILTER ( VALUES ( 'Date'[Year] ), [VLF Filter - Plan cache usage] <> BLANK () )
+			    VAR _itemsCombined =
+			        CONCATENATEX ( _items, 'Date'[Year], UNICHAR ( 10 ), 'Date'[Year], ASC )
+			    RETURN
+			        _itemsCombined & UNICHAR ( 10 )
+			)
+			    & IF (
+			        ISFILTERED ( 'Date'[Month] ),
+			        VAR _items =
+			            DISTINCT ( SELECTCOLUMNS ( FILTER ( 'Date', [VLF Filter - Plan cache usage] <> BLANK () ), "Month", 'Date'[Month], "MonthNumber", 'Date'[MonthNumber] ) )
+			        VAR _itemsCombined =
+			            CONCATENATEX ( _items, [Month], UNICHAR ( 10 ), [MonthNumber], ASC )
+			        RETURN
+			            _itemsCombined & UNICHAR ( 10 )
+			    )
+			    & IF (
+			        ISFILTERED ( 'Date'[Day] ),
+			        VAR _items =
+			            FILTER ( VALUES ( 'Date'[Day] ), [VLF Filter - Plan cache usage] <> BLANK () )
+			        VAR _itemsCombined =
+			            CONCATENATEX ( _items, 'Date'[Day], UNICHAR ( 10 ), 'Date'[Day], ASC )
+			        RETURN
+			            _itemsCombined & UNICHAR ( 10 )
+			    )
+			    & IF (
+			        ISFILTERED ( 'Date'[Day index] ),
+			        VAR _items =
+			            FILTER ( VALUES ( 'Date'[Day index] ), [VLF Filter - Plan cache usage] <> BLANK () )
+			        VAR _itemsCombined =
+			            CONCATENATEX ( _items, 'Date'[Day index], UNICHAR ( 10 ), 'Date'[Day index], ASC )
+			        RETURN
+			            _itemsCombined & UNICHAR ( 10 )
+			    )
+			    & IF (
+			        ISFILTERED ( 'Time'[Hour] ),
+			        VAR _items =
+			            FILTER ( VALUES ( 'Time'[Hour] ), [VLF Filter - Plan cache usage] <> BLANK () )
+			        VAR _itemsCombined =
+			            CONCATENATEX ( _items, 'Time'[Hour], UNICHAR ( 10 ), 'Time'[Hour], ASC )
+			        RETURN
+			            _itemsCombined & UNICHAR ( 10 )
+			    )
+		displayFolder: Plan cache usage\Filter panel
+		lineageTag: 26455ce7-f6d4-4b0d-8948-a2a36f5e3550
+
+	measure 'VLF Filter - Plan guides' =
+			
+			COUNTROWS ( 'Plan guides' )
+		formatString: 0
+		displayFolder: Plan guides\Filter panel
+		lineageTag: 5260193a-6a3b-4a0e-820a-ef6ed5882e06
+
+	measure 'VLF Filter - Query statistics' =
+			
+			COUNTROWS ( 'Query statistics' )
+		formatString: 0
+		displayFolder: Query statistics\Filter panel
+		lineageTag: fdd7bf6c-3580-479a-9af1-b758e40698ab
+
+	measure 'VLF Filter - Resource Governor' =
+			
+			[Avg perf. value - Performance statistics]
+		displayFolder: Resource Governor (using ps)\Filter panel
+		lineageTag: fba71294-20d4-4c0b-a2c9-f36a4c2f87f7
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'VLF Filter - Table size' =
+			
+			COUNTROWS ( 'Table size' )
+		formatString: 0
+		displayFolder: Table size\Filter panel
+		lineageTag: 1ef5bb6f-0422-4b2a-9844-db6d9a2a26f2
+
+	measure 'VLF Filter - Triggers' =
+			
+			COUNTROWS ( Triggers )
+		formatString: 0
+		displayFolder: Triggers\Filter panel
+		lineageTag: 4ba0257b-b2d5-4b4a-a56f-96287b34dcfb
+
+	measure 'VLF Filter - Wait statistics' =
+			
+			COUNTROWS ( 'Wait statistics' )
+		formatString: 0
+		displayFolder: Wait statistics\Filter panel
+		lineageTag: 861628d1-f4dd-42c3-9acb-dbf291815d05
+
+	measure 'Is filters applied - Plan cache usage' =
+			
+			IF (
+			    ISFILTERED ( 'Date'[Year] ) || ISFILTERED ( 'Date'[Month] )
+			        || ISFILTERED ( 'Date'[Day] )
+			        || ISFILTERED ( 'Date'[Day index] )
+			        || ISFILTERED ( 'Time'[Hour] ),
+			    1,
+			    0
+			)
+		formatString: 0
+		displayFolder: Plan cache usage\Filter panel
+		lineageTag: 8818c56d-4e12-4ac8-8bfe-ee37697b3428
+
+	measure 'Open filter button tooltip - Plan cache usage' =
+			
+			IF (
+			    [Is filters applied - Plan cache usage] = 1,
+			    [Filters are applied text],
+			    [Filters are not applied]
+			)
+		displayFolder: Plan cache usage\Filter panel
+		lineageTag: 46777926-3cc2-4e1e-8454-c9a51ce49e52
 
 	partition _Measures = m
 		mode: import

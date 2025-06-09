@@ -3,6 +3,13 @@ You can try the [live demo](https://app.powerbi.com/view?r=eyJrIjoiMDQ2MDQ3ZjQtO
 
 Have fun :-)
 <p>
+<b>June 9, 2025: Version 2.7.0</b> with:</br>
+<li>Slicers configured as dropdown and with multi-select now has the option "Select all" enabled.</li>
+<li>All filter panels reviewed and fixed for minor configuration errors.</li>
+<li>Added "Fulltext" and "Other" as file types used as dimensions for "Database IO" and "Database size".</li>
+<li>Added filters to the "Monitor status" report page.</li>
+</p>
+<p>
 <b>May 25, 2025: Version 2.6.1</b> with:</br>
 <li>Reverted setting "Select all" on slicers as it had side effects.</li>
 </p>

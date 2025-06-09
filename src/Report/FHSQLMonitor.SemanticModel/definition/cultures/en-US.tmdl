@@ -12779,64 +12779,28 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "OH errors",
-			          "ConceptualProperty": "EndTime"
+			          "ConceptualProperty": "End time"
 			        }
 			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "End time": {
-			            "State": "Suggested",
-			            "Source": {
-			              "Type": "External",
-			              "Agent": "PowerBI.VisualColumnRename"
-			            },
-			            "Weight": 0.9
-			          }
-			        }
-			      ]
+			      "State": "Generated"
 			    },
 			    "oh_errors.errormessage": {
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "OH errors",
-			          "ConceptualProperty": "ErrorMessage"
+			          "ConceptualProperty": "Error msg."
 			        }
 			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "Error message": {
-			            "State": "Suggested",
-			            "Source": {
-			              "Type": "External",
-			              "Agent": "PowerBI.VisualColumnRename"
-			            },
-			            "Weight": 0.9
-			          }
-			        }
-			      ]
+			      "State": "Generated"
 			    },
 			    "oh_errors.starttime": {
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "OH errors",
-			          "ConceptualProperty": "StartTime"
+			          "ConceptualProperty": "Start time"
 			        }
 			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "Start time": {
-			            "State": "Suggested",
-			            "Source": {
-			              "Type": "External",
-			              "Agent": "PowerBI.VisualColumnRename"
-			            },
-			            "Weight": 0.9
-			          }
-			        }
-			      ]
+			      "State": "Generated"
 			    },
 			    "performance_counter": {
 			      "Definition": {
@@ -23603,7 +23567,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "VLF - Index leaf statistics"
+			          "ConceptualProperty": "VLF Filter - Index leaf statistics"
 			        }
 			      },
 			      "State": "Generated",
@@ -23743,7 +23707,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "VLF - Index usage"
+			          "ConceptualProperty": "VLF Filter - Index usage"
 			        }
 			      },
 			      "State": "Generated",
@@ -23871,7 +23835,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "VLF - Lock statistics"
+			          "ConceptualProperty": "VLF Filter - Lock statistics"
 			        }
 			      },
 			      "State": "Generated",
@@ -24005,7 +23969,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "VLF - Statistics"
+			          "ConceptualProperty": "VLF Filter - Statistics"
 			        }
 			      },
 			      "State": "Generated",
@@ -60002,6 +59966,318 @@ cultureInfo en-US
 			          }
 			        }
 			      ]
+			    },
+			    "table_measures.show_filters_headers__monitor_status": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Show filters Headers - Monitor status"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Filters": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "blocked_process.timestamp_utc": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Blocked process",
+			          "ConceptualProperty": "Timestamp (UTC)"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Timestamp (UTC)": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "blocks_and_deadlocks.client_application": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Blocks and deadlocks",
+			          "ConceptualProperty": "Client application"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Client application": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "blocks_and_deadlocks.host_name": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Blocks and deadlocks",
+			          "ConceptualProperty": "Host name"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Host name": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "blocks_and_deadlocks.login_name": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Blocks and deadlocks",
+			          "ConceptualProperty": "Login name"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Login name": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "deadlock.inputbuf_statement": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Deadlock",
+			          "ConceptualProperty": "Inputbuf statement"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Inputbuf statement": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "deadlock.frame_statement": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Deadlock",
+			          "ConceptualProperty": "Frame statement"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Frame statement": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "deadlock.timestamp_utc": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Deadlock",
+			          "ConceptualProperty": "Timestamp (UTC)"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Timestamp (UTC)": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "deadlock.spid": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Deadlock",
+			          "ConceptualProperty": "SPID"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "SPID": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.show_filters__monitor_status": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Show filters - Monitor status"
+			        }
+			      },
+			      "State": "Generated"
+			    },
+			    "blocked_process.data_set": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Blocked process",
+			          "ConceptualProperty": "Data set"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Set": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "deadlock.data_set": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Deadlock",
+			          "ConceptualProperty": "Data set"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Set": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.data_set_info__blocks_details": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Data set info - Blocks details"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Execute query to get details like XML data": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.data_set_info__deadlock_details": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Data set info - Deadlock details"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Execute query to get details like XML and XDL (Deadlock graph) data": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.show_filters_headers__plan_cache_usage": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Show filters Headers - Plan cache usage"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Filters": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.show_filters__plan_cache_usage": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Show filters - Plan cache usage"
+			        }
+			      },
+			      "State": "Generated"
 			    }
 			  },
 			  "Relationships": {

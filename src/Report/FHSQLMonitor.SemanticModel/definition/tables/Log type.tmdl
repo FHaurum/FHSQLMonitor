@@ -1,0 +1,27 @@
+table 'Log type'
+	lineageTag: c9332421-86e7-4ba3-80be-47dda5431773
+
+	column Type
+		lineageTag: ab3c4dc3-11da-4517-8147-4524c083c9d4
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Type]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Log type' = calculated
+		mode: import
+		source = ```
+				
+				    DATATABLE (
+				        "Type", STRING,
+				        {
+				            { "Error" },
+				            { "Warning" }
+				        }
+				    )
+				
+				```
+
+	annotation PBI_Id = d773bcf6d98e4e94b8228c4026147812
+
