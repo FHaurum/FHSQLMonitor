@@ -1,5 +1,5 @@
 # FHSQLMonitor
-You can try the [live demo](https://app.powerbi.com/view?r=eyJrIjoiMDQ2MDQ3ZjQtOGY1Ni00N2UzLTgzOTQtYTliMTkwMDkyZjk5IiwidCI6IjczYzA3MDE0LTAyYzEtNDVkMy04NWFiLTI0NDA1MzU3ZDUyYSIsImMiOjl9), and then conitue to read more about the product on my blog [SQL Server Monitoring](https://www.haurumit.dk/sql-server-monitoring)
+You can try the [live demo](https://app.powerbi.com/view?r=eyJrIjoiMDQ2MDQ3ZjQtOGY1Ni00N2UzLTgzOTQtYTliMTkwMDkyZjk5IiwidCI6IjczYzA3MDE0LTAyYzEtNDVkMy04NWFiLTI0NDA1MzU3ZDUyYSIsImMiOjl9), and then continue to read more about the product on my blog [SQL Server Monitoring](https://www.haurumit.dk/sql-server-monitoring)
 
 Have fun :-)
 <p>
