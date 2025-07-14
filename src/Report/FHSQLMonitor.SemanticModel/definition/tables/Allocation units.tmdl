@@ -1,65 +1,66 @@
-table 'Database size'
-	lineageTag: f4de3086-b090-41e3-970d-5ea1e6a01ef6
+table 'Allocation units'
+	lineageTag: 4e2ac486-e35c-4567-8fa5-f26187c20533
 
-	column CurrentSize
+	column 'Partition no.'
 		dataType: int64
-		isHidden
-		formatString: 0
-		lineageTag: feaffa30-7111-495f-a606-fb2b89d81b66
+		formatString: #,0
+		lineageTag: b1a9dde0-05d3-45ae-bec2-e1a5981142c6
 		summarizeBy: none
-		sourceColumn: CurrentSize
-
-		changedProperty = IsHidden
+		sourceColumn: Partition no.
 
 		annotation SummarizationSetBy = User
 
-	column UsedSize
-		dataType: int64
-		isHidden
-		formatString: 0
-		lineageTag: f6ed0658-dba8-4324-89aa-07734d326b58
+	column 'Allocation unit type'
+		dataType: string
+		lineageTag: dbb64d2f-f688-4869-bba2-e8894499a2f9
 		summarizeBy: none
-		sourceColumn: UsedSize
-
-		changedProperty = IsHidden
-
-		annotation SummarizationSetBy = User
-
-	column Date
-		dataType: dateTime
-		isHidden
-		isNullable: false
-		formatString: Long Date
-		lineageTag: 7920bf2c-9c37-401c-bd2a-37bacab18ea4
-		summarizeBy: none
-		sourceColumn: Date
-
-		changedProperty = IsHidden
+		sourceColumn: Allocation unit type
 
 		annotation SummarizationSetBy = Automatic
 
-		annotation UnderlyingDateTimeDataType = Date
-
-	column DatabaseFileKey
+	column TotalSpaceKB
 		dataType: int64
 		isHidden
-		isNullable: false
 		formatString: 0
-		lineageTag: 2fce125f-91ae-4f36-b717-42de23be55e3
+		lineageTag: c4e65681-aff7-411f-b6c8-5f7f9aa84faf
 		summarizeBy: none
-		sourceColumn: DatabaseFileKey
+		sourceColumn: TotalSpaceKB
 
 		changedProperty = IsHidden
 
 		annotation SummarizationSetBy = User
 
-	column DiskKey
+	column UsedSpaceKB
 		dataType: int64
 		isHidden
 		formatString: 0
-		lineageTag: 334fb60d-1794-4c80-9cf1-c4a7a1f68785
+		lineageTag: c906b611-283c-442d-b5a9-fc9170bbf4f3
 		summarizeBy: none
-		sourceColumn: DiskKey
+		sourceColumn: UsedSpaceKB
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column DataSpaceKB
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: b684efcf-b659-456f-905d-3e607df953a6
+		summarizeBy: none
+		sourceColumn: DataSpaceKB
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column IndexKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 0cdec451-1a41-4e68-9001-b025f05cb2de
+		summarizeBy: none
+		sourceColumn: IndexKey
 
 		changedProperty = IsHidden
 
@@ -69,7 +70,7 @@ table 'Database size'
 		dataType: int64
 		isHidden
 		formatString: 0
-		lineageTag: b5602b87-e8f7-42b1-a0f2-1e9683942fc9
+		lineageTag: 5b88b196-b815-4778-a262-8eb01bbf9dee
 		summarizeBy: none
 		sourceColumn: FileGroupKey
 
@@ -77,7 +78,7 @@ table 'Database size'
 
 		annotation SummarizationSetBy = Automatic
 
-	partition 'Database size' = m
+	partition 'Allocation units' = m
 		mode: import
 		queryGroup: Facts
 		source = ```
@@ -88,25 +89,21 @@ table 'Database size'
 				  ), 
 				  dbList = Sql.Databases(#"Server name"), 
 				  db     = dbList{[Name = #"Database name"]}[Data], 
-				  table  = db{[Schema = #"Schema name", Item = "Database size"]}[Data], 
+				  table  = db{[Schema = #"Schema name", Item = "Allocation units"]}[Data], 
 				  emptyDataset = Table.FirstN(table, 0), 
 				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
-				  selectColumns = Table.SelectColumns(
+				  renameColumns = Table.RenameColumns(
 				    datasetToUse, 
 				    {
-				      "CurrentSize", 
-				      "UsedSize", 
-				      "Date", 
-				      "DatabaseFileKey", 
-				      "DiskKey", 
-				      "FileGroupKey"
+				      {"AllocationUnitTypeDesc", "Allocation unit type"}, 
+				      {"PartitionNumber", "Partition no."}
 				    }
 				  )
 				in
-				  selectColumns
+				  renameColumns
 				```
 
-	annotation PBI_ResultType = Table
-
 	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
 

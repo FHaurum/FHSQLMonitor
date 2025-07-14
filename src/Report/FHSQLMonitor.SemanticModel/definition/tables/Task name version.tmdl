@@ -1,9 +1,9 @@
-table LogTaskName
-	lineageTag: dca84af5-de77-433e-8e82-b526958267f5
+table 'Task name version'
+	lineageTag: f6bfa9f2-0f0c-4db7-b335-f2c7b27a6aca
 
 	column Task
 		dataType: string
-		lineageTag: 149ecf3b-8233-4ad2-b645-97791550ec7f
+		lineageTag: 51c23de1-e402-4056-8be7-b4d34a2f743f
 		summarizeBy: none
 		sourceColumn: Task
 
@@ -11,32 +11,40 @@ table LogTaskName
 
 	column Name
 		dataType: string
-		lineageTag: 07660002-d3ec-40c4-9daf-9207729f2346
+		lineageTag: 2a04370f-78a1-4f36-bb0d-0983b748b18f
 		summarizeBy: none
 		sourceColumn: Name
 
 		annotation SummarizationSetBy = Automatic
 
-	column LogTaskNameKey
+	column Version
+		dataType: string
+		lineageTag: 28cbebe2-f81b-4943-b03d-309844c95d85
+		summarizeBy: none
+		sourceColumn: Version
+
+		annotation SummarizationSetBy = Automatic
+
+	column TaskNameVersionKey
 		dataType: int64
 		isHidden
 		formatString: 0
-		lineageTag: 8b02097f-2de6-4b5f-94d8-9a2e0aebac35
+		lineageTag: f064a2c4-7168-4b4f-aefd-acb83012bed5
 		summarizeBy: none
-		sourceColumn: LogTaskNameKey
+		sourceColumn: TaskNameVersionKey
 
 		changedProperty = IsHidden
 
 		annotation SummarizationSetBy = Automatic
 
-	partition LogTaskName = m
+	partition 'Task name version' = m
 		mode: import
 		queryGroup: Framework
 		source = ```
 				let
 				  dbList = Sql.Databases(#"Server name"), 
 				  db     = dbList{[Name = #"Database name"]}[Data], 
-				  table  = db{[Schema = #"Schema name", Item = "LogTaskName"]}[Data]
+				  table  = db{[Schema = #"Schema name", Item = "Task name version"]}[Data]
 				in
 				  table
 				```

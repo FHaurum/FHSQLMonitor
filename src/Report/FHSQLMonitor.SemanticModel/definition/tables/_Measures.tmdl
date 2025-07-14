@@ -98,7 +98,11 @@ table _Measures
 	measure 'Latest data size MB - Database size' =
 			
 			VAR _maxDate =
-			    CALCULATE ( MAX ( 'Database size'[Date] ), REMOVEFILTERS ( 'Database file' ) )
+			    CALCULATE (
+			        MAX ( 'Database size'[Date] ),
+			        REMOVEFILTERS ( 'Database file' ),
+			        REMOVEFILTERS ( Disk[Disk] )
+			    )
 			VAR _latestValue =
 			    CALCULATE ( [Data size MB - Database size], 'Database size'[Date] = _maxDate )
 			VAR _result = _latestValue
@@ -111,7 +115,11 @@ table _Measures
 	measure 'Latest log size MB - Database size' =
 			
 			VAR _maxDate =
-			    CALCULATE ( MAX ( 'Database size'[Date] ), REMOVEFILTERS ( 'Database file' ) )
+			    CALCULATE (
+			        MAX ( 'Database size'[Date] ),
+			        REMOVEFILTERS ( 'Database file' ),
+			        REMOVEFILTERS ( Disk[Disk] )
+			    )
 			VAR _latestValue =
 			    CALCULATE ( [Log size MB - Database size], 'Database size'[Date] = _maxDate )
 			VAR _result = _latestValue
@@ -124,7 +132,11 @@ table _Measures
 	measure 'Latest data used MB - Database size' =
 			
 			VAR _maxDate =
-			    CALCULATE ( MAX ( 'Database size'[Date] ), REMOVEFILTERS ( 'Database file' ) )
+			    CALCULATE (
+			        MAX ( 'Database size'[Date] ),
+			        REMOVEFILTERS ( 'Database file' ),
+			        REMOVEFILTERS ( Disk[Disk] )
+			    )
 			VAR _latestValue =
 			    CALCULATE ( [Data used MB - Database size], 'Database size'[Date] = _maxDate )
 			VAR _result = _latestValue
@@ -137,7 +149,11 @@ table _Measures
 	measure 'Latest log used MB - Database size' =
 			
 			VAR _maxDate =
-			    CALCULATE ( MAX ( 'Database size'[Date] ), REMOVEFILTERS ( 'Database file' ) )
+			    CALCULATE (
+			        MAX ( 'Database size'[Date] ),
+			        REMOVEFILTERS ( 'Database file' ),
+			        REMOVEFILTERS ( Disk[Disk] )
+			    )
 			VAR _latestValue =
 			    CALCULATE ( [Log used MB - Database size], 'Database size'[Date] = _maxDate )
 			VAR _result = _latestValue
@@ -158,7 +174,7 @@ table _Measures
 		displayFolder: Database size
 		lineageTag: ed34deb3-d3a8-4b9a-961f-d9bb01c3c5b5
 
-	measure 'Details title - Database size' =
+	measure 'Details title size per database - Database size' =
 			
 			VAR _latestDate = [Latest date - Database size]
 			VAR _pastDate = [Past date - Database size]
@@ -391,6 +407,7 @@ table _Measures
 			        MAX ( 'Database size'[Date] ),
 			        REMOVEFILTERS ( 'Date'[Date] ),
 			        REMOVEFILTERS ( 'Database file' ),
+			        REMOVEFILTERS ( Disk[Disk] ),
 			        'Database size'[Date] <= _compareDate
 			    )
 			VAR _compareDateWithDataFoundOver =
@@ -398,6 +415,7 @@ table _Measures
 			        MIN ( 'Database size'[Date] ),
 			        REMOVEFILTERS ( 'Date'[Date] ),
 			        REMOVEFILTERS ( 'Database file' ),
+			        REMOVEFILTERS ( Disk[Disk] ),
 			        'Database size'[Date] > _compareDate
 			    )
 			VAR _compareDateWithData =
@@ -426,12 +444,19 @@ table _Measures
 	measure 'Show filters Headers - Database size' = ```
 			
 			IF (
-			    ISFILTERED ( 'Database file'[Database] ),
+			    ISFILTERED ( Disk[Disk] ),
 			    VAR _cnt = 
-			        COUNTROWS ( FILTER ( VALUES ( 'Database file'[Database] ), [VLF Filter - Database size] <> BLANK () ) )
+			        COUNTROWS ( FILTER ( VALUES ( Disk[Disk] ), [VLF Filter - Database size] <> BLANK () ) )
 			    RETURN
-			        IF ( _cnt > 0, "Database:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
+			        IF ( _cnt > 0, "Disk:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			)
+			    & IF (
+			        ISFILTERED ( 'Database file'[Database] ),
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Database file'[Database] ), [VLF Filter - Database size] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Database:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
+			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Year] ),
 			        VAR _cnt = 
@@ -467,14 +492,23 @@ table _Measures
 	measure 'Show filters - Database size' =
 			
 			IF (
-			    ISFILTERED ( 'Database file'[Database] ),
+			    ISFILTERED ( Disk[Disk] ),
 			    VAR _items =
-			        FILTER ( VALUES ( 'Database file'[Database] ), [VLF Filter - Database size] <> BLANK () )
+			        FILTER ( VALUES ( Disk[Disk] ), [VLF Filter - Database size] <> BLANK () )
 			    VAR _itemsCombined =
-			        CONCATENATEX ( _items, 'Database file'[Database], UNICHAR ( 10 ), 'Database file'[Database], ASC )
+			        CONCATENATEX ( _items, Disk[Disk], UNICHAR ( 10 ), Disk[Disk], ASC )
 			    RETURN
 			        _itemsCombined & UNICHAR ( 10 )
 			)
+			    & IF (
+			        ISFILTERED ( 'Database file'[Database] ),
+			        VAR _items =
+			            FILTER ( VALUES ( 'Database file'[Database] ), [VLF Filter - Database size] <> BLANK () )
+			        VAR _itemsCombined =
+			            CONCATENATEX ( _items, 'Database file'[Database], UNICHAR ( 10 ), 'Database file'[Database], ASC )
+			        RETURN
+			            _itemsCombined & UNICHAR ( 10 )
+			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Year] ),
 			        VAR _items =
@@ -991,7 +1025,8 @@ table _Measures
 	measure 'Is filters applied - Database size' =
 			
 			IF (
-			    ISFILTERED ( 'Database file'[Database] ) || ISFILTERED ( 'Date'[Year] )
+			    ISFILTERED ( Disk[Disk] ) || ISFILTERED ( 'Database file'[Database] )
+			        || ISFILTERED ( 'Date'[Year] )
 			        || ISFILTERED ( 'Date'[Month] )
 			        || ISFILTERED ( 'Date'[Day] )
 			        || ISFILTERED ( 'Date'[Day index] ),
@@ -1091,7 +1126,7 @@ table _Measures
 	measure 'Front page version text' =
 			
 			[Info text] & UNICHAR ( 10 ) & " "
-			    & UNICHAR ( 10 ) & "Developed using Power BI Desktop version: 2.143.1378.0 64-bit (May 2025)"
+			    & UNICHAR ( 10 ) & "Developed using Power BI Desktop version: 2.144.1378.0 64-bit (June 2025)"
 		displayFolder: Common
 		lineageTag: e74236c7-2bcf-4409-b8d2-ddb49a83e10b
 
@@ -2197,7 +2232,7 @@ table _Measures
 
 	measure 'Version number' =
 			
-			"2.7.0"
+			"2.8.0"
 		isHidden
 		displayFolder: Common
 		lineageTag: 39428edf-bb47-48d0-a60e-f025984fd1ba
@@ -6528,7 +6563,7 @@ table _Measures
 			    "Monitor logs"
 			        & IF (
 			            _minDataDate <> BLANK (),
-			            " between " & _minDataDateTxt & " (UTC) and " & _maxDataDateTxt & " (UTC)"
+			            " between " & _minDataDateTxt & " (UTC) and " & _maxDataDateTxt & " (UTC) " & [Drill-through symbol]
 			        )
 			VAR _result = _txt
 			RETURN
@@ -6550,7 +6585,7 @@ table _Measures
 			    "Monitor non debug and info logs"
 			        & IF (
 			            _minDataDate <> BLANK (),
-			            " between " & _minDataDateTxt & " (UTC) and " & _maxDataDateTxt & " (UTC)"
+			            " between " & _minDataDateTxt & " (UTC) and " & _maxDataDateTxt & " (UTC) " & [Drill-through symbol]
 			        )
 			VAR _result = _txt
 			RETURN
@@ -9344,7 +9379,7 @@ table _Measures
 			VAR _return = _text
 			RETURN
 			    _return
-		displayFolder: Agent jobs performance
+		displayFolder: Agent jobs performance\Tooltip
 		lineageTag: 2b4237ff-cdc0-4e30-9900-1365dd1e79f8
 
 	measure 'Executions (Failed - tooltip) - Agent jobs performance' =
@@ -9371,7 +9406,7 @@ table _Measures
 			VAR _return = _text
 			RETURN
 			    _return
-		displayFolder: Agent jobs performance
+		displayFolder: Agent jobs performance\Tooltip
 		lineageTag: 1a2203e1-4541-47e2-8e1a-194648389d25
 
 	measure 'Executions (Ended with errors - tooltip) - Agent jobs performance' =
@@ -9398,7 +9433,7 @@ table _Measures
 			VAR _return = _text
 			RETURN
 			    _return
-		displayFolder: Agent jobs performance
+		displayFolder: Agent jobs performance\Tooltip
 		lineageTag: 8cd533c7-93a1-42ac-bb54-263456ae1808
 
 	measure 'Executions (Total - tooltip) - Agent jobs performance' =
@@ -9425,7 +9460,7 @@ table _Measures
 			VAR _return = _text
 			RETURN
 			    _return
-		displayFolder: Agent jobs performance
+		displayFolder: Agent jobs performance\Tooltip
 		lineageTag: 12368882-17cf-46be-b5da-7cf8927baef7
 
 	measure 'Data range - Database configuration history' =
@@ -9564,9 +9599,18 @@ table _Measures
 			    MAX ( 'Time'[Hour] )
 			VAR _hourTxt =
 			    FORMAT ( _hour, "#0" )
+			VAR _min =
+			    MAX ( 'Time'[Minute] )
+			VAR _minTxt =
+			    FORMAT ( _min, "#0" )
 			VAR _txt =
 			    _dateTxt
-			        & IF ( ISFILTERED ( 'Time' ), " Hour: " & _hourTxt, "" )
+			        & IF (
+			            ISFILTERED ( 'Time'[Hour] ),
+			            " Hour: " & _hourTxt
+			                & IF ( ISFILTERED ( 'Time'[Minute] ), " Min.: " & _minTxt, "" ),
+			            ""
+			        )
 			VAR _result = _txt
 			RETURN
 			    _result
@@ -9597,7 +9641,7 @@ table _Measures
 			VAR _return = _text
 			RETURN
 			    _return
-		displayFolder: Agent jobs performance
+		displayFolder: Agent jobs performance\Tooltip
 		lineageTag: 26601c25-714b-42d3-a153-d60663bed3f1
 
 	measure 'Executions (Succeeded) - Agent jobs performance' =
@@ -9690,7 +9734,7 @@ table _Measures
 	measure 'Modification counter - Statistics age' =
 			
 			SUM ( 'Statistics age'[Modification counter] )
-		formatString: 0
+		formatString: #,0
 		displayFolder: Statistics\Statistics age
 		lineageTag: 6e08b2de-7c59-4447-98e8-ef1ad50688cd
 
@@ -10019,7 +10063,7 @@ table _Measures
 	measure 'Is filters applied - Monitor status' =
 			
 			IF (
-			    ISFILTERED ( LogTaskName[Name] ) || ISFILTERED ( LogTaskName[Task] )
+			    ISFILTERED ( 'Task name version'[Name] ) || ISFILTERED ( 'Task name version'[Task] )
 			        || ISFILTERED ( 'Date'[Year] )
 			        || ISFILTERED ( 'Date'[Month] )
 			        || ISFILTERED ( 'Date'[Day] )
@@ -10045,20 +10089,20 @@ table _Measures
 	measure 'Show filters - Monitor status' =
 			
 			IF (
-			    ISFILTERED ( LogTaskName[Name] ),
+			    ISFILTERED ( 'Task name version'[Name] ),
 			    VAR _items =
-			        FILTER ( VALUES ( LogTaskName[Name] ), [VLF Filter - Monitor status] <> BLANK () )
+			        FILTER ( VALUES ( 'Task name version'[Name] ), [VLF Filter - Monitor status] <> BLANK () )
 			    VAR _itemsCombined =
-			        CONCATENATEX ( _items, LogTaskName[Name], UNICHAR ( 10 ), LogTaskName[Name], ASC )
+			        CONCATENATEX ( _items, 'Task name version'[Name], UNICHAR ( 10 ), 'Task name version'[Name], ASC )
 			    RETURN
 			        _itemsCombined & UNICHAR ( 10 )
 			)
 			    & IF (
-			        ISFILTERED ( LogTaskName[Task] ),
+			        ISFILTERED ( 'Task name version'[Task] ),
 			        VAR _items =
-			            FILTER ( VALUES ( LogTaskName[Task] ), [VLF Filter - Monitor status] <> BLANK () )
+			            FILTER ( VALUES ( 'Task name version'[Task] ), [VLF Filter - Monitor status] <> BLANK () )
 			        VAR _itemsCombined =
-			            CONCATENATEX ( _items, LogTaskName[Task], UNICHAR ( 10 ), LogTaskName[Task], ASC )
+			            CONCATENATEX ( _items, 'Task name version'[Task], UNICHAR ( 10 ), 'Task name version'[Task], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
@@ -10113,16 +10157,16 @@ table _Measures
 	measure 'Show filters Headers - Monitor status' = ```
 			
 			IF (
-			    ISFILTERED ( LogTaskName[Name] ),
+			    ISFILTERED ( 'Task name version'[Name] ),
 			    VAR _cnt = 
-			        COUNTROWS ( FILTER ( VALUES ( LogTaskName[Name] ), [VLF Filter - Monitor status] <> BLANK () ) )
+			        COUNTROWS ( FILTER ( VALUES ( 'Task name version'[Name] ), [VLF Filter - Monitor status] <> BLANK () ) )
 			    RETURN
 			        IF ( _cnt > 0, "Name:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			)
 			    & IF (
-			        ISFILTERED ( LogTaskName[Task] ),
+			        ISFILTERED ( 'Task name version'[Task] ),
 			        VAR _cnt = 
-			            COUNTROWS ( FILTER ( VALUES ( LogTaskName[Task] ), [VLF Filter - Monitor status] <> BLANK () ) )
+			            COUNTROWS ( FILTER ( VALUES ( 'Task name version'[Task] ), [VLF Filter - Monitor status] <> BLANK () ) )
 			        RETURN
 			            IF ( _cnt > 0, "Task:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
@@ -10431,6 +10475,283 @@ table _Measures
 			)
 		displayFolder: Plan cache usage\Filter panel
 		lineageTag: 46777926-3cc2-4e1e-8454-c9a51ce49e52
+
+	measure 'Logical reads pr. execution - Query statistics' =
+			
+			DIVIDE ( [Logical reads - Query statistics], [Execution count - Query statistics] )
+		formatString: #,0
+		displayFolder: Query statistics
+		lineageTag: 44fcb31d-9b7e-4ac9-8bbc-c68fb04ccd2a
+
+	measure 'Worker time mS pr. execution - Query statistics' =
+			
+			DIVIDE ( [Worker time mS - Query statistics], [Execution count - Query statistics] )
+		formatString: #,0
+		displayFolder: Query statistics
+		lineageTag: d36270e5-f562-4546-9dd3-33f21566e45a
+
+	measure 'Duration in sec. - type 0 - Monitor status' =
+			
+			VAR _value =
+			    CALCULATE ( SUM ( Processing[DurationInMSec] ), Processing[Type] = 0 )
+			VAR _valueSec =
+			    DIVIDE ( _value, 1000 )
+			VAR _result = _valueSec
+			RETURN
+			    _result
+		formatString: #,0.0
+		displayFolder: Monitor status
+		lineageTag: b2a02c02-0190-4d8e-be2e-caf4beaecdb5
+
+	measure 'Executions # - type 0 - Monitor status' =
+			
+			VAR _value =
+			    CALCULATE ( COUNTROWS ( Processing ), Processing[Type] = 0 )
+			VAR _result = _value
+			RETURN
+			    _result
+		formatString: #,0
+		displayFolder: Monitor status
+		lineageTag: 4c38486d-8044-4b6f-988e-47fcff862502
+
+	measure 'Executions (Tooltip) - Monitor status' =
+			
+			VAR _cnt =
+			    [Executions # - type 0 - Monitor status]
+			VAR _cntZeroed =
+			    IF ( _cnt = BLANK (), 0, _cnt )
+			VAR _text =
+			    FORMAT ( _cntZeroed, "#,##0" )
+			VAR _return = _text
+			RETURN
+			    _return
+		displayFolder: Monitor status\Tooltip
+		lineageTag: ef599542-5cc9-44b7-ad54-a1f0e38cd499
+
+	measure 'Duration in sec. (Tooltip) - Monitor status' =
+			
+			VAR _exec = [Executions # - type 0 - Monitor status]
+			VAR _sec = [Duration in sec. - type 0 - Monitor status]
+			VAR _secFormat =
+			    IF ( _exec = 1, "#,##0.0", "#,##0" )
+			VAR _secPrExec =
+			    DIVIDE ( _sec, _exec )
+			VAR _secPrExecFormat =
+			    IF ( _secPrExec < 10 || _exec = 1, "#,##0.0", "#,##0" )
+			VAR _secZeroed =
+			    IF ( _sec = BLANK (), 0, _sec )
+			VAR _text =
+			    FORMAT ( _secZeroed, _secFormat ) & " seconds / "
+			        & IF (
+			            _secPrExec <> BLANK (),
+			            FORMAT ( _secPrExec, _secPrExecFormat ) & " pr. exec.",
+			            ""
+			        )
+			VAR _return = _text
+			RETURN
+			    _return
+		displayFolder: Monitor status\Tooltip
+		lineageTag: 16534ae1-2843-4315-a9a2-b57198fab159
+
+	measure 'Drill-through filters - Processing details' =
+			
+			VAR _dateTxt =
+			    IF (
+			        ISFILTERED ( 'Date'[Date] ),
+			        " - Date:" & FORMAT ( MAX ( 'Date'[Date] ), [Date format string] ),
+			        ""
+			    )
+			VAR _timeTxt =
+			    IF (
+			        ISFILTERED ( 'Time'[Hour] ),
+			        " - Hour:" & FORMAT ( MAX ( 'Time'[Hour] ), "00" ),
+			        ""
+			    )
+			VAR _txt =
+			    "Name:" & MAX ( 'Task name version'[Name] ) & _dateTxt & _timeTxt
+			VAR _result = _txt
+			RETURN
+			    _result
+		displayFolder: Monitor status\Processing details
+		lineageTag: 70e6c308-1761-4465-a06f-eb2c4002e4eb
+
+	measure 'Duration and executions title - Monitor status' =
+			
+			VAR _minDataDate =
+			    CALCULATE ( MIN ( Processing[Date] ) )
+			VAR _maxDataDate =
+			    CALCULATE ( MAX ( Processing[Date] ) )
+			VAR _minDataDateTxt =
+			    FORMAT ( _minDataDate, [Date format string] )
+			VAR _maxDataDateTxt =
+			    FORMAT ( _maxDataDate, [Date format string] )
+			VAR _txt =
+			    "Duration and executions"
+			        & IF (
+			            _minDataDate <> BLANK (),
+			            " between " & _minDataDateTxt & " and " & _maxDataDateTxt & " " & [Drill-through symbol]
+			        )
+			VAR _result = _txt
+			RETURN
+			    _result
+		displayFolder: Monitor status
+		lineageTag: 8a75af64-2113-49cf-b145-cfb261f3258d
+
+	measure 'Duration in sec. - Monitor status' =
+			
+			VAR _value =
+			    SUM ( Processing[DurationInMSec] )
+			VAR _valueSec =
+			    DIVIDE ( _value, 1000 )
+			VAR _result = _valueSec
+			RETURN
+			    _result
+		formatString: 0.0
+		displayFolder: Monitor status
+		lineageTag: a3c5dc16-afe3-4bbb-8c38-92fbc99cb481
+
+	measure 'Documentation URL - report pages' =
+			
+			IF (
+			    ISFILTERED ( 'Documentation - report pages'[Page] ),
+			    [Info URL] & "/sql-server-monitoring-"
+			        & MAX ( 'Documentation - report pages'[URL] )
+			)
+		displayFolder: Common
+		lineageTag: b8960c53-402a-4758-912c-f82a8f93a80c
+
+	measure 'Documentation URL - hidden pages' =
+			
+			IF (
+			    ISFILTERED ( 'Documentation - hidden pages'[Page] ),
+			    [Info URL] & "/sql-server-monitoring-"
+			        & MAX ( 'Documentation - hidden pages'[URL] )
+			)
+		displayFolder: Common
+		lineageTag: ec90fc66-da1c-4418-ac71-72e391389508
+
+	measure 'Free MB - Disk size' =
+			
+			SUMX ( 'Disk size', 'Disk size'[FreeBytes] / 1024 / 1024 )
+		formatString: #,0
+		displayFolder: Disk size
+		lineageTag: cd013203-1b66-4f50-a5ff-7c910b487d75
+
+	measure 'Total MB - Disk size' =
+			
+			SUMX ( 'Disk size', 'Disk size'[TotalBytes] / 1024 / 1024 )
+		formatString: #,0
+		displayFolder: Disk size
+		lineageTag: 399e97c5-a096-4737-9bec-433519802dc6
+
+	measure 'Used MB - Disk size' =
+			
+			[Total MB - Disk size] - [Free MB - Disk size]
+		formatString: #,0
+		displayFolder: Disk size
+		lineageTag: bc4c60c2-058c-4b3b-a239-2ed8d3d0aa84
+
+	measure 'Data size ratio of disk - Database size' =
+			
+			VAR _size = [Latest data size MB - Database size]
+			VAR _diskSize =
+			    CALCULATE (
+			        [Latest disk size MB - Database size],
+			        REMOVEFILTERS ( 'Database file'[Database], 'Database file'[Physical file] )
+			    )
+			VAR _ratio =
+			    DIVIDE ( _size, _diskSize )
+			VAR _result = _ratio
+			RETURN
+			    _result
+		formatString: #,0.00\ %;-#,0.00\ %;#,0.00\ %
+		displayFolder: Database size
+		lineageTag: 19e92ea1-0bab-42bd-8eaa-f94c20875b3b
+
+	measure 'Latest disk size MB - Database size' =
+			
+			VAR _maxDate =
+			    CALCULATE ( MAX ( 'Disk size'[Date] ), REMOVEFILTERS ( Disk[Disk] ) )
+			VAR _latestValue =
+			    CALCULATE ( [Total MB - Disk size], 'Disk size'[Date] = _maxDate )
+			VAR _result = _latestValue
+			RETURN
+			    _result
+		formatString: #,0
+		displayFolder: Database size
+		lineageTag: 66f4b2ec-b59d-4d96-adce-e924d7c163f1
+
+	measure 'Details title size per disk - Database size' =
+			
+			VAR _latestDate = [Latest date - Database size]
+			VAR _latestDateTxt =
+			    FORMAT ( _latestDate, [Date format string] ) & " ("
+			        & FORMAT ( _latestDate, [Dayname format string] ) & ")"
+			VAR _txt =
+			    "Size per disk"
+			        & IF (
+			            _latestDate <> BLANK (),
+			            " at " & _latestDateTxt
+			        )
+			VAR _result = _txt
+			RETURN
+			    _result
+		displayFolder: Database size
+		lineageTag: bbcfd15e-00d6-4763-906a-82982b3d1485
+
+	measure 'Past disk size MB - Database size' =
+			
+			VAR _pastDate = [Past date - Database size]
+			VAR _latestValue =
+			    CALCULATE (
+			        [Total MB - Disk size],
+			        REMOVEFILTERS ( 'Date'[Date] ),
+			        'Disk size'[Date] = _pastDate
+			    )
+			VAR _result = _latestValue
+			RETURN
+			    _result
+		formatString: #,0
+		displayFolder: Database size
+		lineageTag: d68bebca-b2c5-4b6c-8ec4-4e28c3697898
+
+	measure 'Log size ratio of disk - Database size' =
+			
+			VAR _size = [Latest log size MB - Database size]
+			VAR _diskSize =
+			    CALCULATE (
+			        [Latest disk size MB - Database size],
+			        REMOVEFILTERS ( 'Database file'[Database], 'Database file'[Physical file] )
+			    )
+			VAR _ratio =
+			    DIVIDE ( _size, _diskSize )
+			VAR _result = _ratio
+			RETURN
+			    _result
+		formatString: #,0.00\ %;-#,0.00\ %;#,0.00\ %
+		displayFolder: Database size
+		lineageTag: 7ab2fd40-c790-4efe-88f3-344ed9dd5b04
+
+	measure 'Used space KB - Allocation units' =
+			
+			SUM ( 'Allocation units'[UsedSpaceKB] )
+		formatString: #,0
+		displayFolder: Allocation units
+		lineageTag: cbcefa21-c3f1-4d4e-9564-b10b6a59a095
+
+	measure 'Data space KB - Allocation units' =
+			
+			SUM ( 'Allocation units'[DataSpaceKB] )
+		formatString: #,0
+		displayFolder: Allocation units
+		lineageTag: 3a92def0-1a70-4d01-93d6-e2d9678a5fc5
+
+	measure 'Total space KB - Allocation units' =
+			
+			SUM ( 'Allocation units'[TotalSpaceKB] )
+		formatString: #,0
+		displayFolder: Allocation units
+		lineageTag: 0891c8b9-9ac1-43d9-abd5-38ac3977625f
 
 	partition _Measures = m
 		mode: import

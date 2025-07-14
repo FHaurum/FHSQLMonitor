@@ -66,7 +66,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.7';
+		SET @version = '2.8';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -490,22 +490,23 @@ ELSE BEGIN
 	--
 	BEGIN
 		WITH
-		schedules(Enabled, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters) AS(
+		schedules(Enabled, DeploymentStatus, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters) AS(
 			SELECT
-				@enablePlanGuides
-				,'Plan guides'
-				,PARSENAME('dbo.fhsmSPPlanGuides', 1)
-				,1 * 60 * 60
-				,CAST('1900-1-1T00:00:00.0000' AS datetime2(0))
-				,CAST('1900-1-1T23:59:59.0000' AS datetime2(0))
-				,1, 1, 1, 1, 1, 1, 1
-				,'@Databases = ''USER_DATABASES, msdb'''
+				@enablePlanGuides								AS Enabled
+				,0												AS DeploymentStatus
+				,'Plan guides'									AS Name
+				,PARSENAME('dbo.fhsmSPPlanGuides', 1)			AS Task
+				,1 * 60 * 60									AS ExecutionDelaySec
+				,CAST('1900-1-1T00:00:00.0000' AS datetime2(0))	AS FromTime
+				,CAST('1900-1-1T23:59:59.0000' AS datetime2(0))	AS ToTime
+				,1, 1, 1, 1, 1, 1, 1							-- Monday..Sunday
+				,'@Databases = ''USER_DATABASES, msdb'''		AS Parameters
 		)
 		MERGE dbo.fhsmSchedules AS tgt
 		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
 		WHEN NOT MATCHED BY TARGET
-			THEN INSERT(Enabled, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters)
-			VALUES(src.Enabled, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameters);
+			THEN INSERT(Enabled, DeploymentStatus, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters)
+			VALUES(src.Enabled, src.DeploymentStatus, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameters);
 	END;
 
 	--

@@ -131,6 +131,7 @@
           {
             "fontFamily": "Segoe UI",
             "fontSize": 10,
+            "labelDisplayUnits": 1,
             "showAxisTitle": false
           }
         ]
@@ -201,6 +202,7 @@
             "gridlineStyle": "solid",
             "gridlineThickness": 1,
             "gridlineTransparency": 40,
+            "labelDisplayUnits": 1,
             "showAxisTitle": false,
             "start": 0
           }
@@ -248,13 +250,13 @@
             "backgroundTransparency": 60,
             "enableBackground": true,
             "enableTitleDataLabel": true,
-            "fontSize": 12,
+            "fontSize": 10,
             "horizontalAlignment": "right",
             "labelContentLayout": "MultiLine",
             "labelDensity": 0,
             "labelPosition": "Under",
             "show": true,
-            "titleFontSize": 12
+            "titleFontSize": 10
           }
         ],
         "legend": [
@@ -298,6 +300,7 @@
             "gridlineStyle": "solid",
             "gridlineThickness": 1,
             "gridlineTransparency": 40,
+            "labelDisplayUnits": 1,
             "showAxisTitle": false,
             "start": 0
           }
@@ -373,8 +376,10 @@
             "gridlineStyle": "solid",
             "gridlineThickness": 1,
             "gridlineTransparency": 40,
+            "labelDisplayUnits": 1,
             "secFontFamily": "Segoe UI",
             "secFontSize": 10,
+            "secLabelDisplayUnits": 1,
             "secTitleFontFamily": "Segoe UI",
             "secTitleFontSize": 10,
             "showAxisTitle": true,
@@ -454,8 +459,11 @@
             "gridlineStyle": "solid",
             "gridlineThickness": 1,
             "gridlineTransparency": 40,
+            "labelDisplayUnits": 1,
             "secFontFamily": "Segoe UI",
             "secFontSize": 10,
+            "secLabelDisplayUnits": 1,
+            "secStart": 0,
             "secTitleFontFamily": "Segoe UI",
             "secTitleFontSize": 10,
             "showAxisTitle": true,
@@ -533,6 +541,11 @@
         ],
         "rowHeaders": [
           {
+            "backColor": {
+              "solid": {
+                "color": "#CBE1FF"
+              }
+            },
             "bold": true,
             "fontFamily": "Segoe UI",
             "fontSize": 12

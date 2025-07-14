@@ -1,0 +1,75 @@
+table 'Disk size'
+	lineageTag: 25717002-c202-49ba-a64f-d32e526704ca
+
+	column TotalBytes
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 70dafd08-99e7-4aca-a72a-273170f7ef53
+		summarizeBy: none
+		sourceColumn: TotalBytes
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column FreeBytes
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 4d6f4927-e1b6-4bf8-a224-72f5d9b4ba79
+		summarizeBy: none
+		sourceColumn: FreeBytes
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column Date
+		dataType: dateTime
+		isHidden
+		formatString: Long Date
+		lineageTag: 14e54bd3-b29a-4485-be14-f0da60097347
+		summarizeBy: none
+		sourceColumn: Date
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column DiskKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: b44fac6d-2237-43eb-a5ae-aa0bff4cf0e7
+		summarizeBy: none
+		sourceColumn: DiskKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Disk size' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Capacity")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db     = dbList{[Name = #"Database name"]}[Data], 
+				  table  = db{[Schema = #"Schema name", Item = "Disk size"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset
+				in
+				  datasetToUse
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

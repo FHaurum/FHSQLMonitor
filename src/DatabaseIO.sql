@@ -66,7 +66,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.7';
+		SET @version = '2.8';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -115,7 +115,12 @@ ELSE BEGIN
 					Id int identity(1,1) NOT NULL
 					,DatabaseName nvarchar(128) NOT NULL
 					,LogicalName nvarchar(128) NOT NULL
+					,PhysicalName nvarchar(260) NULL
 					,Type tinyint NOT NULL
+					,VolumeMountPoint nvarchar(512) NULL
+					,LogicalVolumeName nvarchar(512) NULL
+					,FilegroupName nvarchar(128) NULL
+					,FileGroupType char(2) NULL
 					,SampleMS bigint NOT NULL
 					,IOStall bigint NOT NULL
 					,NumOfReads bigint NOT NULL
@@ -131,6 +136,76 @@ ELSE BEGIN
 					,Timestamp datetime NOT NULL
 					,CONSTRAINT PK_DatabaseIO PRIMARY KEY(Id)' + @tableCompressionStmt + '
 				);
+			';
+			EXEC(@stmt);
+		END;
+
+		--
+		-- Adding column PhysicalName to table dbo.fhsmDatabaseIO if it not already exists
+		--
+		IF NOT EXISTS (SELECT * FROM sys.columns AS c WHERE (c.object_id = OBJECT_ID('dbo.fhsmDatabaseIO')) AND (c.name = 'PhysicalName'))
+		BEGIN
+			RAISERROR('Adding column [PhysicalName] to table dbo.fhsmDatabaseIO', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
+				ALTER TABLE dbo.fhsmDatabaseIO
+					ADD PhysicalName nvarchar(260) NULL;
+			';
+			EXEC(@stmt);
+		END;
+
+		--
+		-- Adding column VolumeMountPoint to table dbo.fhsmDatabaseIO if it not already exists
+		--
+		IF NOT EXISTS (SELECT * FROM sys.columns AS c WHERE (c.object_id = OBJECT_ID('dbo.fhsmDatabaseIO')) AND (c.name = 'VolumeMountPoint'))
+		BEGIN
+			RAISERROR('Adding column [VolumeMountPoint] to table dbo.fhsmDatabaseIO', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
+				ALTER TABLE dbo.fhsmDatabaseIO
+					ADD VolumeMountPoint nvarchar(512) NULL;
+			';
+			EXEC(@stmt);
+		END;
+
+		--
+		-- Adding column LogicalVolumeName to table dbo.fhsmDatabaseIO if it not already exists
+		--
+		IF NOT EXISTS (SELECT * FROM sys.columns AS c WHERE (c.object_id = OBJECT_ID('dbo.fhsmDatabaseIO')) AND (c.name = 'LogicalVolumeName'))
+		BEGIN
+			RAISERROR('Adding column [LogicalVolumeName] to table dbo.fhsmDatabaseIO', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
+				ALTER TABLE dbo.fhsmDatabaseIO
+					ADD LogicalVolumeName nvarchar(512) NULL;
+			';
+			EXEC(@stmt);
+		END;
+
+		--
+		-- Adding column FilegroupName to table dbo.fhsmDatabaseIO if it not already exists
+		--
+		IF NOT EXISTS (SELECT * FROM sys.columns AS c WHERE (c.object_id = OBJECT_ID('dbo.fhsmDatabaseIO')) AND (c.name = 'FilegroupName'))
+		BEGIN
+			RAISERROR('Adding column [FilegroupName] to table dbo.fhsmDatabaseIO', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
+				ALTER TABLE dbo.fhsmDatabaseIO
+					ADD FilegroupName nvarchar(128) NULL;
+			';
+			EXEC(@stmt);
+		END;
+
+		--
+		-- Adding column FileGroupType to table dbo.fhsmDatabaseIO if it not already exists
+		--
+		IF NOT EXISTS (SELECT * FROM sys.columns AS c WHERE (c.object_id = OBJECT_ID('dbo.fhsmDatabaseIO')) AND (c.name = 'FileGroupType'))
+		BEGIN
+			RAISERROR('Adding column [FileGroupType] to table dbo.fhsmDatabaseIO', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
+				ALTER TABLE dbo.fhsmDatabaseIO
+					ADD FileGroupType char(2) NULL;
 			';
 			EXEC(@stmt);
 		END;
@@ -214,6 +289,9 @@ ELSE BEGIN
 					SELECT
 						dio.DatabaseName
 						,dio.LogicalName
+						,dio.PhysicalName
+						,dio.VolumeMountPoint
+						,dio.FilegroupName
 						,dio.Type
 						,dio.SampleMS
 						,dio.IOStall
@@ -251,7 +329,7 @@ ELSE BEGIN
 					,CAST(b.Timestamp AS date) AS Date
 					,(DATEPART(HOUR, b.Timestamp) * 60 * 60) + (DATEPART(MINUTE, b.Timestamp) * 60) + (DATEPART(SECOND, b.Timestamp)) AS TimeKey
 					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(b.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(b.DatabaseName, b.LogicalName,
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(b.DatabaseName, b.LogicalName, b.PhysicalName,
 						CASE b.Type
 							WHEN 0 THEN ''Data''
 							WHEN 1 THEN ''Log''
@@ -259,7 +337,9 @@ ELSE BEGIN
 							WHEN 4 THEN ''Fulltext''
 							ELSE ''Other''
 						END,
-					DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseFileKey
+					b.FilegroupName, DEFAULT) AS k) AS DatabaseFileKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(b.VolumeMountPoint, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DiskKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(b.DatabaseName, b.FilegroupName, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS FileGroupKey
 			';
 			SET @stmt += '
 				FROM (
@@ -313,6 +393,9 @@ ELSE BEGIN
 						,a.Timestamp
 						,a.DatabaseName
 						,a.LogicalName
+						,a.PhysicalName
+						,a.VolumeMountPoint
+						,a.FilegroupName
 						,a.Type
 			';
 			SET @stmt += '
@@ -357,6 +440,9 @@ ELSE BEGIN
 							,dio.Timestamp
 							,dio.DatabaseName
 							,dio.LogicalName
+							,dio.PhysicalName
+							,dio.VolumeMountPoint
+							,dio.FilegroupName
 							,dio.Type
 						FROM databaseIO AS dio
 						LEFT OUTER JOIN databaseIO AS prevDio ON
@@ -404,6 +490,9 @@ ELSE BEGIN
 							,dio.Timestamp
 							,dio.DatabaseName
 							,dio.LogicalName
+							,dio.PhysicalName
+							,dio.VolumeMountPoint
+							,dio.FilegroupName
 							,dio.Type
 						FROM dbo.fhsmDatabaseIO AS dio
 				';
@@ -597,7 +686,26 @@ ELSE BEGIN
 
 									SELECT
 										DB_NAME() AS DatabaseName
-										,df.name, df.Type
+										,df.name, df.physical_name, df.Type
+				';
+				IF ((@productVersion1 = 10) AND (@productVersion2 = 0))
+				BEGIN
+					-- SQL Versions SQL2008
+					SET @stmt += '
+										,CAST(NULL AS nvarchar(512))	AS VolumeMountPoint
+										,CAST(NULL AS nvarchar(512))	AS LogicalVolumeName
+					';
+				END
+				ELSE BEGIN
+					-- SQL Versions SQL2008R2 or higher
+					SET @stmt += '
+										,dovs.volume_mount_point	AS VolumeMountPoint
+										,dovs.logical_volume_name	AS LogicalVolumeName
+					';
+				END;
+				SET @stmt += '
+										,fg.name					AS FilegroupName
+										,fg.type					AS FileGroupType
 										,divfs.sample_ms
 										,divfs.io_stall
 										,divfs.num_of_reads, divfs.num_of_bytes_read, divfs.io_stall_read_ms, '' + @ioStallQueuedReadMSStmt + ''
@@ -605,11 +713,23 @@ ELSE BEGIN
 										,divfs.size_on_disk_bytes
 										,@nowUTC, @now
 									FROM sys.dm_io_virtual_file_stats(DB_ID(), NULL) AS divfs
-									INNER JOIN sys.database_files AS df WITH (NOLOCK) ON (divfs.file_id = df.file_id);
+									INNER JOIN sys.database_files AS df WITH (NOLOCK) ON (divfs.file_id = df.file_id)
+				';
+				IF NOT ((@productVersion1 = 10) AND (@productVersion2 = 0))
+				BEGIN
+					-- SQL Versions SQL2008R2 or higher
+					SET @stmt += '
+									CROSS APPLY sys.dm_os_volume_stats(DB_ID(), df.file_id) AS dovs
+					';
+				END;
+				SET @stmt += '
+									LEFT OUTER JOIN sys.filegroups AS fg WITH (NOLOCK) ON (fg.data_space_id = df.data_space_id);
 								'';
 								BEGIN TRY
 									INSERT INTO dbo.fhsmDatabaseIO(
-										DatabaseName, LogicalName, Type
+										DatabaseName, LogicalName, PhysicalName, Type
+										,VolumeMountPoint, LogicalVolumeName
+										,FilegroupName, FileGroupType
 										,SampleMS, IOStall
 										,NumOfReads, NumOfBytesRead, IOStallReadMS, IOStallQueuedReadMS
 										,NumOfWrites, NumOfBytesWritten, IOStallWriteMS, IOStallQueuedWriteMS
@@ -687,22 +807,23 @@ ELSE BEGIN
 	--
 	BEGIN
 		WITH
-		schedules(Enabled, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters) AS(
+		schedules(Enabled, DeploymentStatus, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters) AS(
 			SELECT
-				@enableDatabaseIO
-				,'Database IO'
-				,PARSENAME('dbo.fhsmSPDatabaseIO', 1)
-				,15 * 60
-				,CAST('1900-1-1T00:00:00.0000' AS datetime2(0))
-				,CAST('1900-1-1T23:59:59.0000' AS datetime2(0))
-				,1, 1, 1, 1, 1, 1, 1
-				,'@Databases = ''ALL_DATABASES'''
+				@enableDatabaseIO								AS Enabled
+				,0												AS DeploymentStatus
+				,'Database IO'									AS Name
+				,PARSENAME('dbo.fhsmSPDatabaseIO', 1)			AS Task
+				,15 * 60										AS ExecutionDelaySec
+				,CAST('1900-1-1T00:00:00.0000' AS datetime2(0))	AS FromTime
+				,CAST('1900-1-1T23:59:59.0000' AS datetime2(0))	AS ToTime
+				,1, 1, 1, 1, 1, 1, 1							-- Monday..Sunday
+				,'@Databases = ''ALL_DATABASES'''				AS Parameters
 		)
 		MERGE dbo.fhsmSchedules AS tgt
 		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
 		WHEN NOT MATCHED BY TARGET
-			THEN INSERT(Enabled, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters)
-			VALUES(src.Enabled, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameters);
+			THEN INSERT(Enabled, DeploymentStatus, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters)
+			VALUES(src.Enabled, src.DeploymentStatus, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameters);
 	END;
 
 	--
@@ -713,8 +834,8 @@ ELSE BEGIN
 		dimensions(
 			DimensionName, DimensionKey
 			,SrcTable, SrcAlias, SrcWhere, SrcDateColumn
-			,SrcColumn1, SrcColumn2, SrcColumn3
-			,OutputColumn1, OutputColumn2, OutputColumn3
+			,SrcColumn1, SrcColumn2, SrcColumn3, SrcColumn4, SrcColumn5
+			,OutputColumn1, OutputColumn2, OutputColumn3, OutputColumn4, OutputColumn5
 		) AS (
 			SELECT
 				'Database' AS DimensionName
@@ -723,8 +844,8 @@ ELSE BEGIN
 				,'src' AS SrcAlias
 				,NULL AS SrcWhere
 				,'src.[Timestamp]' AS SrcDateColumn
-				,'src.[DatabaseName]', NULL, NULL
-				,'Database', NULL, NULL
+				,'src.[DatabaseName]', NULL, NULL, NULL, NULL
+				,'Database', NULL, NULL, NULL, NULL
 
 			UNION ALL
 
@@ -735,8 +856,32 @@ ELSE BEGIN
 				,'src' AS SrcAlias
 				,NULL AS SrcWhere
 				,'src.[Timestamp]' AS SrcDateColumn
-				,'src.[DatabaseName]', 'src.[LogicalName]', 'CASE src.[Type] WHEN 0 THEN ''Data'' WHEN 1 THEN ''Log'' WHEN 2 THEN ''Filestream'' WHEN 4 THEN ''Fulltext'' ELSE ''Other'' END'
-				,'Database name', 'Logical name', 'Type'
+				,'src.[DatabaseName]', 'src.[LogicalName]', 'src.[PhysicalName]', 'CASE src.[Type] WHEN 0 THEN ''Data'' WHEN 1 THEN ''Log'' WHEN 2 THEN ''Filestream'' WHEN 4 THEN ''Fulltext'' ELSE ''Other'' END', 'src.[FilegroupName]'
+				,'Database name', 'Logical name', 'Physical name', 'Type', 'File group'
+
+			UNION ALL
+
+			SELECT
+				'Disk' AS DimensionName
+				,'DiskKey' AS DimensionKey
+				,'dbo.fhsmDatabaseIO' AS SrcTable
+				,'src' AS SrcAlias
+				,NULL AS SrcWhere
+				,'src.[Timestamp]' AS SrcDateColumn
+				,'src.[VolumeMountPoint]', NULL, NULL, NULL, NULL
+				,'Disk', NULL, NULL, NULL, NULL
+
+			UNION ALL
+
+			SELECT
+				'File group' AS DimensionName
+				,'FileGroupKey' AS DimensionKey
+				,'dbo.fhsmDatabaseIO' AS SrcTable
+				,'src' AS SrcAlias
+				,NULL AS SrcWhere
+				,'src.[Timestamp]' AS SrcDateColumn
+				,'src.[DatabaseName]', 'src.[FilegroupName]', NULL, NULL, NULL
+				,'Database', 'File group', NULL, NULL, NULL
 		)
 		MERGE dbo.fhsmDimensions AS tgt
 		USING dimensions AS src ON (src.DimensionName = tgt.DimensionName) AND (src.SrcTable = tgt.SrcTable)
@@ -750,21 +895,25 @@ ELSE BEGIN
 				,tgt.SrcColumn1 = src.SrcColumn1
 				,tgt.SrcColumn2 = src.SrcColumn2
 				,tgt.SrcColumn3 = src.SrcColumn3
+				,tgt.SrcColumn4 = src.SrcColumn4
+				,tgt.SrcColumn5 = src.SrcColumn5
 				,tgt.OutputColumn1 = src.OutputColumn1
 				,tgt.OutputColumn2 = src.OutputColumn2
 				,tgt.OutputColumn3 = src.OutputColumn3
+				,tgt.OutputColumn4 = src.OutputColumn4
+				,tgt.OutputColumn5 = src.OutputColumn5
 		WHEN NOT MATCHED BY TARGET
 			THEN INSERT(
 				DimensionName, DimensionKey
 				,SrcTable, SrcAlias, SrcWhere, SrcDateColumn
-				,SrcColumn1, SrcColumn2, SrcColumn3
-				,OutputColumn1, OutputColumn2, OutputColumn3
+				,SrcColumn1, SrcColumn2, SrcColumn3, SrcColumn4, SrcColumn5
+				,OutputColumn1, OutputColumn2, OutputColumn3, OutputColumn4, OutputColumn5
 			)
 			VALUES(
 				src.DimensionName, src.DimensionKey
 				,src.SrcTable, src.SrcAlias, src.SrcWhere, src.SrcDateColumn
-				,src.SrcColumn1, src.SrcColumn2, src.SrcColumn3
-				,src.OutputColumn1, src.OutputColumn2, src.OutputColumn3
+				,src.SrcColumn1, src.SrcColumn2, src.SrcColumn3, src.SrcColumn4, src.SrcColumn5
+				,src.OutputColumn1, src.OutputColumn2, src.OutputColumn3, src.OutputColumn4, src.OutputColumn5
 			);
 	END;
 

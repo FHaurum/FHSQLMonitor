@@ -1,0 +1,87 @@
+table Processing
+	lineageTag: af6689c2-5253-483b-afc0-f192b6b07fe5
+
+	column Type
+		dataType: int64
+		formatString: #,0
+		lineageTag: a5dd9eae-03c0-4dd6-8b70-0cea71cee85f
+		summarizeBy: none
+		sourceColumn: Type
+
+		annotation SummarizationSetBy = User
+
+	column DurationInMSec
+		dataType: int64
+		isHidden
+		formatString: #,0
+		lineageTag: cb890590-bfa6-4480-ac43-620a7c8d0d2a
+		summarizeBy: none
+		sourceColumn: DurationInMSec
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column Date
+		dataType: dateTime
+		isHidden
+		formatString: Long Date
+		lineageTag: 004ca48c-0949-4367-8b41-2162d61f1348
+		summarizeBy: none
+		sourceColumn: Date
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column TimeKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 2becb9f2-c118-4e74-839c-e0cad4771031
+		summarizeBy: none
+		sourceColumn: TimeKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column TaskNameVersionKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 2079f2d2-94dc-4112-9f87-3d0a2f5f8837
+		summarizeBy: none
+		sourceColumn: TaskNameVersionKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column Id
+		dataType: int64
+		formatString: #,0
+		lineageTag: ba4be3d1-2e98-4089-8735-299e6781f14f
+		summarizeBy: none
+		sourceColumn: Id
+
+		annotation SummarizationSetBy = User
+
+	partition Processing = m
+		mode: import
+		queryGroup: Framework
+		source = ```
+				let
+				  dbList = Sql.Databases(#"Server name"), 
+				  db     = dbList{[Name = #"Database name"]}[Data], 
+				  table  = db{[Schema = #"Schema name", Item = "Processing"]}[Data]
+				in
+				  table
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

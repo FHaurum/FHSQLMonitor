@@ -54,7 +54,7 @@ table Index
 				    Table.SelectRows(
 				      #"Data load", 
 				      each List.Contains(
-				        {"Index operational", "Index optimize", "Index usage", "OH errors", "Partitioned indexes", "Statistics"}, 
+				        {"Capacity", "Index operational", "Index optimize", "Index usage", "OH errors", "Statistics"}, 
 				        [Service]
 				      )
 				        and List.Contains({"Yes"}, [DataLoad])

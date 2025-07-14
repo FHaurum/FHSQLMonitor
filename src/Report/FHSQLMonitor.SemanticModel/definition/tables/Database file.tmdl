@@ -41,6 +41,22 @@ table 'Database file'
 
 		annotation SummarizationSetBy = Automatic
 
+	column 'Physical file'
+		dataType: string
+		lineageTag: 0b95a75c-0e78-48e2-9e4d-da0e8181d004
+		summarizeBy: none
+		sourceColumn: Physical file
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'File group'
+		dataType: string
+		lineageTag: faf248af-71c9-4700-a47e-14d5c7512345
+		summarizeBy: none
+		sourceColumn: File group
+
+		annotation SummarizationSetBy = Automatic
+
 	partition 'Database file' = m
 		mode: import
 		queryGroup: Dimensions
@@ -49,7 +65,7 @@ table 'Database file'
 				  loadConfigFirstMatch = Table.First(
 				    Table.SelectRows(
 				      #"Data load", 
-				      each List.Contains({"Database IO", "Database size"}, [Service])
+				      each List.Contains({"Capacity", "Database IO"}, [Service])
 				        and List.Contains({"Yes"}, [DataLoad])
 				    )
 				  ), 
@@ -67,6 +83,7 @@ table 'Database file'
 				    datasetToUse, 
 				    {
 				      {"Logical name", "Logical file"}, 
+				      {"Physical name", "Physical file"}, 
 				      {"Database name", "Database"}
 				    }
 				  )

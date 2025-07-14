@@ -21,7 +21,9 @@ END;
 -- Declare variables
 --
 BEGIN
+	DECLARE @cnt int;
 	DECLARE @edition nvarchar(128);
+	DECLARE @msg nvarchar(max);
 	DECLARE @myUserName nvarchar(128);
 	DECLARE @nowUTC datetime;
 	DECLARE @nowUTCStr nvarchar(128);
@@ -66,7 +68,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.7';
+		SET @version = '2.8';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -106,101 +108,353 @@ ELSE BEGIN
 		--
 		-- Create table dbo.fhsmIndexUsage and indexes if they not already exists
 		--
-		IF OBJECT_ID('dbo.fhsmIndexUsage', 'U') IS NULL
 		BEGIN
-			RAISERROR('Creating table dbo.fhsmIndexUsage', 0, 1) WITH NOWAIT;
+			IF OBJECT_ID('dbo.fhsmIndexUsage', 'U') IS NULL
+			BEGIN
+				RAISERROR('Creating table dbo.fhsmIndexUsage', 0, 1) WITH NOWAIT;
 
-			SET @stmt = '
-				CREATE TABLE dbo.fhsmIndexUsage(
-					Id int identity(1,1) NOT NULL
-					,DatabaseName nvarchar(128) NOT NULL
-					,SchemaName nvarchar(128) NOT NULL
-					,ObjectName nvarchar(128) NOT NULL
-					,IndexName nvarchar(128) NULL
-					,UserSeeks bigint NULL
-					,UserScans bigint NULL
-					,UserLookups bigint NULL
-					,UserUpdates bigint NULL
-					,LastUserSeek datetime NULL
-					,LastUserScan datetime NULL
-					,LastUserLookup datetime NULL
-					,LastUserUpdate datetime NULL
-					,IndexType tinyint NOT NULL
-					,IsUnique bit NOT NULL
-					,IsPrimaryKey bit NOT NULL
-					,IsUniqueConstraint bit NOT NULL
-					,[FillFactor] tinyint NOT NULL
-					,IsDisabled bit NOT NULL
-					,IsHypothetical bit NOT NULL
-					,AllowRowLocks bit NOT NULL
-					,AllowPageLocks bit NOT NULL
-					,HasFilter bit NOT NULL
-					,FilterDefinition nvarchar(max) NULL
-					,AutoCreated bit NULL
-					,IndexColumns nvarchar(max) NULL
-					,IncludedColumns nvarchar(max) NULL
-					,LastSQLServiceRestart datetime NOT NULL
-					,TimestampUTC datetime NOT NULL
-					,Timestamp datetime NOT NULL
-					,CONSTRAINT PK_fhsmIndexUsage PRIMARY KEY(Id)' + @tableCompressionStmt + '
-				);
-			';
-			EXEC(@stmt);
-		END;
+				SET @stmt = '
+					CREATE TABLE dbo.fhsmIndexUsage(
+						Id int identity(1,1) NOT NULL
+						,DatabaseName nvarchar(128) NOT NULL
+						,SchemaName nvarchar(128) NOT NULL
+						,ObjectName nvarchar(128) NOT NULL
+						,IndexName nvarchar(128) NULL
+						,UserSeeks bigint NULL
+						,UserScans bigint NULL
+						,UserLookups bigint NULL
+						,UserUpdates bigint NULL
+						,LastUserSeek datetime NULL
+						,LastUserScan datetime NULL
+						,LastUserLookup datetime NULL
+						,LastUserUpdate datetime NULL
+						,IndexType tinyint NOT NULL
+						,IsUnique bit NOT NULL
+						,IsPrimaryKey bit NOT NULL
+						,IsUniqueConstraint bit NOT NULL
+						,[FillFactor] tinyint NOT NULL
+						,IsDisabled bit NOT NULL
+						,IsHypothetical bit NOT NULL
+						,AllowRowLocks bit NOT NULL
+						,AllowPageLocks bit NOT NULL
+						,HasFilter bit NOT NULL
+						,FilterDefinition nvarchar(max) NULL
+						,AutoCreated bit NULL
+						,IndexColumns nvarchar(max) NULL
+						,IncludedColumns nvarchar(max) NULL
+						,LastSQLServiceRestart datetime NOT NULL
+						,TimestampUTC datetime NOT NULL
+						,Timestamp datetime NOT NULL
+						,CONSTRAINT PK_fhsmIndexUsage PRIMARY KEY(Id)' + @tableCompressionStmt + '
+					);
+				';
+				EXEC(@stmt);
+			END;
 
-		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmIndexUsage')) AND (i.name = 'NC_fhsmIndexUsage_TimestampUTC'))
-		BEGIN
-			RAISERROR('Adding index [NC_fhsmIndexUsage_TimestampUTC] to table dbo.fhsmIndexUsage', 0, 1) WITH NOWAIT;
+			IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmIndexUsage')) AND (i.name = 'NC_fhsmIndexUsage_TimestampUTC'))
+			BEGIN
+				RAISERROR('Adding index [NC_fhsmIndexUsage_TimestampUTC] to table dbo.fhsmIndexUsage', 0, 1) WITH NOWAIT;
 
-			SET @stmt = '
-				CREATE NONCLUSTERED INDEX NC_fhsmIndexUsage_TimestampUTC ON dbo.fhsmIndexUsage(TimestampUTC)' + @tableCompressionStmt + ';
-			';
-			EXEC(@stmt);
-		END;
+				SET @stmt = '
+					CREATE NONCLUSTERED INDEX NC_fhsmIndexUsage_TimestampUTC ON dbo.fhsmIndexUsage(TimestampUTC)' + @tableCompressionStmt + ';
+				';
+				EXEC(@stmt);
+			END;
 
-		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmIndexUsage')) AND (i.name = 'NC_fhsmIndexUsage_Timestamp'))
-		BEGIN
-			RAISERROR('Adding index [NC_fhsmIndexUsage_Timestamp] to table dbo.fhsmIndexUsage', 0, 1) WITH NOWAIT;
+			IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmIndexUsage')) AND (i.name = 'NC_fhsmIndexUsage_Timestamp'))
+			BEGIN
+				RAISERROR('Adding index [NC_fhsmIndexUsage_Timestamp] to table dbo.fhsmIndexUsage', 0, 1) WITH NOWAIT;
 
-			SET @stmt = '
-				CREATE NONCLUSTERED INDEX NC_fhsmIndexUsage_Timestamp ON dbo.fhsmIndexUsage(Timestamp)' + @tableCompressionStmt + ';
-			';
-			EXEC(@stmt);
-		END;
+				SET @stmt = '
+					CREATE NONCLUSTERED INDEX NC_fhsmIndexUsage_Timestamp ON dbo.fhsmIndexUsage(Timestamp)' + @tableCompressionStmt + ';
+				';
+				EXEC(@stmt);
+			END;
 
-		IF EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmIndexUsage')) AND (i.name = 'NC_fhsmIndexUsage_DatabaseName_SchemaName_ObjectName_IndexName'))
-		BEGIN
-			RAISERROR('Dropping index [NC_fhsmIndexUsage_DatabaseName_SchemaName_ObjectName_IndexName] on table dbo.fhsmIndexUsage', 0, 1) WITH NOWAIT;
+			IF EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmIndexUsage')) AND (i.name = 'NC_fhsmIndexUsage_DatabaseName_SchemaName_ObjectName_IndexName'))
+			BEGIN
+				RAISERROR('Dropping index [NC_fhsmIndexUsage_DatabaseName_SchemaName_ObjectName_IndexName] on table dbo.fhsmIndexUsage', 0, 1) WITH NOWAIT;
 
-			SET @stmt = '
-				DROP INDEX NC_fhsmIndexUsage_DatabaseName_SchemaName_ObjectName_IndexName ON dbo.fhsmIndexUsage;
-			';
-			EXEC(@stmt);
-		END;
+				SET @stmt = '
+					DROP INDEX NC_fhsmIndexUsage_DatabaseName_SchemaName_ObjectName_IndexName ON dbo.fhsmIndexUsage;
+				';
+				EXEC(@stmt);
+			END;
 
-		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmIndexUsage')) AND (i.name = 'NC_fhsmIndexUsage_DatabaseName_SchemaName_ObjectName_IndexName_TimestampUTC'))
-		BEGIN
-			RAISERROR('Adding index [NC_fhsmIndexUsage_DatabaseName_SchemaName_ObjectName_IndexName_TimestampUTC] to table dbo.fhsmIndexUsage', 0, 1) WITH NOWAIT;
+			IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmIndexUsage')) AND (i.name = 'NC_fhsmIndexUsage_DatabaseName_SchemaName_ObjectName_IndexName_TimestampUTC'))
+			BEGIN
+				RAISERROR('Adding index [NC_fhsmIndexUsage_DatabaseName_SchemaName_ObjectName_IndexName_TimestampUTC] to table dbo.fhsmIndexUsage', 0, 1) WITH NOWAIT;
 
-			SET @stmt = '
-				CREATE NONCLUSTERED INDEX NC_fhsmIndexUsage_DatabaseName_SchemaName_ObjectName_IndexName_TimestampUTC ON dbo.fhsmIndexUsage(DatabaseName, SchemaName, ObjectName, IndexName, TimestampUTC)' + @tableCompressionStmt + ';
-			';
-			EXEC(@stmt);
+				SET @stmt = '
+					CREATE NONCLUSTERED INDEX NC_fhsmIndexUsage_DatabaseName_SchemaName_ObjectName_IndexName_TimestampUTC ON dbo.fhsmIndexUsage(DatabaseName, SchemaName, ObjectName, IndexName, TimestampUTC)' + @tableCompressionStmt + ';
+				';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Register extended properties on the table dbo.fhsmIndexUsage
+			--
+			BEGIN
+				SET @objectName = 'dbo.fhsmIndexUsage';
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+			END;
 		END;
 
 		--
-		-- Register extended properties on the table dbo.fhsmIndexUsage
+		-- Create table dbo.fhsmIndexUsageDelta and indexes if they not already exists
 		--
 		BEGIN
-			SET @objectName = 'dbo.fhsmIndexUsage';
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
+			IF OBJECT_ID('dbo.fhsmIndexUsageDelta', 'U') IS NULL
+			BEGIN
+				RAISERROR('Creating table dbo.fhsmIndexUsageDelta', 0, 1) WITH NOWAIT;
 
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+				SET @stmt = '
+					CREATE TABLE dbo.fhsmIndexUsageDelta(
+						Id int identity(1,1) NOT NULL
+						,DatabaseName nvarchar(128) NOT NULL
+						,SchemaName nvarchar(128) NOT NULL
+						,ObjectName nvarchar(128) NOT NULL
+						,IndexName nvarchar(128) NULL
+						,UserSeeks bigint NULL
+						,UserScans bigint NULL
+						,UserLookups bigint NULL
+						,UserUpdates bigint NULL
+						,LastUserSeek datetime NULL
+						,LastUserScan datetime NULL
+						,LastUserLookup datetime NULL
+						,LastUserUpdate datetime NULL
+						,TimestampUTC datetime NOT NULL
+						,Timestamp datetime NOT NULL
+						,CONSTRAINT PK_fhsmIndexUsageDelta PRIMARY KEY(Id)' + @tableCompressionStmt + '
+					);
+				';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Processing data from dbo.fhsmIndexUsage into dbo.fhsmIndexUsageDelta, and before adding indexes
+			--
+			IF NOT EXISTS(SELECT * FROM dbo.fhsmIndexUsageDelta)
+			BEGIN
+				SET @cnt = (SELECT COUNT(*) FROM dbo.fhsmIndexUsage);
+				RAISERROR('Processing data from dbo.fhsmIndexUsage into dbo.fhsmIndexUsageDelta', 0, 1) WITH NOWAIT;
+				SET @msg = '!!! This might take some time if there are lots of data in the table dbo.fhsmIndexUsage. The table contains ' + CAST(@cnt AS nvarchar) + ' rows';
+				RAISERROR(@msg, 0, 1) WITH NOWAIT;
+
+				SET @stmt = '';
+
+				IF (@productVersion1 <= 10)
+				BEGIN
+					-- SQL Versions SQL2008R2 or lower
+
+					SET @stmt += '
+					WITH indexUsage AS (
+						SELECT
+							iu.DatabaseName
+							,iu.SchemaName
+							,iu.ObjectName
+							,iu.IndexName
+							,iu.UserSeeks
+							,iu.LastUserSeek
+							,iu.UserScans
+							,iu.LastUserScan
+							,iu.UserLookups
+							,iu.LastUserLookup
+							,iu.UserUpdates
+							,iu.LastUserUpdate
+							,iu.LastSQLServiceRestart
+							,iu.TimestampUTC
+							,iu.Timestamp
+							,ROW_NUMBER() OVER(PARTITION BY iu.DatabaseName, iu.SchemaName, iu.ObjectName, iu.IndexName ORDER BY iu.TimestampUTC) AS Idx
+						FROM dbo.fhsmIndexUsage AS iu
+					)
+					';
+				END;
+				SET @stmt += '
+					INSERT INTO dbo.fhsmIndexUsageDelta(
+						DatabaseName, SchemaName, ObjectName, IndexName
+						,UserSeeks, UserScans, UserLookups, UserUpdates
+						,LastUserSeek, LastUserScan, LastUserLookup, LastUserUpdate
+						,TimestampUTC, Timestamp
+					)
+					SELECT
+						b.DatabaseName
+						,b.SchemaName
+						,b.ObjectName
+						,b.IndexName
+						,b.DeltaUserSeeks AS UserSeeks
+						,b.DeltaUserScans AS UserScans
+						,b.DeltaUserLookups AS UserLookups
+						,b.DeltaUserUpdates AS UserUpdates
+						,b.LastUserSeek
+						,b.LastUserScan
+						,b.LastUserLookup
+						,b.LastUserUpdate
+						,b.TimestampUTC
+						,b.Timestamp
+					FROM (
+				';
+				SET @stmt += '
+						SELECT
+							CASE
+								WHEN (a.PreviousUserSeeks IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL									-- Ignore 1. data set - Yes we loose one data set but better than having visuals showing very high data
+								WHEN (a.PreviousUserSeeks > a.UserSeeks) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.UserSeeks	-- Either has the counters had an overflow or the server har been restarted
+								ELSE a.UserSeeks - a.PreviousUserSeeks																						-- Difference
+							END AS DeltaUserSeeks
+							,a.LastUserSeek
+							,CASE
+								WHEN (a.PreviousUserScans IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+								WHEN (a.PreviousUserScans > a.UserScans) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.UserScans
+								ELSE a.UserScans - a.PreviousUserScans
+							END AS DeltaUserScans
+							,a.LastUserScan
+							,CASE
+								WHEN (a.PreviousUserLookups IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+								WHEN (a.PreviousUserLookups > a.UserLookups) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.UserLookups
+								ELSE a.UserLookups - a.PreviousUserLookups
+							END AS DeltaUserLookups
+							,a.LastUserLookup
+							,CASE
+								WHEN (a.PreviousUserUpdates IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+								WHEN (a.PreviousUserUpdates > a.UserUpdates) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.UserUpdates
+								ELSE a.UserUpdates - a.PreviousUserUpdates
+							END AS DeltaUserUpdates
+							,a.LastUserUpdate
+							,a.TimestampUTC
+							,a.Timestamp
+							,a.DatabaseName
+							,a.SchemaName
+							,a.ObjectName
+							,a.IndexName
+						FROM (
+				';
+				IF (@productVersion1 <= 10)
+				BEGIN
+					-- SQL Versions SQL2008R2 or lower
+
+					SET @stmt += '
+							SELECT
+								iu.UserSeeks
+								,prevIU.UserSeeks AS PreviousUserSeeks
+								,iu.LastUserSeek
+								,iu.UserScans
+								,prevIU.UserScans AS PreviousUserScans
+								,iu.LastUserScan
+								,iu.UserLookups
+								,prevIU.UserLookups AS PreviousUserLookups
+								,iu.LastUserLookup
+								,iu.UserUpdates
+								,prevIU.UserUpdates AS PreviousUserUpdates
+								,iu.LastUserUpdate
+								,iu.LastSQLServiceRestart
+								,prevIU.LastSQLServiceRestart AS PreviousLastSQLServiceRestart
+								,iu.TimestampUTC
+								,iu.Timestamp
+								,iu.DatabaseName
+								,iu.SchemaName
+								,iu.ObjectName
+								,iu.IndexName
+							FROM indexUsage AS iu
+							LEFT OUTER JOIN indexUsage AS prevIU ON
+								(prevIU.DatabaseName = iu.DatabaseName)
+								AND (prevIU.SchemaName = iu.SchemaName)
+								AND (prevIU.ObjectName = iu.ObjectName)
+								AND ((prevIU.IndexName = iu.IndexName) OR ((prevIU.IndexName IS NULL) AND (iu.IndexName IS NULL)))
+								AND (prevIU.Idx = iu.Idx - 1)
+					';
+				END
+				ELSE BEGIN
+					-- SQL Versions SQL2012 or higher
+
+					SET @stmt += '
+							SELECT
+								iu.UserSeeks
+								,LAG(iu.UserSeeks) OVER(PARTITION BY iu.DatabaseName, iu.SchemaName, iu.ObjectName, iu.IndexName ORDER BY iu.TimestampUTC) AS PreviousUserSeeks
+								,iu.LastUserSeek
+								,iu.UserScans
+								,LAG(iu.UserScans) OVER(PARTITION BY iu.DatabaseName, iu.SchemaName, iu.ObjectName, iu.IndexName ORDER BY iu.TimestampUTC) AS PreviousUserScans
+								,iu.LastUserScan
+								,iu.UserLookups
+								,LAG(iu.UserLookups) OVER(PARTITION BY iu.DatabaseName, iu.SchemaName, iu.ObjectName, iu.IndexName ORDER BY iu.TimestampUTC) AS PreviousUserLookups
+								,iu.LastUserLookup
+								,iu.UserUpdates
+								,LAG(iu.UserUpdates) OVER(PARTITION BY iu.DatabaseName, iu.SchemaName, iu.ObjectName, iu.IndexName ORDER BY iu.TimestampUTC) AS PreviousUserUpdates
+								,iu.LastUserUpdate
+								,iu.LastSQLServiceRestart
+								,LAG(iu.LastSQLServiceRestart) OVER(PARTITION BY iu.DatabaseName, iu.SchemaName, iu.ObjectName, iu.IndexName ORDER BY iu.TimestampUTC) AS PreviousLastSQLServiceRestart
+								,iu.TimestampUTC
+								,iu.Timestamp
+								,iu.DatabaseName
+								,iu.SchemaName
+								,iu.ObjectName
+								,iu.IndexName
+							FROM dbo.fhsmIndexUsage AS iu
+					';
+				END;
+				SET @stmt += '
+						) AS a
+					) AS b
+					WHERE
+						(b.DeltaUserSeeks <> 0)
+						OR (b.DeltaUserScans <> 0)
+						OR (b.DeltaUserLookups <> 0)
+						OR (b.DeltaUserUpdates <> 0)
+					ORDER BY b.TimestampUTC, b.DatabaseName, b.SchemaName, b.ObjectName, b.IndexName;
+				';
+				EXEC(@stmt);
+			END;
+
+			IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmIndexUsageDelta')) AND (i.name = 'NC_fhsmIndexUsageDelta_TimestampUTC'))
+			BEGIN
+				RAISERROR('Adding index [NC_fhsmIndexUsageDelta_TimestampUTC] to table dbo.fhsmIndexUsageDelta', 0, 1) WITH NOWAIT;
+
+				SET @stmt = '
+					CREATE NONCLUSTERED INDEX NC_fhsmIndexUsageDelta_TimestampUTC ON dbo.fhsmIndexUsageDelta(TimestampUTC)' + @tableCompressionStmt + ';
+				';
+				EXEC(@stmt);
+			END;
+
+			IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmIndexUsageDelta')) AND (i.name = 'NC_fhsmIndexUsageDelta_Timestamp'))
+			BEGIN
+				RAISERROR('Adding index [NC_fhsmIndexUsageDelta_Timestamp] to table dbo.fhsmIndexUsageDelta', 0, 1) WITH NOWAIT;
+
+				SET @stmt = '
+					CREATE NONCLUSTERED INDEX NC_fhsmIndexUsageDelta_Timestamp ON dbo.fhsmIndexUsageDelta(Timestamp)' + @tableCompressionStmt + ';
+				';
+				EXEC(@stmt);
+			END;
+
+			IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmIndexUsageDelta')) AND (i.name = 'NC_fhsmIndexUsageDelta_DatabaseName_SchemaName_ObjectName_IndexName_TimestampUTC'))
+			BEGIN
+				RAISERROR('Adding index [NC_fhsmIndexUsageDelta_DatabaseName_SchemaName_ObjectName_IndexName_TimestampUTC] to table dbo.fhsmIndexUsageDelta', 0, 1) WITH NOWAIT;
+
+				SET @stmt = '
+					CREATE NONCLUSTERED INDEX NC_fhsmIndexUsageDelta_DatabaseName_SchemaName_ObjectName_IndexName_TimestampUTC ON dbo.fhsmIndexUsageDelta(DatabaseName, SchemaName, ObjectName, IndexName, TimestampUTC)' + @tableCompressionStmt + ';
+				';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Register extended properties on the table dbo.fhsmIndexUsageDelta
+			--
+			BEGIN
+				SET @objectName = 'dbo.fhsmIndexUsageDelta';
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+			END;
 		END;
 	END;
 
@@ -306,187 +560,39 @@ ELSE BEGIN
 			SET @stmt = '
 				ALTER VIEW  ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Index usage') + '
 				AS
-			';
-			IF (@productVersion1 <= 10)
-			BEGIN
-				-- SQL Versions SQL2008R2 or lower
-
-				SET @stmt += '
-				WITH indexUsage AS (
+				SELECT
+					iud.UserSeeks
+					,iud.LastUserSeek
+					,iud.UserScans
+					,iud.LastUserScan
+					,iud.UserLookups
+					,iud.LastUserLookup
+					,iud.UserUpdates
+					,iud.LastUserUpdate
+					,iud.Timestamp
+					,CAST(iud.Timestamp AS date) AS Date
+					,(DATEPART(HOUR, iud.Timestamp) * 60 * 60) + (DATEPART(MINUTE, iud.Timestamp) * 60) + (DATEPART(SECOND, iud.Timestamp)) AS TimeKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iud.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iud.DatabaseName, iud.SchemaName, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS SchemaKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iud.DatabaseName, iud.SchemaName, iud.ObjectName, DEFAULT, DEFAULT, DEFAULT) AS k) AS ObjectKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iud.DatabaseName, iud.SchemaName, iud.ObjectName, COALESCE(iud.IndexName, ''N.A.''), DEFAULT, DEFAULT) AS k) AS IndexKey
+				FROM (
 					SELECT
 						iu.DatabaseName
 						,iu.SchemaName
 						,iu.ObjectName
 						,iu.IndexName
-						,iu.UserSeeks
-						,iu.LastUserSeek
-						,iu.UserScans
-						,iu.LastUserScan
-						,iu.UserLookups
-						,iu.LastUserLookup
-						,iu.UserUpdates
-						,iu.LastUserUpdate
-						,iu.LastSQLServiceRestart
-						,iu.Timestamp
-						,CAST(iu.Timestamp AS date) AS Date
-						,ROW_NUMBER() OVER(PARTITION BY iu.DatabaseName, iu.SchemaName, iu.ObjectName, iu.IndexName ORDER BY iu.TimestampUTC) AS Idx
-					FROM (
-						SELECT
-							iu.DatabaseName
-							,iu.SchemaName
-							,iu.ObjectName
-							,iu.IndexName
-						FROM dbo.fhsmIndexUsage AS iu
-						WHERE (iu.TimestampUTC = (
-							SELECT MAX(iuLatest.TimestampUTC)
-							FROM dbo.fhsmIndexUsage AS iuLatest
-						))
-					) AS iuExists
-					INNER JOIN dbo.fhsmIndexUsage AS iu ON
-						(iu.DatabaseName = iuExists.DatabaseName)
-						AND (iu.SchemaName = iuExists.SchemaName)
-						AND (iu.ObjectName = iuExists.ObjectName)
-						AND ((iu.IndexName = iuExists.IndexName) OR ((iu.IndexName IS NULL) AND (iuExists.IndexName IS NULL)))
-				)
-				';
-			END;
-			SET @stmt += '
-				SELECT
-					b.DeltaUserSeeks AS UserSeeks
-					,b.LastUserSeek
-					,b.DeltaUserScans AS UserScans
-					,b.LastUserScan
-					,b.DeltaUserLookups AS UserLookups
-					,b.LastUserLookup
-					,b.DeltaUserUpdates AS UserUpdates
-					,b.LastUserUpdate
-					,b.Timestamp
-					,CAST(b.Timestamp AS date) AS Date
-					,(DATEPART(HOUR, b.Timestamp) * 60 * 60) + (DATEPART(MINUTE, b.Timestamp) * 60) + (DATEPART(SECOND, b.Timestamp)) AS TimeKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(b.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(b.DatabaseName, b.SchemaName, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS SchemaKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(b.DatabaseName, b.SchemaName, b.ObjectName, DEFAULT, DEFAULT, DEFAULT) AS k) AS ObjectKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(b.DatabaseName, b.SchemaName, b.ObjectName, COALESCE(b.IndexName, ''N.A.''), DEFAULT, DEFAULT) AS k) AS IndexKey
-				FROM (
-			';
-			SET @stmt += '
-					SELECT
-						CASE
-							WHEN (a.PreviousUserSeeks IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL									-- Ignore 1. data set - Yes we loose one data set but better than having visuals showing very high data
-							WHEN (a.PreviousUserSeeks > a.UserSeeks) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.UserSeeks	-- Either has the counters had an overflow or the server har been restarted
-							ELSE a.UserSeeks - a.PreviousUserSeeks																						-- Difference
-						END AS DeltaUserSeeks
-						,a.LastUserSeek
-						,CASE
-							WHEN (a.PreviousUserScans IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
-							WHEN (a.PreviousUserScans > a.UserScans) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.UserScans
-							ELSE a.UserScans - a.PreviousUserScans
-						END AS DeltaUserScans
-						,a.LastUserScan
-						,CASE
-							WHEN (a.PreviousUserLookups IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
-							WHEN (a.PreviousUserLookups > a.UserLookups) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.UserLookups
-							ELSE a.UserLookups - a.PreviousUserLookups
-						END AS DeltaUserLookups
-						,a.LastUserLookup
-						,CASE
-							WHEN (a.PreviousUserUpdates IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
-							WHEN (a.PreviousUserUpdates > a.UserUpdates) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.UserUpdates
-							ELSE a.UserUpdates - a.PreviousUserUpdates
-						END AS DeltaUserUpdates
-						,a.LastUserUpdate
-						,a.Timestamp
-						,a.DatabaseName
-						,a.SchemaName
-						,a.ObjectName
-						,a.IndexName
-					FROM (
-			';
-			IF (@productVersion1 <= 10)
-			BEGIN
-				-- SQL Versions SQL2008R2 or lower
-
-				SET @stmt += '
-						SELECT
-							iu.UserSeeks
-							,prevIU.UserSeeks AS PreviousUserSeeks
-							,iu.LastUserSeek
-							,iu.UserScans
-							,prevIU.UserScans AS PreviousUserScans
-							,iu.LastUserScan
-							,iu.UserLookups
-							,prevIU.UserLookups AS PreviousUserLookups
-							,iu.LastUserLookup
-							,iu.UserUpdates
-							,prevIU.UserUpdates AS PreviousUserUpdates
-							,iu.LastUserUpdate
-							,iu.LastSQLServiceRestart
-							,prevIU.LastSQLServiceRestart AS PreviousLastSQLServiceRestart
-							,iu.Timestamp
-							,iu.DatabaseName
-							,iu.SchemaName
-							,iu.ObjectName
-							,iu.IndexName
-						FROM indexUsage AS iu
-						LEFT OUTER JOIN indexUsage AS prevIU ON
-							(prevIU.DatabaseName = iu.DatabaseName)
-							AND (prevIU.SchemaName = iu.SchemaName)
-							AND (prevIU.ObjectName = iu.ObjectName)
-							AND ((prevIU.IndexName = iu.IndexName) OR ((prevIU.IndexName IS NULL) AND (iu.IndexName IS NULL)))
-							AND (prevIU.Idx = iu.Idx - 1)
-				';
-			END
-			ELSE BEGIN
-				-- SQL Versions SQL2012 or higher
-
-				SET @stmt += '
-						SELECT
-							iu.UserSeeks
-							,LAG(iu.UserSeeks) OVER(PARTITION BY iu.DatabaseName, iu.SchemaName, iu.ObjectName, iu.IndexName ORDER BY iu.TimestampUTC) AS PreviousUserSeeks
-							,iu.LastUserSeek
-							,iu.UserScans
-							,LAG(iu.UserScans) OVER(PARTITION BY iu.DatabaseName, iu.SchemaName, iu.ObjectName, iu.IndexName ORDER BY iu.TimestampUTC) AS PreviousUserScans
-							,iu.LastUserScan
-							,iu.UserLookups
-							,LAG(iu.UserLookups) OVER(PARTITION BY iu.DatabaseName, iu.SchemaName, iu.ObjectName, iu.IndexName ORDER BY iu.TimestampUTC) AS PreviousUserLookups
-							,iu.LastUserLookup
-							,iu.UserUpdates
-							,LAG(iu.UserUpdates) OVER(PARTITION BY iu.DatabaseName, iu.SchemaName, iu.ObjectName, iu.IndexName ORDER BY iu.TimestampUTC) AS PreviousUserUpdates
-							,iu.LastUserUpdate
-							,iu.LastSQLServiceRestart
-							,LAG(iu.LastSQLServiceRestart) OVER(PARTITION BY iu.DatabaseName, iu.SchemaName, iu.ObjectName, iu.IndexName ORDER BY iu.TimestampUTC) AS PreviousLastSQLServiceRestart
-							,iu.Timestamp
-							,iu.DatabaseName
-							,iu.SchemaName
-							,iu.ObjectName
-							,iu.IndexName
-						FROM (
-							SELECT
-								iu.DatabaseName
-								,iu.SchemaName
-								,iu.ObjectName
-								,iu.IndexName
-							FROM dbo.fhsmIndexUsage AS iu
-							WHERE (iu.TimestampUTC = (
-								SELECT MAX(iuLatest.TimestampUTC)
-								FROM dbo.fhsmIndexUsage AS iuLatest
-							))
-						) AS iuExists
-						INNER JOIN dbo.fhsmIndexUsage AS iu ON
-							(iu.DatabaseName = iuExists.DatabaseName)
-							AND (iu.SchemaName = iuExists.SchemaName)
-							AND (iu.ObjectName = iuExists.ObjectName)
-							AND ((iu.IndexName = iuExists.IndexName) OR ((iu.IndexName IS NULL) AND (iuExists.IndexName IS NULL)))
-				';
-			END;
-			SET @stmt += '
-					) AS a
-				) AS b
-				WHERE
-					(b.DeltaUserSeeks <> 0)
-					OR (b.DeltaUserScans <> 0)
-					OR (b.DeltaUserLookups <> 0)
-					OR (b.DeltaUserUpdates <> 0);
+					FROM dbo.fhsmIndexUsage AS iu
+					WHERE (iu.TimestampUTC = (
+						SELECT MAX(iuLatest.TimestampUTC)
+						FROM dbo.fhsmIndexUsage AS iuLatest
+					))
+				) AS iuExists
+				INNER JOIN dbo.fhsmIndexUsageDelta AS iud
+					ON (iud.DatabaseName = iuExists.DatabaseName)
+					AND (iud.SchemaName = iuExists.SchemaName)
+					AND (iud.ObjectName = iuExists.ObjectName)
+					AND ((iud.IndexName = iuExists.IndexName) OR ((iud.IndexName IS NULL) AND (iuExists.IndexName IS NULL)));
 			';
 			EXEC(@stmt);
 		END;
@@ -541,6 +647,10 @@ ELSE BEGIN
 					DECLARE @nowUTC datetime;
 					DECLARE @parameters nvarchar(max);
 					DECLARE @parametersTable TABLE([Key] nvarchar(128) NOT NULL, Value nvarchar(128) NULL);
+					DECLARE @prevTimestampUTC datetime;
+					DECLARE @processingId int;
+					DECLARE @processingTimestamp datetime;
+					DECLARE @processingTimestampUTC datetime;
 					DECLARE @replicaId uniqueidentifier;
 					DECLARE @stmt nvarchar(max);
 					DECLARE @thisTask nvarchar(128);
@@ -594,6 +704,14 @@ ELSE BEGIN
 							,@nowUTC = SYSUTCDATETIME();
 
 						--
+						-- Remember latest to be used as previous when loading data into dbo.fhsmIndexUsageDelta
+						--
+						SET @prevTimestampUTC = (
+							SELECT MAX(iu.TimestampUTC)
+							FROM dbo.fhsmIndexUsage AS iu
+						);
+
+						--
 						-- Test if auto_created exists on indexes
 						--
 						BEGIN
@@ -610,6 +728,19 @@ ELSE BEGIN
 								SET @autoCreatedStmt = ''NULL'';
 							END;
 						END;
+
+						SET @message = ''Before loading data into dbo.fhsmIndexUsage'';
+						EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''Debug'', @message = @message;
+
+						--
+						-- Insert Processing record and remember the @id in the variable @processingId
+						-- Type: 1: Loading data into dbo.fhsmIndexUsage
+						--
+						SET @processingId = NULL;
+						SELECT
+							@processingTimestampUTC = SYSUTCDATETIME()
+							,@processingTimestamp = SYSDATETIME();
+						EXEC dbo.fhsmSPProcessing @name = @name, @task = @thisTask, @version = NULL, @type = 1, @timestampUTC = @processingTimestampUTC, @timestamp = @processingTimestamp, @id = @processingId OUTPUT;
 
 						DECLARE dCur CURSOR LOCAL READ_ONLY FAST_FORWARD FOR
 						SELECT dl.DatabaseName, ' + CASE WHEN (@productVersion1 <= 10) THEN 'NULL' ELSE 'd.replica_id' END + ' AS replica_id
@@ -754,6 +885,152 @@ ELSE BEGIN
 
 						CLOSE dCur;
 						DEALLOCATE dCur;
+
+						--
+						-- Update Processing record from before execution with @version, @processingTimestampUTC and @processingTimestamp
+						-- Type: 1: Loading data into dbo.fhsmIndexUsage
+						--
+						SELECT
+							@processingTimestampUTC = SYSUTCDATETIME()
+							,@processingTimestamp = SYSDATETIME();
+						EXEC dbo.fhsmSPProcessing @name = @name, @task = @thisTask, @version = @version, @type = 1, @timestampUTC = @processingTimestampUTC, @timestamp = @processingTimestamp, @id = @processingId OUTPUT;
+
+						SET @message = ''After loading data into dbo.fhsmIndexUsage'';
+						EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''Debug'', @message = @message;
+	';
+	SET @stmt += '
+						--
+						-- Process all new records in dbo.fhsmIndexUsage into dbo.fhsmIndexUsageDelta
+						--
+						BEGIN
+							SET @message = ''Before loading data into dbo.fhsmIndexUsageDelta'';
+							EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''Debug'', @message = @message;
+
+							--
+							-- Insert Processing record and remember the @id in the variable @processingId
+							-- Type: 2: Loading data into dbo.fhsmIndexUsageDelta
+							--
+							SET @processingId = NULL;
+							SELECT
+								@processingTimestampUTC = SYSUTCDATETIME()
+								,@processingTimestamp = SYSDATETIME();
+							EXEC dbo.fhsmSPProcessing @name = @name, @task = @thisTask, @version = NULL, @type = 2, @timestampUTC = @processingTimestampUTC, @timestamp = @processingTimestamp, @id = @processingId OUTPUT;
+
+							INSERT INTO dbo.fhsmIndexUsageDelta(
+								DatabaseName, SchemaName, ObjectName, IndexName
+								,UserSeeks, UserScans, UserLookups, UserUpdates
+								,LastUserSeek, LastUserScan, LastUserLookup, LastUserUpdate
+								,TimestampUTC, Timestamp
+							)
+							SELECT
+								b.DatabaseName
+								,b.SchemaName
+								,b.ObjectName
+								,b.IndexName
+								,b.DeltaUserSeeks AS UserSeeks
+								,b.DeltaUserScans AS UserScans
+								,b.DeltaUserLookups AS UserLookups
+								,b.DeltaUserUpdates AS UserUpdates
+								,b.LastUserSeek
+								,b.LastUserScan
+								,b.LastUserLookup
+								,b.LastUserUpdate
+								,b.TimestampUTC
+								,b.Timestamp
+							FROM (
+	';
+	SET @stmt += '
+								SELECT
+									CASE
+										WHEN (a.PreviousUserSeeks IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL									-- Ignore 1. data set - Yes we loose one data set but better than having visuals showing very high data
+										WHEN (a.PreviousUserSeeks > a.UserSeeks) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.UserSeeks	-- Either has the counters had an overflow or the server har been restarted
+										ELSE a.UserSeeks - a.PreviousUserSeeks																						-- Difference
+									END AS DeltaUserSeeks
+									,a.LastUserSeek
+									,CASE
+										WHEN (a.PreviousUserScans IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+										WHEN (a.PreviousUserScans > a.UserScans) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.UserScans
+										ELSE a.UserScans - a.PreviousUserScans
+									END AS DeltaUserScans
+									,a.LastUserScan
+									,CASE
+										WHEN (a.PreviousUserLookups IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+										WHEN (a.PreviousUserLookups > a.UserLookups) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.UserLookups
+										ELSE a.UserLookups - a.PreviousUserLookups
+									END AS DeltaUserLookups
+									,a.LastUserLookup
+									,CASE
+										WHEN (a.PreviousUserUpdates IS NULL) OR (a.PreviousLastSQLServiceRestart IS NULL) THEN NULL
+										WHEN (a.PreviousUserUpdates > a.UserUpdates) OR (a.PreviousLastSQLServiceRestart <> a.LastSQLServiceRestart) THEN a.UserUpdates
+										ELSE a.UserUpdates - a.PreviousUserUpdates
+									END AS DeltaUserUpdates
+									,a.LastUserUpdate
+									,a.TimestampUTC
+									,a.Timestamp
+									,a.DatabaseName
+									,a.SchemaName
+									,a.ObjectName
+									,a.IndexName
+	';
+	SET @stmt += '
+								FROM (
+									SELECT
+										iu.UserSeeks
+										,prevIU.UserSeeks AS PreviousUserSeeks
+										,iu.LastUserSeek
+										,iu.UserScans
+										,prevIU.UserScans AS PreviousUserScans
+										,iu.LastUserScan
+										,iu.UserLookups
+										,prevIU.UserLookups AS PreviousUserLookups
+										,iu.LastUserLookup
+										,iu.UserUpdates
+										,prevIU.UserUpdates AS PreviousUserUpdates
+										,iu.LastUserUpdate
+										,iu.LastSQLServiceRestart
+										,prevIU.LastSQLServiceRestart AS PreviousLastSQLServiceRestart
+										,iu.TimestampUTC
+										,iu.Timestamp
+										,iu.DatabaseName
+										,iu.SchemaName
+										,iu.ObjectName
+										,iu.IndexName
+									FROM (
+										SELECT *
+										FROM dbo.fhsmIndexUsage AS iu
+										WHERE (iu.TimestampUTC = @nowUTC)
+									) AS iu
+									INNER JOIN (
+										SELECT *
+										FROM dbo.fhsmIndexUsage AS iu
+										WHERE (iu.TimestampUTC = @prevTimestampUTC)
+									) AS prevIU
+										ON (prevIU.DatabaseName = iu.DatabaseName)
+										AND (prevIU.SchemaName = iu.SchemaName)
+										AND (prevIU.ObjectName = iu.ObjectName)
+										AND ((prevIU.IndexName = iu.IndexName) OR ((prevIU.IndexName IS NULL) AND (iu.IndexName IS NULL)))
+	';
+	SET @stmt += '
+								) AS a
+							) AS b
+							WHERE
+								(b.DeltaUserSeeks <> 0)
+								OR (b.DeltaUserScans <> 0)
+								OR (b.DeltaUserLookups <> 0)
+								OR (b.DeltaUserUpdates <> 0);
+
+							--
+							-- Update Processing record from before execution with @version, @processingTimestampUTC and @processingTimestamp
+							-- Type: 2: Loading data into dbo.fhsmIndexUsageDelta
+							--
+							SELECT
+								@processingTimestampUTC = SYSUTCDATETIME()
+								,@processingTimestamp = SYSDATETIME();
+							EXEC dbo.fhsmSPProcessing @name = @name, @task = @thisTask, @version = @version, @type = 2, @timestampUTC = @processingTimestampUTC, @timestamp = @processingTimestamp, @id = @processingId OUTPUT;
+
+							SET @message = ''After loading data into dbo.fhsmIndexUsageDelta'';
+							EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''Debug'', @message = @message;
+						END;
 					END;
 
 					RETURN 0;
@@ -798,6 +1075,23 @@ ELSE BEGIN
 		WHEN NOT MATCHED BY TARGET
 			THEN INSERT(Enabled, TableName, Sequence, TimeColumn, IsUtc, Days, Filter)
 			VALUES(src.Enabled, src.TableName, src.Sequence, src.TimeColumn, src.IsUtc, src.Days, src.Filter);
+
+		WITH
+		retention(Enabled, TableName, Sequence, TimeColumn, IsUtc, Days, Filter) AS(
+			SELECT
+				1
+				,'dbo.fhsmIndexUsageDelta'
+				,1
+				,'TimestampUTC'
+				,1
+				,90
+				,NULL
+		)
+		MERGE dbo.fhsmRetentions AS tgt
+		USING retention AS src ON (src.TableName = tgt.TableName) AND (src.Sequence = tgt.Sequence)
+		WHEN NOT MATCHED BY TARGET
+			THEN INSERT(Enabled, TableName, Sequence, TimeColumn, IsUtc, Days, Filter)
+			VALUES(src.Enabled, src.TableName, src.Sequence, src.TimeColumn, src.IsUtc, src.Days, src.Filter);
 	END;
 
 	--
@@ -805,22 +1099,23 @@ ELSE BEGIN
 	--
 	BEGIN
 		WITH
-		schedules(Enabled, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters) AS(
+		schedules(Enabled, DeploymentStatus, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters) AS(
 			SELECT
-				@enableIndexUsage
-				,'Index usage'
-				,PARSENAME('dbo.fhsmSPIndexUsage', 1)
-				,4 * 60 * 60
-				,CAST('1900-1-1T06:00:00.0000' AS datetime2(0))
-				,CAST('1900-1-1T23:59:59.0000' AS datetime2(0))
-				,1, 1, 1, 1, 1, 1, 1
-				,'@Databases = ''USER_DATABASES, msdb'''
+				@enableIndexUsage								AS Enabled
+				,0												AS DeploymentStatus
+				,'Index usage'									AS Name
+				,PARSENAME('dbo.fhsmSPIndexUsage', 1)			AS Task
+				,4 * 60 * 60									AS ExecutionDelaySec
+				,CAST('1900-1-1T06:00:00.0000' AS datetime2(0))	AS FromTime
+				,CAST('1900-1-1T23:59:59.0000' AS datetime2(0))	AS ToTime
+				,1, 1, 1, 1, 1, 1, 1							-- Monday..Sunday
+				,'@Databases = ''USER_DATABASES, msdb'''		AS Parameters
 		)
 		MERGE dbo.fhsmSchedules AS tgt
 		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
 		WHEN NOT MATCHED BY TARGET
-			THEN INSERT(Enabled, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters)
-			VALUES(src.Enabled, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameters);
+			THEN INSERT(Enabled, DeploymentStatus, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters)
+			VALUES(src.Enabled, src.DeploymentStatus, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameters);
 	END;
 
 	--

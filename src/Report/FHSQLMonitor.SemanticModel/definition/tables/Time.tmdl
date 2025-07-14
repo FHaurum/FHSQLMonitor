@@ -40,6 +40,14 @@ table Time
 
 		annotation SummarizationSetBy = User
 
+	column Time
+		dataType: string
+		lineageTag: ebf91844-f571-4cb8-9508-172fde2740f9
+		summarizeBy: none
+		sourceColumn: Time
+
+		annotation SummarizationSetBy = Automatic
+
 	partition Time = m
 		mode: import
 		queryGroup: Dimensions

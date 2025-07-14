@@ -85,7 +85,7 @@ BEGIN
   --// Source:  https://ola.hallengren.com                                                        //--
   --// License: https://ola.hallengren.com/license.html                                           //--
   --// GitHub:  https://github.com/olahallengren/sql-server-maintenance-solution                  //--
-  --// Version: 2025-02-16 16:17:53                                                               //--
+  --// Version: 2025-06-14 16:13:00                                                               //--
   ----------------------------------------------------------------------------------------------------
 
   SET NOCOUNT ON
@@ -2023,7 +2023,7 @@ BEGIN
         BEGIN
           IF NOT (@CurrentOnReadOnlyFileGroup = 1)
           AND NOT (@CurrentIsMemoryOptimized = 1)
-          AND NOT (@CurrentAllowPageLocks = 1)
+          AND NOT (@CurrentAllowPageLocks = 0)
           BEGIN
             INSERT INTO @CurrentActionsAllowed ([Action])
             VALUES (''INDEX_REORGANIZE'')
@@ -2045,9 +2045,9 @@ BEGIN
           AND NOT (@CurrentIndexType = 3)
           AND NOT (@CurrentIndexType = 4)
           AND NOT (@CurrentIndexType = 5 AND @Version < 15)
-          AND NOT (@CurrentIndexType = 6 AND @Version < 15)
+          AND NOT (@CurrentIndexType = 6 AND @Version < 14)
           AND NOT (@CurrentIndexType = 1 AND @CurrentHasColumnstore = 1 AND @Version < 13)
-          AND NOT (@CurrentIndexType = 2 AND @CurrentHasColumnstore = 1 AND @Version < 13)
+          AND NOT (@CurrentIndexType = 2 AND @CurrentHasColumnstore = 1 AND @Version < 15)
           BEGIN
             INSERT INTO @CurrentActionsAllowed ([Action])
             VALUES (''INDEX_REBUILD_ONLINE'')

@@ -42,14 +42,6 @@ table Log
 
 		annotation SummarizationSetBy = Automatic
 
-	column Version
-		dataType: string
-		lineageTag: 8c75a78b-dda8-44ad-b2ea-fbcb5a5362cb
-		summarizeBy: none
-		sourceColumn: Version
-
-		annotation SummarizationSetBy = Automatic
-
 	column 'Timestamp UTC'
 		dataType: dateTime
 		formatString: dd-mmm-yyyy hh:nn:ss
@@ -98,13 +90,13 @@ table Log
 
 		annotation SummarizationSetBy = Automatic
 
-	column LogTaskNameKey
+	column TaskNameVersionKey
 		dataType: int64
 		isHidden
 		formatString: 0
-		lineageTag: 80b9633f-8b79-481d-8d48-d36f5baf6af2
+		lineageTag: f3ad2468-c4e5-417c-b63c-0d4a0ffa3020
 		summarizeBy: none
-		sourceColumn: LogTaskNameKey
+		sourceColumn: TaskNameVersionKey
 
 		changedProperty = IsHidden
 

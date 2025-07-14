@@ -66,7 +66,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.6';
+		SET @version = '2.8';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -100,350 +100,518 @@ ELSE BEGIN
 	END;
 
 	--
-	-- Create tables
+	-- Create tables and indexes
 	--
 	BEGIN
 		--
 		-- Create table dbo.fhsmAgentJobsPerformance and indexes if they not already exists
 		--
-		IF OBJECT_ID('dbo.fhsmAgentJobsPerformance', 'U') IS NULL
 		BEGIN
-			RAISERROR('Creating table dbo.fhsmAgentJobsPerformance', 0, 1) WITH NOWAIT;
+			IF OBJECT_ID('dbo.fhsmAgentJobsPerformance', 'U') IS NULL
+			BEGIN
+				RAISERROR('Creating table dbo.fhsmAgentJobsPerformance', 0, 1) WITH NOWAIT;
 
-			SET @stmt = '
-				CREATE TABLE dbo.fhsmAgentJobsPerformance(
-					Id int identity(1,1) NOT NULL
-					,Name nvarchar(128) NOT NULL
-					,JobStatus int NOT NULL
-					,StepsStatus int NOT NULL
-					,Date date NOT NULL
-					,Hour tinyint NOT NULL
-					,Cnt smallint NOT NULL
-					,SumDurationSeconds int NOT NULL
-					,MinDurationSeconds int NOT NULL
-					,MaxDurationSeconds int NOT NULL
-					,CONSTRAINT PK_fhsmAgentJobsPerformance PRIMARY KEY(Id)' + @tableCompressionStmt + '
-				);
-			';
-			EXEC(@stmt);
-		END;
+				SET @stmt = '
+					CREATE TABLE dbo.fhsmAgentJobsPerformance(
+						Id int identity(1,1) NOT NULL
+						,Name nvarchar(128) NOT NULL
+						,JobStatus int NOT NULL
+						,StepsStatus int NOT NULL
+						,Date date NOT NULL
+						,Hour tinyint NOT NULL
+						,Cnt smallint NOT NULL
+						,SumDurationSeconds int NOT NULL
+						,MinDurationSeconds int NOT NULL
+						,MaxDurationSeconds int NOT NULL
+						,CONSTRAINT PK_fhsmAgentJobsPerformance PRIMARY KEY(Id)' + @tableCompressionStmt + '
+					);
+				';
+				EXEC(@stmt);
+			END;
 
-		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmAgentJobsPerformance')) AND (i.name = 'NC_fhsmAgentJobsPerformance_Date_Name'))
-		BEGIN
-			RAISERROR('Adding index [NC_fhsmAgentJobsPerformance_Date_Name] to table dbo.fhsmAgentJobsPerformance', 0, 1) WITH NOWAIT;
+			IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmAgentJobsPerformance')) AND (i.name = 'NC_fhsmAgentJobsPerformance_Date_Name'))
+			BEGIN
+				RAISERROR('Adding index [NC_fhsmAgentJobsPerformance_Date_Name] to table dbo.fhsmAgentJobsPerformance', 0, 1) WITH NOWAIT;
 
-			SET @stmt = '
-				CREATE NONCLUSTERED INDEX NC_fhsmAgentJobsPerformance_Date_Name ON dbo.fhsmAgentJobsPerformance(Date, Name)' + @tableCompressionStmt + ';
-			';
-			EXEC(@stmt);
-		END;
+				SET @stmt = '
+					CREATE NONCLUSTERED INDEX NC_fhsmAgentJobsPerformance_Date_Name ON dbo.fhsmAgentJobsPerformance(Date, Name)' + @tableCompressionStmt + ';
+				';
+				EXEC(@stmt);
+			END;
 
-		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmAgentJobsPerformance')) AND (i.name = 'NC_fhsmAgentJobsPerformance_Name_Date'))
-		BEGIN
-			RAISERROR('Adding index [NC_fhsmAgentJobsPerformance_Name_Date] to table dbo.fhsmAgentJobsPerformance', 0, 1) WITH NOWAIT;
+			IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmAgentJobsPerformance')) AND (i.name = 'NC_fhsmAgentJobsPerformance_Name_Date'))
+			BEGIN
+				RAISERROR('Adding index [NC_fhsmAgentJobsPerformance_Name_Date] to table dbo.fhsmAgentJobsPerformance', 0, 1) WITH NOWAIT;
 
-			SET @stmt = '
-				CREATE NONCLUSTERED INDEX NC_fhsmAgentJobsPerformance_Name_Date ON dbo.fhsmAgentJobsPerformance(Name, Date)' + @tableCompressionStmt + ';
-			';
-			EXEC(@stmt);
-		END;
+				SET @stmt = '
+					CREATE NONCLUSTERED INDEX NC_fhsmAgentJobsPerformance_Name_Date ON dbo.fhsmAgentJobsPerformance(Name, Date)' + @tableCompressionStmt + ';
+				';
+				EXEC(@stmt);
+			END;
 
-		--
-		-- Register extended properties on the table dbo.fhsmAgentJobsPerformance
-		--
-		BEGIN
-			SET @objectName = 'dbo.fhsmAgentJobsPerformance';
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
+			--
+			-- Register extended properties on the table dbo.fhsmAgentJobsPerformance
+			--
+			BEGIN
+				SET @objectName = 'dbo.fhsmAgentJobsPerformance';
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
 
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+			END;
 		END;
 
 		--
 		-- Create table dbo.fhsmAgentJobsPerformanceDelta and indexes if they not already exists
 		--
-		IF OBJECT_ID('dbo.fhsmAgentJobsPerformanceDelta', 'U') IS NULL
 		BEGIN
-			RAISERROR('Creating table dbo.fhsmAgentJobsPerformanceDelta', 0, 1) WITH NOWAIT;
+			IF OBJECT_ID('dbo.fhsmAgentJobsPerformanceDelta', 'U') IS NULL
+			BEGIN
+				RAISERROR('Creating table dbo.fhsmAgentJobsPerformanceDelta', 0, 1) WITH NOWAIT;
 
-			SET @stmt = '
-				CREATE TABLE dbo.fhsmAgentJobsPerformanceDelta(
-					Id int identity(1,1) NOT NULL
-					,Name nvarchar(128) NOT NULL
-					,JobStatus int NOT NULL
-					,StepsStatus int NOT NULL
-					,StartDateTime datetime NOT NULL
-					,DurationSeconds int NOT NULL
-					,TimestampUTC datetime NOT NULL
-					,Timestamp datetime NOT NULL
-					,CONSTRAINT PK_fhsmAgentJobsPerformanceDelta PRIMARY KEY(Id)' + @tableCompressionStmt + '
-				);
-			';
-			EXEC(@stmt);
-		END;
+				SET @stmt = '
+					CREATE TABLE dbo.fhsmAgentJobsPerformanceDelta(
+						Id int identity(1,1) NOT NULL
+						,Name nvarchar(128) NOT NULL
+						,JobStatus int NOT NULL
+						,StepsStatus int NOT NULL
+						,StartDateTime datetime NOT NULL
+						,DurationSeconds int NOT NULL
+						,TimestampUTC datetime NOT NULL
+						,Timestamp datetime NOT NULL
+						,CONSTRAINT PK_fhsmAgentJobsPerformanceDelta PRIMARY KEY(Id)' + @tableCompressionStmt + '
+					);
+				';
+				EXEC(@stmt);
+			END;
 
-		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmAgentJobsPerformanceDelta')) AND (i.name = 'NC_fhsmAgentJobsPerformanceDelta_TimestampUTC'))
-		BEGIN
-			RAISERROR('Adding index [NC_fhsmAgentJobsPerformanceDelta_TimestampUTC] to table dbo.fhsmAgentJobsPerformanceDelta', 0, 1) WITH NOWAIT;
+			IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmAgentJobsPerformanceDelta')) AND (i.name = 'NC_fhsmAgentJobsPerformanceDelta_TimestampUTC'))
+			BEGIN
+				RAISERROR('Adding index [NC_fhsmAgentJobsPerformanceDelta_TimestampUTC] to table dbo.fhsmAgentJobsPerformanceDelta', 0, 1) WITH NOWAIT;
 
-			SET @stmt = '
-				CREATE NONCLUSTERED INDEX NC_fhsmAgentJobsPerformanceDelta_TimestampUTC ON dbo.fhsmAgentJobsPerformanceDelta(TimestampUTC)' + @tableCompressionStmt + ';
-			';
-			EXEC(@stmt);
-		END;
+				SET @stmt = '
+					CREATE NONCLUSTERED INDEX NC_fhsmAgentJobsPerformanceDelta_TimestampUTC ON dbo.fhsmAgentJobsPerformanceDelta(TimestampUTC)' + @tableCompressionStmt + ';
+				';
+				EXEC(@stmt);
+			END;
 
-		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmAgentJobsPerformanceDelta')) AND (i.name = 'NC_fhsmAgentJobsPerformanceDelta_Timestamp'))
-		BEGIN
-			RAISERROR('Adding index [NC_fhsmAgentJobsPerformanceDelta_Timestamp] to table dbo.fhsmAgentJobsPerformanceDelta', 0, 1) WITH NOWAIT;
+			IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmAgentJobsPerformanceDelta')) AND (i.name = 'NC_fhsmAgentJobsPerformanceDelta_Timestamp'))
+			BEGIN
+				RAISERROR('Adding index [NC_fhsmAgentJobsPerformanceDelta_Timestamp] to table dbo.fhsmAgentJobsPerformanceDelta', 0, 1) WITH NOWAIT;
 
-			SET @stmt = '
-				CREATE NONCLUSTERED INDEX NC_fhsmAgentJobsPerformanceDelta_Timestamp ON dbo.fhsmAgentJobsPerformanceDelta(Timestamp)' + @tableCompressionStmt + ';
-			';
-			EXEC(@stmt);
-		END;
+				SET @stmt = '
+					CREATE NONCLUSTERED INDEX NC_fhsmAgentJobsPerformanceDelta_Timestamp ON dbo.fhsmAgentJobsPerformanceDelta(Timestamp)' + @tableCompressionStmt + ';
+				';
+				EXEC(@stmt);
+			END;
 
-		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmAgentJobsPerformanceDelta')) AND (i.name = 'NC_fhsmAgentJobsPerformanceDelta_Name_TimestampUTC'))
-		BEGIN
-			RAISERROR('Adding index [NC_fhsmAgentJobsPerformanceDelta_Name_TimestampUTC] to table dbo.fhsmAgentJobsPerformanceDelta', 0, 1) WITH NOWAIT;
+			IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmAgentJobsPerformanceDelta')) AND (i.name = 'NC_fhsmAgentJobsPerformanceDelta_Name_TimestampUTC'))
+			BEGIN
+				RAISERROR('Adding index [NC_fhsmAgentJobsPerformanceDelta_Name_TimestampUTC] to table dbo.fhsmAgentJobsPerformanceDelta', 0, 1) WITH NOWAIT;
 
-			SET @stmt = '
-				CREATE NONCLUSTERED INDEX NC_fhsmAgentJobsPerformanceDelta_Name_TimestampUTC ON dbo.fhsmAgentJobsPerformanceDelta(Name, TimestampUTC)' + @tableCompressionStmt + ';
-			';
-			EXEC(@stmt);
+				SET @stmt = '
+					CREATE NONCLUSTERED INDEX NC_fhsmAgentJobsPerformanceDelta_Name_TimestampUTC ON dbo.fhsmAgentJobsPerformanceDelta(Name, TimestampUTC)' + @tableCompressionStmt + ';
+				';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Register extended properties on the table dbo.fhsmAgentJobsPerformanceDelta
+			--
+			BEGIN
+				SET @objectName = 'dbo.fhsmAgentJobsPerformanceDelta';
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+			END;
 		END;
 
 		--
-		-- Register extended properties on the table dbo.fhsmAgentJobsPerformanceDelta
+		-- Create table dbo.fhsmAgentJobsPerformanceDeltaTemp and indexes if they not already exists
 		--
 		BEGIN
-			SET @objectName = 'dbo.fhsmAgentJobsPerformanceDelta';
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
+			IF OBJECT_ID('dbo.fhsmAgentJobsPerformanceDeltaTemp', 'U') IS NULL
+			BEGIN
+				RAISERROR('Creating table dbo.fhsmAgentJobsPerformanceDeltaTemp', 0, 1) WITH NOWAIT;
 
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+				SET @stmt = '
+					CREATE TABLE dbo.fhsmAgentJobsPerformanceDeltaTemp(
+						Id int identity(1,1) NOT NULL
+						,Name nvarchar(128) NOT NULL
+						,JobStatus int NOT NULL
+						,StartDateTime datetime NOT NULL
+						,DurationSeconds int NOT NULL
+						,JobId uniqueidentifier NOT NULL
+						,InstanceId int NOT NULL
+						,PrevInstanceId int NULL
+					);
+				';
+				EXEC(@stmt);
+			END;
+
+			IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmAgentJobsPerformanceDeltaTemp')) AND (i.name = 'CL_fhsmAgentJobsPerformanceDeltaTemp'))
+			BEGIN
+				RAISERROR('Adding index [CL_fhsmAgentJobsPerformanceDeltaTemp] to table dbo.fhsmAgentJobsPerformanceDeltaTemp', 0, 1) WITH NOWAIT;
+
+				SET @stmt = '
+					CREATE CLUSTERED INDEX CL_fhsmAgentJobsPerformanceDeltaTemp ON dbo.fhsmAgentJobsPerformanceDeltaTemp(JobId)' + @tableCompressionStmt + ';
+				';
+				EXEC(@stmt);
+			END;
+
+			IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmAgentJobsPerformanceDeltaTemp')) AND (i.name = 'NC_fhsmAgentJobsPerformanceDeltaTemp_Id'))
+			BEGIN
+				RAISERROR('Adding index [NC_fhsmAgentJobsPerformanceDeltaTemp_Id] to table dbo.fhsmAgentJobsPerformanceDeltaTemp', 0, 1) WITH NOWAIT;
+
+				SET @stmt = '
+					CREATE UNIQUE NONCLUSTERED INDEX NC_fhsmAgentJobsPerformanceDeltaTemp_Id ON dbo.fhsmAgentJobsPerformanceDeltaTemp(Id)' + @tableCompressionStmt + ';
+				';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Register extended properties on the table dbo.fhsmAgentJobsPerformanceDeltaTemp
+			--
+			BEGIN
+				SET @objectName = 'dbo.fhsmAgentJobsPerformanceDeltaTemp';
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+			END;
 		END;
 
 		--
 		-- Create table dbo.fhsmAgentJobsPerformanceLatest and indexes if they not already exists
 		--
-		IF OBJECT_ID('dbo.fhsmAgentJobsPerformanceLatest', 'U') IS NULL
 		BEGIN
-			RAISERROR('Creating table dbo.fhsmAgentJobsPerformanceLatest', 0, 1) WITH NOWAIT;
+			IF OBJECT_ID('dbo.fhsmAgentJobsPerformanceLatest', 'U') IS NULL
+			BEGIN
+				RAISERROR('Creating table dbo.fhsmAgentJobsPerformanceLatest', 0, 1) WITH NOWAIT;
 
-			SET @stmt = '
-				CREATE TABLE dbo.fhsmAgentJobsPerformanceLatest(
-					Id bigint identity(1,1) NOT NULL
-					,Name nvarchar(128) NOT NULL
-					,JobStatus int NOT NULL
-					,StepsStatus int NOT NULL
-					,StartDateTime datetime NOT NULL
-					,DurationSeconds int NOT NULL
-					,Aggregated bit NOT NULL
-					,TimestampUTC datetime NOT NULL
-					,Timestamp datetime NOT NULL
-					,CONSTRAINT PK_fhsmAgentJobsPerformanceLatest PRIMARY KEY(Id)' + @tableCompressionStmt + '
-				);
-			';
-			EXEC(@stmt);
-		END;
+				SET @stmt = '
+					CREATE TABLE dbo.fhsmAgentJobsPerformanceLatest(
+						Id bigint identity(1,1) NOT NULL
+						,Name nvarchar(128) NOT NULL
+						,JobStatus int NOT NULL
+						,StepsStatus int NOT NULL
+						,StartDateTime datetime NOT NULL
+						,DurationSeconds int NOT NULL
+						,Aggregated bit NOT NULL
+						,TimestampUTC datetime NOT NULL
+						,Timestamp datetime NOT NULL
+						,CONSTRAINT PK_fhsmAgentJobsPerformanceLatest PRIMARY KEY(Id)' + @tableCompressionStmt + '
+					);
+				';
+				EXEC(@stmt);
+			END;
 
-		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmAgentJobsPerformanceLatest')) AND (i.name = 'NC_fhsmAgentJobsPerformanceLatest_TimestampUTC'))
-		BEGIN
-			RAISERROR('Adding index [NC_fhsmAgentJobsPerformanceLatest_TimestampUTC] to table dbo.fhsmAgentJobsPerformanceLatest', 0, 1) WITH NOWAIT;
+			IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmAgentJobsPerformanceLatest')) AND (i.name = 'NC_fhsmAgentJobsPerformanceLatest_TimestampUTC'))
+			BEGIN
+				RAISERROR('Adding index [NC_fhsmAgentJobsPerformanceLatest_TimestampUTC] to table dbo.fhsmAgentJobsPerformanceLatest', 0, 1) WITH NOWAIT;
 
-			SET @stmt = '
-				CREATE NONCLUSTERED INDEX NC_fhsmAgentJobsPerformanceLatest_TimestampUTC ON dbo.fhsmAgentJobsPerformanceLatest(TimestampUTC)' + @tableCompressionStmt + ';
-			';
-			EXEC(@stmt);
-		END;
+				SET @stmt = '
+					CREATE NONCLUSTERED INDEX NC_fhsmAgentJobsPerformanceLatest_TimestampUTC ON dbo.fhsmAgentJobsPerformanceLatest(TimestampUTC)' + @tableCompressionStmt + ';
+				';
+				EXEC(@stmt);
+			END;
 
-		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmAgentJobsPerformanceLatest')) AND (i.name = 'NC_fhsmAgentJobsPerformanceLatest_Timestamp'))
-		BEGIN
-			RAISERROR('Adding index [NC_fhsmAgentJobsPerformanceLatest_Timestamp] to table dbo.fhsmAgentJobsPerformanceLatest', 0, 1) WITH NOWAIT;
+			IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmAgentJobsPerformanceLatest')) AND (i.name = 'NC_fhsmAgentJobsPerformanceLatest_Timestamp'))
+			BEGIN
+				RAISERROR('Adding index [NC_fhsmAgentJobsPerformanceLatest_Timestamp] to table dbo.fhsmAgentJobsPerformanceLatest', 0, 1) WITH NOWAIT;
 
-			SET @stmt = '
-				CREATE NONCLUSTERED INDEX NC_fhsmAgentJobsPerformanceLatest_Timestamp ON dbo.fhsmAgentJobsPerformanceLatest(Timestamp)' + @tableCompressionStmt + ';
-			';
-			EXEC(@stmt);
-		END;
+				SET @stmt = '
+					CREATE NONCLUSTERED INDEX NC_fhsmAgentJobsPerformanceLatest_Timestamp ON dbo.fhsmAgentJobsPerformanceLatest(Timestamp)' + @tableCompressionStmt + ';
+				';
+				EXEC(@stmt);
+			END;
 
-		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmAgentJobsPerformanceLatest')) AND (i.name = 'NC_fhsmAgentJobsPerformanceLatest_Name_TimestampUTC'))
-		BEGIN
-			RAISERROR('Adding index [NC_fhsmAgentJobsPerformanceLatest_Name_TimestampUTC] to table dbo.fhsmAgentJobsPerformanceLatest', 0, 1) WITH NOWAIT;
+			IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmAgentJobsPerformanceLatest')) AND (i.name = 'NC_fhsmAgentJobsPerformanceLatest_Name_TimestampUTC'))
+			BEGIN
+				RAISERROR('Adding index [NC_fhsmAgentJobsPerformanceLatest_Name_TimestampUTC] to table dbo.fhsmAgentJobsPerformanceLatest', 0, 1) WITH NOWAIT;
 
-			SET @stmt = '
-				CREATE NONCLUSTERED INDEX NC_fhsmAgentJobsPerformanceLatest_Name_TimestampUTC ON dbo.fhsmAgentJobsPerformanceLatest(Name, TimestampUTC)' + @tableCompressionStmt + ';
-			';
-			EXEC(@stmt);
-		END;
+				SET @stmt = '
+					CREATE NONCLUSTERED INDEX NC_fhsmAgentJobsPerformanceLatest_Name_TimestampUTC ON dbo.fhsmAgentJobsPerformanceLatest(Name, TimestampUTC)' + @tableCompressionStmt + ';
+				';
+				EXEC(@stmt);
+			END;
 
-		--
-		-- Register extended properties on the table dbo.fhsmAgentJobsPerformanceLatest
-		--
-		BEGIN
-			SET @objectName = 'dbo.fhsmAgentJobsPerformanceLatest';
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
+			--
+			-- Register extended properties on the table dbo.fhsmAgentJobsPerformanceLatest
+			--
+			BEGIN
+				SET @objectName = 'dbo.fhsmAgentJobsPerformanceLatest';
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
 
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+			END;
 		END;
 
 		--
 		-- Create table dbo.fhsmAgentJobsPerformanceErrorDelta and indexes if they not already exists
 		--
-		IF OBJECT_ID('dbo.fhsmAgentJobsPerformanceErrorDelta', 'U') IS NULL
 		BEGIN
-			RAISERROR('Creating table dbo.fhsmAgentJobsPerformanceErrorDelta', 0, 1) WITH NOWAIT;
+			IF OBJECT_ID('dbo.fhsmAgentJobsPerformanceErrorDelta', 'U') IS NULL
+			BEGIN
+				RAISERROR('Creating table dbo.fhsmAgentJobsPerformanceErrorDelta', 0, 1) WITH NOWAIT;
 
-			SET @stmt = '
-				CREATE TABLE dbo.fhsmAgentJobsPerformanceErrorDelta(
-					Id int identity(1,1) NOT NULL
-					,Name nvarchar(128) NOT NULL
-					,StepId int NOT NULL
-					,StepName nvarchar(128) NOT NULL
-					,RunStatus int NOT NULL
-					,StartDateTime datetime NOT NULL
-					,DurationSeconds int NOT NULL
-					,JobDurationSeconds int NULL
-					,MessageId int NULL
-					,Severity int NULL
-					,Message nvarchar(4000) NULL
-					,TimestampUTC datetime NOT NULL
-					,Timestamp datetime NOT NULL
-					,CONSTRAINT PK_fhsmAgentJobsPerformanceErrorDelta PRIMARY KEY(Id)' + @tableCompressionStmt + '
-				);
-			';
-			EXEC(@stmt);
-		END;
+				SET @stmt = '
+					CREATE TABLE dbo.fhsmAgentJobsPerformanceErrorDelta(
+						Id int identity(1,1) NOT NULL
+						,Name nvarchar(128) NOT NULL
+						,StepId int NOT NULL
+						,StepName nvarchar(128) NOT NULL
+						,RunStatus int NOT NULL
+						,StartDateTime datetime NOT NULL
+						,DurationSeconds int NOT NULL
+						,JobDurationSeconds int NULL
+						,MessageId int NULL
+						,Severity int NULL
+						,Message nvarchar(4000) NULL
+						,TimestampUTC datetime NOT NULL
+						,Timestamp datetime NOT NULL
+						,CONSTRAINT PK_fhsmAgentJobsPerformanceErrorDelta PRIMARY KEY(Id)' + @tableCompressionStmt + '
+					);
+				';
+				EXEC(@stmt);
+			END;
 
-		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmAgentJobsPerformanceErrorDelta')) AND (i.name = 'NC_fhsmAgentJobsPerformanceErrorDelta_TimestampUTC'))
-		BEGIN
-			RAISERROR('Adding index [NC_fhsmAgentJobsPerformanceErrorDelta_TimestampUTC] to table dbo.fhsmAgentJobsPerformanceErrorDelta', 0, 1) WITH NOWAIT;
+			IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmAgentJobsPerformanceErrorDelta')) AND (i.name = 'NC_fhsmAgentJobsPerformanceErrorDelta_TimestampUTC'))
+			BEGIN
+				RAISERROR('Adding index [NC_fhsmAgentJobsPerformanceErrorDelta_TimestampUTC] to table dbo.fhsmAgentJobsPerformanceErrorDelta', 0, 1) WITH NOWAIT;
 
-			SET @stmt = '
-				CREATE NONCLUSTERED INDEX NC_fhsmAgentJobsPerformanceErrorDelta_TimestampUTC ON dbo.fhsmAgentJobsPerformanceErrorDelta(TimestampUTC)' + @tableCompressionStmt + ';
-			';
-			EXEC(@stmt);
-		END;
+				SET @stmt = '
+					CREATE NONCLUSTERED INDEX NC_fhsmAgentJobsPerformanceErrorDelta_TimestampUTC ON dbo.fhsmAgentJobsPerformanceErrorDelta(TimestampUTC)' + @tableCompressionStmt + ';
+				';
+				EXEC(@stmt);
+			END;
 
-		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmAgentJobsPerformanceErrorDelta')) AND (i.name = 'NC_fhsmAgentJobsPerformanceErrorDelta_Timestamp'))
-		BEGIN
-			RAISERROR('Adding index [NC_fhsmAgentJobsPerformanceErrorDelta_Timestamp] to table dbo.fhsmAgentJobsPerformanceErrorDelta', 0, 1) WITH NOWAIT;
+			IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmAgentJobsPerformanceErrorDelta')) AND (i.name = 'NC_fhsmAgentJobsPerformanceErrorDelta_Timestamp'))
+			BEGIN
+				RAISERROR('Adding index [NC_fhsmAgentJobsPerformanceErrorDelta_Timestamp] to table dbo.fhsmAgentJobsPerformanceErrorDelta', 0, 1) WITH NOWAIT;
 
-			SET @stmt = '
-				CREATE NONCLUSTERED INDEX NC_fhsmAgentJobsPerformanceErrorDelta_Timestamp ON dbo.fhsmAgentJobsPerformanceErrorDelta(Timestamp)' + @tableCompressionStmt + ';
-			';
-			EXEC(@stmt);
-		END;
+				SET @stmt = '
+					CREATE NONCLUSTERED INDEX NC_fhsmAgentJobsPerformanceErrorDelta_Timestamp ON dbo.fhsmAgentJobsPerformanceErrorDelta(Timestamp)' + @tableCompressionStmt + ';
+				';
+				EXEC(@stmt);
+			END;
 
-		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmAgentJobsPerformanceErrorDelta')) AND (i.name = 'NC_fhsmAgentJobsPerformanceErrorDelta_Name_TimestampUTC'))
-		BEGIN
-			RAISERROR('Adding index [NC_fhsmAgentJobsPerformanceErrorDelta_Name_TimestampUTC] to table dbo.fhsmAgentJobsPerformanceErrorDelta', 0, 1) WITH NOWAIT;
+			IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmAgentJobsPerformanceErrorDelta')) AND (i.name = 'NC_fhsmAgentJobsPerformanceErrorDelta_Name_TimestampUTC'))
+			BEGIN
+				RAISERROR('Adding index [NC_fhsmAgentJobsPerformanceErrorDelta_Name_TimestampUTC] to table dbo.fhsmAgentJobsPerformanceErrorDelta', 0, 1) WITH NOWAIT;
 
-			SET @stmt = '
-				CREATE NONCLUSTERED INDEX NC_fhsmAgentJobsPerformanceErrorDelta_Name_TimestampUTC ON dbo.fhsmAgentJobsPerformanceErrorDelta(Name, TimestampUTC)' + @tableCompressionStmt + ';
-			';
-			EXEC(@stmt);
-		END;
+				SET @stmt = '
+					CREATE NONCLUSTERED INDEX NC_fhsmAgentJobsPerformanceErrorDelta_Name_TimestampUTC ON dbo.fhsmAgentJobsPerformanceErrorDelta(Name, TimestampUTC)' + @tableCompressionStmt + ';
+				';
+				EXEC(@stmt);
+			END;
 
-		--
-		-- Register extended properties on the table dbo.fhsmAgentJobsPerformanceErrorDelta
-		--
-		BEGIN
-			SET @objectName = 'dbo.fhsmAgentJobsPerformanceErrorDelta';
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
+			--
+			-- Register extended properties on the table dbo.fhsmAgentJobsPerformanceErrorDelta
+			--
+			BEGIN
+				SET @objectName = 'dbo.fhsmAgentJobsPerformanceErrorDelta';
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
 
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+			END;
 		END;
 
 		--
 		-- Create table dbo.fhsmAgentJobsPerformanceLatestError and indexes if they not already exists
 		--
-		IF OBJECT_ID('dbo.fhsmAgentJobsPerformanceLatestError', 'U') IS NULL
 		BEGIN
-			RAISERROR('Creating table dbo.fhsmAgentJobsPerformanceLatestError', 0, 1) WITH NOWAIT;
+			IF OBJECT_ID('dbo.fhsmAgentJobsPerformanceLatestError', 'U') IS NULL
+			BEGIN
+				RAISERROR('Creating table dbo.fhsmAgentJobsPerformanceLatestError', 0, 1) WITH NOWAIT;
 
-			SET @stmt = '
-				CREATE TABLE dbo.fhsmAgentJobsPerformanceLatestError(
-					Id int identity(1,1) NOT NULL
-					,Name nvarchar(128) NOT NULL
-					,StepId int NOT NULL
-					,StepName nvarchar(128) NOT NULL
-					,RunStatus int NOT NULL
-					,StartDateTime datetime NOT NULL
-					,DurationSeconds int NOT NULL
-					,JobDurationSeconds int NULL
-					,MessageId int NULL
-					,Severity int NULL
-					,Message nvarchar(4000) NULL
-					,TimestampUTC datetime NOT NULL
-					,Timestamp datetime NOT NULL
-					,CONSTRAINT PK_fhsmAgentJobsPerformanceLatestError PRIMARY KEY(Id)' + @tableCompressionStmt + '
-				);
-			';
-			EXEC(@stmt);
-		END;
+				SET @stmt = '
+					CREATE TABLE dbo.fhsmAgentJobsPerformanceLatestError(
+						Id int identity(1,1) NOT NULL
+						,Name nvarchar(128) NOT NULL
+						,StepId int NOT NULL
+						,StepName nvarchar(128) NOT NULL
+						,RunStatus int NOT NULL
+						,StartDateTime datetime NOT NULL
+						,DurationSeconds int NOT NULL
+						,JobDurationSeconds int NULL
+						,MessageId int NULL
+						,Severity int NULL
+						,Message nvarchar(4000) NULL
+						,TimestampUTC datetime NOT NULL
+						,Timestamp datetime NOT NULL
+						,CONSTRAINT PK_fhsmAgentJobsPerformanceLatestError PRIMARY KEY(Id)' + @tableCompressionStmt + '
+					);
+				';
+				EXEC(@stmt);
+			END;
 
-		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmAgentJobsPerformanceLatestError')) AND (i.name = 'NC_fhsmAgentJobsPerformanceLatestError_TimestampUTC'))
-		BEGIN
-			RAISERROR('Adding index [NC_fhsmAgentJobsPerformanceLatestError_TimestampUTC] to table dbo.fhsmAgentJobsPerformanceLatestError', 0, 1) WITH NOWAIT;
+			IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmAgentJobsPerformanceLatestError')) AND (i.name = 'NC_fhsmAgentJobsPerformanceLatestError_TimestampUTC'))
+			BEGIN
+				RAISERROR('Adding index [NC_fhsmAgentJobsPerformanceLatestError_TimestampUTC] to table dbo.fhsmAgentJobsPerformanceLatestError', 0, 1) WITH NOWAIT;
 
-			SET @stmt = '
-				CREATE NONCLUSTERED INDEX NC_fhsmAgentJobsPerformanceLatestError_TimestampUTC ON dbo.fhsmAgentJobsPerformanceLatestError(TimestampUTC)' + @tableCompressionStmt + ';
-			';
-			EXEC(@stmt);
-		END;
+				SET @stmt = '
+					CREATE NONCLUSTERED INDEX NC_fhsmAgentJobsPerformanceLatestError_TimestampUTC ON dbo.fhsmAgentJobsPerformanceLatestError(TimestampUTC)' + @tableCompressionStmt + ';
+				';
+				EXEC(@stmt);
+			END;
 
-		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmAgentJobsPerformanceLatestError')) AND (i.name = 'NC_fhsmAgentJobsPerformanceLatestError_Timestamp'))
-		BEGIN
-			RAISERROR('Adding index [NC_fhsmAgentJobsPerformanceLatestError_Timestamp] to table dbo.fhsmAgentJobsPerformanceLatestError', 0, 1) WITH NOWAIT;
+			IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmAgentJobsPerformanceLatestError')) AND (i.name = 'NC_fhsmAgentJobsPerformanceLatestError_Timestamp'))
+			BEGIN
+				RAISERROR('Adding index [NC_fhsmAgentJobsPerformanceLatestError_Timestamp] to table dbo.fhsmAgentJobsPerformanceLatestError', 0, 1) WITH NOWAIT;
 
-			SET @stmt = '
-				CREATE NONCLUSTERED INDEX NC_fhsmAgentJobsPerformanceLatestError_Timestamp ON dbo.fhsmAgentJobsPerformanceLatestError(Timestamp)' + @tableCompressionStmt + ';
-			';
-			EXEC(@stmt);
-		END;
+				SET @stmt = '
+					CREATE NONCLUSTERED INDEX NC_fhsmAgentJobsPerformanceLatestError_Timestamp ON dbo.fhsmAgentJobsPerformanceLatestError(Timestamp)' + @tableCompressionStmt + ';
+				';
+				EXEC(@stmt);
+			END;
 
-		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmAgentJobsPerformanceLatestError')) AND (i.name = 'NC_fhsmAgentJobsPerformanceLatestError_Name_TimestampUTC'))
-		BEGIN
-			RAISERROR('Adding index [NC_fhsmAgentJobsPerformanceLatestError_Name_TimestampUTC] to table dbo.fhsmAgentJobsPerformanceLatestError', 0, 1) WITH NOWAIT;
+			IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmAgentJobsPerformanceLatestError')) AND (i.name = 'NC_fhsmAgentJobsPerformanceLatestError_Name_TimestampUTC'))
+			BEGIN
+				RAISERROR('Adding index [NC_fhsmAgentJobsPerformanceLatestError_Name_TimestampUTC] to table dbo.fhsmAgentJobsPerformanceLatestError', 0, 1) WITH NOWAIT;
 
-			SET @stmt = '
-				CREATE NONCLUSTERED INDEX NC_fhsmAgentJobsPerformanceLatestError_Name_TimestampUTC ON dbo.fhsmAgentJobsPerformanceLatestError(Name, TimestampUTC)' + @tableCompressionStmt + ';
-			';
-			EXEC(@stmt);
+				SET @stmt = '
+					CREATE NONCLUSTERED INDEX NC_fhsmAgentJobsPerformanceLatestError_Name_TimestampUTC ON dbo.fhsmAgentJobsPerformanceLatestError(Name, TimestampUTC)' + @tableCompressionStmt + ';
+				';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Register extended properties on the table dbo.fhsmAgentJobsPerformanceLatestError
+			--
+			BEGIN
+				SET @objectName = 'dbo.fhsmAgentJobsPerformanceLatestError';
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+			END;
 		END;
 
 		--
-		-- Register extended properties on the table dbo.fhsmAgentJobsPerformanceLatestError
+		-- Add indexes to msdb.dbo.sysjobhistory if they if they not already exists
 		--
 		BEGIN
-			SET @objectName = 'dbo.fhsmAgentJobsPerformanceLatestError';
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
+			--
+			-- Test if index on msdb.dbo.sysjobhistory with index columns [job_id] and [step_id] exists
+			--
+			IF NOT EXISTS (
+				SELECT *
+				FROM msdb.sys.indexes AS i
+				WHERE (i.object_id = OBJECT_ID('msdb.dbo.sysjobhistory'))
+					AND EXISTS (	-- Test for [job_id] AS index column #1
+						SELECT *
+						FROM msdb.sys.index_columns AS ic
+						INNER JOIN msdb.sys.columns AS c ON (c.object_id = ic.object_id) AND (c.column_id = ic.column_id)
+						WHERE (1 = 1)
+							AND (ic.object_id = i.object_id)
+							AND (ic.index_id = i.index_id)
+							AND (ic.index_column_id = 1)
+							AND (ic.is_included_column = 0)
+							AND (c.name = 'job_id')
+					)
+					AND EXISTS (	-- Test for [step_id] AS index column #2
+						SELECT *
+						FROM msdb.sys.index_columns AS ic
+						INNER JOIN msdb.sys.columns AS c ON (c.object_id = ic.object_id) AND (c.column_id = ic.column_id)
+						WHERE (1 = 1)
+							AND (ic.object_id = i.object_id)
+							AND (ic.index_id = i.index_id)
+							AND (ic.index_column_id = 2)
+							AND (ic.is_included_column = 0)
+							AND (c.name = 'step_id')
+					)
+			)
+			BEGIN
+				RAISERROR('Adding index [NC_sysjobhistory_job_id_step_id] to table msdb.dbo.sysjobhistory', 0, 1) WITH NOWAIT;
 
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+				SET @stmt = '
+					USE [msdb];
+					CREATE NONCLUSTERED INDEX NC_sysjobhistory_job_id_step_id ON dbo.sysjobhistory(job_id, step_id)
+					INCLUDE(run_status, run_date, run_time, run_duration)
+					' + @tableCompressionStmt + ';
+				';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Test if index on msdb.dbo.sysjobhistory with index columns [job_id], [instance_id] and [run_status] exists
+			--
+			IF NOT EXISTS (
+				SELECT *
+				FROM msdb.sys.indexes AS i
+				WHERE (i.object_id = OBJECT_ID('msdb.dbo.sysjobhistory'))
+					AND EXISTS (	-- Test for [job_id] AS index column #1
+						SELECT *
+						FROM msdb.sys.index_columns AS ic
+						INNER JOIN msdb.sys.columns AS c ON (c.object_id = ic.object_id) AND (c.column_id = ic.column_id)
+						WHERE (1 = 1)
+							AND (ic.object_id = i.object_id)
+							AND (ic.index_id = i.index_id)
+							AND (ic.index_column_id = 1)
+							AND (ic.is_included_column = 0)
+							AND (c.name = 'job_id')
+					)
+					AND EXISTS (	-- Test for [instance_id] AS index column #2
+						SELECT *
+						FROM msdb.sys.index_columns AS ic
+						INNER JOIN msdb.sys.columns AS c ON (c.object_id = ic.object_id) AND (c.column_id = ic.column_id)
+						WHERE (1 = 1)
+							AND (ic.object_id = i.object_id)
+							AND (ic.index_id = i.index_id)
+							AND (ic.index_column_id = 2)
+							AND (ic.is_included_column = 0)
+							AND (c.name = 'instance_id')
+					)
+					AND EXISTS (	-- Test for [run_status] AS index column #3
+						SELECT *
+						FROM msdb.sys.index_columns AS ic
+						INNER JOIN msdb.sys.columns AS c ON (c.object_id = ic.object_id) AND (c.column_id = ic.column_id)
+						WHERE (1 = 1)
+							AND (ic.object_id = i.object_id)
+							AND (ic.index_id = i.index_id)
+							AND (ic.index_column_id = 3)
+							AND (ic.is_included_column = 0)
+							AND (c.name = 'run_status')
+					)
+			)
+			BEGIN
+				RAISERROR('Adding index [NC_sysjobhistory_job_id_instance_id_run_status] to table msdb.dbo.sysjobhistory', 0, 1) WITH NOWAIT;
+
+				SET @stmt = '
+					USE [msdb];
+					CREATE NONCLUSTERED INDEX NC_sysjobhistory_job_id_instance_id_run_status ON dbo.sysjobhistory(job_id, instance_id, run_status)
+					' + @tableCompressionStmt + ';
+				';
+				EXEC(@stmt);
+			END;
 		END;
 	END;
 
@@ -665,7 +833,7 @@ ELSE BEGIN
 			';
 			SET @stmt += '
 					--
-					-- Create wherecondition to load latest and newest per job
+					-- Create where condition to load latest and newest per job
 					--
 					BEGIN
 						DECLARE jCur CURSOR LOCAL READ_ONLY FAST_FORWARD FOR
@@ -725,7 +893,7 @@ ELSE BEGIN
 			';
 			SET @stmt += '
 					--
-					-- Create wherecondition to load latest and newest errors per job
+					-- Create where condition to load latest and newest errors per job
 					--
 					BEGIN
 						DECLARE jCur CURSOR LOCAL READ_ONLY FAST_FORWARD FOR
@@ -792,8 +960,11 @@ ELSE BEGIN
 							@now = SYSDATETIME()
 							,@nowUTC = SYSUTCDATETIME();
 
+						--
+						-- Collect data into temp table
+						--
 						SET @stmt = ''
-							TRUNCATE TABLE dbo.fhsmAgentJobsPerformanceDelta;
+							TRUNCATE TABLE dbo.fhsmAgentJobsPerformanceDeltaTemp;
 						'';
 						IF (@productVersion1 <= 10)
 						BEGIN
@@ -821,15 +992,15 @@ ELSE BEGIN
 			';
 			SET @stmt += '
 						SET @stmt += ''
-							INSERT INTO dbo.fhsmAgentJobsPerformanceDelta(Name, JobStatus, StepsStatus, StartDateTime, DurationSeconds, TimestampUTC, Timestamp)
+							INSERT INTO dbo.fhsmAgentJobsPerformanceDeltaTemp(Name, JobStatus, StartDateTime, DurationSeconds, JobId, InstanceId, PrevInstanceId)
 							SELECT
 								sj.name AS Name
 								,sj.run_status AS JobStatus
-								,COALESCE(jobStepError.MinRunStatus, 1) AS StepsStatus
 								,ajt.StartDateTime
 								,CASE WHEN (ajt.DurationSeconds = 0) THEN 1 ELSE ajt.DurationSeconds END AS DurationSeconds
-								,@nowUTC
-								,@now
+								,sj.job_id AS JobId
+								,sj.instance_id AS InstanceId
+								,sj.PrevInstanceId AS PrevInstanceId
 							FROM (
 						'';
 						IF (@productVersion1 <= 10)
@@ -845,7 +1016,7 @@ ELSE BEGIN
 									,jrn.run_time
 									,jrn.run_duration
 									,jrn.run_status
-									,COALESCE(prevJRN.instance_id, 0) AS PrevinstanceId
+									,COALESCE(prevJRN.instance_id, 0) AS PrevInstanceId
 								FROM jrn
 								LEFT OUTER JOIN jrn AS prevJRN ON
 									(prevJRN.job_id = jrn.job_id)
@@ -864,7 +1035,7 @@ ELSE BEGIN
 									,jrn.run_time
 									,jrn.run_duration
 									,jrn.run_status
-									,LAG(jrn.instance_id, 1, 0) OVER(PARTITION BY jrn.job_id ORDER BY jrn.JobRunNumber) AS PrevinstanceId
+									,LAG(jrn.instance_id, 1, 0) OVER(PARTITION BY jrn.job_id ORDER BY jrn.JobRunNumber) AS PrevInstanceId
 								FROM (
 									SELECT
 										sj.name
@@ -886,18 +1057,44 @@ ELSE BEGIN
 			SET @stmt += '
 						SET @stmt += ''
 							) AS sj
+							CROSS APPLY dbo.fhsmFNAgentJobTime(sj.run_date, sj.run_time, sj.run_duration) AS ajt
+							WHERE (1 = 1)
+								'' + @whereStmt + '';
+						'';
+						EXEC sp_executesql
+							@stmt
+							,N''@now datetime, @nowUTC datetime''
+							,@now = @now
+							,@nowUTC = @nowUTC;
+			';
+			SET @stmt += '
+						--
+						-- Move temp data into data
+						--
+						SET @stmt = ''
+							TRUNCATE TABLE dbo.fhsmAgentJobsPerformanceDelta;
+						'';
+
+						SET @stmt += ''
+							INSERT INTO dbo.fhsmAgentJobsPerformanceDelta(Name, JobStatus, StepsStatus, StartDateTime, DurationSeconds, TimestampUTC, Timestamp)
+							SELECT
+								sj.Name
+								,sj.JobStatus
+								,COALESCE(jobStepError.MinRunStatus, 1) AS StepsStatus
+								,sj.StartDateTime
+								,sj.DurationSeconds
+								,@nowUTC
+								,@now
+							FROM dbo.fhsmAgentJobsPerformanceDeltaTemp AS sj
 							OUTER APPLY (
 								SELECT MIN(sjh.run_status) AS MinRunStatus
 								FROM msdb.dbo.sysjobhistory AS sjh
 								WHERE
 									(sjh.run_status <> 1)
-									AND (sjh.job_id = sj.job_id)
-									AND (sjh.instance_id <= sj.instance_id)
-									AND (sjh.instance_id > sj.PrevinstanceId)
-							) AS jobStepError
-							CROSS APPLY dbo.fhsmFNAgentJobTime(sj.run_date, sj.run_time, sj.run_duration) AS ajt
-							WHERE (1 = 1)
-								'' + @whereStmt + '';
+									AND (sjh.job_id = sj.JobId)
+									AND (sjh.instance_id <= sj.InstanceId)
+									AND (sjh.instance_id > sj.PrevInstanceId)
+							) AS jobStepError;
 						'';
 						EXEC sp_executesql
 							@stmt
@@ -1133,22 +1330,23 @@ ELSE BEGIN
 	--
 	BEGIN
 		WITH
-		schedules(Enabled, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters) AS(
+		schedules(Enabled, DeploymentStatus, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters) AS(
 			SELECT
-				@enableAgentJobsPerformance
-				,'Agent jobs performance'
-				,PARSENAME('dbo.fhsmSPAgentJobsPerformance', 1)
-				,10 * 60
-				,CAST('1900-1-1T00:00:00.0000' AS datetime2(0))
-				,CAST('1900-1-1T23:59:59.0000' AS datetime2(0))
-				,1, 1, 1, 1, 1, 1, 1
-				,NULL
+				@enableAgentJobsPerformance						AS Enabled
+				,0												AS DeploymentStatus
+				,'Agent jobs performance'						AS Name
+				,PARSENAME('dbo.fhsmSPAgentJobsPerformance', 1)	AS Task
+				,10 * 60										AS ExecutionDelaySec
+				,CAST('1900-1-1T00:00:00.0000' AS datetime2(0))	AS FromTime
+				,CAST('1900-1-1T23:59:59.0000' AS datetime2(0))	AS ToTime
+				,1, 1, 1, 1, 1, 1, 1							-- Monday..Sunday
+				,NULL											AS Parameters
 		)
 		MERGE dbo.fhsmSchedules AS tgt
 		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
 		WHEN NOT MATCHED BY TARGET
-			THEN INSERT(Enabled, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters)
-			VALUES(src.Enabled, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameters);
+			THEN INSERT(Enabled, DeploymentStatus, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters)
+			VALUES(src.Enabled, src.DeploymentStatus, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameters);
 	END;
 
 	--

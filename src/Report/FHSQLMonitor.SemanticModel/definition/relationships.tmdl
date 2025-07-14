@@ -336,7 +336,45 @@ relationship 0553b358-f98e-0e02-e233-3f7e0832a98a
 	fromColumn: Log.TimeKey
 	toColumn: Time.TimeKey
 
-relationship d554dcd5-41ae-cbb7-8437-560ce00346b6
-	fromColumn: Log.LogTaskNameKey
-	toColumn: LogTaskName.LogTaskNameKey
+relationship 842f362e-4ece-967d-e32a-328aba8f2275
+	fromColumn: Processing.TaskNameVersionKey
+	toColumn: 'Task name version'.TaskNameVersionKey
+
+relationship 29891cd8-6afd-1172-b4a3-d16b3a318348
+	fromColumn: Processing.Date
+	toColumn: Date.Date
+
+relationship f7a29bba-3131-283d-f1d5-e83f09f78a73
+	fromColumn: Processing.TimeKey
+	toColumn: Time.TimeKey
+
+relationship c75b6ff7-8f20-88f5-3bf0-aebd2a7cf8b1
+	fromColumn: Log.TaskNameVersionKey
+	toColumn: 'Task name version'.TaskNameVersionKey
+
+relationship aa50d776-3291-0112-b866-1d461e541551
+	fromColumn: 'Disk size'.Date
+	toColumn: Date.Date
+
+relationship 1dce6ba5-64da-9863-f74c-5e791b04f50b
+	fromColumn: 'Disk size'.DiskKey
+	toColumn: Disk.DiskKey
+
+relationship e218ec0a-7e91-26e4-bda8-95dfba4fc66a
+	fromColumn: 'Database size'.DiskKey
+	toColumn: Disk.DiskKey
+
+relationship 2e512cee-e5f2-fc85-b7ac-bf011ee8577f
+	fromColumn: 'Allocation units'.FileGroupKey
+	toColumn: 'File group'.FileGroupKey
+
+relationship 3289dba6-a77a-1f16-d7d7-c7ccc26469ea
+	fromColumn: 'Allocation units'.IndexKey
+	toColumn: Index.IndexKey
+
+relationship f025bcf2-402c-cfa7-ebfb-427b012e647d
+	crossFilteringBehavior: bothDirections
+	toCardinality: many
+	fromColumn: 'Allocation units'.FileGroupKey
+	toColumn: 'Database size'.FileGroupKey
 

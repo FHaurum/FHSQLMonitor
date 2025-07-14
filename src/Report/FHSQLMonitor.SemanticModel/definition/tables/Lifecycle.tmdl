@@ -1,0 +1,83 @@
+table Lifecycle
+	lineageTag: f66ca89f-ec3e-4e59-a047-7f9c57936194
+
+	column 'Mainstream end date'
+		dataType: dateTime
+		formatString: dd-mmm-yyyy
+		lineageTag: 09d773c6-a26d-430f-ba00-7cd206cf6dc3
+		summarizeBy: none
+		sourceColumn: Mainstream end date
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	column 'Extended end date'
+		dataType: dateTime
+		formatString: dd-mmm-yyyy
+		lineageTag: fe2a0837-4a1c-464b-a09b-b3e8ba69a1eb
+		summarizeBy: none
+		sourceColumn: Extended end date
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	column State
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 11a71107-d1b5-4bd9-9b67-f78c8943765e
+		summarizeBy: none
+		sourceColumn: State
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column Indicator =
+			
+			SWITCH (
+			    'Lifecycle'[State],
+			    0, UNICHAR ( 128994 ),
+			    1, UNICHAR ( 128993 ),
+			    UNICHAR ( 128992 )
+			)
+		lineageTag: 925f28bf-67da-4532-844b-32575f76faca
+		summarizeBy: none
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Lifecycle = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Instance configuration")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db     = dbList{[Name = #"Database name"]}[Data], 
+				  table  = db{[Schema = #"Schema name", Item = "Lifecycle"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset,
+				  renamedColumns = Table.RenameColumns(
+				    datasetToUse, 
+				    {
+				      {"MainstreamEndDate", "Mainstream end date"}, 
+				      {"ExtendedEndDate", "Extended end date"}
+				    }
+				  )
+				in
+				  renamedColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

@@ -117,7 +117,7 @@ table 'Table size'
 		source = ```
 				let
 				  loadConfig = Record.Field(
-				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Table size")), 
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Capacity")), 
 				    "DataLoad"
 				  ), 
 				  dbList = Sql.Databases(#"Server name"), 

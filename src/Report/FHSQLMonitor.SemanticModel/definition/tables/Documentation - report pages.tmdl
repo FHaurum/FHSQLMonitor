@@ -1,0 +1,68 @@
+table 'Documentation - report pages'
+	lineageTag: ef66ca5e-9ef9-41ed-ab26-4e097d6c992d
+
+	column Page
+		lineageTag: 730cb813-e768-43fb-8951-f9d67d4e634d
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Page]
+
+		annotation SummarizationSetBy = Automatic
+
+	column URL
+		isHidden
+		lineageTag: 0ac137ff-f673-4b9b-b1e3-39745b6df607
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [URL]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Documentation - report pages' = calculated
+		mode: import
+		source =
+				
+				DATATABLE (
+				    "Page", STRING,
+				    "URL", STRING,
+				    {
+				        { "Agent jobs configuration", "agent-jobs-configuration" },
+				        { "Agent jobs performance", "agent-jobs-performance" },
+				        { "Always On traffic", "always-on-traffic" },
+				        { "Backup", "backup" },
+				        { "Blocks and deadlocks", "blocks-and-deadlocks" },
+				        { "Connections", "connections" },
+				        { "CPU", "cpu" },
+				        { "Data load", "data-load" },
+				        { "Database configuration", "database-configuration" },
+				        { "Database IO", "database-io" },
+				        { "Database size", "database-size" },
+				        { "Index configuration", "index-configuration" },
+				        { "Index leaf statistics", "index-leaf-statistics" },
+				        { "Index optimize", "index-optimize" },
+				        { "Index physical", "index-physical" },
+				        { "Index usage", "index-usage" },
+				        { "Instance configuration", "instance-configuration" },
+				        { "Instance status", "instance-status" },
+				        { "Lock statistics", "lock-statistics" },
+				        { "Missing indexes", "missing-indexes" },
+				        { "Monitor configuration", "monitor-configuration" },
+				        { "Monitor status", "monitor-status" },
+				        { "Ola Hallengren errors", "ola-hallengren-errors" },
+				        { "Partitioned indexes", "partitioned-indexes" },
+				        { "Performance statistics", "performance-statistics" },
+				        { "Plan cache usage", "plan-cache-usage" },
+				        { "Plan guides", "plan-guides" },
+				        { "Query statistics", "query-statistics" },
+				        { "Resource Governor", "resource-governor" },
+				        { "Resource Governor configuration", "resource-governor-configuration" },
+				        { "Statistics", "statistics" },
+				        { "Table size", "table-size" },
+				        { "Triggers", "triggers" },
+				        { "Wait statistics", "wait-statistics" },
+				        { "Who is active", "who-is-active" }
+				    }
+				)
+
+	annotation PBI_Id = 804e68efca0045d69c81386ee0c44e9a
+

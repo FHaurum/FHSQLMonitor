@@ -65,7 +65,7 @@ table 'Partitioned indexes'
 		source = ```
 				let
 				  loadConfig = Record.Field(
-				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Partitioned indexes")), 
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Capacity")), 
 				    "DataLoad"
 				  ), 
 				  dbList = Sql.Databases(#"Server name"), 

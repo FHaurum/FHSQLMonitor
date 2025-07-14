@@ -3,6 +3,15 @@ You can try the [live demo](https://app.powerbi.com/view?r=eyJrIjoiMDQ2MDQ3ZjQtO
 
 Have fun :-)
 <p>
+<b>July 14, 2025: Version 2.8.0</b> with:</br>
+<li>The Database size report now also shows disk size and allocation usage, allowing you to see which databases and tables are using which filegroups and disks.</li>
+<li>The Instance configuration report now shows whether the SQL Server edition is in Mainstream Support, Extended Support, or Unsupported.</li>
+<li>Combined the 3 services Database size, Partitioned indexes and Table size into the new Capacity service</li>
+<li>The Monitor status report page now also shows the duration and number of service executions in the tool itself.</li>
+<li>Optimized the code to collect Agent jobs performance data.</li>
+<li>Optimized the code to collect Index usage data.</li>
+</p>
+<p>
 <b>June 9, 2025: Version 2.7.0</b> with:</br>
 <li>Slicers configured as dropdown and with multi-select now has the option "Select all" enabled.</li>
 <li>All filter panels reviewed and fixed for minor configuration errors.</li>
