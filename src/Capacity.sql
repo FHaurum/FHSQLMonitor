@@ -66,7 +66,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.8';
+		SET @version = '2.9';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -1007,7 +1007,7 @@ ELSE BEGIN
 				SET @stmt = '
 					ALTER PROC dbo.fhsmSPAllocationUnits (
 						@name nvarchar(128),
-						@parameters nvarchar(max)
+						@parameter nvarchar(max)
 					)
 					AS
 					BEGIN
@@ -1019,7 +1019,7 @@ ELSE BEGIN
 						DECLARE @message nvarchar(max);
 						DECLARE @now datetime;
 						DECLARE @nowUTC datetime;
-						DECLARE @parametersTable TABLE([Key] nvarchar(128) NOT NULL, Value nvarchar(128) NULL);
+						DECLARE @parameterTable TABLE([Key] nvarchar(128) NOT NULL, Value nvarchar(128) NULL);
 						DECLARE @replicaId uniqueidentifier;
 						DECLARE @stmt nvarchar(max);
 						DECLARE @thisTask nvarchar(128);
@@ -1029,16 +1029,16 @@ ELSE BEGIN
 						SET @version = ''' + @version + ''';
 
 						--
-						-- Parse the parameters for the command
+						-- Parse the parameter for the command
 						--
 						BEGIN
-							INSERT INTO @parametersTable([Key], Value)
+							INSERT INTO @parameterTable([Key], Value)
 							SELECT
 								(SELECT s.Txt FROM dbo.fhsmFNSplitString(p.Txt, ''='') AS s WHERE (s.Part = 1)) AS [Key]
 								,(SELECT s.Txt FROM dbo.fhsmFNSplitString(p.Txt, ''='') AS s WHERE (s.Part = 2)) AS Value
-							FROM dbo.fhsmFNSplitString(@parameters, '';'') AS p;
+							FROM dbo.fhsmFNSplitString(@parameter, '';'') AS p;
 
-							SET @databases = (SELECT pt.Value FROM @parametersTable AS pt WHERE (pt.[Key] = ''@Databases''));
+							SET @databases = (SELECT pt.Value FROM @parameterTable AS pt WHERE (pt.[Key] = ''@Databases''));
 
 							--
 							-- Trim @databases if Ola Hallengren style has been chosen
@@ -1210,7 +1210,7 @@ ELSE BEGIN
 				SET @stmt = '
 					ALTER PROC dbo.fhsmSPDatabaseSize (
 						@name nvarchar(128),
-						@parameters nvarchar(max)
+						@parameter nvarchar(max)
 					)
 					AS
 					BEGIN
@@ -1222,7 +1222,7 @@ ELSE BEGIN
 						DECLARE @message nvarchar(max);
 						DECLARE @now datetime;
 						DECLARE @nowUTC datetime;
-						DECLARE @parametersTable TABLE([Key] nvarchar(128) NOT NULL, Value nvarchar(128) NULL);
+						DECLARE @parameterTable TABLE([Key] nvarchar(128) NOT NULL, Value nvarchar(128) NULL);
 						DECLARE @replicaId uniqueidentifier;
 						DECLARE @stmt nvarchar(max);
 						DECLARE @thisTask nvarchar(128);
@@ -1232,16 +1232,16 @@ ELSE BEGIN
 						SET @version = ''' + @version + ''';
 
 						--
-						-- Get the parameters for the command
+						-- Get the parameter for the command
 						--
 						BEGIN
-							INSERT INTO @parametersTable([Key], Value)
+							INSERT INTO @parameterTable([Key], Value)
 							SELECT
 								(SELECT s.Txt FROM dbo.fhsmFNSplitString(p.Txt, ''='') AS s WHERE (s.Part = 1)) AS [Key]
 								,(SELECT s.Txt FROM dbo.fhsmFNSplitString(p.Txt, ''='') AS s WHERE (s.Part = 2)) AS Value
-							FROM dbo.fhsmFNSplitString(@parameters, '';'') AS p;
+							FROM dbo.fhsmFNSplitString(@parameter, '';'') AS p;
 
-							SET @databases = (SELECT pt.Value FROM @parametersTable AS pt WHERE (pt.[Key] = ''@Databases''));
+							SET @databases = (SELECT pt.Value FROM @parameterTable AS pt WHERE (pt.[Key] = ''@Databases''));
 
 							--
 							-- Trim @databases if Ola Hallengren style has been chosen
@@ -1513,7 +1513,7 @@ ELSE BEGIN
 				SET @stmt = '
 					ALTER PROC dbo.fhsmSPPartitionedIndexes (
 						@name nvarchar(128),
-						@parameters nvarchar(max)
+						@parameter nvarchar(max)
 					)
 					AS
 					BEGIN
@@ -1525,7 +1525,7 @@ ELSE BEGIN
 						DECLARE @message nvarchar(max);
 						DECLARE @now datetime;
 						DECLARE @nowUTC datetime;
-						DECLARE @parametersTable TABLE([Key] nvarchar(128) NOT NULL, Value nvarchar(128) NULL);
+						DECLARE @parameterTable TABLE([Key] nvarchar(128) NOT NULL, Value nvarchar(128) NULL);
 						DECLARE @replicaId uniqueidentifier;
 						DECLARE @stmt nvarchar(max);
 						DECLARE @thisTask nvarchar(128);
@@ -1535,16 +1535,16 @@ ELSE BEGIN
 						SET @version = ''' + @version + ''';
 
 						--
-						-- Get the parameters for the command
+						-- Get the parameter for the command
 						--
 						BEGIN
-							INSERT INTO @parametersTable([Key], Value)
+							INSERT INTO @parameterTable([Key], Value)
 							SELECT
 								(SELECT s.Txt FROM dbo.fhsmFNSplitString(p.Txt, ''='') AS s WHERE (s.Part = 1)) AS [Key]
 								,(SELECT s.Txt FROM dbo.fhsmFNSplitString(p.Txt, ''='') AS s WHERE (s.Part = 2)) AS Value
-							FROM dbo.fhsmFNSplitString(@parameters, '';'') AS p;
+							FROM dbo.fhsmFNSplitString(@parameter, '';'') AS p;
 
-							SET @databases = (SELECT pt.Value FROM @parametersTable AS pt WHERE (pt.[Key] = ''@Databases''));
+							SET @databases = (SELECT pt.Value FROM @parameterTable AS pt WHERE (pt.[Key] = ''@Databases''));
 
 							--
 							-- Trim @databases if Ola Hallengren style has been chosen
@@ -1917,7 +1917,7 @@ ELSE BEGIN
 				SET @stmt = '
 					ALTER PROC dbo.fhsmSPTableSize (
 						@name nvarchar(128),
-						@parameters nvarchar(max)
+						@parameter nvarchar(max)
 					)
 					AS
 					BEGIN
@@ -1929,7 +1929,7 @@ ELSE BEGIN
 						DECLARE @message nvarchar(max);
 						DECLARE @now datetime;
 						DECLARE @nowUTC datetime;
-						DECLARE @parametersTable TABLE([Key] nvarchar(128) NOT NULL, Value nvarchar(128) NULL);
+						DECLARE @parameterTable TABLE([Key] nvarchar(128) NOT NULL, Value nvarchar(128) NULL);
 						DECLARE @replicaId uniqueidentifier;
 						DECLARE @spaceUsed TABLE(DatabaseName nvarchar(128), SchemaName nvarchar(128), ObjectName nvarchar(128), IndexName nvarchar(128), PartitionNumber int, IsMemoryOptimized bit, Rows bigint, Reserved int, Data int, IndexSize int, Unused int);
 						DECLARE @stmt nvarchar(max);
@@ -1940,16 +1940,16 @@ ELSE BEGIN
 						SET @version = ''' + @version + ''';
 
 						--
-						-- Get the parameters for the command
+						-- Get the parameter for the command
 						--
 						BEGIN
-							INSERT INTO @parametersTable([Key], Value)
+							INSERT INTO @parameterTable([Key], Value)
 							SELECT
 								(SELECT s.Txt FROM dbo.fhsmFNSplitString(p.Txt, ''='') AS s WHERE (s.Part = 1)) AS [Key]
 								,(SELECT s.Txt FROM dbo.fhsmFNSplitString(p.Txt, ''='') AS s WHERE (s.Part = 2)) AS Value
-							FROM dbo.fhsmFNSplitString(@parameters, '';'') AS p;
+							FROM dbo.fhsmFNSplitString(@parameter, '';'') AS p;
 
-							SET @databases = (SELECT pt.Value FROM @parametersTable AS pt WHERE (pt.[Key] = ''@Databases''));
+							SET @databases = (SELECT pt.Value FROM @parameterTable AS pt WHERE (pt.[Key] = ''@Databases''));
 
 							--
 							-- Trim @databases if Ola Hallengren style has been chosen
@@ -2102,7 +2102,7 @@ ELSE BEGIN
 					DECLARE @message nvarchar(max);
 					DECLARE @now datetime;
 					DECLARE @nowUTC datetime;
-					DECLARE @parameters nvarchar(max);
+					DECLARE @parameter nvarchar(max);
 					DECLARE @processingId int;
 					DECLARE @processingTimestamp datetime;
 					DECLARE @processingTimestampUTC datetime;
@@ -2112,10 +2112,10 @@ ELSE BEGIN
 					SET @version = ''' + @version + ''';
 
 					--
-					-- Get the parameters for the command
+					-- Get the parameter for the command
 					--
 					BEGIN
-						SET @parameters = dbo.fhsmFNGetTaskParameter(@thisTask, @name);
+						SET @parameter = dbo.fhsmFNGetTaskParameter(@thisTask, @name);
 					END;
 
 					--
@@ -2141,7 +2141,7 @@ ELSE BEGIN
 								,@processingTimestamp = SYSDATETIME();
 							EXEC dbo.fhsmSPProcessing @name = @name, @task = @thisTask, @version = NULL, @type = 1, @timestampUTC = @processingTimestampUTC, @timestamp = @processingTimestamp, @id = @processingId OUTPUT;
 
-							EXEC dbo.fhsmSPAllocationUnits @name = @name, @parameters = @parameters;
+							EXEC dbo.fhsmSPAllocationUnits @name = @name, @parameter = @parameter;
 
 							--
 							-- Update Processing record from before execution with @version, @processingTimestampUTC and @processingTimestamp
@@ -2174,7 +2174,7 @@ ELSE BEGIN
 								,@processingTimestamp = SYSDATETIME();
 							EXEC dbo.fhsmSPProcessing @name = @name, @task = @thisTask, @version = NULL, @type = 2, @timestampUTC = @processingTimestampUTC, @timestamp = @processingTimestamp, @id = @processingId OUTPUT;
 
-							EXEC dbo.fhsmSPDatabaseSize @name = @name, @parameters = @parameters;
+							EXEC dbo.fhsmSPDatabaseSize @name = @name, @parameter = @parameter;
 
 							--
 							-- Update Processing record from before execution with @version, @processingTimestampUTC and @processingTimestamp
@@ -2246,7 +2246,7 @@ ELSE BEGIN
 								,@processingTimestamp = SYSDATETIME();
 							EXEC dbo.fhsmSPProcessing @name = @name, @task = @thisTask, @version = NULL, @type = 4, @timestampUTC = @processingTimestampUTC, @timestamp = @processingTimestamp, @id = @processingId OUTPUT;
 
-							EXEC dbo.fhsmSPPartitionedIndexes @name = @name, @parameters = @parameters;
+							EXEC dbo.fhsmSPPartitionedIndexes @name = @name, @parameter = @parameter;
 
 							--
 							-- Update Processing record from before execution with @version, @processingTimestampUTC and @processingTimestamp
@@ -2279,7 +2279,7 @@ ELSE BEGIN
 								,@processingTimestamp = SYSDATETIME();
 							EXEC dbo.fhsmSPProcessing @name = @name, @task = @thisTask, @version = NULL, @type = 5, @timestampUTC = @processingTimestampUTC, @timestamp = @processingTimestamp, @id = @processingId OUTPUT;
 
-							EXEC dbo.fhsmSPTableSize @name = @name, @parameters = @parameters;
+							EXEC dbo.fhsmSPTableSize @name = @name, @parameter = @parameter;
 
 							--
 							-- Update Processing record from before execution with @version, @processingTimestampUTC and @processingTimestamp
@@ -2305,6 +2305,153 @@ ELSE BEGIN
 			--
 			BEGIN
 				SET @objectName = 'dbo.fhsmSPCapacity';
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+			END;
+		END;
+
+		--
+		-- Create stored procedure dbo.fhsmSPControlCapacity
+		--
+		BEGIN
+			SET @stmt = '
+				IF OBJECT_ID(''dbo.fhsmSPControlCapacity'', ''P'') IS NULL
+				BEGIN
+					EXEC(''CREATE PROC dbo.fhsmSPControlCapacity AS SELECT ''''dummy'''' AS Txt'');
+				END;
+			';
+			EXEC(@stmt);
+
+			SET @stmt = '
+				ALTER PROC dbo.fhsmSPControlCapacity (
+					@Type nvarchar(16)
+					,@Command nvarchar(16)
+					,@Name nvarchar(128) = NULL
+					,@Parameter nvarchar(max) = NULL
+					,@Task nvarchar(128) = NULL
+				)
+				AS
+				BEGIN
+					SET NOCOUNT ON;
+
+					DECLARE @message nvarchar(max);
+					DECLARE @parameterChanges TABLE(
+						Action nvarchar(10),
+						DeletedTask nvarchar(128),
+						DeletedName nvarchar(128),
+						DeletedParameter nvarchar(max),
+						InsertedTask nvarchar(128),
+						InsertedName nvarchar(128),
+						InsertedParameter nvarchar(max)
+					);
+					DECLARE @thisTask nvarchar(128);
+					DECLARE @version nvarchar(128);
+
+					SET @thisTask = OBJECT_NAME(@@PROCID);
+					SET @version = ''' + @version + ''';
+			';
+			SET @stmt += '
+					IF (@Type = ''Parameter'')
+					BEGIN
+						IF (@Command = ''set'')
+						BEGIN
+							SET @Parameter = NULLIF(@Parameter, '''');
+
+							IF NOT EXISTS (
+								SELECT *
+								FROM dbo.fhsmSchedules AS s
+								WHERE (s.Task = @Task) AND (s.Name = @Name) AND (s.DeploymentStatus <> -1)
+							)
+							BEGIN
+								SET @message = ''Invalid @Task:'''''' + COALESCE(NULLIF(@Task, ''''), ''<NULL>'') + '''''' and @Name:'''''' + COALESCE(NULLIF(@Name, ''''), ''<NULL>'') + '''''''';
+								RAISERROR(@message, 0, 1) WITH NOWAIT;
+								RETURN -11;
+							END;
+
+							--
+							-- Register configuration changes
+							--
+							BEGIN
+								WITH
+								conf(Task, Name, Parameter) AS(
+									SELECT
+										@Task AS Task
+										,@Name AS Name
+										,@Parameter AS Parameter
+								)
+								MERGE dbo.fhsmSchedules AS tgt
+								USING conf AS src ON (src.[Task] = tgt.[Task] COLLATE SQL_Latin1_General_CP1_CI_AS) AND (src.[Name] = tgt.[Name] COLLATE SQL_Latin1_General_CP1_CI_AS)
+								-- Not testing for NULL as a NULL parameter is not allowed
+								WHEN MATCHED AND (tgt.Parameter <> src.Parameter)
+									THEN UPDATE
+										SET tgt.Parameter = src.Parameter
+								WHEN NOT MATCHED BY TARGET
+									THEN INSERT(Task, Name, Parameter)
+									VALUES(src.Task, src.Name, src.Parameter)
+								OUTPUT
+									$action,
+									deleted.Task,
+									deleted.Name,
+									deleted.Parameter,
+									inserted.Task,
+									inserted.Name,
+									inserted.Parameter
+								INTO @parameterChanges;
+
+								IF (@@ROWCOUNT <> 0)
+								BEGIN
+									SET @message = (
+										SELECT ''Parameter is '''''' + COALESCE(src.InsertedParameter, ''<NULL>'') + '''''' - changed from '''''' + COALESCE(src.DeletedParameter, ''<NULL>'') + ''''''''
+										FROM @parameterChanges AS src
+									);
+									IF (@message IS NOT NULL)
+									BEGIN
+										EXEC dbo.fhsmSPLog @name = @Name, @version = @version, @task = @thisTask, @type = ''Info'', @message = @message;
+									END;
+								END;
+							END;
+			';
+			SET @stmt += '
+						END
+						ELSE BEGIN
+							SET @message = ''Illegal Combination of @Type:'''''' + COALESCE(@Type, ''<NULL>'') + '''''' and @Command:'''''' + COALESCE(@Command, ''<NULL>'') + '''''''';
+							RAISERROR(@message, 0, 1) WITH NOWAIT;
+							RETURN -19;
+						END;
+					END
+			';
+			SET @stmt += '
+					ELSE IF (@Type = ''Uninstall'')
+					BEGIN
+						--
+						-- Place holder
+						--
+						SET @Type = @Type;
+					END
+			';
+			SET @stmt += '
+					ELSE BEGIN
+						SET @message = ''Illegal @Type:'''''' + COALESCE(@Type, ''<NULL>'') + '''''''';
+						RAISERROR(@message, 0, 1) WITH NOWAIT;
+						RETURN -999;
+					END;
+
+					RETURN 0;
+				END;
+			';
+			EXEC(@stmt);
+
+			--
+			-- Register extended properties on the stored procedure dbo.fhsmSPControlCapacity
+			--
+			BEGIN
+				SET @objectName = 'dbo.fhsmSPControlCapacity';
 				SET @objName = PARSENAME(@objectName, 1);
 				SET @schName = PARSENAME(@objectName, 2);
 
@@ -2389,7 +2536,7 @@ ELSE BEGIN
 	--
 	BEGIN
 		WITH
-		schedules(Enabled, DeploymentStatus, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters) AS(
+		schedules(Enabled, DeploymentStatus, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameter) AS(
 			SELECT
 				@enableCapacity										AS Enabled
 				,0													AS DeploymentStatus
@@ -2399,13 +2546,16 @@ ELSE BEGIN
 				,CAST('1900-1-1T07:00:00.0000' AS datetime2(0))		AS FromTime
 				,CAST('1900-1-1T08:00:00.0000' AS datetime2(0))		AS ToTime
 				,1, 1, 1, 1, 1, 1, 1								-- Monday..Sunday
-				,'@Databases = ''USER_DATABASES, msdb, tempdb'''	AS Parameters
+				,'@Databases = ''USER_DATABASES, msdb, tempdb'''	AS Parameter
 		)
 		MERGE dbo.fhsmSchedules AS tgt
 		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
+		WHEN MATCHED AND (tgt.Enabled = 0) AND (src.Enabled = 1)
+			THEN UPDATE
+				SET tgt.Enabled = src.Enabled
 		WHEN NOT MATCHED BY TARGET
-			THEN INSERT(Enabled, DeploymentStatus, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters)
-			VALUES(src.Enabled, src.DeploymentStatus, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameters);
+			THEN INSERT(Enabled, DeploymentStatus, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameter)
+			VALUES(src.Enabled, src.DeploymentStatus, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameter);
 	END;
 
 	--

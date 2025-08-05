@@ -1,0 +1,115 @@
+table 'Always On read only routing'
+	lineageTag: 1d65d6fb-8b05-4114-9ac4-78cfd8723a6a
+
+	column 'Replica replica'
+		dataType: string
+		lineageTag: bef4329e-b08f-4494-a08a-9e98804cbc31
+		summarizeBy: none
+		sourceColumn: Replica replica
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Read only routing URL'
+		dataType: string
+		lineageTag: 6888bbe0-bfc8-4dd9-ba3f-5a76ff133247
+		summarizeBy: none
+		sourceColumn: Read only routing URL
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Routing priority'
+		dataType: int64
+		formatString: 0
+		lineageTag: 9ad06a07-4112-47ce-852c-df63b9518e66
+		summarizeBy: none
+		sourceColumn: Routing priority
+
+		annotation SummarizationSetBy = User
+
+	column 'Secondary role allow connections'
+		dataType: string
+		lineageTag: 89ead12a-36d0-460d-a6bb-9036d0934bed
+		summarizeBy: none
+		sourceColumn: Secondary role allow connections
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Min. timestamp'
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: 22fca286-b4be-424b-9557-51c77ac8d3cf
+		summarizeBy: none
+		sourceColumn: Min. timestamp
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	column 'Max. timestamp'
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: 4b74a090-cd68-453f-9076-1573820aff6d
+		summarizeBy: none
+		sourceColumn: Max. timestamp
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	column AlwaysOnGroupReplicaKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 69928d1a-8937-4642-ae1e-c18ab24dc8f1
+		summarizeBy: none
+		sourceColumn: AlwaysOnGroupReplicaKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Always On read only routing' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Database configuration")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db     = dbList{[Name = #"Database name"]}[Data], 
+				  table  = db{[Schema = #"Schema name", Item = "Always On read only routing"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  selectColumns = Table.SelectColumns(
+				    datasetToUse, 
+				    {
+				      "AGReplReplicaName", 
+				      "ReadOnlyRoutingURL", 
+				      "RoutingPriority", 
+				      "SecondaryRoleAllowConnections", 
+				      "MinTimestamp", 
+				      "MaxTimestamp", 
+				      "AlwaysOnGroupReplicaKey"
+				    }
+				  ), 
+				  renameColumns = Table.RenameColumns(
+				    selectColumns, 
+				    {
+				      {"AGReplReplicaName", "Replica replica"}, 
+				      {"ReadOnlyRoutingURL", "Read only routing URL"}, 
+				      {"RoutingPriority", "Routing priority"}, 
+				      {"SecondaryRoleAllowConnections", "Secondary role allow connections"}, 
+				      {"MinTimestamp", "Min. timestamp"}, 
+				      {"MaxTimestamp", "Max. timestamp"}
+				    }
+				  )
+				in
+				  renameColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

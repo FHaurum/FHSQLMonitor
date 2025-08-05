@@ -1,0 +1,164 @@
+table 'Always On database states'
+	lineageTag: 938c4774-27b0-438d-a445-c229babfd142
+
+	column Database
+		dataType: string
+		lineageTag: 0c42da23-7865-4759-8dfd-cc536e789ab5
+		summarizeBy: none
+		sourceColumn: Database
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Is local'
+		dataType: string
+		lineageTag: 1809f168-9d00-4d4b-8565-b9aa51d00dba
+		summarizeBy: none
+		sourceColumn: Is local
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Is primary replica'
+		dataType: string
+		lineageTag: 460a8345-e350-4f9d-8f10-32cabb5be01a
+		summarizeBy: none
+		sourceColumn: Is primary replica
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Synchronization state'
+		dataType: string
+		lineageTag: b09e423c-702a-4288-b8d2-d44422eef62d
+		summarizeBy: none
+		sourceColumn: Synchronization state
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Is commit participant'
+		dataType: string
+		lineageTag: 7ec9fd34-192d-40b5-ada8-90331f5bac62
+		summarizeBy: none
+		sourceColumn: Is commit participant
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Synchronization health'
+		dataType: string
+		lineageTag: 558e1654-5d70-49fa-a9f5-581f73fd636c
+		summarizeBy: none
+		sourceColumn: Synchronization health
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Database state'
+		dataType: string
+		lineageTag: fe9c7293-d6ce-4bf2-b96b-2c0d1bfc8376
+		summarizeBy: none
+		sourceColumn: Database state
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Is suspended'
+		dataType: string
+		lineageTag: c8fa6359-9e63-4fea-b44d-447da0d98fbe
+		summarizeBy: none
+		sourceColumn: Is suspended
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Suspend reason'
+		dataType: string
+		lineageTag: 88b83b98-0f2f-4c63-8e27-7ff21afe7567
+		summarizeBy: none
+		sourceColumn: Suspend reason
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Min. timestamp'
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: 99ff9a1d-28bd-489c-bdda-78125d516ac7
+		summarizeBy: none
+		sourceColumn: Min. timestamp
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	column 'Max. timestamp'
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: 226d1e95-13e8-402d-b8de-7d2b3e8b6926
+		summarizeBy: none
+		sourceColumn: Max. timestamp
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	column AlwaysOnGroupReplicaKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 880e8b83-ef3a-4326-bd35-c21614cc5e15
+		summarizeBy: none
+		sourceColumn: AlwaysOnGroupReplicaKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Always On database states' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Database configuration")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db     = dbList{[Name = #"Database name"]}[Data], 
+				  table  = db{[Schema = #"Schema name", Item = "Always On database states"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  selectColumns = Table.SelectColumns(
+				    datasetToUse, 
+				    {
+				      "AGDatabaseName", 
+				      "IsLocal", 
+				      "IsPrimaryReplica", 
+				      "SynchronizationState", 
+				      "IsCommitParticipant", 
+				      "SynchronizationHealth", 
+				      "DatabaseState", 
+				      "IsSuspended", 
+				      "SuspendReason", 
+				      "MinTimestamp", 
+				      "MaxTimestamp", 
+				      "AlwaysOnGroupReplicaKey"
+				    }
+				  ), 
+				  renameColumns = Table.RenameColumns(
+				    selectColumns, 
+				    {
+				      {"AGDatabaseName", "Database"}, 
+				      {"IsLocal", "Is local"}, 
+				      {"IsPrimaryReplica", "Is primary replica"}, 
+				      {"SynchronizationState", "Synchronization state"}, 
+				      {"IsCommitParticipant", "Is commit participant"}, 
+				      {"SynchronizationHealth", "Synchronization health"}, 
+				      {"DatabaseState", "Database state"}, 
+				      {"IsSuspended", "Is suspended"}, 
+				      {"SuspendReason", "Suspend reason"}, 
+				      {"MinTimestamp", "Min. timestamp"}, 
+				      {"MaxTimestamp", "Max. timestamp"}
+				    }
+				  )
+				in
+				  renameColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

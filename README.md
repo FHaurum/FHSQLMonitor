@@ -3,6 +3,12 @@ You can try the [live demo](https://app.powerbi.com/view?r=eyJrIjoiMDQ2MDQ3ZjQtO
 
 Have fun :-)
 <p>
+<b>August 5, 2025: Version 2.9.0</b> with:</br>
+<li>New report "Always On configuration".</li>
+<li>Added "Database scoped configuration" to the report page "Database configuration".</li>
+<li>Added command line interface stored procedure dbo.fhsmSPControl to allow update and changes to Schedules, Retention and Parameters without having to do manual T-SQL Update commands.</li>
+</p>
+<p>
 <b>July 14, 2025: Version 2.8.0</b> with:</br>
 <li>The Database size report now also shows disk size and allocation usage, allowing you to see which databases and tables are using which filegroups and disks.</li>
 <li>The Instance configuration report now shows whether the SQL Server edition is in Mainstream Support, Extended Support, or Unsupported.</li>

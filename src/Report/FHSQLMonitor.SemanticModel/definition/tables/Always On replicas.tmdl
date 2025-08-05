@@ -1,0 +1,155 @@
+table 'Always On replicas'
+	lineageTag: 774291ae-25b4-4235-9d9c-69971b5a6ad6
+
+	column 'Endpoint URL'
+		dataType: string
+		lineageTag: 0a101ca4-bd54-4054-9278-3bb5c127cf86
+		summarizeBy: none
+		sourceColumn: Endpoint URL
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Availability mode'
+		dataType: string
+		lineageTag: 446e70b3-775a-4157-94ab-2c2510b11991
+		summarizeBy: none
+		sourceColumn: Availability mode
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Failover mode'
+		dataType: string
+		lineageTag: 5fe8c995-bc45-493b-afcf-88e14ae47670
+		summarizeBy: none
+		sourceColumn: Failover mode
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Primary role allow connections'
+		dataType: string
+		lineageTag: 687c8669-ccb3-4385-98d8-191e1355b727
+		summarizeBy: none
+		sourceColumn: Primary role allow connections
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Secondary role allow connections'
+		dataType: string
+		lineageTag: 5ad5845c-66a9-43b9-a2d2-cc5fb489a4ac
+		summarizeBy: none
+		sourceColumn: Secondary role allow connections
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Backup priority'
+		dataType: int64
+		formatString: 0
+		lineageTag: 16fb2a09-ffb1-4f9e-8f8a-67230e027b2e
+		summarizeBy: none
+		sourceColumn: Backup priority
+
+		annotation SummarizationSetBy = User
+
+	column 'Read only routing URL'
+		dataType: string
+		lineageTag: 537ba5dd-5e12-4009-a076-991b93e65188
+		summarizeBy: none
+		sourceColumn: Read only routing URL
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Read-write routing URL'
+		dataType: string
+		lineageTag: c8f19dd7-c092-4052-b110-d34ab887908e
+		summarizeBy: none
+		sourceColumn: Read-write routing URL
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Min. timestamp'
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: de448c06-3e5c-4d01-8292-2a180c49413e
+		summarizeBy: none
+		sourceColumn: Min. timestamp
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	column 'Max. timestamp'
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: 4f5a7cfd-2b49-4df1-9492-66941524d227
+		summarizeBy: none
+		sourceColumn: Max. timestamp
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	column AlwaysOnGroupReplicaKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 0b6a29af-66db-4a20-b980-b5729115fcc2
+		summarizeBy: none
+		sourceColumn: AlwaysOnGroupReplicaKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Always On replicas' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Database configuration")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db     = dbList{[Name = #"Database name"]}[Data], 
+				  table  = db{[Schema = #"Schema name", Item = "Always On replicas"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  selectColumns = Table.SelectColumns(
+				    datasetToUse, 
+				    {
+				      "EndpointURL", 
+				      "AvailabilityMode", 
+				      "FailoverMode", 
+				      "PrimaryRoleAllowConnections", 
+				      "SecondaryRoleAllowConnections", 
+				      "BackupPriority", 
+				      "ReadOnlyRoutingURL", 
+				      "ReadWriteRoutingURL", 
+				      "MinTimestamp", 
+				      "MaxTimestamp", 
+				      "AlwaysOnGroupReplicaKey"
+				    }
+				  ), 
+				  renameColumns = Table.RenameColumns(
+				    selectColumns, 
+				    {
+				      {"EndpointURL", "Endpoint URL"}, 
+				      {"AvailabilityMode", "Availability mode"}, 
+				      {"FailoverMode", "Failover mode"}, 
+				      {"PrimaryRoleAllowConnections", "Primary role allow connections"}, 
+				      {"SecondaryRoleAllowConnections", "Secondary role allow connections"}, 
+				      {"BackupPriority", "Backup priority"}, 
+				      {"ReadOnlyRoutingURL", "Read only routing URL"}, 
+				      {"ReadWriteRoutingURL", "Read-write routing URL"}, 
+				      {"MinTimestamp", "Min. timestamp"}, 
+				      {"MaxTimestamp", "Max. timestamp"}
+				    }
+				  )
+				in
+				  renameColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

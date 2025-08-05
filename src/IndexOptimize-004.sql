@@ -145,7 +145,7 @@ BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.8';
+		SET @version = '2.9';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -373,7 +373,7 @@ BEGIN
 				BEGIN
 					SET NOCOUNT ON;
 
-					DECLARE @parameters nvarchar(max);
+					DECLARE @parameter nvarchar(max);
 					DECLARE @stmt nvarchar(max);
 					DECLARE @thisTask nvarchar(128);
 
@@ -381,17 +381,17 @@ BEGIN
 					SET @version = ''' + @version + ''';
 
 					--
-					-- Get the parameters for the command
+					-- Get the parameter for the command
 					--
 					BEGIN
-						SET @parameters = dbo.fhsmFNGetTaskParameter(@thisTask, @name);
+						SET @parameter = dbo.fhsmFNGetTaskParameter(@thisTask, @name);
 					END;
 
 					--
 					-- Call Ola Hallengren
 					--
 					BEGIN
-						SET @stmt = ''EXEC dbo.IndexOptimize '' + @parameters;
+						SET @stmt = ''EXEC dbo.IndexOptimize '' + @parameter;
 						EXEC(@stmt);
 					END;
 
@@ -399,21 +399,168 @@ BEGIN
 				END;
 			';
 			EXEC(@stmt);
+
+			--
+			-- Register extended properties on the stored procedure dbo.fhsmSPIndexOptimize
+			--
+			BEGIN
+				SET @objectName = 'dbo.fhsmSPIndexOptimize';
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+			END;
 		END;
 
 		--
-		-- Register extended properties on the stored procedure dbo.fhsmSPIndexOptimize
+		-- Create stored procedure dbo.fhsmSPControlIndexOptimize
 		--
 		BEGIN
-			SET @objectName = 'dbo.fhsmSPIndexOptimize';
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
+			SET @stmt = '
+				IF OBJECT_ID(''dbo.fhsmSPControlIndexOptimize'', ''P'') IS NULL
+				BEGIN
+					EXEC(''CREATE PROC dbo.fhsmSPControlIndexOptimize AS SELECT ''''dummy'''' AS Txt'');
+				END;
+			';
+			EXEC(@stmt);
 
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+			SET @stmt = '
+				ALTER PROC dbo.fhsmSPControlIndexOptimize (
+					@Type nvarchar(16)
+					,@Command nvarchar(16)
+					,@Name nvarchar(128) = NULL
+					,@Parameter nvarchar(max) = NULL
+					,@Task nvarchar(128) = NULL
+				)
+				AS
+				BEGIN
+					SET NOCOUNT ON;
+
+					DECLARE @message nvarchar(max);
+					DECLARE @parameterChanges TABLE(
+						Action nvarchar(10),
+						DeletedTask nvarchar(128),
+						DeletedName nvarchar(128),
+						DeletedParameter nvarchar(max),
+						InsertedTask nvarchar(128),
+						InsertedName nvarchar(128),
+						InsertedParameter nvarchar(max)
+					);
+					DECLARE @thisTask nvarchar(128);
+					DECLARE @version nvarchar(128);
+
+					SET @thisTask = OBJECT_NAME(@@PROCID);
+					SET @version = ''' + @version + ''';
+			';
+			SET @stmt += '
+					IF (@Type = ''Parameter'')
+					BEGIN
+						IF (@Command = ''set'')
+						BEGIN
+							SET @Parameter = NULLIF(@Parameter, '''');
+
+							IF NOT EXISTS (
+								SELECT *
+								FROM dbo.fhsmSchedules AS s
+								WHERE (s.Task = @Task) AND (s.Name = @Name) AND (s.DeploymentStatus <> -1)
+							)
+							BEGIN
+								SET @message = ''Invalid @Task:'''''' + COALESCE(NULLIF(@Task, ''''), ''<NULL>'') + '''''' and @Name:'''''' + COALESCE(NULLIF(@Name, ''''), ''<NULL>'') + '''''''';
+								RAISERROR(@message, 0, 1) WITH NOWAIT;
+								RETURN -11;
+							END;
+
+							--
+							-- Register configuration changes
+							--
+							BEGIN
+								WITH
+								conf(Task, Name, Parameter) AS(
+									SELECT
+										@Task AS Task
+										,@Name AS Name
+										,@Parameter AS Parameter
+								)
+								MERGE dbo.fhsmSchedules AS tgt
+								USING conf AS src ON (src.[Task] = tgt.[Task] COLLATE SQL_Latin1_General_CP1_CI_AS) AND (src.[Name] = tgt.[Name] COLLATE SQL_Latin1_General_CP1_CI_AS)
+								-- Not testing for NULL as a NULL parameter is not allowed
+								WHEN MATCHED AND (tgt.Parameter <> src.Parameter)
+									THEN UPDATE
+										SET tgt.Parameter = src.Parameter
+								WHEN NOT MATCHED BY TARGET
+									THEN INSERT(Task, Name, Parameter)
+									VALUES(src.Task, src.Name, src.Parameter)
+								OUTPUT
+									$action,
+									deleted.Task,
+									deleted.Name,
+									deleted.Parameter,
+									inserted.Task,
+									inserted.Name,
+									inserted.Parameter
+								INTO @parameterChanges;
+
+								IF (@@ROWCOUNT <> 0)
+								BEGIN
+									SET @message = (
+										SELECT ''Parameter is '''''' + COALESCE(src.InsertedParameter, ''<NULL>'') + '''''' - changed from '''''' + COALESCE(src.DeletedParameter, ''<NULL>'') + ''''''''
+										FROM @parameterChanges AS src
+									);
+									IF (@message IS NOT NULL)
+									BEGIN
+										EXEC dbo.fhsmSPLog @name = @Name, @version = @version, @task = @thisTask, @type = ''Info'', @message = @message;
+									END;
+								END;
+							END;
+			';
+			SET @stmt += '
+						END
+						ELSE BEGIN
+							SET @message = ''Illegal Combination of @Type:'''''' + COALESCE(@Type, ''<NULL>'') + '''''' and @Command:'''''' + COALESCE(@Command, ''<NULL>'') + '''''''';
+							RAISERROR(@message, 0, 1) WITH NOWAIT;
+							RETURN -19;
+						END;
+					END
+			';
+			SET @stmt += '
+					ELSE IF (@Type = ''Uninstall'')
+					BEGIN
+						--
+						-- Place holder
+						--
+						SET @Type = @Type;
+					END
+			';
+			SET @stmt += '
+					ELSE BEGIN
+						SET @message = ''Illegal @Type:'''''' + COALESCE(@Type, ''<NULL>'') + '''''''';
+						RAISERROR(@message, 0, 1) WITH NOWAIT;
+						RETURN -999;
+					END;
+
+					RETURN 0;
+				END;
+			';
+			EXEC(@stmt);
+
+			--
+			-- Register extended properties on the stored procedure dbo.fhsmSPControlIndexOptimize
+			--
+			BEGIN
+				SET @objectName = 'dbo.fhsmSPControlIndexOptimize';
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+			END;
 		END;
 	END;
 
@@ -446,7 +593,7 @@ BEGIN
 	IF (DB_NAME() = COALESCE(@olaDatabase, DB_NAME()))
 	BEGIN
 		WITH
-		schedules(Enabled, DeploymentStatus, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters) AS(
+		schedules(Enabled, DeploymentStatus, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameter) AS(
 			SELECT
 				@enableIndexRebuild								AS Enabled
 				,0												AS DeploymentStatus
@@ -499,9 +646,12 @@ BEGIN
 		)
 		MERGE dbo.fhsmSchedules AS tgt
 		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
+		WHEN MATCHED AND (tgt.Enabled = 0) AND (src.Enabled = 1)
+			THEN UPDATE
+				SET tgt.Enabled = src.Enabled
 		WHEN NOT MATCHED BY TARGET
-			THEN INSERT(Enabled, DeploymentStatus, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters)
-			VALUES(src.Enabled, src.DeploymentStatus, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameters);
+			THEN INSERT(Enabled, DeploymentStatus, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameter)
+			VALUES(src.Enabled, src.DeploymentStatus, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameter);
 	END;
 
 	--

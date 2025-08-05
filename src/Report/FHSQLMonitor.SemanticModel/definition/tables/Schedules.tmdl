@@ -26,14 +26,6 @@ table Schedules
 
 		annotation SummarizationSetBy = Automatic
 
-	column Parameters
-		dataType: string
-		lineageTag: e4c0f8a6-b61b-4a2e-b6bc-2c7fa9f5f300
-		summarizeBy: none
-		sourceColumn: Parameters
-
-		annotation SummarizationSetBy = Automatic
-
 	column 'Execution delay in sec.'
 		dataType: int64
 		formatString: 0
@@ -159,6 +151,14 @@ table Schedules
 		lineageTag: c63f8cea-9d89-4b5e-846d-e4fdc0ef245f
 		summarizeBy: none
 		sourceColumn: Last error message
+
+		annotation SummarizationSetBy = Automatic
+
+	column Parameter
+		dataType: string
+		lineageTag: d6842302-a4fa-4f35-ba47-6c654678172a
+		summarizeBy: none
+		sourceColumn: Parameter
 
 		annotation SummarizationSetBy = Automatic
 

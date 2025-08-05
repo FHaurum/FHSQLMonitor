@@ -1,0 +1,64 @@
+table 'Always On group-replica'
+	lineageTag: 0f8a3adc-ffff-4d27-90bf-078d1897d575
+
+	column Group
+		dataType: string
+		lineageTag: 067aad9b-116c-4dc8-a233-17f80d3c4faa
+		summarizeBy: none
+		sourceColumn: Group
+
+		annotation SummarizationSetBy = Automatic
+
+	column Replica
+		dataType: string
+		lineageTag: 01fe16dc-4357-4289-bc25-25726273ba09
+		summarizeBy: none
+		sourceColumn: Replica
+
+		annotation SummarizationSetBy = Automatic
+
+	column AlwaysOnGroupReplicaKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 986776de-4ce3-4c0c-be1f-ab2b18962adf
+		summarizeBy: none
+		sourceColumn: AlwaysOnGroupReplicaKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Always On group-replica' = m
+		mode: import
+		queryGroup: Dimensions
+		source = ```
+				let
+				  loadConfigFirstMatch = Table.First(
+				    Table.SelectRows(
+				      #"Data load", 
+				      each List.Contains(
+				        {"Database configuration"}, 
+				        [Service]
+				      )
+				        and List.Contains({"Yes"}, [DataLoad])
+				    )
+				  ), 
+				  loadConfig = 
+				    if (loadConfigFirstMatch = null) then
+				      "No"
+				    else
+				      Record.Field(loadConfigFirstMatch, "DataLoad"), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db     = dbList{[Name = #"Database name"]}[Data], 
+				  table  = db{[Schema = #"Schema name", Item = "Always On group-replica"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset
+				in
+				  datasetToUse
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

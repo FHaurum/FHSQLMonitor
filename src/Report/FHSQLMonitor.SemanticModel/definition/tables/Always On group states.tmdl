@@ -1,0 +1,104 @@
+table 'Always On group states'
+	lineageTag: aedb49fb-ca2b-4432-9291-dafa1bbdcd7a
+
+	column 'Primary recovery health'
+		dataType: string
+		lineageTag: 975b3362-bb2d-4bce-9452-a01da7bbb0eb
+		summarizeBy: none
+		sourceColumn: Primary recovery health
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Secondary recovery health'
+		dataType: string
+		lineageTag: 9d750c55-5503-4aa0-9e93-ab9c42811e50
+		summarizeBy: none
+		sourceColumn: Secondary recovery health
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Synchronization health'
+		dataType: string
+		lineageTag: cef6b4f9-c8a6-4165-84bd-50a8d42fd61d
+		summarizeBy: none
+		sourceColumn: Synchronization health
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Min. timestamp'
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: baf707d0-a563-4eca-9bae-7ef7aa9c55da
+		summarizeBy: none
+		sourceColumn: Min. timestamp
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	column 'Max. timestamp'
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: ec1ea755-24c3-4c58-8506-049ff69b3d17
+		summarizeBy: none
+		sourceColumn: Max. timestamp
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	column AlwaysOnGroupReplicaKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: e30f86ba-d625-46d8-9bd0-a32bb2d371c0
+		summarizeBy: none
+		sourceColumn: AlwaysOnGroupReplicaKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Always On group states' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Database configuration")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db     = dbList{[Name = #"Database name"]}[Data], 
+				  table  = db{[Schema = #"Schema name", Item = "Always On group states"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  selectColumns = Table.SelectColumns(
+				    datasetToUse, 
+				    {
+				      "PrimaryRecoveryHealth", 
+				      "SecondaryRecoveryHealth", 
+				      "SynchronizationHealth", 
+				      "MinTimestamp", 
+				      "MaxTimestamp", 
+				      "AlwaysOnGroupReplicaKey"
+				    }
+				  ), 
+				  renameColumns = Table.RenameColumns(
+				    selectColumns, 
+				    {
+				      {"PrimaryRecoveryHealth", "Primary recovery health"}, 
+				      {"SecondaryRecoveryHealth", "Secondary recovery health"}, 
+				      {"SynchronizationHealth", "Synchronization health"}, 
+				      {"MinTimestamp", "Min. timestamp"}, 
+				      {"MaxTimestamp", "Max. timestamp"}
+				    }
+				  )
+				in
+				  renameColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

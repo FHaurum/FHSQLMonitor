@@ -139,6 +139,26 @@ table 'Database state'
 
 		annotation SummarizationSetBy = Automatic
 
+	column 'Is on Always On primary'
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 64ca9ec9-67cb-40a0-9291-0ac0accb9cb9
+		summarizeBy: none
+		sourceColumn: Is on Always On primary
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column 'Always On group'
+		dataType: string
+		lineageTag: d2878ec6-6079-4db0-a930-61e210d0aa68
+		summarizeBy: none
+		sourceColumn: Always On group
+
+		annotation SummarizationSetBy = Automatic
+
 	partition 'Database state' = m
 		mode: import
 		queryGroup: Facts
@@ -156,6 +176,7 @@ table 'Database state'
 				  selectColumns = Table.SelectColumns(
 				    datasetToUse, 
 				    {
+				      "AlwaysOnGroupName", 
 				      "CollationName", 
 				      "CompatibilityLevel", 
 				      "DelayedDurability", 
@@ -164,8 +185,9 @@ table 'Database state'
 				      "IsAutoUpdateStatsAsyncOn", 
 				      "IsEncrypted", 
 				      "IsMixedPageAllocationOn", 
-				      "PageVerifyOption", 
+				      "IsOnAlwaysOnPrimary", 
 				      "IsReadCommittedSnapshotOn", 
+				      "PageVerifyOption", 
 				      "RecoveryModel", 
 				      "TargetRecoveryTimeInSeconds", 
 				      "MinTimestamp", 
@@ -186,6 +208,8 @@ table 'Database state'
 				      {"IsAutoShrinkOn", "Auto shrink"}, 
 				      {"IsAutoUpdateStatsAsyncOn", "Auto update stats. async."}, 
 				      {"IsEncrypted", "Encrypted"}, 
+				      {"AlwaysOnGroupName", "Always On group"}, 
+				      {"IsOnAlwaysOnPrimary", "Is on Always On primary"}, 
 				      {"DelayedDurability", "Delayed durability"}, 
 				      {"TargetRecoveryTimeInSeconds", "Target recovery time in sec."}, 
 				      {"MinTimestamp", "Min. timestamp"}, 

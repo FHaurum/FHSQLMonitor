@@ -1,0 +1,81 @@
+table 'WSFC quorum state'
+	lineageTag: f31f9d66-38f0-4143-9ad0-cddda40b6882
+
+	column 'Cluster name'
+		dataType: string
+		lineageTag: 83044a15-6641-407c-a19f-32a14c17a52e
+		summarizeBy: none
+		sourceColumn: Cluster name
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Quorum type'
+		dataType: string
+		lineageTag: 0179a479-93c7-43a8-92a9-fe70da6d25a9
+		summarizeBy: none
+		sourceColumn: Quorum type
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Quorum state'
+		dataType: string
+		lineageTag: d401e5b7-2d18-4bb9-9581-9f9ed278914b
+		summarizeBy: none
+		sourceColumn: Quorum state
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Min. timestamp'
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: 1018b204-aa2d-4933-af7f-4397d80061d3
+		summarizeBy: none
+		sourceColumn: Min. timestamp
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	column 'Max. timestamp'
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: 235d5e6f-9103-417b-ac22-b04116c480b7
+		summarizeBy: none
+		sourceColumn: Max. timestamp
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	partition 'WSFC quorum state' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Database configuration")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db     = dbList{[Name = #"Database name"]}[Data], 
+				  table  = db{[Schema = #"Schema name", Item = "WSFC quorum state"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  renameColumns = Table.RenameColumns(
+				    datasetToUse, 
+				    {
+				      {"WSFCClusterName", "Cluster name"}, 
+				      {"QuorumType", "Quorum type"}, 
+				      {"QuorumState", "Quorum state"}, 
+				      {"MinTimestamp", "Min. timestamp"}, 
+				      {"MaxTimestamp", "Max. timestamp"}
+				    }
+				  )
+				in
+				  renameColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

@@ -1,0 +1,126 @@
+table 'Database scoped configurations'
+	lineageTag: 80b955ea-b5c0-4d31-b1ec-340f088050d3
+
+	column Value
+		dataType: string
+		lineageTag: 306a7230-1912-48ab-9ffa-9ffbd18199bd
+		summarizeBy: none
+		sourceColumn: Value
+
+		annotation SummarizationSetBy = Automatic
+
+	column Timestamp
+		dataType: dateTime
+		formatString: dd-mmm-yyyy
+		lineageTag: bcb01e62-4a87-4eee-b6c6-d15321396a3d
+		summarizeBy: none
+		sourceColumn: Timestamp
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	column DatabaseKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 6009da56-03b7-4dc0-80ff-9678c453ed92
+		summarizeBy: none
+		sourceColumn: DatabaseKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column ConfigurationSortOrder
+		dataType: int64
+		formatString: 0
+		lineageTag: 23754c94-02da-484a-b906-9c5e4bed79d3
+		summarizeBy: none
+		sourceColumn: ConfigurationSortOrder
+
+		annotation SummarizationSetBy = User
+
+	column DefaultState
+		dataType: int64
+		formatString: 0
+		lineageTag: 97d67ff8-f64c-45c8-bb23-5ecb71a2fb4c
+		summarizeBy: none
+		sourceColumn: DefaultState
+
+		annotation SummarizationSetBy = User
+
+	column DefaultIndicator = ```
+			
+			IF (
+			    'Database scoped configurations'[DefaultState] = 0,
+			    UNICHAR ( 128993 ),
+			    UNICHAR ( 128994 )
+			)
+			
+			```
+		lineageTag: 07903390-5197-4f62-a663-072a3eeb8311
+		summarizeBy: none
+
+		annotation SummarizationSetBy = Automatic
+
+	column DatabaseScopedConfigurationKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 3f72c300-7340-4d44-98e7-5b4dcad001c5
+		summarizeBy: none
+		sourceColumn: DatabaseScopedConfigurationKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Value for secondary'
+		dataType: string
+		lineageTag: b8be8ba0-2f8c-49dc-b1bd-eeb64012feb0
+		summarizeBy: none
+		sourceColumn: Value for secondary
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Database scoped configurations' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Database configuration")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db     = dbList{[Name = #"Database name"]}[Data], 
+				  table  = db{[Schema = #"Schema name", Item = "Database scoped configurations"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  selectColumns = Table.SelectColumns(
+				    datasetToUse, 
+				    {
+				      "Value", 
+				      "ValueForSecondary", 
+				      "DefaultState", 
+				      "ConfigurationSortOrder", 
+				      "Timestamp", 
+				      "DatabaseKey", 
+				      "DatabaseScopedConfigurationKey"
+				    }
+				  ), 
+				  renameColumns = Table.RenameColumns(
+				    selectColumns, 
+				    {
+				      {"ValueForSecondary", "Value for secondary"}
+				    }
+				  )
+				in
+				  renameColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

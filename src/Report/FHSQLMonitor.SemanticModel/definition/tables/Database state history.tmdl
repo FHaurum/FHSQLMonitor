@@ -51,6 +51,14 @@ table 'Database state history'
 
 		annotation SummarizationSetBy = Automatic
 
+	column Type
+		dataType: string
+		lineageTag: 888c1cb2-7f46-448e-8d7a-4bb2c760cc7f
+		summarizeBy: none
+		sourceColumn: Type
+
+		annotation SummarizationSetBy = Automatic
+
 	partition 'Database state history' = m
 		mode: import
 		queryGroup: Facts
@@ -68,6 +76,7 @@ table 'Database state history'
 				  selectColumns = Table.SelectColumns(
 				    datasetToUse, 
 				    {
+				      "Type", 
 				      "Key", 
 				      "ValidFrom", 
 				      "ValidTo", 

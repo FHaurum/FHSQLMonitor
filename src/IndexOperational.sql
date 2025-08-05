@@ -66,7 +66,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.8';
+		SET @version = '2.9';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -430,8 +430,8 @@ ELSE BEGIN
 					DECLARE @message nvarchar(max);
 					DECLARE @now datetime;
 					DECLARE @nowUTC datetime;
-					DECLARE @parameters nvarchar(max);
-					DECLARE @parametersTable TABLE([Key] nvarchar(128) NOT NULL, Value nvarchar(128) NULL);
+					DECLARE @parameter nvarchar(max);
+					DECLARE @parameterTable TABLE([Key] nvarchar(128) NOT NULL, Value nvarchar(128) NULL);
 					DECLARE @replicaId uniqueidentifier;
 					DECLARE @stmt nvarchar(max);
 					DECLARE @thisTask nvarchar(128);
@@ -442,18 +442,18 @@ ELSE BEGIN
 					SET @version = ''' + @version + ''';
 
 					--
-					-- Get the parameters for the command
+					-- Get the parameter for the command
 					--
 					BEGIN
-						SET @parameters = dbo.fhsmFNGetTaskParameter(@thisTask, @name);
+						SET @parameter = dbo.fhsmFNGetTaskParameter(@thisTask, @name);
 
-						INSERT INTO @parametersTable([Key], Value)
+						INSERT INTO @parameterTable([Key], Value)
 						SELECT
 							(SELECT s.Txt FROM dbo.fhsmFNSplitString(p.Txt, ''='') AS s WHERE (s.Part = 1)) AS [Key]
 							,(SELECT s.Txt FROM dbo.fhsmFNSplitString(p.Txt, ''='') AS s WHERE (s.Part = 2)) AS Value
-						FROM dbo.fhsmFNSplitString(@parameters, '';'') AS p;
+						FROM dbo.fhsmFNSplitString(@parameter, '';'') AS p;
 
-						SET @databases = (SELECT pt.Value FROM @parametersTable AS pt WHERE (pt.[Key] = ''@Databases''));
+						SET @databases = (SELECT pt.Value FROM @parameterTable AS pt WHERE (pt.[Key] = ''@Databases''));
 
 						--
 						-- Trim @databases if Ola Hallengren style has been chosen
@@ -1188,7 +1188,7 @@ ELSE BEGIN
 	--
 	BEGIN
 		WITH
-		schedules(Enabled, DeploymentStatus, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters) AS(
+		schedules(Enabled, DeploymentStatus, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameter) AS(
 			SELECT
 				@enableIndexOperational							AS Enabled
 				,0												AS DeploymentStatus
@@ -1198,13 +1198,16 @@ ELSE BEGIN
 				,CAST('1900-1-1T06:00:00.0000' AS datetime2(0))	AS FromTime
 				,CAST('1900-1-1T23:59:59.0000' AS datetime2(0))	AS ToTime
 				,1, 1, 1, 1, 1, 1, 1							-- Monday..Sunday
-				,'@Databases = ''USER_DATABASES, msdb'''		AS Parameters
+				,'@Databases = ''USER_DATABASES, msdb'''		AS Parameter
 		)
 		MERGE dbo.fhsmSchedules AS tgt
 		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
+		WHEN MATCHED AND (tgt.Enabled = 0) AND (src.Enabled = 1)
+			THEN UPDATE
+				SET tgt.Enabled = src.Enabled
 		WHEN NOT MATCHED BY TARGET
-			THEN INSERT(Enabled, DeploymentStatus, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters)
-			VALUES(src.Enabled, src.DeploymentStatus, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameters);
+			THEN INSERT(Enabled, DeploymentStatus, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameter)
+			VALUES(src.Enabled, src.DeploymentStatus, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameter);
 	END;
 
 	--

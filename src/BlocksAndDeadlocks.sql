@@ -84,7 +84,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.8';
+		SET @version = '2.9';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -333,6 +333,62 @@ ELSE BEGIN
 				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
 			END;
 		END;
+
+		--
+		-- We have to install empty control stored procedure in order to satisfy the documentation
+		--
+		BEGIN
+			--
+			-- Create stored procedure dbo.fhsmSPControlBlocksAndDeadlocks
+			--
+			BEGIN
+				SET @stmt = '
+					IF OBJECT_ID(''dbo.fhsmSPControlBlocksAndDeadlocks'', ''P'') IS NULL
+					BEGIN
+						EXEC(''CREATE PROC dbo.fhsmSPControlBlocksAndDeadlocks AS SELECT ''''dummy'''' AS Txt'');
+					END;
+				';
+				EXEC(@stmt);
+
+				SET @stmt = '
+					ALTER PROC dbo.fhsmSPControlBlocksAndDeadlocks (
+						@Type nvarchar(16)
+						,@Command nvarchar(16)
+						,@Key nvarchar(128) = NULL
+						,@Name nvarchar(128) = NULL
+						,@Parameter nvarchar(max) = NULL
+						,@Task nvarchar(128) = NULL
+						,@Value nvarchar(128) = NULL
+					)
+					AS
+					BEGIN
+						SET NOCOUNT ON;
+
+						RAISERROR(''!!!'', 0, 1) WITH NOWAIT;
+						RAISERROR(''!!! Can not configure BlocksAndDeadlocks on SQL versions lower than SQL2012'', 0, 1) WITH NOWAIT;
+						RAISERROR(''!!!'', 0, 1) WITH NOWAIT;
+
+						RETURN 0;
+					END;
+				';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Register extended properties on the stored procedure dbo.fhsmSPControlBlocksAndDeadlocks
+			--
+			BEGIN
+				SET @objectName = 'dbo.fhsmSPControlBlocksAndDeadlocks';
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+			END;
+		END;
 	END
 	ELSE BEGIN
 		--
@@ -385,6 +441,7 @@ ELSE BEGIN
 			)
 			MERGE dbo.fhsmConfigurations AS tgt
 			USING conf AS src ON (src.[Key] = tgt.[Key] COLLATE SQL_Latin1_General_CP1_CI_AS)
+			-- Not testing for NULL as a NULL parameter is not allowed
 			WHEN MATCHED AND (tgt.Value <> src.Value)
 				THEN UPDATE
 					SET tgt.Value = src.Value
@@ -399,14 +456,17 @@ ELSE BEGIN
 				inserted.Value
 			INTO @blockedProcessThresholdChanges;
 
-			SET @message = (
-				SELECT 'Blocked process reporting threshold is ''' + src.InsertedValue + '''' + COALESCE(' - changed from ''' + src.DeletedValue + '''', '')
-				FROM @blockedProcessThresholdChanges AS src
-			);
-			IF (@message IS NOT NULL)
+			IF (@@ROWCOUNT <> 0)
 			BEGIN
-				RAISERROR(@message, 0, 1) WITH NOWAIT;
-				EXEC dbo.fhsmSPLog @name = 'Blocks and deadlocks - installation', @version = @version, @task = 'BlocksAndDeadlocks', @type = 'Info', @message = @message;
+				SET @message = (
+					SELECT 'Blocked process reporting threshold is ''' + src.InsertedValue + '''' + COALESCE(' - changed from ''' + src.DeletedValue + '''', '')
+					FROM @blockedProcessThresholdChanges AS src
+				);
+				IF (@message IS NOT NULL)
+				BEGIN
+					RAISERROR(@message, 0, 1) WITH NOWAIT;
+					EXEC dbo.fhsmSPLog @name = 'Blocks and deadlocks - installation', @version = @version, @task = 'BlocksAndDeadlocks', @type = 'Info', @message = @message;
+				END;
 			END;
 		END;
 
@@ -899,10 +959,11 @@ ELSE BEGIN
 						DECLARE @message nvarchar(max);
 						DECLARE @now datetime;
 						DECLARE @nowUTC datetime;
-						DECLARE @parameters nvarchar(max);
-						DECLARE @parametersTable TABLE([Key] nvarchar(128) NOT NULL, Value nvarchar(128) NULL);
+						DECLARE @parameter nvarchar(max);
+						DECLARE @parameterTable TABLE([Key] nvarchar(128) NOT NULL, Value nvarchar(128) NULL);
 						DECLARE @runningFilePath nvarchar(260);
 						DECLARE @sessionName nvarchar(128);
+						DECLARE @sessionNameOldStyle nvarchar(128);
 						DECLARE @stmt nvarchar(max);
 						DECLARE @testFileName nvarchar(260);
 						DECLARE @thisTask nvarchar(128);
@@ -911,18 +972,18 @@ ELSE BEGIN
 						SET @version = ''' + @version + ''';
 
 						--
-						-- Get the parameters for the command
+						-- Get the parameter for the command
 						--
 						BEGIN
-							SET @parameters = dbo.fhsmFNGetTaskParameter(@thisTask, @name);
+							SET @parameter = dbo.fhsmFNGetTaskParameter(@thisTask, @name);
 
-							INSERT INTO @parametersTable([Key], Value)
+							INSERT INTO @parameterTable([Key], Value)
 							SELECT
 								(SELECT s.Txt FROM dbo.fhsmFNSplitString(p.Txt, ''='') AS s WHERE (s.Part = 1)) AS [Key]
 								,(SELECT s.Txt FROM dbo.fhsmFNSplitString(p.Txt, ''='') AS s WHERE (s.Part = 2)) AS Value
-							FROM dbo.fhsmFNSplitString(@parameters, '';'') AS p;
+							FROM dbo.fhsmFNSplitString(@parameter, '';'') AS p;
 
-							SET @filePath = (SELECT pt.Value FROM @parametersTable AS pt WHERE (pt.[Key] = ''@FilePath''));
+							SET @filePath = (SELECT pt.Value FROM @parameterTable AS pt WHERE (pt.[Key] = ''@FilePath''));
 							SET @filePath = NULLIF(REPLACE(@filePath, '''''''', ''''), '''');
 						END;
 
@@ -930,9 +991,24 @@ ELSE BEGIN
 						-- Initialize variables
 						--
 						BEGIN
-							SET @sessionName = ''FHSMBlocksAndDeadlocks'';
+							SET @sessionName = DB_NAME() + ''BlocksAndDeadlocks'';
+							SET @sessionNameOldStyle = ''FHSMBlocksAndDeadlocks'';
 							SET @filePathEvent = COALESCE(@filePath + ''\'', '''') + @sessionName + ''.xel'';
 							SET @filePath = REPLACE(@filePathEvent, ''.xel'', ''*.xel'');
+						END;
+
+						--
+						-- Delete session with old name
+						--
+						IF (@sessionName <> @sessionNameOldStyle)
+							AND EXISTS(
+								SELECT *
+								FROM sys.server_event_sessions AS ses
+								WHERE (ses.name = @sessionNameOldStyle)
+							)
+						BEGIN
+							SET @stmt = ''DROP EVENT SESSION '' + QUOTENAME(@sessionNameOldStyle) + '' ON SERVER;'';
+							EXEC(@stmt);
 						END;
 				';
 				SET @stmt += '
@@ -954,6 +1030,7 @@ ELSE BEGIN
 							)
 							MERGE dbo.fhsmConfigurations AS tgt
 							USING conf AS src ON (src.[Key] = tgt.[Key] COLLATE SQL_Latin1_General_CP1_CI_AS)
+							-- Not testing for NULL as a NULL parameter is not allowed
 							WHEN MATCHED AND (tgt.Value <> src.Value)
 								THEN UPDATE
 									SET tgt.Value = src.Value
@@ -968,13 +1045,16 @@ ELSE BEGIN
 								inserted.Value
 							INTO @blockedProcessThresholdChanges;
 
-							SET @message = (
-								SELECT ''Blocked process reporting threshold is '''''' + src.InsertedValue + '''''''' + COALESCE('' - changed from '''''' + src.DeletedValue + '''''''', '''')
-								FROM @blockedProcessThresholdChanges AS src
-							);
-							IF (@message IS NOT NULL)
+							IF (@@ROWCOUNT <> 0)
 							BEGIN
-								EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''Info'', @message = @message;
+								SET @message = (
+									SELECT ''Blocked process reporting threshold is '''''' + src.InsertedValue + '''''''' + COALESCE('' - changed from '''''' + src.DeletedValue + '''''''', '''')
+									FROM @blockedProcessThresholdChanges AS src
+								);
+								IF (@message IS NOT NULL)
+								BEGIN
+									EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''Info'', @message = @message;
+								END;
 							END;
 						END;
 				';
@@ -1122,6 +1202,402 @@ ELSE BEGIN
 				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
 				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
 			END;
+
+			--
+			-- Create stored procedure dbo.fhsmSPControlBlocksAndDeadlocks
+			--
+			BEGIN
+				SET @stmt = '
+					IF OBJECT_ID(''dbo.fhsmSPControlBlocksAndDeadlocks'', ''P'') IS NULL
+					BEGIN
+						EXEC(''CREATE PROC dbo.fhsmSPControlBlocksAndDeadlocks AS SELECT ''''dummy'''' AS Txt'');
+					END;
+				';
+				EXEC(@stmt);
+
+				SET @stmt = '
+					ALTER PROC dbo.fhsmSPControlBlocksAndDeadlocks (
+						@Type nvarchar(16)
+						,@Command nvarchar(16)
+						,@Key nvarchar(128) = NULL
+						,@Name nvarchar(128) = NULL
+						,@Parameter nvarchar(max) = NULL
+						,@Task nvarchar(128) = NULL
+						,@Value nvarchar(128) = NULL
+					)
+					AS
+					BEGIN
+						SET NOCOUNT ON;
+
+						DECLARE @blockedProcessThreshold int;
+						DECLARE @blockedProcessThresholdChanges TABLE(
+							Action nvarchar(10),
+							DeletedKey nvarchar(128),
+							DeletedValue nvarchar(128),
+							InsertedKey nvarchar(128),
+							InsertedValue nvarchar(128)
+						);
+						DECLARE @filePath nvarchar(260);
+						DECLARE @filePathEvent nvarchar(260);
+						DECLARE @jobStatus int;
+						DECLARE @message nvarchar(max);
+						DECLARE @parameterChanges TABLE(
+							Action nvarchar(10),
+							DeletedTask nvarchar(128),
+							DeletedName nvarchar(128),
+							DeletedParameter nvarchar(max),
+							InsertedTask nvarchar(128),
+							InsertedName nvarchar(128),
+							InsertedParameter nvarchar(max)
+						);
+						DECLARE @parameterTable TABLE([Key] nvarchar(128) NOT NULL, Value nvarchar(128) NULL);
+						DECLARE @runningFilePath nvarchar(260);
+						DECLARE @sessionName nvarchar(128);
+						DECLARE @showAdvancedOptions int;
+						DECLARE @stmt nvarchar(max);
+						DECLARE @thisTask nvarchar(128);
+						DECLARE @valueInt int;
+						DECLARE @version nvarchar(128);
+
+						SET @thisTask = OBJECT_NAME(@@PROCID);
+						SET @version = ''' + @version + ''';
+				';
+				SET @stmt += '
+						IF (@Type = ''Configuration'')
+						BEGIN
+							IF (@Command = ''set'') AND (@Key = ''BlockedProcessThreshold'')
+							BEGIN
+								SET @valueInt = dbo.fhsmFNTryParseAsInt(@Value);
+
+								IF (@valueInt IS NULL)
+								BEGIN
+									SET @message = ''Illegal @Value:'''''' + COALESCE(@Value, ''<NULL>'') + '''''''';
+									RAISERROR(@message, 0, 1) WITH NOWAIT;
+									RETURN -1;
+								END
+
+								SET @blockedProcessThreshold = (
+									SELECT CAST(c.value_in_use AS int)
+									FROM sys.configurations AS c
+									WHERE (c.configuration_id = 1569)
+								);
+
+								SET @showAdvancedOptions = (
+									SELECT CAST(c.value_in_use AS int)
+									FROM sys.configurations AS c
+									WHERE (c.configuration_id = 518)
+								);
+
+								IF (@blockedProcessThreshold <> @valueInt)
+								BEGIN
+									IF (@showAdvancedOptions = 0)
+									BEGIN
+										SET @stmt = ''
+											EXEC sp_configure ''''show advanced options'''', 1;
+											RECONFIGURE;
+										'';
+										EXEC(@stmt);
+									END
+
+									SET @stmt = ''
+										EXEC sp_configure ''''blocked process threshold'''', '' + @Value + '';
+										RECONFIGURE;
+									'';
+									EXEC(@stmt);
+
+									IF (@showAdvancedOptions = 0)
+									BEGIN
+										SET @stmt = ''
+											EXEC sp_configure ''''show advanced options'''', 0;
+											RECONFIGURE;
+										'';
+										EXEC(@stmt);
+									END;
+
+									--
+									-- Register configuration changes
+									--
+									BEGIN
+										SET @blockedProcessThreshold = (
+											SELECT CAST(c.value_in_use AS int)
+											FROM sys.configurations AS c
+											WHERE (c.configuration_id = 1569)
+										);
+
+										WITH
+										conf([Key], Value) AS(
+											SELECT
+												''BlockedProcessThreshold'' AS [Key]
+												,CAST(@blockedProcessThreshold AS nvarchar) AS Value
+										)
+										MERGE dbo.fhsmConfigurations AS tgt
+										USING conf AS src ON (src.[Key] = tgt.[Key] COLLATE SQL_Latin1_General_CP1_CI_AS)
+										-- Not testing for NULL as a NULL parameter is not allowed
+										WHEN MATCHED AND (tgt.Value <> src.Value)
+											THEN UPDATE
+												SET tgt.Value = src.Value
+										WHEN NOT MATCHED BY TARGET
+											THEN INSERT([Key], Value)
+											VALUES(src.[Key], src.Value)
+										OUTPUT
+											$action,
+											deleted.[Key],
+											deleted.Value,
+											inserted.[Key],
+											inserted.Value
+										INTO @blockedProcessThresholdChanges;
+
+										IF (@@ROWCOUNT <> 0)
+										BEGIN
+											SET @message = (
+												SELECT ''Blocked process reporting threshold is '''''' + src.InsertedValue + '''''''' + COALESCE('' - changed from '''''' + src.DeletedValue + '''''''', '''')
+												FROM @blockedProcessThresholdChanges AS src
+											);
+											IF (@message IS NOT NULL)
+											BEGIN
+												EXEC dbo.fhsmSPLog @name = @thisTask, @version = @version, @task = @thisTask, @type = ''Info'', @message = @message;
+											END;
+										END;
+									END;
+								END
+							END
+							ELSE BEGIN
+								SET @message = ''Illegal Combination of @Type:'''''' + COALESCE(@Type, ''<NULL>'') + '''''', @Command:'''''' + COALESCE(@Command, ''<NULL>'') + '''''' and @Key:'''''' + COALESCE(@Key, ''<NULL>'') + '''''''';
+								RAISERROR(@message, 0, 1) WITH NOWAIT;
+								RETURN -9;
+							END;
+						END
+				';
+				SET @stmt += '
+						ELSE IF (@Type = ''Parameter'')
+						BEGIN
+							IF (@Command = ''set'')
+							BEGIN
+								SET @Parameter = NULLIF(@Parameter, '''');
+
+								IF NOT EXISTS (
+									SELECT *
+									FROM dbo.fhsmSchedules AS s
+									WHERE (s.Task = @Task) AND (s.Name = @Name) AND (s.DeploymentStatus <> -1)
+								)
+								BEGIN
+									SET @message = ''Invalid @Task:'''''' + COALESCE(NULLIF(@Task, ''''), ''<NULL>'') + '''''' and @Name:'''''' + COALESCE(NULLIF(@Name, ''''), ''<NULL>'') + '''''''';
+									RAISERROR(@message, 0, 1) WITH NOWAIT;
+									RETURN -11;
+								END;
+
+								EXEC dbo.fhsmSPAgentJobControl @command = ''Disable'', @jobStatus = @jobStatus OUTPUT;
+
+								--
+								-- Register configuration changes
+								--
+								BEGIN
+									WITH
+									conf(Task, Name, Parameter) AS(
+										SELECT
+											@Task AS Task
+											,@Name AS Name
+											,@Parameter AS Parameter
+									)
+									MERGE dbo.fhsmSchedules AS tgt
+									USING conf AS src ON (src.[Task] = tgt.[Task] COLLATE SQL_Latin1_General_CP1_CI_AS) AND (src.[Name] = tgt.[Name] COLLATE SQL_Latin1_General_CP1_CI_AS)
+									-- Not testing for NULL as a NULL parameter is not allowed
+									WHEN MATCHED AND (tgt.Parameter <> src.Parameter)
+										THEN UPDATE
+											SET tgt.Parameter = src.Parameter
+									WHEN NOT MATCHED BY TARGET
+										THEN INSERT(Task, Name, Parameter)
+										VALUES(src.Task, src.Name, src.Parameter)
+									OUTPUT
+										$action,
+										deleted.Task,
+										deleted.Name,
+										deleted.Parameter,
+										inserted.Task,
+										inserted.Name,
+										inserted.Parameter
+									INTO @parameterChanges;
+
+									IF (@@ROWCOUNT <> 0)
+									BEGIN
+										SET @message = (
+											SELECT ''Parameter is '''''' + COALESCE(src.InsertedParameter, ''<NULL>'') + '''''' - changed from '''''' + COALESCE(src.DeletedParameter, ''<NULL>'') + ''''''''
+											FROM @parameterChanges AS src
+										);
+										IF (@message IS NOT NULL)
+										BEGIN
+											EXEC dbo.fhsmSPLog @name = @Name, @version = @version, @task = @thisTask, @type = ''Info'', @message = @message;
+										END;
+									END;
+								END;
+				';
+				SET @stmt += '
+								--
+								-- Setup or change event session if @filePath is not configured or the same
+								--
+								BEGIN
+									--
+									-- Get the parameter for the command
+									--
+									BEGIN
+										SET @Parameter = dbo.fhsmFNGetTaskParameter(@Task, @Name);
+
+										INSERT INTO @parameterTable([Key], Value)
+										SELECT
+											(SELECT s.Txt FROM dbo.fhsmFNSplitString(p.Txt, ''='') AS s WHERE (s.Part = 1)) AS [Key]
+											,(SELECT s.Txt FROM dbo.fhsmFNSplitString(p.Txt, ''='') AS s WHERE (s.Part = 2)) AS Value
+										FROM dbo.fhsmFNSplitString(@Parameter, '';'') AS p;
+
+										SET @filePath = (SELECT pt.Value FROM @parameterTable AS pt WHERE (pt.[Key] = ''@FilePath''));
+										SET @filePath = NULLIF(REPLACE(@filePath, '''''''', ''''), '''');
+									END;
+
+									--
+									-- Initialize variables
+									--
+									BEGIN
+										SET @sessionName = DB_NAME() + ''BlocksAndDeadlocks'';
+										SET @filePathEvent = COALESCE(@filePath + ''\'', '''') + @sessionName + ''.xel'';
+										SET @filePath = REPLACE(@filePathEvent, ''.xel'', ''*.xel'');
+									END;
+
+									SET @runningFilePath = (
+										SELECT CAST(sesf.value AS nvarchar(260))
+										FROM sys.server_event_sessions AS ses
+										INNER JOIN sys.server_event_session_fields AS sesf ON (sesf.event_session_id = ses.event_session_id)
+										WHERE (ses.name = @sessionName) AND (sesf.name = ''FILENAME'')
+									);
+
+									IF (@runningFilePath <> @filePathEvent) OR (@runningFilePath IS NULL)
+									BEGIN
+										IF EXISTS(
+											SELECT *
+											FROM sys.server_event_sessions AS ses
+											WHERE (ses.name = @sessionName)
+										)
+										BEGIN
+											SET @stmt = ''DROP EVENT SESSION '' + QUOTENAME(@sessionName) + '' ON SERVER;'';
+											EXEC(@stmt);
+										END;
+
+										SET @stmt = ''
+											CREATE EVENT SESSION '' + QUOTENAME(@sessionName) + '' ON SERVER
+											ADD EVENT sqlserver.blocked_process_report(
+												ACTION(
+													sqlserver.client_app_name,
+													sqlserver.client_hostname,
+													sqlserver.database_name
+												)
+											),
+											ADD EVENT sqlserver.xml_deadlock_report(
+												ACTION(
+													sqlserver.client_app_name,
+													sqlserver.client_hostname,
+													sqlserver.database_name
+												)
+											)
+											ADD TARGET package0.asynchronous_file_target(
+												SET
+												filename = N''''<FILENAME>'''',
+												max_file_size = (10),
+												max_rollover_files = 2
+											)
+											WITH (
+												EVENT_RETENTION_MODE = ALLOW_SINGLE_EVENT_LOSS,
+												MAX_DISPATCH_LATENCY = 15 SECONDS,
+												STARTUP_STATE = ON
+											);
+										'';
+
+										SET @stmt = REPLACE(@stmt, ''<FILENAME>'', @filePathEvent);
+										EXEC(@stmt);
+
+										SET @stmt = ''ALTER EVENT SESSION '' + QUOTENAME(@sessionName) + '' ON SERVER STATE = START;'';
+										EXEC(@stmt);
+									END;
+								END;
+
+								IF (@jobStatus = 1)
+								BEGIN
+									EXEC dbo.fhsmSPAgentJobControl @command = ''Enable'', @jobStatus = @jobStatus OUTPUT;
+								END;
+							END
+							ELSE BEGIN
+								SET @message = ''Illegal Combination of @Type:'''''' + COALESCE(@Type, ''<NULL>'') + '''''' and @Command:'''''' + COALESCE(@Command, ''<NULL>'') + '''''''';
+								RAISERROR(@message, 0, 1) WITH NOWAIT;
+								RETURN -19;
+							END;
+						END
+				';
+				SET @stmt += '
+						ELSE IF (@Type = ''Uninstall'')
+						BEGIN
+							--
+							-- Initialize variables
+							--
+							BEGIN
+								SET @sessionName = DB_NAME() + ''BlocksAndDeadlocks'';
+							END;
+
+							--
+							-- Disable task
+							--
+							BEGIN
+								UPDATE s
+								SET s.Enabled = 0
+								FROM dbo.fhsmSchedules AS s
+								WHERE (s.Task = @Task) AND (s.Name = @Name);
+
+								SET @message = ''Disabling schedule'';
+								EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''Info'', @message = @message;
+							END;
+
+							--
+							-- Delete extended event
+							--
+							BEGIN
+								IF EXISTS(
+									SELECT *
+									FROM sys.server_event_sessions AS ses
+									WHERE (ses.name = @sessionName)
+								)
+								BEGIN
+									SET @stmt = ''DROP EVENT SESSION '' + QUOTENAME(@sessionName) + '' ON SERVER;'';
+									EXEC(@stmt);
+
+									SET @message = ''Dropping extended event session:'''''' + @sessionName + '''''''';
+									EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''Info'', @message = @message;
+								END;
+							END;
+						END
+				';
+				SET @stmt += '
+						ELSE BEGIN
+							SET @message = ''Illegal @Type:'''''' + COALESCE(@Type, ''<NULL>'') + '''''''';
+							RAISERROR(@message, 0, 1) WITH NOWAIT;
+							RETURN -999;
+						END;
+
+						RETURN 0;
+					END;
+				';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Register extended properties on the stored procedure dbo.fhsmSPControlBlocksAndDeadlocks
+			--
+			BEGIN
+				SET @objectName = 'dbo.fhsmSPControlBlocksAndDeadlocks';
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+			END;
 		END;
 
 		--
@@ -1151,7 +1627,7 @@ ELSE BEGIN
 		--
 		BEGIN
 			WITH
-			schedules(Enabled, DeploymentStatus, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters) AS(
+			schedules(Enabled, DeploymentStatus, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameter) AS(
 				SELECT
 					@enableBlocksAndDeadlocks												AS Enabled
 					,0																		AS DeploymentStatus
@@ -1161,13 +1637,16 @@ ELSE BEGIN
 					,CAST('1900-1-1T00:00:00.0000' AS datetime2(0))							AS FromTime
 					,CAST('1900-1-1T23:59:59.0000' AS datetime2(0))							AS ToTime
 					,1, 1, 1, 1, 1, 1, 1													-- Monday..Sunday
-					,'@FilePath = ''' + COALESCE(@blocksAndDeadlocksFilePath, '') + ''''	AS Parameters
+					,'@FilePath = ''' + COALESCE(@blocksAndDeadlocksFilePath, '') + ''''	AS Parameter
 			)
 			MERGE dbo.fhsmSchedules AS tgt
 			USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
+			WHEN MATCHED AND (tgt.Enabled = 0) AND (src.Enabled = 1)
+				THEN UPDATE
+					SET tgt.Enabled = src.Enabled
 			WHEN NOT MATCHED BY TARGET
-				THEN INSERT(Enabled, DeploymentStatus, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameters)
-				VALUES(src.Enabled, src.DeploymentStatus, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameters);
+				THEN INSERT(Enabled, DeploymentStatus, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameter)
+				VALUES(src.Enabled, src.DeploymentStatus, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameter);
 		END;
 
 		--

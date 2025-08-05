@@ -378,3 +378,27 @@ relationship f025bcf2-402c-cfa7-ebfb-427b012e647d
 	fromColumn: 'Allocation units'.FileGroupKey
 	toColumn: 'Database size'.FileGroupKey
 
+relationship 1bb1ecda-cdbd-e58a-a482-d98ebbefd593
+	fromColumn: 'Database scoped configurations'.DatabaseKey
+	toColumn: Database.DatabaseKey
+
+relationship 949d3634-36f4-c13e-1c4c-6d86723ab928
+	fromColumn: 'Database scoped configurations'.DatabaseScopedConfigurationKey
+	toColumn: 'Database scoped configuration'.DatabaseScopedConfigurationKey
+
+relationship 9d5879e3-8007-f4ad-f806-5a0be235ecc2
+	fromColumn: 'Always On database states'.AlwaysOnGroupReplicaKey
+	toColumn: 'Always On group-replica'.AlwaysOnGroupReplicaKey
+
+relationship 4cb6335c-75f1-f909-170e-f540f72f23a5
+	fromColumn: 'Always On group states'.AlwaysOnGroupReplicaKey
+	toColumn: 'Always On group-replica'.AlwaysOnGroupReplicaKey
+
+relationship 5fe73e18-6c38-b7ae-343b-664ac2d728c8
+	fromColumn: 'Always On read only routing'.AlwaysOnGroupReplicaKey
+	toColumn: 'Always On group-replica'.AlwaysOnGroupReplicaKey
+
+relationship 0d764450-3dcd-b1e0-cfee-dba9f2cb4dbc
+	fromColumn: 'Always On replicas'.AlwaysOnGroupReplicaKey
+	toColumn: 'Always On group-replica'.AlwaysOnGroupReplicaKey
+

@@ -1,0 +1,101 @@
+table 'WSFC quorum members'
+	lineageTag: 598d88f0-0ed8-4e91-a283-e359720a9605
+
+	column Member
+		dataType: string
+		lineageTag: f2d4d566-565b-43fd-ae08-7e3242d9dd1a
+		summarizeBy: none
+		sourceColumn: Member
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Member type'
+		dataType: string
+		lineageTag: b1d070d0-db45-46e1-93df-5b429e60b376
+		summarizeBy: none
+		sourceColumn: Member type
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Member state'
+		dataType: string
+		lineageTag: 7edfb7fe-27d3-4baf-9a56-9eb6e8e660d5
+		summarizeBy: none
+		sourceColumn: Member state
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'No. of quorum votes'
+		dataType: int64
+		formatString: 0
+		lineageTag: 35b48e9e-39b7-42a3-a9ad-71c95b8c5811
+		summarizeBy: none
+		sourceColumn: No. of quorum votes
+
+		annotation SummarizationSetBy = User
+
+	column 'No. of current votes'
+		dataType: int64
+		formatString: 0
+		lineageTag: 0d564e7a-e183-4698-bd44-5cf45f9d25e1
+		summarizeBy: none
+		sourceColumn: No. of current votes
+
+		annotation SummarizationSetBy = User
+
+	column 'Min. timestamp'
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: 56ee871b-1124-4851-b1f8-8b1c8dac5681
+		summarizeBy: none
+		sourceColumn: Min. timestamp
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	column 'Max. timestamp'
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: aeb3b4a0-9599-48f3-8dd6-7251d3636065
+		summarizeBy: none
+		sourceColumn: Max. timestamp
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	partition 'WSFC quorum members' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Database configuration")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db     = dbList{[Name = #"Database name"]}[Data], 
+				  table  = db{[Schema = #"Schema name", Item = "WSFC quorum members"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  renameColumns = Table.RenameColumns(
+				    datasetToUse, 
+				    {
+				      {"WSFCQuorumMember", "Member"}, 
+				      {"MemberType", "Member type"}, 
+				      {"MemberState", "Member state"}, 
+				      {"NumberOfQuorumVotes", "No. of quorum votes"}, 
+				      {"NumberOfCurrentVotes", "No. of current votes"}, 
+				      {"MinTimestamp", "Min. timestamp"}, 
+				      {"MaxTimestamp", "Max. timestamp"}
+				    }
+				  )
+				in
+				  renameColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

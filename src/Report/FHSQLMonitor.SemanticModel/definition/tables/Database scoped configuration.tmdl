@@ -1,0 +1,56 @@
+table 'Database scoped configuration'
+	lineageTag: b08c9b91-f614-4e79-adee-4bd72239e619
+
+	column Key
+		dataType: string
+		lineageTag: 3056a60c-220d-4af6-b45b-bba64cb95a33
+		summarizeBy: none
+		sourceColumn: Key
+
+		annotation SummarizationSetBy = Automatic
+
+	column DatabaseScopedConfigurationKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 5455fa7d-6d7c-4d3d-91f6-f0eb5b7f5f03
+		summarizeBy: none
+		sourceColumn: DatabaseScopedConfigurationKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Database scoped configuration' = m
+		mode: import
+		queryGroup: Dimensions
+		source = ```
+				let
+				  loadConfigFirstMatch = Table.First(
+				    Table.SelectRows(
+				      #"Data load", 
+				      each List.Contains(
+				        {"Database configuration"}, 
+				        [Service]
+				      )
+				        and List.Contains({"Yes"}, [DataLoad])
+				    )
+				  ), 
+				  loadConfig = 
+				    if (loadConfigFirstMatch = null) then
+				      "No"
+				    else
+				      Record.Field(loadConfigFirstMatch, "DataLoad"), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db     = dbList{[Name = #"Database name"]}[Data], 
+				  table  = db{[Schema = #"Schema name", Item = "Database scoped configuration"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset
+				in
+				  datasetToUse
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

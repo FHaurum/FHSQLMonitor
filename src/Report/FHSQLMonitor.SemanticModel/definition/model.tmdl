@@ -28,11 +28,11 @@ queryGroup 'Connection parameters'
 
 annotation __PBI_TimeIntelligenceEnabled = 0
 
-annotation PBIDesktopVersion = 2.144.1378.0 (25.06)+cba1e61f16ea36d44901f06fa446299040122394
+annotation PBIDesktopVersion = 2.145.1602.0 (25.07)+10647c9fa319b5e39936cdb21328038c371d1fe4
 
 annotation PBI_ProTooling = ["DevMode"]
 
-annotation PBI_QueryOrder = ["Agent job","Agent job status","Blocks and deadlocks","Connection info","Database","Database file","Agent alerts","Agent jobs","Agent jobs - grid","Agent jobs - list","Agent jobs performance","Agent jobs performance errors","Allocation units","Backup age","Backup status","Blocked process","Connections","CPU per database","CPU utilization","Database IO","Database size","Database state","Database state history","Deadlock","Disk size","Index configuration","Index operational","Index optimize","Index physical","Index usage","Instance configurations","Instance configurations history","Instance dump files","Instance hardware","Instance hardware history","Instance services","Instance SQL agent properties","Instance SQL agent properties history","Instance suspect pages","Lifecycle","Missing indexes","Missing indexes - Index details","OH errors","Partitioned indexes","Performance statistics","Plan cache usage","Plan guides","Query statements","Query statistics","Resource governor configuration","Resource governor external resource pool affinity","Resource governor external resource pools","Resource governor resource pool affinity","Resource governor resource pools","Resource governor workload groups","Statistics age","Statistics age incremental","Date","Disk","File group","Index","Index alloc type","Junk dimensions","Missing index statement","_Measures","Server name","Database name","Schema name","Data load list","Configurations","Data load","LastRefresh","Log","Processing","Retentions","Schedules","Table size","Trace flags","Trace flags history","Triggers","Object","Object partition","Performance counter","Query statistic","Time","Wait type","Wait statistics","Who is active","Task name version"]
+annotation PBI_QueryOrder = ["Agent job","Agent job status","Always On group-replica","Blocks and deadlocks","Connection info","Database","Database file","Database scoped configuration","Agent alerts","Agent jobs","Agent jobs - grid","Agent jobs - list","Agent jobs performance","Agent jobs performance errors","Allocation units","Always On database states","Always On group states","Always On read only routing","Always On replicas","Backup age","Backup status","Blocked process","Connections","CPU per database","CPU utilization","Database IO","Database scoped configurations","Database size","Database state","Database state history","Deadlock","Disk size","Index configuration","Index operational","Index optimize","Index physical","Index usage","Instance configurations","Instance configurations history","Instance dump files","Instance hardware","Instance hardware history","Instance services","Instance SQL agent properties","Instance SQL agent properties history","Instance suspect pages","Lifecycle","Missing indexes","Missing indexes - Index details","OH errors","Partitioned indexes","Performance statistics","Plan cache usage","Plan guides","Query statements","Query statistics","Resource governor configuration","Resource governor external resource pool affinity","Resource governor external resource pools","Resource governor resource pool affinity","Resource governor resource pools","Resource governor workload groups","Statistics age","Statistics age incremental","Date","Disk","File group","Index","Index alloc type","Junk dimensions","Missing index statement","_Measures","Server name","Database name","Schema name","Data load list","Configurations","Data load","LastRefresh","Log","Processing","Retentions","Schedules","Table size","Trace flags","Trace flags history","Triggers","Object","Object partition","Performance counter","Query statistic","Time","Wait type","Wait statistics","Who is active","WSFC quorum members","Task name version","WSFC quorum state"]
 
 annotation __TEdtr = 1
 
@@ -142,6 +142,15 @@ ref table 'Disk size'
 ref table Disk
 ref table 'Allocation units'
 ref table 'File group'
+ref table 'Database scoped configurations'
+ref table 'Database scoped configuration'
+ref table 'WSFC quorum state'
+ref table 'WSFC quorum members'
+ref table 'Always On group states'
+ref table 'Always On read only routing'
+ref table 'Always On replicas'
+ref table 'Always On database states'
+ref table 'Always On group-replica'
 
 ref cultureInfo en-US
 

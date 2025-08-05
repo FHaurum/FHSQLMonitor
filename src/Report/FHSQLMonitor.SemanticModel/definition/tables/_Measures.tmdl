@@ -1126,7 +1126,7 @@ table _Measures
 	measure 'Front page version text' =
 			
 			[Info text] & UNICHAR ( 10 ) & " "
-			    & UNICHAR ( 10 ) & "Developed using Power BI Desktop version: 2.144.1378.0 64-bit (June 2025)"
+			    & UNICHAR ( 10 ) & "Developed using Power BI Desktop version: 2.145.1602.0 64-bit (July 2025)"
 		displayFolder: Common
 		lineageTag: e74236c7-2bcf-4409-b8d2-ddb49a83e10b
 
@@ -2232,7 +2232,7 @@ table _Measures
 
 	measure 'Version number' =
 			
-			"2.8.0"
+			"2.9.0"
 		isHidden
 		displayFolder: Common
 		lineageTag: 39428edf-bb47-48d0-a60e-f025984fd1ba
@@ -7797,7 +7797,11 @@ table _Measures
 
 	measure 'Is filters applied - Database configuration' =
 			
-			IF ( ISFILTERED ( 'Database'[Database] ), 1, 0 )
+			IF (
+			    ISFILTERED ( 'Database'[Database] ) || ISFILTERED ( 'Database scoped configuration'[Key] ),
+			    1,
+			    0
+			)
 		formatString: 0
 		displayFolder: Database configuration\Filter panel
 		lineageTag: 6c189adb-bb2f-4795-b447-6b1189167492
@@ -7823,6 +7827,15 @@ table _Measures
 			    RETURN
 			        _itemsCombined & UNICHAR ( 10 )
 			)
+			    & IF (
+			        ISFILTERED ( 'Database scoped configuration'[Key] ),
+			        VAR _items =
+			            FILTER ( VALUES ( 'Database scoped configuration'[Key] ), [VLF Filter - Database configuration] <> BLANK () )
+			        VAR _itemsCombined =
+			            CONCATENATEX ( _items, 'Database scoped configuration'[Key], UNICHAR ( 10 ), 'Database scoped configuration'[Key], ASC )
+			        RETURN
+			            _itemsCombined & UNICHAR ( 10 )
+			    )
 		displayFolder: Database configuration\Filter panel
 		lineageTag: 9c97103a-cd97-4829-95a9-ca36fd686bf9
 
@@ -7835,6 +7848,13 @@ table _Measures
 			    RETURN
 			        IF ( _cnt > 0, "Database:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			)
+			    & IF (
+			        ISFILTERED ( 'Database scoped configuration'[Key] ),
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Database scoped configuration'[Key] ), [VLF Filter - Database configuration] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Scoped conf.:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
+			    )
 			```
 		displayFolder: Database configuration\Filter panel
 		lineageTag: 324c394e-1e9d-4ad4-809e-88a01f5b90bd
@@ -8081,10 +8101,7 @@ table _Measures
 			
 			VAR _timestamps =
 			    UNION (
-			        SELECTCOLUMNS (
-			            ALL ( 'Retentions' ),
-			            "Timestamp", Retentions[Last executed UTC]
-			        ),
+			        SELECTCOLUMNS ( ALL ( 'Retentions' ), "Timestamp", Retentions[Last executed UTC] ),
 			        SELECTCOLUMNS ( ALL ( 'Schedules' ), "Timestamp", Schedules[Last executed UTC] )
 			    )
 			VAR _minDataDate =
@@ -8109,14 +8126,19 @@ table _Measures
 
 	measure 'Data range - Monitor status' =
 			
+			VAR _timestamps =
+			    UNION (
+			        SELECTCOLUMNS ( ALL ( 'Log' ), "Timestamp", 'Log'[Timestamp] ),
+			        SELECTCOLUMNS ( ALL ( 'Processing' ), "Timestamp", 'Processing'[Date] )
+			    )
 			VAR _minDataDate =
-			    CALCULATE ( MIN ( 'Log'[Timestamp] ), ALL () )
+			    MINX ( _timestamps, [Timestamp] )
 			VAR _maxDataDate =
-			    CALCULATE ( MAX ( 'Log'[Timestamp] ), ALL () )
+			    MAXX ( _timestamps, [Timestamp] )
 			VAR _minDataDateTxt =
-			    FORMAT ( _minDataDate, [Date-min format string] )
+			    FORMAT ( _minDataDate, [Date format string] )
 			VAR _maxDataDateTxt =
-			    FORMAT ( _maxDataDate, [Date-min format string] )
+			    FORMAT ( _maxDataDate, [Date format string] )
 			VAR _txt =
 			    IF (
 			        _minDataDate = BLANK (),
@@ -9761,10 +9783,19 @@ table _Measures
 
 	measure 'Data range - Blocks and deadlocks' =
 			
+			VAR _minBlockedProcessDate =
+			    CALCULATE ( MIN ( 'Blocked process'[Date] ), ALL () )
+			VAR _minDeadlockDate =
+			    CALCULATE ( MIN ( 'Deadlock'[Date] ), ALL () )
 			VAR _minDataDate =
-			    MIN (
-			        CALCULATE ( MIN ( 'Blocked process'[Date] ), ALL () ),
-			        CALCULATE ( MIN ( 'Deadlock'[Date] ), ALL () )
+			    IF (
+			        _minBlockedProcessDate = BLANK (),
+			        _minDeadlockDate,
+			        IF (
+			            _minDeadlockDate = BLANK (),
+			            _minBlockedProcessDate,
+			            MIN ( _minBlockedProcessDate, _minDeadlockDate )
+			        )
 			    )
 			VAR _maxDataDate =
 			    MAX (
@@ -10752,6 +10783,165 @@ table _Measures
 		formatString: #,0
 		displayFolder: Allocation units
 		lineageTag: 0891c8b9-9ac1-43d9-abd5-38ac3977625f
+
+	measure 'Always On flag - Database configuration' =
+			
+			SUM ( 'Database state'[Is on Always On primary] )
+		formatString: 0
+		displayFolder: Database configuration
+		lineageTag: 9358da3d-59cb-41bb-b6f6-e81d1fa88619
+
+	measure 'Data range - Processing' =
+			
+			VAR _timestamps =
+			    SELECTCOLUMNS ( 'Processing', "Timestamp", 'Processing'[Date] )
+			VAR _minDataDate =
+			    MINX ( _timestamps, [Timestamp] )
+			VAR _maxDataDate =
+			    MAXX ( _timestamps, [Timestamp] )
+			VAR _minDataDateTxt =
+			    FORMAT ( _minDataDate, [Date format string] )
+			VAR _maxDataDateTxt =
+			    FORMAT ( _maxDataDate, [Date format string] )
+			VAR _txt =
+			    IF (
+			        _minDataDate = BLANK (),
+			        "",
+			        IF ( _minDataDate = _maxDataDate,
+			            "Data available for " & _minDataDateTxt,
+			            "Data available between " & _minDataDateTxt & " and " & _maxDataDateTxt
+			        )
+			    )
+			VAR _result = _txt
+			RETURN
+			    _result
+		displayFolder: Monitor status
+		lineageTag: 96911c72-0341-4dc1-bbd0-2e9a149e6da0
+
+	measure 'Data range - Always On configuration' =
+			
+			VAR _minDateAlwaysOnDatabaseStates =
+			    CALCULATE ( MIN ( 'Always On database states'[Min. timestamp] ), ALL () )
+			VAR _minDateAlwaysOnGroupStates =
+			    CALCULATE ( MIN ( 'Always On group states'[Min. timestamp] ), ALL () )
+			VAR _minDateAlwaysOnReadOnlyRouting =
+			    CALCULATE ( MIN ( 'Always On read only routing'[Min. timestamp] ), ALL () )
+			VAR _minDateAlwaysOnReplicas =
+			    CALCULATE ( MIN ( 'Always On replicas'[Min. timestamp] ), ALL () )
+			VAR _minDateWSFCQuorumMembers =
+			    CALCULATE ( MIN ( 'WSFC quorum members'[Min. timestamp] ), ALL () )
+			VAR _minDateWSFCQuorumState =
+			    CALCULATE ( MIN ( 'WSFC quorum state'[Min. timestamp] ), ALL () )
+			VAR _minDataDateA =
+			    MIN ( COALESCE ( _minDateAlwaysOnDatabaseStates, _minDateAlwaysOnGroupStates ), COALESCE ( _minDateAlwaysOnGroupStates, _minDateAlwaysOnDatabaseStates ) )
+			VAR _minDataDateB =
+			    MIN ( COALESCE ( _minDataDateA, _minDateAlwaysOnReadOnlyRouting ), COALESCE ( _minDateAlwaysOnReadOnlyRouting, _minDataDateA ) )
+			VAR _minDataDateC =
+			    MIN ( COALESCE ( _minDataDateB, _minDateAlwaysOnReplicas ), COALESCE ( _minDateAlwaysOnReplicas, _minDataDateB ) )
+			VAR _minDataDateD =
+			    MIN ( COALESCE ( _minDataDateC, _minDateWSFCQuorumMembers ), COALESCE ( _minDateWSFCQuorumMembers, _minDataDateC ) )
+			VAR _minDataDate =
+			    MIN ( COALESCE ( _minDataDateD, _minDateWSFCQuorumState ), COALESCE ( _minDateWSFCQuorumState, _minDataDateD ) )
+			VAR _maxDateAlwaysOnDatabaseStates =
+			    CALCULATE ( MAX ( 'Always On database states'[Min. timestamp] ), ALL () )
+			VAR _maxDateAlwaysOnGroupStates =
+			    CALCULATE ( MAX ( 'Always On group states'[Min. timestamp] ), ALL () )
+			VAR _maxDateAlwaysOnReadOnlyRouting =
+			    CALCULATE ( MAX ( 'Always On read only routing'[Min. timestamp] ), ALL () )
+			VAR _maxDateAlwaysOnReplicas =
+			    CALCULATE ( MAX ( 'Always On replicas'[Min. timestamp] ), ALL () )
+			VAR _maxDateWSFCQuorumMembers =
+			    CALCULATE ( MAX ( 'WSFC quorum members'[Min. timestamp] ), ALL () )
+			VAR _maxDateWSFCQuorumState =
+			    CALCULATE ( MAX ( 'WSFC quorum state'[Min. timestamp] ), ALL () )
+			VAR _maxDataDate =
+			    MAX ( _maxDateAlwaysOnDatabaseStates, MAX ( _maxDateAlwaysOnGroupStates, MAX ( _maxDateAlwaysOnReadOnlyRouting, MAX ( _maxDateAlwaysOnReplicas, MAX ( _maxDateWSFCQuorumMembers, _maxDateWSFCQuorumState ) ) ) ) )
+			VAR _minDataDateTxt =
+			    FORMAT ( _minDataDate, [Date-min format string] )
+			VAR _maxDataDateTxt =
+			    FORMAT ( _maxDataDate, [Date-min format string] )
+			VAR _txt =
+			    IF (
+			        _minDataDate = BLANK (),
+			        "",
+			        "Data available between " & _minDataDateTxt & " and " & _maxDataDateTxt
+			    )
+			VAR _result = _txt
+			RETURN
+			    _result
+		displayFolder: Always On configuration
+		lineageTag: 634c073a-2eea-4c3f-8c82-91770e6e7f68
+
+	measure 'VLF Filter - Always On configuration' =
+			
+			COUNTROWS ( 'Always On database states' ) + COUNTROWS ( 'Always On group states' ) + COUNTROWS ( 'Always On read only routing' ) + COUNTROWS ( 'Always On replicas' )
+		formatString: 0
+		displayFolder: Always On configuration\Filter panel
+		lineageTag: 30077b68-e9fd-4d52-9450-401f91024800
+
+	measure 'Is filters applied - Always On configuration' =
+			
+			IF (
+			    ISFILTERED ( 'Always On group-replica'[Group] ) || ISFILTERED ( 'Always On group-replica'[Replica] ),
+			    1,
+			    0
+			)
+		formatString: 0
+		displayFolder: Always On configuration\Filter panel
+		lineageTag: 32b41481-86c1-42bd-ace4-0245b2b1a1dd
+
+	measure 'Open filter button tooltip - Always On configuration' =
+			
+			IF (
+			    [Is filters applied - Always On configuration] = 1,
+			    [Filters are applied text],
+			    [Filters are not applied]
+			)
+		displayFolder: Always On configuration\Filter panel
+		lineageTag: baf5bf8b-1fa9-492a-ac49-5798e245499b
+
+	measure 'Show filters - Always On configuration' =
+			
+			IF (
+			    ISFILTERED ( 'Always On group-replica'[Group] ),
+			    VAR _items =
+			        FILTER ( VALUES ( 'Always On group-replica'[Group] ), [VLF Filter - Always On configuration] <> BLANK () )
+			    VAR _itemsCombined =
+			        CONCATENATEX ( _items, 'Always On group-replica'[Group], UNICHAR ( 10 ), 'Always On group-replica'[Group], ASC )
+			    RETURN
+			        _itemsCombined & UNICHAR ( 10 )
+			)
+			    & IF (
+			        ISFILTERED ( 'Always On group-replica'[Replica] ),
+			        VAR _items =
+			            FILTER ( VALUES ( 'Always On group-replica'[Replica] ), [VLF Filter - Always On configuration] <> BLANK () )
+			        VAR _itemsCombined =
+			            CONCATENATEX ( _items, 'Always On group-replica'[Replica], UNICHAR ( 10 ), 'Always On group-replica'[Replica], ASC )
+			        RETURN
+			            _itemsCombined & UNICHAR ( 10 )
+			    )
+		displayFolder: Always On configuration\Filter panel
+		lineageTag: 782eb0c0-bfb2-443e-8a0d-bb49cdb70f5b
+
+	measure 'Show filters Headers - Always On configuration' = ```
+			
+			IF (
+			    ISFILTERED ( 'Always On group-replica'[Group] ),
+			    VAR _cnt = 
+			        COUNTROWS ( FILTER ( VALUES ( 'Always On group-replica'[Group] ), [VLF Filter - Always On configuration] <> BLANK () ) )
+			    RETURN
+			        IF ( _cnt > 0, "Group:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
+			)
+			    & IF (
+			        ISFILTERED ( 'Always On group-replica'[Replica] ),
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Always On group-replica'[Replica] ), [VLF Filter - Always On configuration] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Replica:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
+			    )
+			```
+		displayFolder: Always On configuration\Filter panel
+		lineageTag: e231c0c0-78f2-46df-8d07-1cc50d22876f
 
 	partition _Measures = m
 		mode: import

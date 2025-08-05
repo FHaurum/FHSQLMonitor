@@ -18890,112 +18890,6 @@ cultureInfo en-US
 			      ],
 			      "NameType": "Name"
 			    },
-			    "schedule.parameter": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "Schedules",
-			          "ConceptualProperty": "Parameters"
-			        }
-			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "parameter": {
-			            "State": "Generated"
-			          }
-			        },
-			        {
-			          "stricture": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.491
-			          }
-			        },
-			        {
-			          "limitation": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.491
-			          }
-			        },
-			        {
-			          "restriction": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.491
-			          }
-			        },
-			        {
-			          "constraint": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.491
-			          }
-			        },
-			        {
-			          "consideration": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.491
-			          }
-			        },
-			        {
-			          "limit": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.476
-			          }
-			        },
-			        {
-			          "bound": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.476
-			          }
-			        },
-			        {
-			          "factor": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.476
-			          }
-			        },
-			        {
-			          "issue": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.476
-			          }
-			        }
-			      ]
-			    },
 			    "schedule.saturday": {
 			      "Definition": {
 			        "Binding": {
@@ -60424,6 +60318,687 @@ cultureInfo en-US
 			      "Terms": [
 			        {
 			          "Total space KB": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "database_scoped_configuration.defaultindicator": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Database scoped configurations",
+			          "ConceptualProperty": "DefaultIndicator"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Def. flag": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "database_scoped_configuration.configurationsortorder": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Database scoped configurations",
+			          "ConceptualProperty": "ConfigurationSortOrder"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Sort order": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "database_scoped_configuration.key": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Database scoped configuration",
+			          "ConceptualProperty": "Key"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Database scoped configuration": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "wsfc_quorum_state.mintimestamp": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "WSFC quorum state",
+			          "ConceptualProperty": "Min. timestamp"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Min. time": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "wsfc_quorum_state.maxtimestamp": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "WSFC quorum state",
+			          "ConceptualProperty": "Max. timestamp"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Max. time": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "wsfc_quorum_state.quorum_type": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "WSFC quorum state",
+			          "ConceptualProperty": "Quorum type"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Type": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "wsfc_quorum_state.quorum_state": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "WSFC quorum state",
+			          "ConceptualProperty": "Quorum state"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "State": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "wsfc_quorum_members.member_type": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "WSFC quorum members",
+			          "ConceptualProperty": "Member type"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Type": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "wsfc_quorum_members.member_state": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "WSFC quorum members",
+			          "ConceptualProperty": "Member state"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "State": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "always_on_groupreplica.replica": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Always On group-replica",
+			          "ConceptualProperty": "Replica"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Source replica": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "wsfc_quorum_members.no__of_quorum_votes": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "WSFC quorum members",
+			          "ConceptualProperty": "No. of quorum votes"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Quorum votes": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "wsfc_quorum_members.no__of_current_votes": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "WSFC quorum members",
+			          "ConceptualProperty": "No. of current votes"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Current votes": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "wsfc_quorum_members.min__timestamp": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "WSFC quorum members",
+			          "ConceptualProperty": "Min. timestamp"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Min. time": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "wsfc_quorum_members.max__timestamp": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "WSFC quorum members",
+			          "ConceptualProperty": "Max. timestamp"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Max. time": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "always_on_group_states.min__timestamp": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Always On group states",
+			          "ConceptualProperty": "Min. timestamp"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Min. time": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "always_on_group_states.max__timestamp": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Always On group states",
+			          "ConceptualProperty": "Max. timestamp"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Max. time": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "always_on_read_only_routing.secondary_role_allow_connections": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Always On read only routing",
+			          "ConceptualProperty": "Secondary role allow connections"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Secondary connections": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "always_on_read_only_routing.min__timestamp": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Always On read only routing",
+			          "ConceptualProperty": "Min. timestamp"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Min. time": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "always_on_read_only_routing.max__timestamp": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Always On read only routing",
+			          "ConceptualProperty": "Max. timestamp"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Max. time": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "always_on_replicas.availability_mode": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Always On replicas",
+			          "ConceptualProperty": "Availability mode"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Availability": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "always_on_replicas.failover_mode": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Always On replicas",
+			          "ConceptualProperty": "Failover mode"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Failover": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "always_on_replicas.primary_role_allow_connections": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Always On replicas",
+			          "ConceptualProperty": "Primary role allow connections"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Primary conn.": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "always_on_replicas.secondary_role_allow_connections": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Always On replicas",
+			          "ConceptualProperty": "Secondary role allow connections"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Secondary conn.": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "always_on_replicas.min__timestamp": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Always On replicas",
+			          "ConceptualProperty": "Min. timestamp"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Min. time": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "always_on_replicas.max__timestamp": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Always On replicas",
+			          "ConceptualProperty": "Max. timestamp"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Max. time": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "always_on_database_states.max__timestamp": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Always On database states",
+			          "ConceptualProperty": "Max. timestamp"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Max. time": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "always_on_database_states.min__timestamp": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Always On database states",
+			          "ConceptualProperty": "Min. timestamp"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Min. time": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "always_on_database_states.is_local": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Always On database states",
+			          "ConceptualProperty": "Is local"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Local": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "always_on_database_states.is_primary_replica": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Always On database states",
+			          "ConceptualProperty": "Is primary replica"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Primary replica": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "always_on_database_states.is_commit_participant": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Always On database states",
+			          "ConceptualProperty": "Is commit participant"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Commit participant": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "always_on_database_states.is_suspended": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Always On database states",
+			          "ConceptualProperty": "Is suspended"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Suspended": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.show_filters__always_on_configuration": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Show filters - Always On configuration"
+			        }
+			      },
+			      "State": "Generated"
+			    },
+			    "table_measures.show_filters_headers__always_on_configuration": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Show filters Headers - Always On configuration"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Filters": {
 			            "State": "Suggested",
 			            "Source": {
 			              "Type": "External",

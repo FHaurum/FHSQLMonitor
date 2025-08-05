@@ -1486,10 +1486,136 @@
           },
           "zIndex": 0,
           "expandedHeight": 152
+        },
+        {
+          "location": {
+            "x": 1797.4022826884138,
+            "y": 1550.1932633699462
+          },
+          "nodeIndex": "Database scoped configurations",
+          "nodeLineageTag": "80b955ea-b5c0-4d31-b1ec-340f088050d3",
+          "size": {
+            "height": 104,
+            "width": 300.70983660046204
+          },
+          "zIndex": 0,
+          "expandedHeight": 176
+        },
+        {
+          "location": {
+            "x": 2170.5197388536772,
+            "y": 1538.1381107313398
+          },
+          "nodeIndex": "Database scoped configuration",
+          "nodeLineageTag": "b08c9b91-f614-4e79-adee-4bd72239e619",
+          "size": {
+            "height": 104,
+            "width": 309.13293349569631
+          },
+          "zIndex": 0,
+          "expandedHeight": 128
+        },
+        {
+          "location": {
+            "x": 1131.6728792648714,
+            "y": 1479.7433777500585
+          },
+          "nodeIndex": "WSFC quorum state",
+          "nodeLineageTag": "f31f9d66-38f0-4143-9ad0-cddda40b6882",
+          "size": {
+            "height": 72,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 200
+        },
+        {
+          "location": {
+            "x": 825.54707423407967,
+            "y": 1476.4262801977914
+          },
+          "nodeIndex": "WSFC quorum members",
+          "nodeLineageTag": "598d88f0-0ed8-4e91-a283-e359720a9605",
+          "size": {
+            "height": 72,
+            "width": 261.97148638638691
+          },
+          "zIndex": 0,
+          "expandedHeight": 248
+        },
+        {
+          "location": {
+            "x": 305.71675658872135,
+            "y": 1584.367273259568
+          },
+          "nodeIndex": "Always On group states",
+          "nodeLineageTag": "aedb49fb-ca2b-4432-9291-dafa1bbdcd7a",
+          "size": {
+            "height": 72,
+            "width": 255.72606392001069
+          },
+          "zIndex": 0,
+          "expandedHeight": 248
+        },
+        {
+          "location": {
+            "x": 595.21481289257179,
+            "y": 1587.4709151828661
+          },
+          "nodeIndex": "Always On read only routing",
+          "nodeLineageTag": "1d65d6fb-8b05-4114-9ac4-78cfd8723a6a",
+          "size": {
+            "height": 72,
+            "width": 283.65696687122295
+          },
+          "zIndex": 0,
+          "expandedHeight": 272
+        },
+        {
+          "location": {
+            "x": 919.53706443622571,
+            "y": 1589.0226139037452
+          },
+          "nodeIndex": "Always On replicas",
+          "nodeLineageTag": "774291ae-25b4-4235-9d9c-69971b5a6ad6",
+          "size": {
+            "height": 72,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 300
+        },
+        {
+          "location": {
+            "x": 0,
+            "y": 1582.8989427436334
+          },
+          "nodeIndex": "Always On database states",
+          "nodeLineageTag": "938c4774-27b0-438d-a445-c229babfd142",
+          "size": {
+            "height": 72,
+            "width": 271.2446810057325
+          },
+          "zIndex": 0,
+          "expandedHeight": 300
+        },
+        {
+          "location": {
+            "x": 1240.3845212212445,
+            "y": 1579.3553815159323
+          },
+          "nodeIndex": "Always On group-replica",
+          "nodeLineageTag": "0f8a3adc-ffff-4d27-90bf-078d1897d575",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 152
         }
       ],
       "name": "All tables",
-      "zoomValue": 64.442115610860256,
+      "zoomValue": 63.871959130572073,
       "pinKeyFieldsToTop": false,
       "showExtraHeaderInfo": false,
       "hideKeyFieldsWhenCollapsed": false,
@@ -1759,6 +1885,119 @@
       "nodes": [
         {
           "location": {
+            "x": 318,
+            "y": 301
+          },
+          "nodeIndex": "WSFC quorum state",
+          "nodeLineageTag": "f31f9d66-38f0-4143-9ad0-cddda40b6882",
+          "size": {
+            "height": 72,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 200
+        },
+        {
+          "location": {
+            "x": 0,
+            "y": 302
+          },
+          "nodeIndex": "WSFC quorum members",
+          "nodeLineageTag": "598d88f0-0ed8-4e91-a283-e359720a9605",
+          "size": {
+            "height": 72,
+            "width": 259
+          },
+          "zIndex": 0,
+          "expandedHeight": 248
+        },
+        {
+          "location": {
+            "x": 316,
+            "y": 154
+          },
+          "nodeIndex": "Always On group states",
+          "nodeLineageTag": "aedb49fb-ca2b-4432-9291-dafa1bbdcd7a",
+          "size": {
+            "height": 104,
+            "width": 257
+          },
+          "zIndex": 0,
+          "expandedHeight": 248
+        },
+        {
+          "location": {
+            "x": 618,
+            "y": 154
+          },
+          "nodeIndex": "Always On read only routing",
+          "nodeLineageTag": "1d65d6fb-8b05-4114-9ac4-78cfd8723a6a",
+          "size": {
+            "height": 104,
+            "width": 283
+          },
+          "zIndex": 0,
+          "expandedHeight": 272
+        },
+        {
+          "location": {
+            "x": 946,
+            "y": 156
+          },
+          "nodeIndex": "Always On replicas",
+          "nodeLineageTag": "774291ae-25b4-4235-9d9c-69971b5a6ad6",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 300
+        },
+        {
+          "location": {
+            "x": 1,
+            "y": 152
+          },
+          "nodeIndex": "Always On database states",
+          "nodeLineageTag": "938c4774-27b0-438d-a445-c229babfd142",
+          "size": {
+            "height": 104,
+            "width": 267
+          },
+          "zIndex": 0,
+          "expandedHeight": 300
+        },
+        {
+          "location": {
+            "x": 464,
+            "y": 0
+          },
+          "nodeIndex": "Always On group-replica",
+          "nodeLineageTag": "0f8a3adc-ffff-4d27-90bf-078d1897d575",
+          "size": {
+            "height": 104,
+            "width": 267
+          },
+          "zIndex": 0,
+          "expandedHeight": 152
+        }
+      ],
+      "name": "Always On configuration",
+      "zoomValue": 100,
+      "pinKeyFieldsToTop": false,
+      "showExtraHeaderInfo": false,
+      "hideKeyFieldsWhenCollapsed": false,
+      "tablesLocked": false
+    },
+    {
+      "ordinal": 5,
+      "scrollPosition": {
+        "x": 0,
+        "y": 0
+      },
+      "nodes": [
+        {
+          "location": {
             "x": 141,
             "y": 295
           },
@@ -1836,7 +2075,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 5,
+      "ordinal": 6,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -1935,7 +2174,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 6,
+      "ordinal": 7,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -2020,7 +2259,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 7,
+      "ordinal": 8,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -2119,7 +2358,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 8,
+      "ordinal": 9,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -2204,7 +2443,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 9,
+      "ordinal": 10,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -2331,7 +2570,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 10,
+      "ordinal": 11,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -2339,8 +2578,8 @@
       "nodes": [
         {
           "location": {
-            "x": 0,
-            "y": 207
+            "x": 348,
+            "y": 209
           },
           "nodeIndex": "Database state",
           "nodeLineageTag": "89b59759-8537-4d65-808b-3a6d2de0f59e",
@@ -2353,7 +2592,7 @@
         },
         {
           "location": {
-            "x": 132,
+            "x": 457,
             "y": 0
           },
           "nodeIndex": "Database",
@@ -2367,8 +2606,8 @@
         },
         {
           "location": {
-            "x": 281,
-            "y": 208
+            "x": 626,
+            "y": 211
           },
           "nodeIndex": "Database state history",
           "nodeLineageTag": "aa21dca5-5903-4052-a50d-5f7273212638",
@@ -2378,6 +2617,33 @@
           },
           "zIndex": 0,
           "expandedHeight": 200
+        },
+        {
+          "location": {
+            "x": 0,
+            "y": 208
+          },
+          "nodeIndex": "Database scoped configurations",
+          "size": {
+            "height": 128,
+            "width": 307
+          },
+          "zIndex": 0,
+          "expandedHeight": 176
+        },
+        {
+          "location": {
+            "x": 7,
+            "y": 0
+          },
+          "nodeIndex": "Database scoped configuration",
+          "nodeLineageTag": "b08c9b91-f614-4e79-adee-4bd72239e619",
+          "size": {
+            "height": 104,
+            "width": 297
+          },
+          "zIndex": 0,
+          "expandedHeight": 145
         }
       ],
       "name": "Database state",
@@ -2388,7 +2654,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 11,
+      "ordinal": 12,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -2472,7 +2738,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 12,
+      "ordinal": 13,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -2557,7 +2823,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 13,
+      "ordinal": 14,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -2642,7 +2908,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 14,
+      "ordinal": 15,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -2685,7 +2951,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 15,
+      "ordinal": 16,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -2770,7 +3036,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 16,
+      "ordinal": 17,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -3063,7 +3329,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 17,
+      "ordinal": 18,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -3162,7 +3428,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 18,
+      "ordinal": 19,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -3247,7 +3513,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 19,
+      "ordinal": 20,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -3304,7 +3570,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 20,
+      "ordinal": 21,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -3375,7 +3641,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 21,
+      "ordinal": 22,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -3432,7 +3698,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 22,
+      "ordinal": 23,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -3475,7 +3741,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 23,
+      "ordinal": 24,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -3560,7 +3826,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 24,
+      "ordinal": 25,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -3631,7 +3897,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 25,
+      "ordinal": 26,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -3674,7 +3940,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 26,
+      "ordinal": 27,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -3759,7 +4025,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 27,
+      "ordinal": 28,
       "scrollPosition": {
         "x": 0,
         "y": 0

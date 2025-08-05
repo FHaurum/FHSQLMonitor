@@ -28,6 +28,7 @@ table 'Documentation - report pages'
 				    {
 				        { "Agent jobs configuration", "agent-jobs-configuration" },
 				        { "Agent jobs performance", "agent-jobs-performance" },
+				        { "Always On configuration", "always-on-configuration" },
 				        { "Always On traffic", "always-on-traffic" },
 				        { "Backup", "backup" },
 				        { "Blocks and deadlocks", "blocks-and-deadlocks" },
