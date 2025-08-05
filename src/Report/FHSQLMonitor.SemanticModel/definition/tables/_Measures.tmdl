@@ -2232,7 +2232,7 @@ table _Measures
 
 	measure 'Version number' =
 			
-			"2.9.0"
+			"2.9.1"
 		isHidden
 		displayFolder: Common
 		lineageTag: 39428edf-bb47-48d0-a60e-f025984fd1ba
@@ -10086,7 +10086,7 @@ table _Measures
 
 	measure 'VLF Filter - Monitor status' =
 			
-			COUNTROWS ( 'Log' )
+			COUNTROWS ( 'Log' ) + COUNTROWS ( Processing )
 		formatString: 0
 		displayFolder: Monitor status\Filter panel
 		lineageTag: 0afe85a6-4945-4d9d-94ce-1416ac49a4ef

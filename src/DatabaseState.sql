@@ -66,7 +66,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.9';
+		SET @version = '2.9.1';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -1494,6 +1494,7 @@ ELSE BEGIN
 						SET NOCOUNT ON;
 
 						DECLARE @database nvarchar(128);
+						DECLARE @errorMsg nvarchar(max);
 						DECLARE @message nvarchar(max);
 						DECLARE @now datetime;
 						DECLARE @nowUTC datetime;
@@ -2303,7 +2304,16 @@ ELSE BEGIN
 											WHERE (a.value IS NOT NULL)
 											OPTION (RECOMPILE);
 										'';
-										EXEC(@stmt);
+
+										BEGIN TRY
+											EXEC(@stmt);
+										END TRY
+										BEGIN CATCH
+											SET @errorMsg = ERROR_MESSAGE();
+
+											SET @message = ''Database '''''' + @database + '''''' failed due to - '' + @errorMsg;
+											EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''Warning'', @message = @message;
+										END CATCH;
 									END
 									ELSE BEGIN
 										SET @message = ''Database '''''' + @database + '''''' is member of a replica but this server is not the primary node'';
@@ -2438,9 +2448,6 @@ ELSE BEGIN
 		)
 		MERGE dbo.fhsmSchedules AS tgt
 		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
-		WHEN MATCHED AND (tgt.Enabled = 0) AND (src.Enabled = 1)
-			THEN UPDATE
-				SET tgt.Enabled = src.Enabled
 		WHEN NOT MATCHED BY TARGET
 			THEN INSERT(Enabled, DeploymentStatus, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameter)
 			VALUES(src.Enabled, src.DeploymentStatus, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameter);

@@ -1,7 +1,7 @@
 USE master;
 
 --
--- FHSQLMonitor v2.9.0 - 2025.08.04 08.37.43
+-- FHSQLMonitor v2.9.1 - 2025.08.05 19.42.19
 --
 
 BEGIN
@@ -16,9 +16,9 @@ BEGIN
 	-- Service parameters - They are only used during a fresh installation and not during an update
 	--   When updating the already configured values in the tables dbo.fhsmSchedules and dbo.fhsmRetentions remains unchanged
 	--
-	DECLARE @fhsqlAgentJobName              nvarchar(128) = 'FHSQLMonitor in ' + @fhSQLMonitorDatabase;
-	DECLARE @blocksAndDeadlocksFilePath     nvarchar(260) = NULL;
 	DECLARE @olaDatabase                    nvarchar(128) = NULL;
+	DECLARE @blocksAndDeadlocksFilePath     nvarchar(260) = NULL;
+	DECLARE @fhsqlAgentJobName              nvarchar(128) = 'FHSQLMonitor in ' + @fhSQLMonitorDatabase;
 
 	DECLARE @enableAgentJobs                bit = 1;
 	DECLARE @enableAgentJobsPerformance     bit = 1;
@@ -80,10 +80,10 @@ ELSE BEGIN
 	SET @fhsqlAgentJobName = COALESCE(@currentAgentJobName, @fhsqlAgentJobName);
 END;
 
-SET @serverInfo = @@SERVERNAME + COALESCE('\' + CAST(SERVERPROPERTY ('InstanceName') AS nvarchar(128)), '');
+SET @serverInfo = @@SERVERNAME;
 
 RAISERROR('', 0, 1) WITH NOWAIT;
-SET @installationMsg = CASE @installUpgradeFlag WHEN 1 THEN 'Install version v2.9.0' + ' of' ELSE 'Upgrade' END + ' FHSQLMonitor in database ' + @fhSQLMonitorDatabase + ' on ' + @serverInfo + ' ' + CASE @installUpgradeFlag WHEN 1 THEN '' ELSE 'from ' + @currentVersion + ' to v2.9.0' END;
+SET @installationMsg = CASE @installUpgradeFlag WHEN 1 THEN 'Install version v2.9.1' + ' of' ELSE 'Upgrade' END + ' FHSQLMonitor in database ' + @fhSQLMonitorDatabase + ' on ' + @serverInfo + ' ' + CASE @installUpgradeFlag WHEN 1 THEN '' ELSE 'from ' + @currentVersion + ' to v2.9.1' END;
 RAISERROR(@installationMsg, 0, 1) WITH NOWAIT;
 
 --
@@ -176,7 +176,7 @@ BEGIN
 END;
 
 --
--- File part:_Install-FHSQLMonitor.sql modified: 2025.08.04 08.36.18
+-- File part:_Install-FHSQLMonitor.sql modified: 2025.08.05 19.40.50
 --
 SET @stmt = '
 SET NOCOUNT ON;
@@ -225,7 +225,7 @@ BEGIN
 	SET @myUserName = SUSER_NAME();
 	SET @nowUTC = SYSUTCDATETIME();
 	SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
-	SET @version = ''2.9.0'';
+	SET @version = ''2.9.1'';
 END;
 
 --
@@ -5285,7 +5285,7 @@ SET @stmt = REPLACE(@stmt, 'SET @createSQLAgentJob = 1;',                       
 SET @stmt = REPLACE(@stmt, 'SET @fhSQLMonitorDatabase = ''FHSQLMonitor'';',              'SET @fhSQLMonitorDatabase = ''' + @fhSQLMonitorDatabase + ''';');
 SET @stmt = REPLACE(@stmt, 'SET @fhsqlAgentJobName = ''FHSQLMonitor in FHSQLMonitor'';', 'SET @fhsqlAgentJobName = ''' + @fhsqlAgentJobName + ''';');
 SET @stmt = REPLACE(@stmt, 'SET @pbiSchema = ''FHSM'';',                                 'SET @pbiSchema = ''' + @pbiSchema + ''';');
-SET @stmt = REPLACE(@stmt, 'SET @buildTimeStr = ''YYYY.MM.DD HH.MM.SS'';',               'SET @buildTimeStr = ''2025.08.04 08.37.43'';');
+SET @stmt = REPLACE(@stmt, 'SET @buildTimeStr = ''YYYY.MM.DD HH.MM.SS'';',               'SET @buildTimeStr = ''2025.08.05 19.42.19'';');
 EXEC(@stmt);
 
 --
@@ -8359,7 +8359,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @ena
 EXEC(@stmt);
 
 --
--- File part:IndexOptimize-004.sql modified: 2025.08.01 10.35.55
+-- File part:IndexOptimize-004.sql modified: 2025.08.05 19.10.33
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -8510,7 +8510,7 @@ BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.9'';
+		SET @version = ''2.9.1'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -9011,9 +9011,6 @@ BEGIN
 		)
 		MERGE dbo.fhsmSchedules AS tgt
 		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
-		WHEN MATCHED AND (tgt.Enabled = 0) AND (src.Enabled = 1)
-			THEN UPDATE
-				SET tgt.Enabled = src.Enabled
 		WHEN NOT MATCHED BY TARGET
 			THEN INSERT(Enabled, DeploymentStatus, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameter)
 			VALUES(src.Enabled, src.DeploymentStatus, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameter);
@@ -9150,7 +9147,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @ena
 EXEC(@stmt);
 
 --
--- File part:DatabaseState.sql modified: 2025.08.04 07.35.51
+-- File part:DatabaseState.sql modified: 2025.08.05 19.09.57
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -9222,7 +9219,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.9'';
+		SET @version = ''2.9.1'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -10650,6 +10647,7 @@ ELSE BEGIN
 						SET NOCOUNT ON;
 
 						DECLARE @database nvarchar(128);
+						DECLARE @errorMsg nvarchar(max);
 						DECLARE @message nvarchar(max);
 						DECLARE @now datetime;
 						DECLARE @nowUTC datetime;
@@ -11459,7 +11457,16 @@ ELSE BEGIN
 											WHERE (a.value IS NOT NULL)
 											OPTION (RECOMPILE);
 										'''';
-										EXEC(@stmt);
+
+										BEGIN TRY
+											EXEC(@stmt);
+										END TRY
+										BEGIN CATCH
+											SET @errorMsg = ERROR_MESSAGE();
+
+											SET @message = ''''Database '''''''''''' + @database + '''''''''''' failed due to - '''' + @errorMsg;
+											EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''''Warning'''', @message = @message;
+										END CATCH;
 									END
 									ELSE BEGIN
 										SET @message = ''''Database '''''''''''' + @database + '''''''''''' is member of a replica but this server is not the primary node'''';
@@ -11594,9 +11601,6 @@ ELSE BEGIN
 		)
 		MERGE dbo.fhsmSchedules AS tgt
 		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
-		WHEN MATCHED AND (tgt.Enabled = 0) AND (src.Enabled = 1)
-			THEN UPDATE
-				SET tgt.Enabled = src.Enabled
 		WHEN NOT MATCHED BY TARGET
 			THEN INSERT(Enabled, DeploymentStatus, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameter)
 			VALUES(src.Enabled, src.DeploymentStatus, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameter);
@@ -11717,7 +11721,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @ena
 EXEC(@stmt);
 
 --
--- File part:AgentJobs.sql modified: 2025.08.01 10.31.21
+-- File part:AgentJobs.sql modified: 2025.08.05 19.07.12
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -11789,7 +11793,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.9'';
+		SET @version = ''2.9.1'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -12406,9 +12410,6 @@ ELSE BEGIN
 		)
 		MERGE dbo.fhsmSchedules AS tgt
 		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
-		WHEN MATCHED AND (tgt.Enabled = 0) AND (src.Enabled = 1)
-			THEN UPDATE
-				SET tgt.Enabled = src.Enabled
 		WHEN NOT MATCHED BY TARGET
 			THEN INSERT(Enabled, DeploymentStatus, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameter)
 			VALUES(src.Enabled, src.DeploymentStatus, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameter);
@@ -12459,7 +12460,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @ena
 EXEC(@stmt);
 
 --
--- File part:AgentJobsPerformance.sql modified: 2025.08.01 10.32.11
+-- File part:AgentJobsPerformance.sql modified: 2025.08.05 19.07.30
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -12531,7 +12532,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.9'';
+		SET @version = ''2.9.1'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -13956,9 +13957,6 @@ ELSE BEGIN
 		)
 		MERGE dbo.fhsmSchedules AS tgt
 		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
-		WHEN MATCHED AND (tgt.Enabled = 0) AND (src.Enabled = 1)
-			THEN UPDATE
-				SET tgt.Enabled = src.Enabled
 		WHEN NOT MATCHED BY TARGET
 			THEN INSERT(Enabled, DeploymentStatus, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameter)
 			VALUES(src.Enabled, src.DeploymentStatus, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameter);
@@ -14060,7 +14058,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @ena
 EXEC(@stmt);
 
 --
--- File part:AgeOfStatistics.sql modified: 2025.08.01 10.32.33
+-- File part:AgeOfStatistics.sql modified: 2025.08.05 19.07.48
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -14132,7 +14130,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.9'';
+		SET @version = ''2.9.1'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -14983,9 +14981,6 @@ ELSE BEGIN
 		)
 		MERGE dbo.fhsmSchedules AS tgt
 		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
-		WHEN MATCHED AND (tgt.Enabled = 0) AND (src.Enabled = 1)
-			THEN UPDATE
-				SET tgt.Enabled = src.Enabled
 		WHEN NOT MATCHED BY TARGET
 			THEN INSERT(Enabled, DeploymentStatus, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameter)
 			VALUES(src.Enabled, src.DeploymentStatus, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameter);
@@ -15148,7 +15143,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @ena
 EXEC(@stmt);
 
 --
--- File part:BackupStatus.sql modified: 2025.08.01 10.32.58
+-- File part:BackupStatus.sql modified: 2025.08.05 19.08.03
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -15220,7 +15215,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.9'';
+		SET @version = ''2.9.1'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -15679,9 +15674,6 @@ ELSE BEGIN
 		)
 		MERGE dbo.fhsmSchedules AS tgt
 		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
-		WHEN MATCHED AND (tgt.Enabled = 0) AND (src.Enabled = 1)
-			THEN UPDATE
-				SET tgt.Enabled = src.Enabled
 		WHEN NOT MATCHED BY TARGET
 			THEN INSERT(Enabled, DeploymentStatus, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameter)
 			VALUES(src.Enabled, src.DeploymentStatus, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameter);
@@ -15779,7 +15771,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @ena
 EXEC(@stmt);
 
 --
--- File part:BlocksAndDeadlocks.sql modified: 2025.08.01 10.43.50
+-- File part:BlocksAndDeadlocks.sql modified: 2025.08.05 19.08.25
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -15869,7 +15861,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.9'';
+		SET @version = ''2.9.1'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -17426,9 +17418,6 @@ ELSE BEGIN
 			)
 			MERGE dbo.fhsmSchedules AS tgt
 			USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
-			WHEN MATCHED AND (tgt.Enabled = 0) AND (src.Enabled = 1)
-				THEN UPDATE
-					SET tgt.Enabled = src.Enabled
 			WHEN NOT MATCHED BY TARGET
 				THEN INSERT(Enabled, DeploymentStatus, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameter)
 				VALUES(src.Enabled, src.DeploymentStatus, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameter);
@@ -17477,7 +17466,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @ena
 EXEC(@stmt);
 
 --
--- File part:Capacity.sql modified: 2025.08.01 10.33.33
+-- File part:Capacity.sql modified: 2025.08.05 19.08.46
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -17549,7 +17538,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.9'';
+		SET @version = ''2.9.1'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -20033,9 +20022,6 @@ ELSE BEGIN
 		)
 		MERGE dbo.fhsmSchedules AS tgt
 		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
-		WHEN MATCHED AND (tgt.Enabled = 0) AND (src.Enabled = 1)
-			THEN UPDATE
-				SET tgt.Enabled = src.Enabled
 		WHEN NOT MATCHED BY TARGET
 			THEN INSERT(Enabled, DeploymentStatus, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameter)
 			VALUES(src.Enabled, src.DeploymentStatus, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameter);
@@ -20360,7 +20346,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @ena
 EXEC(@stmt);
 
 --
--- File part:Connections.sql modified: 2025.08.01 10.33.58
+-- File part:Connections.sql modified: 2025.08.05 19.09.11
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -20432,7 +20418,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.9'';
+		SET @version = ''2.9.1'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -20753,9 +20739,6 @@ ELSE BEGIN
 		)
 		MERGE dbo.fhsmSchedules AS tgt
 		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
-		WHEN MATCHED AND (tgt.Enabled = 0) AND (src.Enabled = 1)
-			THEN UPDATE
-				SET tgt.Enabled = src.Enabled
 		WHEN NOT MATCHED BY TARGET
 			THEN INSERT(Enabled, DeploymentStatus, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameter)
 			VALUES(src.Enabled, src.DeploymentStatus, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameter);
@@ -20867,7 +20850,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @ena
 EXEC(@stmt);
 
 --
--- File part:CPUUtilization.sql modified: 2025.08.01 10.34.20
+-- File part:CPUUtilization.sql modified: 2025.08.05 19.09.27
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -20939,7 +20922,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.9'';
+		SET @version = ''2.9.1'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -21431,9 +21414,6 @@ ELSE BEGIN
 		)
 		MERGE dbo.fhsmSchedules AS tgt
 		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
-		WHEN MATCHED AND (tgt.Enabled = 0) AND (src.Enabled = 1)
-			THEN UPDATE
-				SET tgt.Enabled = src.Enabled
 		WHEN NOT MATCHED BY TARGET
 			THEN INSERT(Enabled, DeploymentStatus, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameter)
 			VALUES(src.Enabled, src.DeploymentStatus, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameter);
@@ -21531,7 +21511,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @ena
 EXEC(@stmt);
 
 --
--- File part:DatabaseIO.sql modified: 2025.08.01 10.34.40
+-- File part:DatabaseIO.sql modified: 2025.08.05 19.09.41
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -21603,7 +21583,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.9'';
+		SET @version = ''2.9.1'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -22505,9 +22485,6 @@ ELSE BEGIN
 		)
 		MERGE dbo.fhsmSchedules AS tgt
 		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
-		WHEN MATCHED AND (tgt.Enabled = 0) AND (src.Enabled = 1)
-			THEN UPDATE
-				SET tgt.Enabled = src.Enabled
 		WHEN NOT MATCHED BY TARGET
 			THEN INSERT(Enabled, DeploymentStatus, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameter)
 			VALUES(src.Enabled, src.DeploymentStatus, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameter);
@@ -22645,7 +22622,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @ena
 EXEC(@stmt);
 
 --
--- File part:IndexOperational.sql modified: 2025.08.01 10.35.17
+-- File part:IndexOperational.sql modified: 2025.08.05 19.10.12
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -22717,7 +22694,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.9'';
+		SET @version = ''2.9.1'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -23853,9 +23830,6 @@ ELSE BEGIN
 		)
 		MERGE dbo.fhsmSchedules AS tgt
 		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
-		WHEN MATCHED AND (tgt.Enabled = 0) AND (src.Enabled = 1)
-			THEN UPDATE
-				SET tgt.Enabled = src.Enabled
 		WHEN NOT MATCHED BY TARGET
 			THEN INSERT(Enabled, DeploymentStatus, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameter)
 			VALUES(src.Enabled, src.DeploymentStatus, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameter);
@@ -23991,7 +23965,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @ena
 EXEC(@stmt);
 
 --
--- File part:IndexPhysical.sql modified: 2025.08.01 10.36.16
+-- File part:IndexPhysical.sql modified: 2025.08.05 19.10.49
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -24063,7 +24037,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.9'';
+		SET @version = ''2.9.1'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -25015,9 +24989,6 @@ ELSE BEGIN
 		)
 		MERGE dbo.fhsmSchedules AS tgt
 		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
-		WHEN MATCHED AND (tgt.Enabled = 0) AND (src.Enabled = 1)
-			THEN UPDATE
-				SET tgt.Enabled = src.Enabled
 		WHEN NOT MATCHED BY TARGET
 			THEN INSERT(Enabled, DeploymentStatus, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameter)
 			VALUES(src.Enabled, src.DeploymentStatus, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameter);
@@ -25181,7 +25152,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @ena
 EXEC(@stmt);
 
 --
--- File part:IndexUsage.sql modified: 2025.08.01 10.36.32
+-- File part:IndexUsage.sql modified: 2025.08.05 19.11.04
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -25255,7 +25226,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.9'';
+		SET @version = ''2.9.1'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -26447,9 +26418,6 @@ ELSE BEGIN
 		)
 		MERGE dbo.fhsmSchedules AS tgt
 		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
-		WHEN MATCHED AND (tgt.Enabled = 0) AND (src.Enabled = 1)
-			THEN UPDATE
-				SET tgt.Enabled = src.Enabled
 		WHEN NOT MATCHED BY TARGET
 			THEN INSERT(Enabled, DeploymentStatus, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameter)
 			VALUES(src.Enabled, src.DeploymentStatus, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameter);
@@ -26585,7 +26553,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @ena
 EXEC(@stmt);
 
 --
--- File part:InstanceState.sql modified: 2025.08.01 10.36.53
+-- File part:InstanceState.sql modified: 2025.08.05 19.11.19
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -26657,7 +26625,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.9'';
+		SET @version = ''2.9.1'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -30667,9 +30635,6 @@ ELSE BEGIN
 		)
 		MERGE dbo.fhsmSchedules AS tgt
 		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
-		WHEN MATCHED AND (tgt.Enabled = 0) AND (src.Enabled = 1)
-			THEN UPDATE
-				SET tgt.Enabled = src.Enabled
 		WHEN NOT MATCHED BY TARGET
 			THEN INSERT(Enabled, DeploymentStatus, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameter)
 			VALUES(src.Enabled, src.DeploymentStatus, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameter);
@@ -30717,7 +30682,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @ena
 EXEC(@stmt);
 
 --
--- File part:MissingIndexes.sql modified: 2025.08.01 10.37.10
+-- File part:MissingIndexes.sql modified: 2025.08.05 19.11.36
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -30789,7 +30754,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.9'';
+		SET @version = ''2.9.1'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -31703,9 +31668,6 @@ ELSE BEGIN
 		)
 		MERGE dbo.fhsmSchedules AS tgt
 		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
-		WHEN MATCHED AND (tgt.Enabled = 0) AND (src.Enabled = 1)
-			THEN UPDATE
-				SET tgt.Enabled = src.Enabled
 		WHEN NOT MATCHED BY TARGET
 			THEN INSERT(Enabled, DeploymentStatus, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameter)
 			VALUES(src.Enabled, src.DeploymentStatus, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameter);
@@ -31827,7 +31789,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @ena
 EXEC(@stmt);
 
 --
--- File part:PerformanceStatistics.sql modified: 2025.08.01 10.37.27
+-- File part:PerformanceStatistics.sql modified: 2025.08.05 19.12.06
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -31905,7 +31867,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.9'';
+		SET @version = ''2.9.1'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -32647,9 +32609,6 @@ ELSE BEGIN
 		)
 		MERGE dbo.fhsmSchedules AS tgt
 		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
-		WHEN MATCHED AND (tgt.Enabled = 0) AND (src.Enabled = 1)
-			THEN UPDATE
-				SET tgt.Enabled = src.Enabled
 		WHEN NOT MATCHED BY TARGET
 			THEN INSERT(Enabled, DeploymentStatus, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameter)
 			VALUES(src.Enabled, src.DeploymentStatus, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameter);
@@ -32747,7 +32706,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @ena
 EXEC(@stmt);
 
 --
--- File part:PlanCacheUsage.sql modified: 2025.08.01 10.37.52
+-- File part:PlanCacheUsage.sql modified: 2025.08.05 19.12.21
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -32819,7 +32778,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.9'';
+		SET @version = ''2.9.1'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -33085,9 +33044,6 @@ ELSE BEGIN
 		)
 		MERGE dbo.fhsmSchedules AS tgt
 		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
-		WHEN MATCHED AND (tgt.Enabled = 0) AND (src.Enabled = 1)
-			THEN UPDATE
-				SET tgt.Enabled = src.Enabled
 		WHEN NOT MATCHED BY TARGET
 			THEN INSERT(Enabled, DeploymentStatus, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameter)
 			VALUES(src.Enabled, src.DeploymentStatus, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameter);
@@ -33138,7 +33094,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @ena
 EXEC(@stmt);
 
 --
--- File part:PlanGuides.sql modified: 2025.08.01 10.38.15
+-- File part:PlanGuides.sql modified: 2025.08.05 19.12.37
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -33210,7 +33166,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.9'';
+		SET @version = ''2.9.1'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -33795,9 +33751,6 @@ ELSE BEGIN
 		)
 		MERGE dbo.fhsmSchedules AS tgt
 		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
-		WHEN MATCHED AND (tgt.Enabled = 0) AND (src.Enabled = 1)
-			THEN UPDATE
-				SET tgt.Enabled = src.Enabled
 		WHEN NOT MATCHED BY TARGET
 			THEN INSERT(Enabled, DeploymentStatus, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameter)
 			VALUES(src.Enabled, src.DeploymentStatus, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameter);
@@ -33897,7 +33850,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @ena
 EXEC(@stmt);
 
 --
--- File part:QueryStatistics.sql modified: 2025.08.01 10.38.35
+-- File part:QueryStatistics.sql modified: 2025.08.05 19.12.52
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -33969,7 +33922,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.9'';
+		SET @version = ''2.9.1'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -35043,9 +34996,6 @@ ELSE BEGIN
 		)
 		MERGE dbo.fhsmSchedules AS tgt
 		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
-		WHEN MATCHED AND (tgt.Enabled = 0) AND (src.Enabled = 1)
-			THEN UPDATE
-				SET tgt.Enabled = src.Enabled
 		WHEN NOT MATCHED BY TARGET
 			THEN INSERT(Enabled, DeploymentStatus, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameter)
 			VALUES(src.Enabled, src.DeploymentStatus, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameter);
@@ -35153,7 +35103,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @ena
 EXEC(@stmt);
 
 --
--- File part:Triggers.sql modified: 2025.08.01 10.38.51
+-- File part:Triggers.sql modified: 2025.08.05 19.13.08
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -35225,7 +35175,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.9'';
+		SET @version = ''2.9.1'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -35812,9 +35762,6 @@ ELSE BEGIN
 		)
 		MERGE dbo.fhsmSchedules AS tgt
 		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
-		WHEN MATCHED AND (tgt.Enabled = 0) AND (src.Enabled = 1)
-			THEN UPDATE
-				SET tgt.Enabled = src.Enabled
 		WHEN NOT MATCHED BY TARGET
 			THEN INSERT(Enabled, DeploymentStatus, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameter)
 			VALUES(src.Enabled, src.DeploymentStatus, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameter);
@@ -35914,7 +35861,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @ena
 EXEC(@stmt);
 
 --
--- File part:WaitStatistics.sql modified: 2025.08.01 10.39.08
+-- File part:WaitStatistics.sql modified: 2025.08.05 19.13.23
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -35986,7 +35933,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.9'';
+		SET @version = ''2.9.1'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -36969,9 +36916,6 @@ ELSE BEGIN
 		)
 		MERGE dbo.fhsmSchedules AS tgt
 		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
-		WHEN MATCHED AND (tgt.Enabled = 0) AND (src.Enabled = 1)
-			THEN UPDATE
-				SET tgt.Enabled = src.Enabled
 		WHEN NOT MATCHED BY TARGET
 			THEN INSERT(Enabled, DeploymentStatus, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameter)
 			VALUES(src.Enabled, src.DeploymentStatus, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameter);
@@ -42629,7 +42573,7 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @ena
 EXEC(@stmt);
 
 --
--- File part:WhoIsActive-002.sql modified: 2025.08.01 10.39.23
+-- File part:WhoIsActive-002.sql modified: 2025.08.05 19.13.35
 --
 SET @stmt = '
 USE [' + @fhSQLMonitorDatabase + '];
@@ -42701,7 +42645,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.9'';
+		SET @version = ''2.9.1'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -43001,9 +42945,6 @@ ELSE BEGIN
 		)
 		MERGE dbo.fhsmSchedules AS tgt
 		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
-		WHEN MATCHED AND (tgt.Enabled = 0) AND (src.Enabled = 1)
-			THEN UPDATE
-				SET tgt.Enabled = src.Enabled
 		WHEN NOT MATCHED BY TARGET
 			THEN INSERT(Enabled, DeploymentStatus, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameter)
 			VALUES(src.Enabled, src.DeploymentStatus, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameter);
@@ -43524,5 +43465,5 @@ BEGIN
 END;
 
 RAISERROR('', 0, 1) WITH NOWAIT;
-SET @installationMsg = 'FHSQLMonitor in database ' + @fhSQLMonitorDatabase + ' on ' + @serverInfo + ' has been ' + CASE @installUpgradeFlag WHEN 1 THEN 'installed with' ELSE 'upgraded to' END + ' v2.9.0';
+SET @installationMsg = 'FHSQLMonitor in database ' + @fhSQLMonitorDatabase + ' on ' + @serverInfo + ' has been ' + CASE @installUpgradeFlag WHEN 1 THEN 'installed with' ELSE 'upgraded to' END + ' v2.9.1';
 RAISERROR(@installationMsg, 0, 1) WITH NOWAIT;

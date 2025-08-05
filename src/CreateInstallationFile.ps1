@@ -1,6 +1,6 @@
 ﻿$outputFile = "..\build\FHSQLMonitor.sql"
 
-$versionNumber = "v2.9.0"
+$versionNumber = "v2.9.1"
 
 $buildTimeStr = (Get-Date).ToString("yyyy:MM:dd HH:mm:ss")
 
@@ -26,9 +26,9 @@ Add-Content $outputFile "	--"
 Add-Content $outputFile "	-- Service parameters - They are only used during a fresh installation and not during an update"
 Add-Content $outputFile "	--   When updating the already configured values in the tables dbo.fhsmSchedules and dbo.fhsmRetentions remains unchanged"
 Add-Content $outputFile "	--"
-Add-Content $outputFile "	DECLARE @fhsqlAgentJobName              nvarchar(128) = 'FHSQLMonitor in ' + @fhSQLMonitorDatabase;"
-Add-Content $outputFile "	DECLARE @blocksAndDeadlocksFilePath     nvarchar(260) = NULL;"
 Add-Content $outputFile "	DECLARE @olaDatabase                    nvarchar(128) = NULL;"
+Add-Content $outputFile "	DECLARE @blocksAndDeadlocksFilePath     nvarchar(260) = NULL;"
+Add-Content $outputFile "	DECLARE @fhsqlAgentJobName              nvarchar(128) = 'FHSQLMonitor in ' + @fhSQLMonitorDatabase;"
 Add-Content $outputFile ""
 Add-Content $outputFile "	DECLARE @enableAgentJobs                bit = 1;"
 Add-Content $outputFile "	DECLARE @enableAgentJobsPerformance     bit = 1;"
@@ -90,7 +90,7 @@ Add-Content $outputFile "	EXEC sp_executesql @stmt, N'@currentAgentJobName nvarc
 Add-Content $outputFile "	SET @fhsqlAgentJobName = COALESCE(@currentAgentJobName, @fhsqlAgentJobName);"
 Add-Content $outputFile "END;"
 Add-Content $outputFile ""
-Add-Content $outputFile "SET @serverInfo = @@SERVERNAME + COALESCE('\' + CAST(SERVERPROPERTY ('InstanceName') AS nvarchar(128)), '');"
+Add-Content $outputFile "SET @serverInfo = @@SERVERNAME;"
 Add-Content $outputFile ""
 Add-Content $outputFile "RAISERROR('', 0, 1) WITH NOWAIT;"
 Add-Content $outputFile ("SET @installationMsg = CASE @installUpgradeFlag WHEN 1 THEN 'Install version " + $versionNumber + "' + ' of' ELSE 'Upgrade' END + ' FHSQLMonitor in database ' + @fhSQLMonitorDatabase + ' on ' + @serverInfo + ' ' + CASE @installUpgradeFlag WHEN 1 THEN '' ELSE 'from ' + @currentVersion + ' to " + $versionNumber + "' END;")

@@ -3,6 +3,10 @@ You can try the [live demo](https://app.powerbi.com/view?r=eyJrIjoiMDQ2MDQ3ZjQtO
 
 Have fun :-)
 <p>
+<b>August 5, 2025: Version 2.9.1</b> with:</br>
+<li>Fixed error when collecting database scoped configuration and some databases are not online.</li>
+</p>
+<p>
 <b>August 5, 2025: Version 2.9.0</b> with:</br>
 <li>New report "Always On configuration".</li>
 <li>Added "Database scoped configuration" to the report page "Database configuration".</li>
