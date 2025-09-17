@@ -1,0 +1,365 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "name": "eb9c99448aeb8dd09b42",
+  "position": {
+    "x": 10,
+    "y": 80,
+    "z": 2500,
+    "height": 455,
+    "width": 1900,
+    "tabOrder": 1000
+  },
+  "visual": {
+    "visualType": "pivotTable",
+    "query": {
+      "queryState": {
+        "Rows": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Query statistic"
+                    }
+                  },
+                  "Property": "Database"
+                }
+              },
+              "queryRef": "Query statistic.Database",
+              "nativeQueryRef": "Database",
+              "active": true
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Query statements"
+                    }
+                  },
+                  "Property": "Statement"
+                }
+              },
+              "queryRef": "Query statements.Statement",
+              "nativeQueryRef": "Statement",
+              "active": false
+            }
+          ]
+        },
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Logical reads - Query statistics"
+                }
+              },
+              "queryRef": "_Measures.Logical reads - Query statistics",
+              "nativeQueryRef": "Logical reads",
+              "displayName": "Logical reads"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Logical reads pr. execution - Query statistics"
+                }
+              },
+              "queryRef": "_Measures.Logical reads pr. execution - Query statistics",
+              "nativeQueryRef": "Logical reads pr. exec.",
+              "displayName": "Logical reads pr. exec."
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Worker time mS - Query statistics"
+                }
+              },
+              "queryRef": "_Measures.Worker time mS - Query statistics",
+              "nativeQueryRef": "Worker time mS",
+              "displayName": "Worker time mS"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Worker time mS pr. execution - Query statistics"
+                }
+              },
+              "queryRef": "_Measures.Worker time mS pr. execution - Query statistics",
+              "nativeQueryRef": "Worker time mS pr. exec.",
+              "displayName": "Worker time mS pr. exec."
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Execution count - Query statistics"
+                }
+              },
+              "queryRef": "_Measures.Execution count - Query statistics",
+              "nativeQueryRef": "Exec. count",
+              "displayName": "Exec. count"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "_Measures"
+                  }
+                },
+                "Property": "Logical reads - Query statistics"
+              }
+            },
+            "direction": "Descending"
+          }
+        ]
+      }
+    },
+    "expansionStates": [
+      {
+        "roles": [
+          "Rows"
+        ],
+        "levels": [
+          {
+            "queryRefs": [
+              "Query statistic.Database"
+            ],
+            "isCollapsed": true,
+            "identityKeys": [
+              {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Query statistic"
+                    }
+                  },
+                  "Property": "Database"
+                }
+              }
+            ],
+            "isPinned": true
+          },
+          {
+            "queryRefs": [
+              "Query statements.Statement"
+            ],
+            "isCollapsed": true,
+            "isPinned": true
+          }
+        ],
+        "root": {}
+      }
+    ],
+    "objects": {
+      "columnWidth": [
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "1061.6459158864752D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Query statistic.Database"
+          }
+        },
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "157.06598434773832D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "_Measures.Logical reads - Query statistics"
+          }
+        },
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "148.61849797252006D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "_Measures.Worker time mS - Query statistics"
+          }
+        },
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "135.8331783430889D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "_Measures.Execution count - Query statistics"
+          }
+        },
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "175.5885350783348D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "_Measures.Logical reads pr. execution - Query statistics"
+          }
+        },
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "203.77382302631236D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "_Measures.Worker time mS pr. execution - Query statistics"
+          }
+        }
+      ],
+      "columnHeaders": [
+        {
+          "properties": {
+            "autoSizeColumnWidth": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Statements'"
+                }
+              }
+            },
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "e51323163cdeb3e51206",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "_Measures"
+              }
+            },
+            "Property": "Logical reads - Query statistics"
+          }
+        },
+        "type": "Advanced",
+        "filter": {
+          "Version": 2,
+          "From": [
+            {
+              "Name": "_",
+              "Entity": "_Measures",
+              "Type": 0
+            }
+          ],
+          "Where": [
+            {
+              "Condition": {
+                "Not": {
+                  "Expression": {
+                    "Comparison": {
+                      "ComparisonKind": 0,
+                      "Left": {
+                        "Measure": {
+                          "Expression": {
+                            "SourceRef": {
+                              "Source": "_"
+                            }
+                          },
+                          "Property": "Logical reads - Query statistics"
+                        }
+                      },
+                      "Right": {
+                        "Literal": {
+                          "Value": "null"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

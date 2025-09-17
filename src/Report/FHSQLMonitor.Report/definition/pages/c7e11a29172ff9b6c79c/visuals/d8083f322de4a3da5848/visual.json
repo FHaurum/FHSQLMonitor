@@ -1,0 +1,246 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "name": "d8083f322de4a3da5848",
+  "position": {
+    "x": 10,
+    "y": 415,
+    "z": 3000,
+    "height": 175,
+    "width": 1900,
+    "tabOrder": 2000
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Always On group-replica"
+                    }
+                  },
+                  "Property": "Group"
+                }
+              },
+              "queryRef": "Always On group-replica.Group",
+              "nativeQueryRef": "Group1"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Always On group-replica"
+                    }
+                  },
+                  "Property": "Replica"
+                }
+              },
+              "queryRef": "Always On group-replica.Replica",
+              "nativeQueryRef": "Source replica",
+              "displayName": "Source replica"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Always On read only routing"
+                    }
+                  },
+                  "Property": "Replica replica"
+                }
+              },
+              "queryRef": "Always On read only routing.Replica replica",
+              "nativeQueryRef": "Replica replica"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Always On read only routing"
+                    }
+                  },
+                  "Property": "Read only routing URL"
+                }
+              },
+              "queryRef": "Always On read only routing.Read only routing URL",
+              "nativeQueryRef": "Read only routing URL"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Always On read only routing"
+                    }
+                  },
+                  "Property": "Routing priority"
+                }
+              },
+              "queryRef": "Always On read only routing.Routing priority",
+              "nativeQueryRef": "Routing priority"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Always On read only routing"
+                    }
+                  },
+                  "Property": "Secondary role allow connections"
+                }
+              },
+              "queryRef": "Always On read only routing.Secondary role allow connections",
+              "nativeQueryRef": "Secondary connections",
+              "displayName": "Secondary connections"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Always On read only routing"
+                    }
+                  },
+                  "Property": "Min. timestamp"
+                }
+              },
+              "queryRef": "Always On read only routing.Min. timestamp",
+              "nativeQueryRef": "Min. time",
+              "displayName": "Min. time"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Always On read only routing"
+                    }
+                  },
+                  "Property": "Max. timestamp"
+                }
+              },
+              "queryRef": "Always On read only routing.Max. timestamp",
+              "nativeQueryRef": "Max. time",
+              "displayName": "Max. time"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Always On group-replica"
+                  }
+                },
+                "Property": "Group"
+              }
+            },
+            "direction": "Ascending"
+          },
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Always On group-replica"
+                  }
+                },
+                "Property": "Replica"
+              }
+            },
+            "direction": "Ascending"
+          },
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Always On read only routing"
+                  }
+                },
+                "Property": "Replica replica"
+              }
+            },
+            "direction": "Ascending"
+          }
+        ]
+      }
+    },
+    "objects": {
+      "total": [
+        {
+          "properties": {
+            "totals": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Always On read only routing'"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "visualTooltip": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            },
+            "section": {
+              "expr": {
+                "Literal": {
+                  "Value": "'___AUTO___'"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "visualHeader": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

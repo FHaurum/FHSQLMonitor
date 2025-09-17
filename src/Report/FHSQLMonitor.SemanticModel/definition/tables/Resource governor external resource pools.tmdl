@@ -1,35 +1,35 @@
 table 'Resource governor external resource pools'
 	lineageTag: 82a0d71b-c29e-494c-ab1b-1ea2af028da3
 
-	column PoolName
+	column 'Pool name'
 		dataType: string
 		lineageTag: 933627bd-0a71-436b-948c-79466aaf0e1f
 		summarizeBy: none
-		sourceColumn: PoolName
+		sourceColumn: Pool name
 
 		annotation SummarizationSetBy = Automatic
 
-	column MaxCPUpercent
+	column 'Max. CPU %'
 		dataType: string
 		lineageTag: 482fcb6b-fba2-4470-8804-a85326ca037b
 		summarizeBy: none
-		sourceColumn: MaxCPUpercent
+		sourceColumn: Max. CPU %
 
 		annotation SummarizationSetBy = Automatic
 
-	column MaxMemoryPercent
+	column 'Max. memory %'
 		dataType: string
 		lineageTag: a126b37e-9d84-4ff7-b04e-5ea5c1bc050d
 		summarizeBy: none
-		sourceColumn: MaxMemoryPercent
+		sourceColumn: Max. memory %
 
 		annotation SummarizationSetBy = Automatic
 
-	column MaxProcesses
+	column 'Max. processes'
 		dataType: string
 		lineageTag: 9eed02dd-7d61-476c-af8b-538feca717df
 		summarizeBy: none
-		sourceColumn: MaxProcesses
+		sourceColumn: Max. processes
 
 		annotation SummarizationSetBy = Automatic
 
@@ -67,9 +67,18 @@ table 'Resource governor external resource pools'
 				  db     = dbList{[Name = #"Database name"]}[Data], 
 				  table  = db{[Schema = #"Schema name", Item = "Resource governor external resource pools"]}[Data], 
 				  emptyDataset = Table.FirstN(table, 0), 
-				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset,
+				  renameColumns = Table.RenameColumns(
+				    datasetToUse, 
+				    {
+				      {"MaxCPUpercent", "Max. CPU %"}, 
+				      {"MaxMemoryPercent", "Max. memory %"}, 
+				      {"MaxProcesses", "Max. processes"}, 
+				      {"PoolName", "Pool name"}
+				    }
+				  )
 				in
-				  datasetToUse
+				  renameColumns
 				```
 
 	annotation PBI_NavigationStepName = Navigation

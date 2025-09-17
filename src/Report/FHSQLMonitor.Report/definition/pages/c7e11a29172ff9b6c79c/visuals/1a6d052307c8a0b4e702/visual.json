@@ -1,0 +1,161 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "name": "1a6d052307c8a0b4e702",
+  "position": {
+    "x": 10,
+    "y": 80,
+    "z": 6000,
+    "height": 110,
+    "width": 940,
+    "tabOrder": 5000
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "WSFC quorum state"
+                    }
+                  },
+                  "Property": "Cluster name"
+                }
+              },
+              "queryRef": "WSFC quorum state.Cluster name",
+              "nativeQueryRef": "Cluster name"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "WSFC quorum state"
+                    }
+                  },
+                  "Property": "Quorum type"
+                }
+              },
+              "queryRef": "WSFC quorum state.Quorum type",
+              "nativeQueryRef": "Type",
+              "displayName": "Type"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "WSFC quorum state"
+                    }
+                  },
+                  "Property": "Quorum state"
+                }
+              },
+              "queryRef": "WSFC quorum state.Qurum state",
+              "nativeQueryRef": "State",
+              "displayName": "State"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "WSFC quorum state"
+                    }
+                  },
+                  "Property": "Min. timestamp"
+                }
+              },
+              "queryRef": "WSFC quorum state.MinTimestamp",
+              "nativeQueryRef": "Min. time",
+              "displayName": "Min. time"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "WSFC quorum state"
+                    }
+                  },
+                  "Property": "Max. timestamp"
+                }
+              },
+              "queryRef": "WSFC quorum state.MaxTimestamp",
+              "nativeQueryRef": "Max. time",
+              "displayName": "Max. time"
+            }
+          ]
+        }
+      }
+    },
+    "objects": {
+      "total": [
+        {
+          "properties": {
+            "totals": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'WSFC quorum state'"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "visualTooltip": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            },
+            "section": {
+              "expr": {
+                "Literal": {
+                  "Value": "'___AUTO___'"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "visualHeader": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

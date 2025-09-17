@@ -1,35 +1,27 @@
 table 'Resource governor configuration'
 	lineageTag: 4dbe7e82-3a8a-42e5-8ba2-37788d334f43
 
-	column IsEnabled
-		dataType: string
-		lineageTag: 8b73152a-ee6a-44ea-b43c-2590dad4de5f
-		summarizeBy: none
-		sourceColumn: IsEnabled
-
-		annotation SummarizationSetBy = Automatic
-
-	column MaxOutstandingIOperVolume
+	column 'Max outstanding IO per volume'
 		dataType: string
 		lineageTag: e5d70e86-7cac-4105-8a82-b5bdb8aa5b6a
 		summarizeBy: none
-		sourceColumn: MaxOutstandingIOperVolume
+		sourceColumn: Max outstanding IO per volume
 
 		annotation SummarizationSetBy = Automatic
 
-	column ClassifierFunction
+	column 'Classifier function'
 		dataType: string
 		lineageTag: 4bf7b467-5c78-4844-98d5-07e8716905b2
 		summarizeBy: none
-		sourceColumn: ClassifierFunction
+		sourceColumn: Classifier function
 
 		annotation SummarizationSetBy = Automatic
 
-	column ClassifierFunctionDefinition
+	column 'Classifier function definition'
 		dataType: string
 		lineageTag: 418cbf44-02b5-4446-b854-9549df716f90
 		summarizeBy: none
-		sourceColumn: ClassifierFunctionDefinition
+		sourceColumn: Classifier function definition
 
 		annotation SummarizationSetBy = Automatic
 
@@ -46,6 +38,14 @@ table 'Resource governor configuration'
 
 		annotation PBI_FormatHint = {"isCustom":true}
 
+	column 'Is enabled'
+		dataType: string
+		lineageTag: 6e493d3d-396d-4081-ace1-e7c7fe4d3c3d
+		summarizeBy: none
+		sourceColumn: Is enabled
+
+		annotation SummarizationSetBy = Automatic
+
 	partition 'Resource governor configuration' = m
 		mode: import
 		queryGroup: Facts
@@ -59,9 +59,28 @@ table 'Resource governor configuration'
 				  db     = dbList{[Name = #"Database name"]}[Data], 
 				  table  = db{[Schema = #"Schema name", Item = "Resource governor configuration"]}[Data], 
 				  emptyDataset = Table.FirstN(table, 0), 
-				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  selectColumns = Table.SelectColumns(
+				    datasetToUse, 
+				    {
+				      "ClassifierFunction", 
+				      "ClassifierFunctionDefinition", 
+				      "IsEnabledTxt", 
+				      "MaxOutstandingIOperVolume", 
+				      "Timestamp"
+				    }
+				  ), 
+				  renameColumns = Table.RenameColumns(
+				    selectColumns, 
+				    {
+				      {"ClassifierFunction", "Classifier function"}, 
+				      {"ClassifierFunctionDefinition", "Classifier function definition"}, 
+				      {"IsEnabledTxt", "Is enabled"}, 
+				      {"MaxOutstandingIOperVolume", "Max outstanding IO per volume"}
+				    }
+				  )
 				in
-				  datasetToUse
+				  renameColumns
 				```
 
 	annotation PBI_NavigationStepName = Navigation

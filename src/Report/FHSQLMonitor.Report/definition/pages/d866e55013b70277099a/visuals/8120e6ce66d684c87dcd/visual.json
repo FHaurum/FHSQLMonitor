@@ -1,0 +1,159 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "name": "8120e6ce66d684c87dcd",
+  "position": {
+    "x": 10,
+    "y": 565,
+    "z": 1000,
+    "height": 455,
+    "width": 1900,
+    "tabOrder": 6000
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Agent jobs - list"
+                    }
+                  },
+                  "Property": "Job"
+                }
+              },
+              "queryRef": "Agent jobs - list.Job",
+              "nativeQueryRef": "Job"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Agent jobs - list"
+                    }
+                  },
+                  "Property": "Job enabled"
+                }
+              },
+              "queryRef": "Agent jobs - list.Job enabled",
+              "nativeQueryRef": "Job ena.",
+              "displayName": "Job ena."
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Agent jobs - list"
+                    }
+                  },
+                  "Property": "Schedule enabled"
+                }
+              },
+              "queryRef": "Agent jobs - list.Schedule enabled",
+              "nativeQueryRef": "Schd. ena.",
+              "displayName": "Schd. ena."
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Agent jobs - list"
+                    }
+                  },
+                  "Property": "Description"
+                }
+              },
+              "queryRef": "Agent jobs - list.Description",
+              "nativeQueryRef": "Description"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Agent jobs - list"
+                  }
+                },
+                "Property": "Job"
+              }
+            },
+            "direction": "Ascending"
+          }
+        ]
+      }
+    },
+    "objects": {
+      "columnWidth": [
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "287.09774436090225D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Agent jobs - list.Job"
+          }
+        },
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "839.8345619801481D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Agent jobs - list.Description"
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Special schedules'"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "visualTooltip": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

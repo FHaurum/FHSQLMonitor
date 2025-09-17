@@ -1,0 +1,234 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "name": "b283da722beb0ec7e8b9",
+  "position": {
+    "x": 10,
+    "y": 580,
+    "z": 2000,
+    "height": 205,
+    "width": 1900
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Database"
+                    }
+                  },
+                  "Property": "Database - Drill-through for Log shipping history"
+                }
+              },
+              "queryRef": "Database.Database - Drill-through for Log shipping history",
+              "nativeQueryRef": "Database",
+              "displayName": "Database"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Log shipping secondary database state"
+                    }
+                  },
+                  "Property": "Restore delay"
+                }
+              },
+              "queryRef": "Log shipping secondary database states.Restore delay",
+              "nativeQueryRef": "Res. delay",
+              "displayName": "Res. delay"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Log shipping secondary database state"
+                    }
+                  },
+                  "Property": "Restore all"
+                }
+              },
+              "queryRef": "Log shipping secondary database states.Restore all",
+              "nativeQueryRef": "Res. all",
+              "displayName": "Res. all"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Log shipping secondary database state"
+                    }
+                  },
+                  "Property": "Restore mode"
+                }
+              },
+              "queryRef": "Log shipping secondary database states.Restore mode",
+              "nativeQueryRef": "Res. mode",
+              "displayName": "Res. mode"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Log shipping secondary database state"
+                    }
+                  },
+                  "Property": "Disconnect users"
+                }
+              },
+              "queryRef": "Log shipping secondary database states.Disconnect users",
+              "nativeQueryRef": "Disconnect users"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Log shipping secondary database state"
+                    }
+                  },
+                  "Property": "Block size"
+                }
+              },
+              "queryRef": "Log shipping secondary database states.Block size",
+              "nativeQueryRef": "Block size"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Log shipping secondary database state"
+                    }
+                  },
+                  "Property": "Buffer count"
+                }
+              },
+              "queryRef": "Log shipping secondary database states.Buffer count",
+              "nativeQueryRef": "Buffer count"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Log shipping secondary database state"
+                    }
+                  },
+                  "Property": "Max. transfer size"
+                }
+              },
+              "queryRef": "Log shipping secondary database states.Max. transfer size",
+              "nativeQueryRef": "Max. transfer size"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Log shipping secondary database state"
+                    }
+                  },
+                  "Property": "Min. timestamp"
+                }
+              },
+              "queryRef": "Log shipping secondary database state.Min. timestamp",
+              "nativeQueryRef": "Min. time",
+              "displayName": "Min. time"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Log shipping secondary database state"
+                    }
+                  },
+                  "Property": "Max. timestamp"
+                }
+              },
+              "queryRef": "Log shipping secondary database state.Max. timestamp",
+              "nativeQueryRef": "Max. time",
+              "displayName": "Max. time"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Database"
+                  }
+                },
+                "Property": "Database - Drill-through for Log shipping history"
+              }
+            },
+            "direction": "Ascending"
+          }
+        ]
+      }
+    },
+    "objects": {
+      "total": [
+        {
+          "properties": {
+            "totals": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "text": {
+              "expr": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Title SD - Log shipping configuration"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "visualTooltip": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

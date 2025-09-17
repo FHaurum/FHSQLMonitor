@@ -1,7 +1,7 @@
 table _Measures
 	lineageTag: e13509a8-32ea-4355-9c93-883ee32b11bf
 
-	measure 'Current size MB' =
+	measure 'Current size MB - Database size' =
 			
 			SUM ( 'Database size'[CurrentSize] )
 		formatString: #,0
@@ -13,33 +13,33 @@ table _Measures
 
 	measure 'Data size MB - Database size' =
 			
-			CALCULATE ( [Current size MB], 'Database file'[Type] = "Data" )
+			CALCULATE ( [Current size MB - Database size], 'Database file'[Type] = "Data" )
 		formatString: #,0
 		displayFolder: Database size
 		lineageTag: 9d2702c6-805f-4e62-97c4-fc890c9f6f98
 
 	measure 'Log size MB - Database size' =
 			
-			CALCULATE ( [Current size MB], 'Database file'[Type] = "Log" )
+			CALCULATE ( [Current size MB - Database size], 'Database file'[Type] = "Log" )
 		formatString: #,0
 		displayFolder: Database size
 		lineageTag: d868f121-bcb5-48b5-b3bf-071558f14611
 
 	measure 'Data used MB - Database size' =
 			
-			CALCULATE ( [Used size MB], 'Database file'[Type] = "Data" )
+			CALCULATE ( [Used size MB - Database size], 'Database file'[Type] = "Data" )
 		formatString: #,0
 		displayFolder: Database size
 		lineageTag: b2437ea3-d29c-48f8-ba3a-f9f102c09ad0
 
 	measure 'Log used MB - Database size' =
 			
-			CALCULATE ( [Used size MB], 'Database file'[Type] = "Log" )
+			CALCULATE ( [Used size MB - Database size], 'Database file'[Type] = "Log" )
 		formatString: #,0
 		displayFolder: Database size
 		lineageTag: 9f859abe-ff12-4b50-a1d2-083e50c50ee7
 
-	measure 'Used size MB' =
+	measure 'Used size MB - Database size' =
 			
 			SUM ( 'Database size'[UsedSize] )
 		formatString: #,0
@@ -89,9 +89,18 @@ table _Measures
 		displayFolder: Common
 		lineageTag: 8781468b-bbd1-44a2-baff-f315909cd52a
 
-	measure 'Info URL' =
+	measure 'Info URL' = ```
 			
-			"https://haurumit.dk"
+			VAR _version = [Version number]
+			VAR _url = 
+			    IF (
+			        ISERROR ( VALUE ( SUBSTITUTE ( _version, ".", "" ) ) ),
+			        "http://www.haurumit.de",
+			        "https://haurumit.dk"
+			    )
+			VAR __result = _url
+			RETURN __result
+			```
 		displayFolder: Common
 		lineageTag: 5ffef77e-9662-4772-8568-c79f295e8061
 
@@ -1126,7 +1135,7 @@ table _Measures
 	measure 'Front page version text' =
 			
 			[Info text] & UNICHAR ( 10 ) & " "
-			    & UNICHAR ( 10 ) & "Developed using Power BI Desktop version: 2.145.1602.0 64-bit (July 2025)"
+			    & UNICHAR ( 10 ) & "Developed using Power BI Desktop version: 2.146.1454.0 64-bit (August 2025)"
 		displayFolder: Common
 		lineageTag: e74236c7-2bcf-4409-b8d2-ddb49a83e10b
 
@@ -1188,7 +1197,7 @@ table _Measures
 		displayFolder: Connections
 		lineageTag: 27c408f2-2357-45d0-962d-6e6b112600bf
 
-	measure 'Avg sessions - Connections' =
+	measure 'Avg. sessions - Connections' =
 			
 			VAR _timekeys =
 			    VALUES ( Connections[TimeKey] )
@@ -1421,7 +1430,7 @@ table _Measures
 		displayFolder: Connections
 		lineageTag: 9d5ebfea-025d-4de2-9f04-3694f0242927
 
-	measure 'Avg user sessions latest day - Connections' = ```
+	measure 'Avg. user sessions latest day - Connections' = ```
 			
 			VAR _date = 
 			    CALCULATE (
@@ -1444,7 +1453,7 @@ table _Measures
 		displayFolder: Connections
 		lineageTag: 15648cc0-a8f4-4f0c-9c77-7c056d325afd
 
-	measure 'Past avg user sessions - Connections' = ```
+	measure 'Past avg. user sessions - Connections' = ```
 			
 			VAR _date = 
 			    CALCULATE (
@@ -1467,10 +1476,10 @@ table _Measures
 		displayFolder: Connections
 		lineageTag: 8e5c9c7b-46b0-4718-8bab-eda7b5bfdc21
 
-	measure 'Avg user sessions ratio since past - Connections' =
+	measure 'Avg. user sessions ratio since past - Connections' =
 			
-			VAR _currentValue = [Avg user sessions latest day - Connections]
-			VAR _pastValue = [Past avg user sessions - Connections]
+			VAR _currentValue = [Avg. user sessions latest day - Connections]
+			VAR _pastValue = [Past avg. user sessions - Connections]
 			VAR _ratio =
 			    IF (
 			        _pastValue = BLANK ()
@@ -1485,7 +1494,7 @@ table _Measures
 		displayFolder: Connections
 		lineageTag: 28970756-6d60-42bc-b1d9-f7adca0e5850
 
-	measure 'Avg system sessions latest day - Connections' = ```
+	measure 'Avg. system sessions latest day - Connections' = ```
 			
 			VAR _date = 
 			    CALCULATE (
@@ -1508,7 +1517,7 @@ table _Measures
 		displayFolder: Connections
 		lineageTag: 5af88e66-f9fd-4150-9371-afcb1de3add2
 
-	measure 'Past avg system sessions - Connections' = ```
+	measure 'Past avg. system sessions - Connections' = ```
 			
 			VAR _date = 
 			    CALCULATE (
@@ -1531,10 +1540,10 @@ table _Measures
 		displayFolder: Connections
 		lineageTag: 3daf2c5e-71dd-4acb-81ec-0b0ec5948e36
 
-	measure 'Avg system sessions ratio since past - Connections' =
+	measure 'Avg. system sessions ratio since past - Connections' =
 			
-			VAR _currentValue = [Avg system sessions latest day - Connections]
-			VAR _pastValue = [Past avg system sessions - Connections]
+			VAR _currentValue = [Avg. system sessions latest day - Connections]
+			VAR _pastValue = [Past avg. system sessions - Connections]
 			VAR _ratio =
 			    IF (
 			        _pastValue = BLANK ()
@@ -1801,7 +1810,7 @@ table _Measures
 		displayFolder: CPU
 		lineageTag: 549d15a2-ba68-4e6f-ac62-51df23042f29
 
-	measure 'Avg SQL - CPU' =
+	measure 'Avg. SQL - CPU' =
 			
 			VAR _timekeys =
 			    VALUES ( 'CPU utilization'[TimeKey] )
@@ -1849,7 +1858,7 @@ table _Measures
 		displayFolder: CPU
 		lineageTag: 51c6638d-69f9-4978-aa42-d87d10753c5d
 
-	measure 'Avg Other - CPU' =
+	measure 'Avg. Other - CPU' =
 			
 			VAR _timekeys =
 			    VALUES ( 'CPU utilization'[TimeKey] )
@@ -2232,7 +2241,7 @@ table _Measures
 
 	measure 'Version number' =
 			
-			"2.9.1"
+			"2.11.0"
 		isHidden
 		displayFolder: Common
 		lineageTag: 39428edf-bb47-48d0-a60e-f025984fd1ba
@@ -2707,7 +2716,7 @@ table _Measures
 		displayFolder: Database IO
 		lineageTag: a08831d9-583f-4491-b6cc-5327bfbc0ac7
 
-	measure 'Avg perf. value - Performance statistics' =
+	measure 'Avg. perf. value - Performance statistics' =
 			
 			AVERAGE ( 'Performance statistics'[CounterValue] )
 		formatString: #,0.00
@@ -2720,7 +2729,7 @@ table _Measures
 	measure 'Workload group CPU usage - Resource Governor' =
 			
 			CALCULATE (
-			    [Avg perf. value - Performance statistics],
+			    [Avg. perf. value - Performance statistics],
 			    CONTAINSSTRING ( 'Performance counter'[Object], ":Workload Group Stats" ),
 			    'Performance counter'[Counter] = "CPU usage %"
 			)
@@ -2731,7 +2740,7 @@ table _Measures
 	measure 'Resource pool CPU usage - Resource Governor' =
 			
 			CALCULATE (
-			    [Avg perf. value - Performance statistics],
+			    [Avg. perf. value - Performance statistics],
 			    CONTAINSSTRING ( 'Performance counter'[Object], ":Resource Pool Stats" ),
 			    'Performance counter'[Counter] = "CPU usage %"
 			)
@@ -3512,21 +3521,22 @@ table _Measures
 		displayFolder: Index optimize
 		lineageTag: e85b5432-d73a-4256-a7cf-466d08052e68
 
-	measure 'Avg Bytes Received from Replica - Always On traffic' =
+	measure 'Avg. Bytes Received from Replica - Always On performance' =
 			
 			CALCULATE (
-			    [Avg perf. value - Performance statistics],
+			    [Avg. perf. value - Performance statistics],
 			    CONTAINSSTRING ( 'Performance counter'[Object], ":Availability Replica" ),
 			    'Performance counter'[Counter] = "Bytes Received from Replica/sec"
 			)
 		formatString: #,0
-		displayFolder: Always On traffic (using ps)
+		displayFolder: Always On performance (using ps)
 		lineageTag: 25fe76ec-7f69-4b31-8170-25788038849e
 
-	measure 'Is filters applied - Always On traffic' =
+	measure 'Is filters applied - Always On performance' =
 			
 			IF (
-			    ISFILTERED ( 'Date'[Year] ) || ISFILTERED ( 'Date'[Month] )
+			    ISFILTERED ( Database[Database] ) || ISFILTERED ( 'Date'[Year] )
+			        || ISFILTERED ( 'Date'[Month] )
 			        || ISFILTERED ( 'Date'[Day] )
 			        || ISFILTERED ( 'Date'[Day index] )
 			        || ISFILTERED ( 'Time'[Hour] ),
@@ -3534,39 +3544,39 @@ table _Measures
 			    0
 			)
 		formatString: 0
-		displayFolder: Always On traffic (using ps)\Filter panel
+		displayFolder: Always On performance (using ps)\Filter panel
 		lineageTag: 96fdf35a-67c4-4806-85fd-2613947b73a9
 
-	measure 'Open filter button tooltip - Always On traffic' =
+	measure 'Open filter button tooltip - Always On performance' =
 			
 			IF (
-			    [Is filters applied - Always On traffic] = 1,
+			    [Is filters applied - Always On performance] = 1,
 			    [Filters are applied text],
 			    [Filters are not applied]
 			)
-		displayFolder: Always On traffic (using ps)\Filter panel
+		displayFolder: Always On performance (using ps)\Filter panel
 		lineageTag: 521df29b-343a-46fb-9f66-8336d1a091ce
 
-	measure 'Avg Bytes Sent to Replica - Always On traffic' =
+	measure 'Avg. Bytes Sent to Replica - Always On performance' =
 			
 			CALCULATE (
-			    [Avg perf. value - Performance statistics],
+			    [Avg. perf. value - Performance statistics],
 			    CONTAINSSTRING ( 'Performance counter'[Object], ":Availability Replica" ),
 			    'Performance counter'[Counter] = "Bytes Sent to Replica/sec"
 			)
 		formatString: #,0
-		displayFolder: Always On traffic (using ps)
+		displayFolder: Always On performance (using ps)
 		lineageTag: 779ed2eb-6110-4d25-8510-7b7d49463f6b
 
-	measure 'Avg Bytes Sent to Transport - Always On traffic' =
+	measure 'Avg. Bytes Sent to Transport - Always On performance' =
 			
 			CALCULATE (
-			    [Avg perf. value - Performance statistics],
+			    [Avg. perf. value - Performance statistics],
 			    CONTAINSSTRING ( 'Performance counter'[Object], ":Availability Replica" ),
 			    'Performance counter'[Counter] = "Bytes Sent to Transport/sec"
 			)
 		formatString: #,0
-		displayFolder: Always On traffic (using ps)
+		displayFolder: Always On performance (using ps)
 		lineageTag: 9e3023d1-9545-4143-b32a-779e76eed77d
 
 	measure 'Data range - Index usage' =
@@ -3636,21 +3646,30 @@ table _Measures
 		displayFolder: Index usage\Filter panel
 		lineageTag: 584aeb52-1d26-4e43-b8e0-ff9a74a6ef85
 
-	measure 'Show filters - Always On traffic' =
+	measure 'Show filters - Always On performance' =
 			
 			IF (
-			    ISFILTERED ( 'Date'[Year] ),
+			    ISFILTERED ( Database[Database] ),
 			    VAR _items =
-			        FILTER ( VALUES ( 'Date'[Year] ), [VLF Filter - Always On traffic] <> BLANK () )
+			        FILTER ( VALUES ( Database[Database] ), [VLF Filter - Always On performance] <> BLANK () )
 			    VAR _itemsCombined =
-			        CONCATENATEX ( _items, 'Date'[Year], UNICHAR ( 10 ), 'Date'[Year], ASC )
+			        CONCATENATEX ( _items, Database[Database], UNICHAR ( 10 ), Database[Database], ASC )
 			    RETURN
 			        _itemsCombined & UNICHAR ( 10 )
 			)
 			    & IF (
+			        ISFILTERED ( 'Date'[Year] ),
+			        VAR _items =
+			            FILTER ( VALUES ( 'Date'[Year] ), [VLF Filter - Always On performance] <> BLANK () )
+			        VAR _itemsCombined =
+			            CONCATENATEX ( _items, 'Date'[Year], UNICHAR ( 10 ), 'Date'[Year], ASC )
+			        RETURN
+			            _itemsCombined & UNICHAR ( 10 )
+			    )
+			    & IF (
 			        ISFILTERED ( 'Date'[Month] ),
 			        VAR _items =
-			            DISTINCT ( SELECTCOLUMNS ( FILTER ( 'Date', [VLF Filter - Always On traffic] <> BLANK () ), "Month", 'Date'[Month], "MonthNumber", 'Date'[MonthNumber] ) )
+			            DISTINCT ( SELECTCOLUMNS ( FILTER ( 'Date', [VLF Filter - Always On performance] <> BLANK () ), "Month", 'Date'[Month], "MonthNumber", 'Date'[MonthNumber] ) )
 			        VAR _itemsCombined =
 			            CONCATENATEX ( _items, [Month], UNICHAR ( 10 ), [MonthNumber], ASC )
 			        RETURN
@@ -3659,7 +3678,7 @@ table _Measures
 			    & IF (
 			        ISFILTERED ( 'Date'[Day] ),
 			        VAR _items =
-			            FILTER ( VALUES ( 'Date'[Day] ), [VLF Filter - Always On traffic] <> BLANK () )
+			            FILTER ( VALUES ( 'Date'[Day] ), [VLF Filter - Always On performance] <> BLANK () )
 			        VAR _itemsCombined =
 			            CONCATENATEX ( _items, 'Date'[Day], UNICHAR ( 10 ), 'Date'[Day], ASC )
 			        RETURN
@@ -3668,7 +3687,7 @@ table _Measures
 			    & IF (
 			        ISFILTERED ( 'Date'[Day index] ),
 			        VAR _items =
-			            FILTER ( VALUES ( 'Date'[Day index] ), [VLF Filter - Always On traffic] <> BLANK () )
+			            FILTER ( VALUES ( 'Date'[Day index] ), [VLF Filter - Always On performance] <> BLANK () )
 			        VAR _itemsCombined =
 			            CONCATENATEX ( _items, 'Date'[Day index], UNICHAR ( 10 ), 'Date'[Day index], ASC )
 			        RETURN
@@ -3677,53 +3696,61 @@ table _Measures
 			    & IF (
 			        ISFILTERED ( 'Time'[Hour] ),
 			        VAR _items =
-			            FILTER ( VALUES ( 'Time'[Hour] ), [VLF Filter - Always On traffic] <> BLANK () )
+			            FILTER ( VALUES ( 'Time'[Hour] ), [VLF Filter - Always On performance] <> BLANK () )
 			        VAR _itemsCombined =
 			            CONCATENATEX ( _items, 'Time'[Hour], UNICHAR ( 10 ), 'Time'[Hour], ASC )
 			        RETURN
 			            _itemsCombined & UNICHAR ( 10 )
 			    )
-		displayFolder: Always On traffic (using ps)\Filter panel
+		displayFolder: Always On performance (using ps)\Filter panel
 		lineageTag: 04bec479-171e-4b87-86b2-a9d034961450
 
-	measure 'Show filters Headers - Always On traffic' = ```
+	measure 'Show filters Headers - Always On performance' = ```
 			
 			IF (
-			    ISFILTERED ( 'Date'[Year] ),
+			    ISFILTERED ( Database[Database] ),
 			    VAR _cnt = 
-			        COUNTROWS ( FILTER ( VALUES ( 'Date'[Year] ), [VLF Filter - Always On traffic] <> BLANK () ) )
+			        COUNTROWS ( FILTER ( VALUES ( Database[Database] ), [VLF Filter - Always On performance] <> BLANK () ) )
 			    RETURN
-			        IF ( _cnt > 0, "Year:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
+			        IF ( _cnt > 0, "Database:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			)
+			    & IF (
+			        ISFILTERED ( 'Date'[Year] ),
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Year] ), [VLF Filter - Always On performance] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Year:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
+			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Month] ),
 			        VAR _cnt = 
-			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Month] ), [VLF Filter - Always On traffic] <> BLANK () ) )
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Month] ), [VLF Filter - Always On performance] <> BLANK () ) )
 			        RETURN
 			            IF ( _cnt > 0, "Month:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day] ),
 			        VAR _cnt = 
-			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Day] ), [VLF Filter - Always On traffic] <> BLANK () ) )
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Day] ), [VLF Filter - Always On performance] <> BLANK () ) )
 			        RETURN
 			            IF ( _cnt > 0, "Day:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
 			    )
 			    & IF (
 			        ISFILTERED ( 'Date'[Day index] ),
 			        VAR _cnt = 
-			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Day index] ), [VLF Filter - Always On traffic] <> BLANK () ) )
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Day index] ), [VLF Filter - Always On performance] <> BLANK () ) )
 			        RETURN
 			            IF ( _cnt > 0, "Day index:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
+			    )
 			    & IF (
 			        ISFILTERED ( 'Time'[Hour] ),
 			        VAR _cnt = 
-			            COUNTROWS ( FILTER ( VALUES ( 'Time'[Hour] ), [VLF Filter - Always On traffic] <> BLANK () ) )
+			            COUNTROWS ( FILTER ( VALUES ( 'Time'[Hour] ), [VLF Filter - Always On performance] <> BLANK () ) )
 			        RETURN
 			            IF ( _cnt > 0, "Hour:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
-			    ))
+			    )
 			```
-		displayFolder: Always On traffic (using ps)\Filter panel
+		displayFolder: Always On performance (using ps)\Filter panel
 		lineageTag: ca07261a-22bf-47aa-b44c-d27ac9f86218
 
 	measure 'Show filters Headers - Index usage' = ```
@@ -3877,7 +3904,7 @@ table _Measures
 
 	measure 'VLF Filter - Index usage' =
 			
-			[User lookups - Index usage] + [User scans - Index usage] + [User seeks - Index usage] + [User updates - Index usage]
+			[User lookups - Index usage] + [User scans - Index usage] + [User seeks - Index usage] + [User updates - Index usage] + COUNTROWS ( 'Index not used' )
 		formatString: 0
 		displayFolder: Index usage\Filter panel
 		lineageTag: 78827a00-409f-4b4b-80cd-1d5c6fb069b2
@@ -4134,7 +4161,11 @@ table _Measures
 	measure 'Latest date - Index usage' =
 			
 			VAR _minDate =
-			    CALCULATE ( MIN ( 'Index usage'[Date] ) )
+			    IF (
+			        ISFILTERED ( 'Date' ),
+			        CALCULATE ( MIN ( 'Index usage'[Date] ) ),
+			        CALCULATE ( MIN ( 'Index usage'[Date] ), ALL () )
+			    )
 			VAR _nextMinDate =
 			    CALCULATE (
 			        MIN ( 'Index usage'[Date] ),
@@ -4142,7 +4173,11 @@ table _Measures
 			        'Index usage'[Date] > _minDate
 			    )
 			VAR _maxDate =
-			    CALCULATE ( MAX ( 'Index usage'[Date] ) )
+			    IF (
+			        ISFILTERED ( 'Date' ),
+			        CALCULATE ( MAX ( 'Index usage'[Date] ) ),
+			        CALCULATE ( MAX ( 'Index usage'[Date] ), ALL () )
+			    )
 			VAR _prevMaxDate =
 			    CALCULATE (
 			        MAX ( 'Index usage'[Date] ),
@@ -4435,10 +4470,10 @@ table _Measures
 		displayFolder: Performance statistics (using ps)\Filter panel
 		lineageTag: bd6bf937-71e5-49be-9843-87f2b330995a
 
-	measure 'Avg batch requests/sec - Performance statistics' =
+	measure 'Avg. batch requests/sec - Performance statistics' =
 			
 			CALCULATE (
-			    [Avg perf. value - Performance statistics],
+			    [Avg. perf. value - Performance statistics],
 			    CONTAINSSTRING ( 'Performance counter'[Object], ":SQL Statistics" ),
 			    'Performance counter'[Counter] = "Batch Requests/sec"
 			)
@@ -4446,10 +4481,10 @@ table _Measures
 		displayFolder: Performance statistics (using ps)
 		lineageTag: f270784c-c35e-4c39-b46e-d0ba861e37b5
 
-	measure 'Avg compilations/sec - Performance statistics' =
+	measure 'Avg. compilations/sec - Performance statistics' =
 			
 			CALCULATE (
-			    [Avg perf. value - Performance statistics],
+			    [Avg. perf. value - Performance statistics],
 			    CONTAINSSTRING ( 'Performance counter'[Object], ":SQL Statistics" ),
 			    'Performance counter'[Counter] = "SQL Compilations/sec"
 			)
@@ -4488,10 +4523,10 @@ table _Measures
 
 		changedProperty = IsHidden
 
-	measure 'Avg page life expectancy - Performance statistics' =
+	measure 'Avg. page life expectancy - Performance statistics' =
 			
 			CALCULATE (
-			    [Avg perf. value - Performance statistics],
+			    [Avg. perf. value - Performance statistics],
 			    CONTAINSSTRING ( 'Performance counter'[Object], ":Buffer Manager" ),
 			    'Performance counter'[Counter] = "Page life expectancy"
 			)
@@ -4510,10 +4545,10 @@ table _Measures
 		displayFolder: Performance statistics (using ps)
 		lineageTag: 89c20c4d-7849-4edc-abba-532ba8797eaf
 
-	measure 'Avg page life expectancy #000 - Performance statistics' =
+	measure 'Avg. page life expectancy #000 - Performance statistics' =
 			
 			CALCULATE (
-			    [Avg perf. value - Performance statistics],
+			    [Avg. perf. value - Performance statistics],
 			    CONTAINSSTRING ( 'Performance counter'[Object], ":Buffer Node" ),
 			    'Performance counter'[Counter] = "Page life expectancy",
 			    'Performance counter'[Instance] = "000"
@@ -4522,10 +4557,10 @@ table _Measures
 		displayFolder: Performance statistics (using ps)
 		lineageTag: 2870aba3-cbcf-4a1f-bced-443ac67cf415
 
-	measure 'Avg page life expectancy #001 - Performance statistics' =
+	measure 'Avg. page life expectancy #001 - Performance statistics' =
 			
 			CALCULATE (
-			    [Avg perf. value - Performance statistics],
+			    [Avg. perf. value - Performance statistics],
 			    CONTAINSSTRING ( 'Performance counter'[Object], ":Buffer Node" ),
 			    'Performance counter'[Counter] = "Page life expectancy",
 			    'Performance counter'[Instance] = "001"
@@ -6857,22 +6892,19 @@ table _Measures
 
 	measure 'Is disabled - Triggers' =
 			
-			SELECTEDVALUE ( Triggers[Is disabled] ) + 0
-		formatString: 0
+			SELECTEDVALUE ( Triggers[Is disabled] )
 		displayFolder: Triggers
 		lineageTag: a2d741f5-a230-4f31-8d33-cfac175ff008
 
-	measure 'Is ms shipped - Triggers' =
+	measure 'Is MS shipped - Triggers' =
 			
-			SELECTEDVALUE ( Triggers[Is ms shipped] ) + 0
-		formatString: 0
+			SELECTEDVALUE ( Triggers[Is MS shipped] )
 		displayFolder: Triggers
 		lineageTag: 4d1d148a-5d81-4ae2-a03c-b35d0ce8b5dd
 
 	measure 'Is not for replication - Triggers' =
 			
-			SELECTEDVALUE ( Triggers[Is not for replication] ) + 0
-		formatString: 0
+			SELECTEDVALUE ( Triggers[Is not for replication] )
 		displayFolder: Triggers
 		lineageTag: 153123b3-a8b3-4f96-aa0d-c71098da95b7
 
@@ -6885,8 +6917,7 @@ table _Measures
 
 	measure 'Is disabled - Plan guides' =
 			
-			SELECTEDVALUE ( 'Plan guides'[Is disabled] ) + 0
-		formatString: 0
+			SELECTEDVALUE ( 'Plan guides'[Is disabled] )
 		displayFolder: Plan guides
 		lineageTag: 435c0a6f-f685-449f-9093-7b1df4ff2e04
 
@@ -7746,7 +7777,7 @@ table _Measures
 
 	measure 'RCSI flag - Database configuration' =
 			
-			SELECTEDVALUE ( 'Database state'[RCSI] ) + 0
+			SELECTEDVALUE ( 'Database state'[IsReadCommittedSnapshotOn] ) + 0
 		formatString: 0
 		displayFolder: Database configuration
 		lineageTag: 73b6a072-4193-498f-b43d-c9a27131d950
@@ -7763,21 +7794,21 @@ table _Measures
 
 	measure 'Auto close flag - Database configuration' =
 			
-			SELECTEDVALUE ( 'Database state'[Auto close] ) + 0
+			SELECTEDVALUE ( 'Database state'[IsAutoCloseOn] ) + 0
 		formatString: 0
 		displayFolder: Database configuration
 		lineageTag: bd7fe3f0-9045-4a78-af82-43cb68f61560
 
 	measure 'Auto shrink flag - Database configuration' =
 			
-			SELECTEDVALUE ( 'Database state'[Auto shrink] ) + 0
+			SELECTEDVALUE ( 'Database state'[IsAutoShrinkOn] ) + 0
 		formatString: 0
 		displayFolder: Database configuration
 		lineageTag: 0a0c518c-fb2a-41d9-88da-be8f00be1ac4
 
 	measure 'Auto update stats. async. flag - Database configuration' =
 			
-			SELECTEDVALUE ( 'Database state'[Auto update stats. async.] ) + 0
+			SELECTEDVALUE ( 'Database state'[IsAutoUpdateStatsAsyncOn] ) + 0
 		formatString: 0
 		displayFolder: Database configuration
 		lineageTag: 48b51f26-eac0-4b14-82d5-4e5ade1aa4db
@@ -7999,6 +8030,10 @@ table _Measures
 			
 			VAR _timestamps =
 			    UNION (
+			        SELECTCOLUMNS (
+			            ALL ( 'Error logs' ),
+			            "Timestamp", 'Error logs'[Timestamp]
+			        ),
 			        SELECTCOLUMNS (
 			            ALL ( 'Instance dump files' ),
 			            "Timestamp", 'Instance dump files'[Created]
@@ -8351,7 +8386,7 @@ table _Measures
 
 	measure 'Encrypted flag - Database configuration' =
 			
-			SELECTEDVALUE ( 'Database state'[Encrypted] ) + 0
+			SELECTEDVALUE ( 'Database state'[IsEncrypted] ) + 0
 		formatString: 0
 		displayFolder: Database configuration
 		lineageTag: 8373dc6e-947c-4c60-bc60-6d4c824480e6
@@ -8642,7 +8677,7 @@ table _Measures
 		displayFolder: Partitioned indexes
 		lineageTag: 47b66729-7db9-410a-8997-9cc98f10e7aa
 
-	measure 'VLF - Index details - Missing indexes' =
+	measure 'VLF - Missing indexes - Index details' =
 			
 			VAR _userImpactLimit =
 			    SELECTEDVALUE ( 'Values 0-90 (10 delta)'[Value] )
@@ -8657,33 +8692,15 @@ table _Measures
 
 	measure 'Index columns - Index details - Index configuration' =
 			
-			IF ( ISINSCOPE ( 'Index'[Index] ), MAX ( 'Index configuration'[IndexColumns] ) )
+			IF ( ISINSCOPE ( 'Index'[Index] ), MAX ( 'Index configuration'[Index columns] ) )
 		displayFolder: Index details
 		lineageTag: ae6f4305-30b9-4271-beef-9b041744ceef
 
 	measure 'Included columns - Index details - Index configuration' =
 			
-			IF ( ISINSCOPE ( 'Index'[Index] ), MAX ( 'Index configuration'[IncludedColumns] ) )
+			IF ( ISINSCOPE ( 'Index'[Index] ), MAX ( 'Index configuration'[Included columns] ) )
 		displayFolder: Index details
 		lineageTag: acc94efe-afb4-4234-ac23-90a3e7ee024f
-
-	measure 'VLF - Index details - Index configuration' =
-			
-			VAR _objectKey =
-			    MAX ( Object[ObjectKey] )
-			VAR _value =
-			    SUMX (
-			        FILTER ( 'Index usage', 'Index usage'[ObjectKey] = _objectKey ),
-			        CALCULATE (
-			            [User seeks - Index usage] + [User updates - Index usage] + [User lookups - Index usage] + [User scans - Index usage]
-			        )
-			    )
-			VAR _result = _value
-			RETURN
-			    _result
-		formatString: 0
-		displayFolder: Index details
-		lineageTag: 0b0bc496-44e8-4356-9dd1-a000f3212285
 
 	measure 'Avg. user impact - Index details - Missing indexes' =
 			
@@ -8743,9 +8760,8 @@ table _Measures
 			
 			IF (
 			    ISINSCOPE ( 'Index'[Index] ),
-			    SELECTEDVALUE ( 'Index configuration'[IsPrimaryKey] ) + 0
+			    SELECTEDVALUE ( 'Index configuration'[Is primary key] )
 			)
-		formatString: 0
 		displayFolder: Index details
 		lineageTag: dbdff829-c9fd-4395-ba7a-985e822ed867
 
@@ -8753,9 +8769,8 @@ table _Measures
 			
 			IF (
 			    ISINSCOPE ( 'Index'[Index] ),
-			    SELECTEDVALUE ( 'Index configuration'[IsUnique] ) + 0
+			    SELECTEDVALUE ( 'Index configuration'[Is unique] )
 			)
-		formatString: 0
 		displayFolder: Index details
 		lineageTag: 6f3cfee1-e944-496c-898b-985c47ef2fad
 
@@ -8763,9 +8778,8 @@ table _Measures
 			
 			IF (
 			    ISINSCOPE ( 'Index'[Index] ),
-			    SELECTEDVALUE ( 'Index configuration'[IsDisabled] ) + 0
+			    SELECTEDVALUE ( 'Index configuration'[Is disabled] )
 			)
-		formatString: 0
 		displayFolder: Index details
 		lineageTag: a736cea5-7f24-496b-98ff-38d4e0fb0d97
 
@@ -8773,9 +8787,8 @@ table _Measures
 			
 			IF (
 			    ISINSCOPE ( 'Index'[Index] ),
-			    SELECTEDVALUE ( 'Index configuration'[IsHypothetical] ) + 0
+			    SELECTEDVALUE ( 'Index configuration'[Is hypothetical] )
 			)
-		formatString: 0
 		displayFolder: Index details
 		lineageTag: 6cb88300-ac62-42f3-b579-fd7c62fe37d0
 
@@ -8783,9 +8796,8 @@ table _Measures
 			
 			IF (
 			    ISINSCOPE ( 'Index'[Index] ),
-			    SELECTEDVALUE ( 'Index configuration'[HasFilter] ) + 0
+			    SELECTEDVALUE ( 'Index configuration'[Has filter] )
 			)
-		formatString: 0
 		displayFolder: Index details
 		lineageTag: 65e878af-3e96-4507-b9ef-fbda9a674be3
 
@@ -8793,7 +8805,7 @@ table _Measures
 			
 			IF (
 			    ISINSCOPE ( 'Index'[Index] ),
-			    MAX ( 'Index configuration'[FilterDefinition] )
+			    MAX ( 'Index configuration'[Filter definition] )
 			)
 		displayFolder: Index details
 		lineageTag: 4e03d819-6186-4be8-b2b7-0d4cc44ccb84
@@ -9121,13 +9133,13 @@ table _Measures
 
 	measure 'Index columns - Index configuration' =
 			
-			IF ( ISINSCOPE ( 'Index'[Index] ), MAX ( 'Index configuration'[IndexColumns] ) )
+			IF ( ISINSCOPE ( 'Index'[Index] ), MAX ( 'Index configuration'[Index columns] ) )
 		displayFolder: Index configuration
 		lineageTag: d9e51b19-5c6a-4d6d-8e9f-18efd25d9935
 
 	measure 'Included columns - Index configuration' =
 			
-			IF ( ISINSCOPE ( 'Index'[Index] ), MAX ( 'Index configuration'[IncludedColumns] ) )
+			IF ( ISINSCOPE ( 'Index'[Index] ), MAX ( 'Index configuration'[Included columns] ) )
 		displayFolder: Index configuration
 		lineageTag: 1ab912d8-ce7a-451d-bc6b-279447de51fa
 
@@ -9139,35 +9151,31 @@ table _Measures
 
 	measure 'Is primary key - Index configuration' =
 			
-			IF ( ISINSCOPE ( 'Index'[Index] ), MAX ( 'Index configuration'[IsPrimaryKey] ) )
-		formatString: 0
+			IF ( ISINSCOPE ( 'Index'[Index] ), MAX ( 'Index configuration'[Is primary Key] ) )
 		displayFolder: Index configuration
 		lineageTag: edf9327c-8c5b-46d3-8465-f4262d1fec31
 
 	measure 'Is unique - Index configuration' =
 			
-			IF ( ISINSCOPE ( 'Index'[Index] ), MAX ( 'Index configuration'[IsUnique] ) )
-		formatString: 0
+			IF ( ISINSCOPE ( 'Index'[Index] ), MAX ( 'Index configuration'[Is unique] ) )
 		displayFolder: Index configuration
 		lineageTag: 3e4f3210-9146-4237-9b67-ed83e6ff12c8
 
 	measure 'Is disabled - Index configuration' =
 			
-			IF ( ISINSCOPE ( 'Index'[Index] ), MAX ( 'Index configuration'[IsDisabled] ) )
-		formatString: 0
+			IF ( ISINSCOPE ( 'Index'[Index] ), MAX ( 'Index configuration'[Is disabled] ) )
 		displayFolder: Index configuration
 		lineageTag: a682c655-c16d-416b-80f8-410c2654e91e
 
 	measure 'Is hypothetical - Index configuration' =
 			
-			IF ( ISINSCOPE ( 'Index'[Index] ), MAX ( 'Index configuration'[IsHypothetical] ) )
-		formatString: 0
+			IF ( ISINSCOPE ( 'Index'[Index] ), MAX ( 'Index configuration'[Is hypothetical] ) )
 		displayFolder: Index configuration
 		lineageTag: 9fa9b861-cb73-41dd-aad5-4c7e1e1ae7b6
 
 	measure 'Filter definition - Index configuration' =
 			
-			IF ( ISINSCOPE ( 'Index'[Index] ), MAX ( 'Index configuration'[FilterDefinition] ) )
+			IF ( ISINSCOPE ( 'Index'[Index] ), MAX ( 'Index configuration'[Filter definition] ) )
 		displayFolder: Index configuration
 		lineageTag: 8cad6d83-bd3a-41a0-a911-1f352d478805
 
@@ -9990,14 +9998,14 @@ table _Measures
 
 	measure 'Copy only flag - Backup status' =
 			
-			SELECTEDVALUE ( 'Backup status'[Copy only] ) + 0
+			SELECTEDVALUE ( 'Backup status'[IsCopyOnly] ) + 0
 		formatString: 0
 		displayFolder: Backup\Backup status
 		lineageTag: 8f4f8334-7d32-4bb5-b722-18e8715da163
 
 	measure 'Damaged flag - Backup status' =
 			
-			SELECTEDVALUE ( 'Backup status'[Damaged] ) + 0
+			SELECTEDVALUE ( 'Backup status'[IsDamaged] ) + 0
 		formatString: 0
 		displayFolder: Backup\Backup status
 		lineageTag: acc2b693-117a-4604-9016-21cc73ec3c97
@@ -10013,7 +10021,7 @@ table _Measures
 			
 			CALCULATE (
 			    [Backups # - Backup status],
-			    'Backup status'[Copy only]
+			    'Backup status'[IsCopyOnly]
 			)
 		formatString: #,0
 		displayFolder: Backup\Backup status
@@ -10023,7 +10031,7 @@ table _Measures
 			
 			CALCULATE (
 			    [Backups # - Backup status],
-			    'Backup status'[Damaged]
+			    'Backup status'[IsDamaged]
 			)
 		formatString: #,0
 		displayFolder: Backup\Backup status
@@ -10254,10 +10262,10 @@ table _Measures
 		displayFolder: Agent jobs performance\Filter panel
 		lineageTag: 95c2bf44-ba73-4e33-9f85-bc917661a8b2
 
-	measure 'VLF Filter - Always On traffic' =
+	measure 'VLF Filter - Always On performance' =
 			
-			[Avg perf. value - Performance statistics]
-		displayFolder: Always On traffic (using ps)\Filter panel
+			[Avg. perf. value - Performance statistics] + [Avg. synchronization lag mS - Always On performance]
+		displayFolder: Always On performance (using ps)\Filter panel
 		lineageTag: a6eda3db-2004-4970-8558-58032538a694
 
 		annotation PBI_FormatHint = {"isGeneralNumber":true}
@@ -10336,7 +10344,7 @@ table _Measures
 
 	measure 'VLF Filter - Performance statistics' =
 			
-			[Avg perf. value - Performance statistics]
+			[Avg. perf. value - Performance statistics]
 		displayFolder: Performance statistics (using ps)\Filter panel
 		lineageTag: 8f6ffe5f-6c8f-4d2d-8b7b-c1c0c0eef84f
 
@@ -10456,7 +10464,7 @@ table _Measures
 
 	measure 'VLF Filter - Resource Governor' =
 			
-			[Avg perf. value - Performance statistics]
+			[Avg. perf. value - Performance statistics]
 		displayFolder: Resource Governor (using ps)\Filter panel
 		lineageTag: fba71294-20d4-4c0b-a2c9-f36a4c2f87f7
 
@@ -10786,7 +10794,7 @@ table _Measures
 
 	measure 'Always On flag - Database configuration' =
 			
-			SUM ( 'Database state'[Is on Always On primary] )
+			SUM ( 'Database state'[IsOnAlwaysOnPrimary] )
 		formatString: 0
 		displayFolder: Database configuration
 		lineageTag: 9358da3d-59cb-41bb-b6f6-e81d1fa88619
@@ -10942,6 +10950,692 @@ table _Measures
 			```
 		displayFolder: Always On configuration\Filter panel
 		lineageTag: e231c0c0-78f2-46df-8d07-1cc50d22876f
+
+	measure 'Disabled plan guides # - Plan guides' =
+			
+			CALCULATE (
+			    [Plan guides # - Plan guides],
+			    'Plan guides'[IsDisabled]
+			)
+		formatString: #,0
+		displayFolder: Plan guides
+		lineageTag: 5c79ba2a-8ff4-43e2-9389-11b4aec4f94c
+
+	measure 'Error plan guides # - Plan guides' =
+			
+			CALCULATE (
+			    [Plan guides # - Plan guides],
+			    'Plan guides'[Message] <> BLANK ()
+			)
+		formatString: #,0
+		displayFolder: Plan guides
+		lineageTag: 2a92b079-a0fb-4756-9955-73ab5abda9c0
+
+	measure 'Disabled triggers # - Triggers' =
+			
+			CALCULATE (
+			    [Triggers # - Triggers],
+			    'Triggers'[IsDisabled]
+			)
+		formatString: #,0
+		displayFolder: Triggers
+		lineageTag: 27e29ec8-21ac-4bb7-97e1-4fa317a77f03
+
+	measure 'MS shipped triggers # - Triggers' =
+			
+			CALCULATE (
+			    [Triggers # - Triggers],
+			    'Triggers'[IsMSShipped]
+			)
+		formatString: #,0
+		displayFolder: Triggers
+		lineageTag: 38d1ef07-9cdd-4d29-9960-01c378bc9f83
+
+	measure 'Not for replication # - Triggers' =
+			
+			CALCULATE (
+			    [Triggers # - Triggers],
+			    'Triggers'[IsNotForReplication]
+			)
+		formatString: #,0
+		displayFolder: Triggers
+		lineageTag: dc8602a5-e96d-4915-87ed-e9713c951931
+
+	measure 'VLF Filter - Instance status' =
+			
+			COUNTROWS ( 'Error logs' ) + COUNTROWS ( 'Instance dump files' ) + COUNTROWS ( 'Instance suspect pages' )
+		formatString: 0
+		displayFolder: Instance status\Filter panel
+		lineageTag: d0480df9-45ed-405d-910f-af018f55ba2d
+
+	measure 'Is filters applied - Instance status' =
+			
+			IF (
+			    ISFILTERED ( 'Date'[Year] ) || ISFILTERED ( 'Date'[Month] )
+			        || ISFILTERED ( 'Date'[Day] )
+			        || ISFILTERED ( 'Date'[Day index] ),
+			    1,
+			    0
+			)
+		formatString: 0
+		displayFolder: Instance status\Filter panel
+		lineageTag: 02a4da84-4695-4987-890d-4ae765f28f9f
+
+	measure 'Open filter button tooltip - Instance status' =
+			
+			IF (
+			    [Is filters applied - Instance status] = 1,
+			    [Filters are applied text],
+			    [Filters are not applied]
+			)
+		displayFolder: Instance status\Filter panel
+		lineageTag: de5837da-118a-4260-be5c-de652265c33e
+
+	measure 'Show filters - Instance status' =
+			
+			IF (
+			    ISFILTERED ( 'Date'[Year] ),
+			    VAR _items =
+			        FILTER ( VALUES ( 'Date'[Year] ), [VLF Filter - Instance status] <> BLANK () )
+			    VAR _itemsCombined =
+			        CONCATENATEX ( _items, 'Date'[Year], UNICHAR ( 10 ), 'Date'[Year], ASC )
+			    RETURN
+			        _itemsCombined & UNICHAR ( 10 )
+			)
+			    & IF (
+			        ISFILTERED ( 'Date'[Month] ),
+			        VAR _items =
+			            DISTINCT ( SELECTCOLUMNS ( FILTER ( 'Date', [VLF Filter - Instance status] <> BLANK () ), "Month", 'Date'[Month], "MonthNumber", 'Date'[MonthNumber] ) )
+			        VAR _itemsCombined =
+			            CONCATENATEX ( _items, [Month], UNICHAR ( 10 ), [MonthNumber], ASC )
+			        RETURN
+			            _itemsCombined & UNICHAR ( 10 )
+			    )
+			    & IF (
+			        ISFILTERED ( 'Date'[Day] ),
+			        VAR _items =
+			            FILTER ( VALUES ( 'Date'[Day] ), [VLF Filter - Instance status] <> BLANK () )
+			        VAR _itemsCombined =
+			            CONCATENATEX ( _items, 'Date'[Day], UNICHAR ( 10 ), 'Date'[Day], ASC )
+			        RETURN
+			            _itemsCombined & UNICHAR ( 10 )
+			    )
+			    & IF (
+			        ISFILTERED ( 'Date'[Day index] ),
+			        VAR _items =
+			            FILTER ( VALUES ( 'Date'[Day index] ), [VLF Filter - Instance status] <> BLANK () )
+			        VAR _itemsCombined =
+			            CONCATENATEX ( _items, 'Date'[Day index], UNICHAR ( 10 ), 'Date'[Day index], ASC )
+			        RETURN
+			            _itemsCombined & UNICHAR ( 10 )
+			    )
+		displayFolder: Instance status\Filter panel
+		lineageTag: 6d80cbb8-7627-4ffa-b34b-595e6fc4b036
+
+	measure 'Show filters Headers - Instance status' = ```
+			
+			IF (
+			    ISFILTERED ( 'Date'[Year] ),
+			    VAR _cnt = 
+			        COUNTROWS ( FILTER ( VALUES ( 'Date'[Year] ), [VLF Filter - Instance status] <> BLANK () ) )
+			    RETURN
+			        IF ( _cnt > 0, "Year:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
+			)
+			    & IF (
+			        ISFILTERED ( 'Date'[Month] ),
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Month] ), [VLF Filter - Instance status] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Month:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
+			    )
+			    & IF (
+			        ISFILTERED ( 'Date'[Day] ),
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Day] ), [VLF Filter - Instance status] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Day:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
+			    )
+			    & IF (
+			        ISFILTERED ( 'Date'[Day index] ),
+			        VAR _cnt = 
+			            COUNTROWS ( FILTER ( VALUES ( 'Date'[Day index] ), [VLF Filter - Instance status] <> BLANK () ) )
+			        RETURN
+			            IF ( _cnt > 0, "Day index:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
+			    )
+			```
+		displayFolder: Instance status\Filter panel
+		lineageTag: 3687ef69-42ab-4e31-a064-f44484ef91de
+
+	measure 'VLF - Index not used - Index usage' =
+			
+			COUNTROWS ( 'Index not used' )
+		formatString: 0
+		displayFolder: Index usage
+		lineageTag: 815a4068-af76-433b-a673-8a4f78649a02
+
+	measure 'Details not used title - Index usage' =
+			
+			VAR _minDataDate =
+			    CALCULATE ( MIN ( 'Index usage'[Date] ), ALL () )
+			VAR _maxDataDate =
+			    CALCULATE ( MAX ( 'Index usage'[Date] ), ALL () )
+			VAR _minDataDateTxt =
+			    FORMAT ( _minDataDate, [Date format string] )
+			VAR _maxDataDateTxt =
+			    FORMAT ( _maxDataDate, [Date format string] )
+			VAR _txt =
+			    "Indexes not used"
+			        & IF (
+			            _minDataDate <> BLANK (),
+			            " between " & _minDataDateTxt & " and " & _maxDataDateTxt
+			        )
+			VAR _result = _txt
+			RETURN
+			    _result
+		displayFolder: Index usage
+		lineageTag: 24278328-128b-4120-80d6-3acf3ff84c5f
+
+	measure 'Rows - index not used - Index usage' =
+			
+			VAR _maxTableSizeDate =
+			    MAX ( 'Table size'[Date] )
+			VAR _indexRows =
+			    CALCULATE (
+			        SUM ( 'Table size'[Rows] ),
+			        'Table size'[Date] = _maxTableSizeDate,
+			        USERELATIONSHIP ( 'Index not used'[IndexKey], 'Table size'[IndexKey] )
+			    )
+			VAR _result = _indexRows
+			RETURN
+			    _result
+		formatString: #,0
+		displayFolder: Index usage
+		lineageTag: 442a5617-1717-4183-a7bc-fb02135243c7
+
+	measure 'Difference - Index usage' =
+			
+			VAR _seeks = [Number of seeks in period - Index usage]
+			VAR _scans = [Number of scans in period - Index usage]
+			VAR _lookups = [Number of lookups in period - Index usage]
+			VAR _updates = [Number of updates in period - Index usage]
+			VAR _difference = _updates - ( _seeks + _scans + _lookups )
+			VAR _result = _difference
+			RETURN
+			    _result
+		formatString: #,0
+		displayFolder: Index usage
+		lineageTag: bf7ad9b8-b144-4cd4-bcef-7d29b1f4b0c7
+
+	measure 'Used - Index usage' =
+			
+			VAR _seeks = [Number of seeks in period - Index usage]
+			VAR _scans = [Number of scans in period - Index usage]
+			VAR _lookups = [Number of lookups in period - Index usage]
+			VAR _updates = [Number of updates in period - Index usage]
+			VAR _usage = _seeks + _scans + _lookups
+			VAR _used =
+			    IF (
+			        ISINSCOPE ( 'Index'[Database] ),
+			        IF ( _usage + _updates <> 0, IF ( _usage > 0, "1", "0" ) )
+			    )
+			VAR _result = _used
+			RETURN
+			    _result
+		displayFolder: Index usage
+		lineageTag: 0e5a76fb-360e-4e8f-89db-5da4411cb9fb
+
+	measure 'Sort value - Index usage' =
+			
+			VAR _sortValueRange = 1000000000000
+			VAR _used = [Used - Index usage]
+			VAR _difference = [Difference - Index usage]
+			VAR _differenceText =
+			    IF (
+			        _difference < 0,
+			        RIGHT ( "000000000000" & FORMAT ( ABS ( _sortValueRange + _difference ), "#" ), 12 ),
+			        RIGHT ( "000000000000" & FORMAT ( _difference, "#" ), 12 )
+			    )
+			VAR _sortValue =
+			    IF (
+			        _used <> BLANK () && _difference <> BLANK (),
+			        VAR _letter =
+			            IF (
+			                _used = "0",
+			                IF ( _difference < 0, "C", "D" ),
+			                IF ( _difference < 0, "A", "B" )
+			            )
+			        RETURN
+			            _letter & ":" & _differenceText
+			    )
+			VAR _result = _sortValue
+			RETURN
+			    _result
+		displayFolder: Index usage
+		lineageTag: 513f4d2e-ef91-472e-ab80-c61453e9fc7a
+
+	measure 'Impact - Index details' =
+			
+			SELECTEDVALUE ( 'Values 0-90 (10 delta)'[Value] )
+		formatString: 0
+		displayFolder: Index details
+		lineageTag: 70837846-f1a6-4f21-a663-ec83cd705e1d
+
+	measure 'VLF - Index not used - Index details' =
+			
+			COUNTROWS ( 'Index not used' )
+		formatString: 0
+		displayFolder: Index details
+		lineageTag: 01204461-f9ea-4190-b62e-45fc55b70c2b
+
+	measure 'Standby flag - Database configuration' =
+			
+			SELECTEDVALUE ( 'Database state'[IsInStandby] ) + 0
+		formatString: 0
+		displayFolder: Database configuration
+		lineageTag: b1cabe2b-2416-46cf-85dc-0553e31361e5
+
+	measure 'Read only flag - Database configuration' =
+			
+			SELECTEDVALUE ( 'Database state'[IsReadOnly] ) + 0
+		formatString: 0
+		displayFolder: Database configuration
+		lineageTag: be24a674-105c-4b55-8dec-1fe8e8cc4402
+
+	measure 'State flag - Database configuration' =
+			
+			CALCULATE (
+			    COUNTROWS ( 'Database state' ),
+			    FILTER (
+			        'Database state',
+			        NOT 'Database state'[State] IN { BLANK (), "Online" }
+			    )
+			)
+		formatString: 0
+		displayFolder: Database configuration
+		lineageTag: a3d2b73f-a49d-4fb5-9968-65c82c171d15
+
+	measure 'User specified monitor - Secondary primary database - Log shipping configuration' =
+			
+			SELECTEDVALUE ( 'Log shipping secondary primary database state'[UserSpecifiedMonitor] ) + 0
+		formatString: 0
+		displayFolder: Log shipping configuration
+		lineageTag: 271c98f6-00c6-4f76-9158-54b4d8917341
+
+	measure 'User specified monitor - Primary database - Log shipping configuration' =
+			
+			SELECTEDVALUE ( 'Log shipping primary database state'[UserSpecifiedMonitor] ) + 0
+		formatString: 0
+		displayFolder: Log shipping configuration
+		lineageTag: a887dc68-f3cb-4f06-97a5-5cab503c72de
+
+	measure 'Threshold alert enabled - Monitor secondary database - Log shipping configuration' =
+			
+			SELECTEDVALUE ( 'Log shipping monitor secondary database state'[ThresholdAlertEnabled] ) + 0
+		formatString: 0
+		displayFolder: Log shipping configuration
+		lineageTag: 359e5c60-b3b8-4286-bb94-7ad9d244ac39
+
+	measure 'Monitor server - Primary database - Log shipping configuration' =
+			
+			VAR _userDefMon = [User specified monitor - Primary database - Log shipping configuration]
+			VAR _monServer =
+			    MAX ( 'Log shipping primary database state'[Monitor server] )
+			VAR _monTxt =
+			    IF ( _userDefMon <> 0, _monServer )
+			VAR _result = _monTxt
+			RETURN
+			    _result
+		displayFolder: Log shipping configuration
+		lineageTag: e2452ccf-d124-4618-8c37-eba87cd21d7f
+
+	measure 'Monitor server security - Primary database - Log shipping configuration' =
+			
+			VAR _userDefMon = [User specified monitor - Primary database - Log shipping configuration]
+			VAR _monServer =
+			    MAX ( 'Log shipping primary database state'[Monitor server security mode] )
+			VAR _monTxt =
+			    IF ( _userDefMon <> 0, _monServer )
+			VAR _result = _monTxt
+			RETURN
+			    _result
+		displayFolder: Log shipping configuration
+		lineageTag: ef258604-8031-4b6d-af56-c97756ac3542
+
+	measure 'Monitor server - Secondary primary database - Log shipping configuration' =
+			
+			VAR _userDefMon = [User specified monitor - Secondary primary database - Log shipping configuration]
+			VAR _monServer =
+			    MAX ( 'Log shipping secondary primary database state'[Monitor server] )
+			VAR _monTxt =
+			    IF ( _userDefMon <> 0, _monServer )
+			VAR _result = _monTxt
+			RETURN
+			    _result
+		displayFolder: Log shipping configuration
+		lineageTag: 246fc009-860a-49d3-9f1a-16cf33d8f913
+
+	measure 'Monitor server security - Secondary primary database - Log shipping configuration' =
+			
+			VAR _userDefMon = [User specified monitor - Secondary primary database - Log shipping configuration]
+			VAR _monServer =
+			    MAX ( 'Log shipping secondary primary database state'[Monitor server security mode] )
+			VAR _monTxt =
+			    IF ( _userDefMon <> 0, _monServer )
+			VAR _result = _monTxt
+			RETURN
+			    _result
+		displayFolder: Log shipping configuration
+		lineageTag: 1427814c-47a4-42bd-ba6d-7e614e2ccc00
+
+	measure 'Backup retention - Primary database - Log shipping configuration' =
+			
+			SUM ( 'Log shipping primary database state'[Backup retention period] )
+		formatString: #,0
+		displayFolder: Log shipping configuration
+		lineageTag: c5c3de90-555c-452b-b656-5189ba792d10
+
+	measure 'File retention - Secondary primary database - Log shipping configuration' =
+			
+			SUM ( 'Log shipping secondary primary database state'[File retention period] )
+		formatString: #,0
+		displayFolder: Log shipping configuration
+		lineageTag: b9b9c481-a370-4100-9833-41a19c587811
+
+	measure 'Data range - Log shipping configuration' =
+			
+			VAR _timestamps =
+			    UNION (
+			        SELECTCOLUMNS (
+			            ALL ( 'Log shipping monitor primary database state' ),
+			            "Min. timestamp", 'Log shipping monitor primary database state'[Min. timestamp],
+			            "Max. timestamp", 'Log shipping monitor primary database state'[Max. timestamp]
+			        ),
+			        SELECTCOLUMNS (
+			            ALL ( 'Log shipping monitor secondary database state' ),
+			            "Min. timestamp", 'Log shipping monitor secondary database state'[Min. timestamp],
+			            "Max. timestamp", 'Log shipping monitor secondary database state'[Max. timestamp]
+			        ),
+			        SELECTCOLUMNS (
+			            ALL ( 'Log shipping primary database state' ),
+			            "Min. timestamp", 'Log shipping primary database state'[Min. timestamp],
+			            "Max. timestamp", 'Log shipping primary database state'[Max. timestamp]
+			        ),
+			        SELECTCOLUMNS (
+			            ALL ( 'Log shipping primary secondary database state' ),
+			            "Min. timestamp", 'Log shipping primary secondary database state'[Min. timestamp],
+			            "Max. timestamp", 'Log shipping primary secondary database state'[Max. timestamp]
+			        ),
+			        SELECTCOLUMNS (
+			            ALL ( 'Log shipping secondary database state' ),
+			            "Min. timestamp", 'Log shipping secondary database state'[Min. timestamp],
+			            "Max. timestamp", 'Log shipping secondary database state'[Max. timestamp]
+			        ),
+			        SELECTCOLUMNS (
+			            ALL ( 'Log shipping secondary primary database state' ),
+			            "Min. timestamp", 'Log shipping secondary primary database state'[Min. timestamp],
+			            "Max. timestamp", 'Log shipping secondary primary database state'[Max. timestamp]
+			        )
+			    )
+			VAR _minDataDate =
+			    MINX ( _timestamps, [Min. timestamp] )
+			VAR _maxDataDate =
+			    MAXX ( _timestamps, [Max. timestamp] )
+			VAR _minDataDateTxt =
+			    FORMAT ( _minDataDate, [Date-min format string] )
+			VAR _maxDataDateTxt =
+			    FORMAT ( _maxDataDate, [Date-min format string] )
+			VAR _txt =
+			    IF (
+			        _minDataDate = BLANK (),
+			        "",
+			        "Data changed between " & _minDataDateTxt & " and " & _maxDataDateTxt
+			    )
+			VAR _result = _txt
+			RETURN
+			    _result
+		displayFolder: Log shipping configuration
+		lineageTag: 3f40427c-ed5d-4e95-a5d0-5baa44c31b79
+
+	measure 'Show filters - Log shipping configuration' =
+			
+			IF (
+			    ISFILTERED ( 'Database'[Database] ),
+			    VAR _items =
+			        FILTER ( VALUES ( 'Database'[Database] ), [VLF Filter - Log shipping configuration] <> BLANK () )
+			    VAR _itemsCombined =
+			        CONCATENATEX ( _items, 'Database'[Database], UNICHAR ( 10 ), 'Database'[Database], ASC )
+			    RETURN
+			        _itemsCombined & UNICHAR ( 10 )
+			)
+		displayFolder: Log shipping configuration\Filter panel
+		lineageTag: 27e76127-a215-4273-8ea9-0dcdd8a04e9f
+
+	measure 'VLF Filter - Log shipping configuration' =
+			
+			COUNTROWS ( 'Log shipping monitor primary database state' )
+			+ COUNTROWS ( 'Log shipping monitor secondary database state' )
+			+ COUNTROWS ( 'Log shipping primary database state' )
+			+ COUNTROWS ( 'Log shipping primary secondary database state' )
+			+ COUNTROWS ( 'Log shipping secondary database state' )
+			+ COUNTROWS ( 'Log shipping secondary primary database state' )
+		formatString: 0
+		displayFolder: Log shipping configuration\Filter panel
+		lineageTag: fcace2e9-484f-4e47-9c48-366b5b8603e3
+
+	measure 'Show filters Headers - Log shipping configuration' = ```
+			
+			IF (
+			    ISFILTERED ( 'Database'[Database] ),
+			    VAR _cnt = 
+			        COUNTROWS ( FILTER ( VALUES ( 'Database'[Database] ), [VLF Filter - Log shipping configuration] <> BLANK () ) )
+			    RETURN
+			        IF ( _cnt > 0, "Database:" & UNICHAR ( 127 ) & REPT ( UNICHAR ( 10 ), _cnt ) )
+			)
+			```
+		displayFolder: Log shipping configuration\Filter panel
+		lineageTag: eaf2fdf4-570a-461f-bfcc-e0c76a89e6ed
+
+	measure 'Is filters applied - Log shipping configuration' =
+			
+			IF (
+			    ISFILTERED ( 'Database'[Database] ),
+			    1,
+			    0
+			)
+		formatString: 0
+		displayFolder: Log shipping configuration\Filter panel
+		lineageTag: 3d16cdd5-44e7-4a3a-a37f-26c7642bbdc4
+
+	measure 'Open filter button tooltip - Log shipping configuration' =
+			
+			IF (
+			    [Is filters applied - Log shipping configuration] = 1,
+			    [Filters are applied text],
+			    [Filters are not applied]
+			)
+		displayFolder: Log shipping configuration\Filter panel
+		lineageTag: 8f7a1436-c207-45dc-9557-9c3db061d73e
+
+	measure 'Avg. time since previous backup - Monitor primaries - Log shipping status' =
+			
+			AVERAGE ( 'Log shipping monitor primaries'[Time since previous backup] )
+		formatString: #,0
+		displayFolder: Log shipping status
+		lineageTag: aa2460e3-07c4-45e6-a278-eb4d6001e13a
+
+	measure 'Avg. time since previous copy - Monitor secondary copies - Log shipping status' =
+			
+			AVERAGE ( 'Log shipping monitor secondary copies'[Time since previous copy] )
+		formatString: #,0
+		displayFolder: Log shipping status
+		lineageTag: fb55c270-4505-4043-82e2-31560aae314b
+
+	measure 'Avg. time since previous restore - Monitor secondary restores - Log shipping status' =
+			
+			AVERAGE ( 'Log shipping monitor secondary restores'[Time since previous restore] )
+		formatString: #,0
+		displayFolder: Log shipping status
+		lineageTag: 7f6a55bf-44c6-4811-a8a2-e58c925eead2
+
+	measure 'Avg. time since previous backup - Primary databases - Log shipping status' =
+			
+			AVERAGE ( 'Log shipping primary databases'[Time since previous backup] )
+		formatString: #,0
+		displayFolder: Log shipping status
+		lineageTag: 4e50c973-b0bd-49fb-9705-9405eaf680f8
+
+	measure 'Avg. time since previous copy - Secondaries - Log shipping status' =
+			
+			AVERAGE ( 'Log shipping secondaries'[Time since previous copy] )
+		formatString: #,0
+		displayFolder: Log shipping status
+		lineageTag: 4b663588-20f7-4bd3-837f-820633a96aa0
+
+	measure 'Avg. time since previous restore - Secondary databases - Log shipping status' =
+			
+			AVERAGE ( 'Log shipping secondary databases'[Time since previous restore] )
+		formatString: #,0
+		displayFolder: Log shipping status
+		lineageTag: 7b31f06e-a353-4a65-a729-3b8b4891e644
+
+	measure 'Data range - Log shipping status' =
+			
+			VAR _timestamps =
+			    UNION (
+			        SELECTCOLUMNS (
+			            ALL ( 'Log shipping monitor error details' ),
+			            "Timestamp", 'Log shipping monitor error details'[Date]
+			        ),
+			        SELECTCOLUMNS (
+			            ALL ( 'Log shipping monitor history details' ),
+			            "Timestamp", 'Log shipping monitor history details'[Date]
+			        ),
+			        SELECTCOLUMNS (
+			            ALL ( 'Log shipping monitor primaries' ),
+			            "Timestamp", 'Log shipping monitor primaries'[Date]
+			        ),
+			        SELECTCOLUMNS (
+			            ALL ( 'Log shipping monitor secondary copies' ),
+			            "Timestamp", 'Log shipping monitor secondary copies'[Date]
+			        ),
+			        SELECTCOLUMNS (
+			            ALL ( 'Log shipping monitor secondary restores' ),
+			            "Timestamp", 'Log shipping monitor secondary restores'[Date]
+			        ),
+			        SELECTCOLUMNS (
+			            ALL ( 'Log shipping primary databases' ),
+			            "Timestamp", 'Log shipping primary databases'[Date]
+			        ),
+			        SELECTCOLUMNS (
+			            ALL ( 'Log shipping secondaries' ),
+			            "Timestamp", 'Log shipping secondaries'[Date]
+			        ),
+			        SELECTCOLUMNS (
+			            ALL ( 'Log shipping secondary databases' ),
+			            "Timestamp", 'Log shipping secondary databases'[Date]
+			        )
+			    )
+			VAR _minDataDate =
+			    MINX ( _timestamps, [Timestamp] )
+			VAR _maxDataDate =
+			    MAXX ( _timestamps, [Timestamp] )
+			VAR _minDataDateTxt =
+			    FORMAT ( _minDataDate, [Date format string] )
+			VAR _maxDataDateTxt =
+			    FORMAT ( _maxDataDate, [Date format string] )
+			VAR _txt =
+			    IF (
+			        _minDataDate = BLANK (),
+			        "",
+			        "Data available between " & _minDataDateTxt & " and " & _maxDataDateTxt
+			    )
+			VAR _result = _txt
+			RETURN
+			    _result
+		displayFolder: Log shipping status
+		lineageTag: b123dc74-5bc4-4427-bebc-8e5d1ce4f943
+
+	measure 'Data range - Log shipping configuration history' =
+			
+			VAR _minDataDate =
+			    CALCULATE ( MIN ( 'Log shipping state history'[From] ) )
+			VAR _minDataDateTxt =
+			    FORMAT ( _minDataDate, [Date format string] )
+			VAR _txt =
+			    IF (
+			        _minDataDate = BLANK (),
+			        "",
+			        "Data from " & _minDataDateTxt
+			    )
+			VAR _result = _txt
+			RETURN
+			    _result
+		displayFolder: Log shipping configuration history
+		lineageTag: cfeece1f-4fe6-4f9b-8592-b96289aec7a9
+
+	measure 'Title DSC - Database configuration' =
+			
+			"Database scoped configuration " & [Drill-through symbol]
+		displayFolder: Database configuration
+		lineageTag: 135f7512-c42c-4d5f-bb74-296b02a227d0
+
+	measure 'Title MPD - Log shipping configuration' =
+			
+			"Monitor primary databases " & [Drill-through symbol]
+		displayFolder: Log shipping configuration
+		lineageTag: 5a670f26-59a2-46d0-8307-32f6ca9df405
+
+	measure 'Title MSD - Log shipping configuration' =
+			
+			"Monitor secondary databases " & [Drill-through symbol]
+		displayFolder: Log shipping configuration
+		lineageTag: b66dbafd-18af-4577-b546-5dc5fd6a4415
+
+	measure 'Title PD - Log shipping configuration' =
+			
+			"Primary databases " & [Drill-through symbol]
+		displayFolder: Log shipping configuration
+		lineageTag: 27f9dc35-310c-4322-9fa7-ab33678f4f29
+
+	measure 'Title PSD - Log shipping configuration' =
+			
+			"Primary secondary databases " & [Drill-through symbol]
+		displayFolder: Log shipping configuration
+		lineageTag: 070223aa-4d08-4d6a-9797-bab00008fdcb
+
+	measure 'Title SD - Log shipping configuration' =
+			
+			"Secondary databases " & [Drill-through symbol]
+		displayFolder: Log shipping configuration
+		lineageTag: 159010bf-dddf-42a9-8ee1-0959428b2cd8
+
+	measure 'Title SPD - Log shipping configuration' =
+			
+			"Secondary primary databases " & [Drill-through symbol]
+		displayFolder: Log shipping configuration
+		lineageTag: bec8bb2a-f7a0-4f33-be26-3d418da3f92b
+
+	measure 'Avg. synchronization lag mS - Always On performance' =
+			
+			AVERAGE ( 'Always On synchronization lag'[SynchronizationLagMS] )
+		formatString: #,0.0
+		displayFolder: Always On performance (using ps)
+		lineageTag: 0739d35d-d5d6-443c-8291-6af32e198f77
+
+	measure 'VLF Filter - Synchronization lag - Always On performance' =
+			
+			[Avg. synchronization lag mS - Always On performance]
+		displayFolder: Always On performance (using ps)\Filter panel
+		lineageTag: fae653c7-d7d3-440f-87df-848d6d579874
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	measure 'VLFs - VLF size' =
+			
+			SUM ( 'VLF size'[VLFCount] )
+		formatString: #,0
+		displayFolder: VLF size
+		lineageTag: 5c91f41b-ea1b-4937-b74a-81b99ed490ce
 
 	partition _Measures = m
 		mode: import

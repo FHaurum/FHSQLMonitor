@@ -1,0 +1,397 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "name": "057032b713a3dd1a1ce1",
+  "position": {
+    "x": 10,
+    "y": 565,
+    "z": 1500,
+    "height": 455,
+    "width": 1730,
+    "tabOrder": 1000
+  },
+  "visual": {
+    "visualType": "pivotTable",
+    "query": {
+      "queryState": {
+        "Rows": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Index"
+                    }
+                  },
+                  "Property": "Database"
+                }
+              },
+              "queryRef": "Index.Database",
+              "nativeQueryRef": "Database",
+              "active": true
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Index"
+                    }
+                  },
+                  "Property": "Schema"
+                }
+              },
+              "queryRef": "Index.Schema",
+              "nativeQueryRef": "Schema",
+              "active": false
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Index"
+                    }
+                  },
+                  "Property": "Object"
+                }
+              },
+              "queryRef": "Index.Object",
+              "nativeQueryRef": "Object",
+              "active": false
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Index"
+                    }
+                  },
+                  "Property": "Index"
+                }
+              },
+              "queryRef": "Index.Index",
+              "nativeQueryRef": "Index",
+              "active": false
+            }
+          ]
+        },
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Latest number of index rebuild - Index optimize"
+                }
+              },
+              "queryRef": "_Measures.Latest number of index rebuild - Index rebuild",
+              "nativeQueryRef": "Rebuild #",
+              "displayName": "Rebuild #"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Latest duration of index rebuild - Index optimize"
+                }
+              },
+              "queryRef": "_Measures.Latest duration of index rebuild - Index optimize",
+              "nativeQueryRef": "Rebuild sec.",
+              "displayName": "Rebuild sec."
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Latest number of index reorganize - Index optimize"
+                }
+              },
+              "queryRef": "_Measures.Latest number of index reorganize - Index optimize",
+              "nativeQueryRef": "Reorg. #",
+              "displayName": "Reorg. #"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Latest duration of index reorganize - Index optimize"
+                }
+              },
+              "queryRef": "_Measures.Latest duration of index reorganize - Index optimize",
+              "nativeQueryRef": "Reorg. sec.",
+              "displayName": "Reorg. sec."
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Latest number of statistics update - Index optimize"
+                }
+              },
+              "queryRef": "_Measures.Latest number of statistics update - Index optimize",
+              "nativeQueryRef": "Stats. up. #",
+              "displayName": "Stats. up. #"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Latest duration of statistics update - Index optimize"
+                }
+              },
+              "queryRef": "_Measures.Latest duration of statistics update - Index optimize",
+              "nativeQueryRef": "Stats. up. sec.",
+              "displayName": "Stats. up. sec."
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Number of index rebuild in period - Index optimize"
+                }
+              },
+              "queryRef": "_Measures.Number of index rebuild in period - Index optimize",
+              "nativeQueryRef": "Rebuild total",
+              "displayName": "Rebuild total"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Duration of index rebuild in period - Index optimize"
+                }
+              },
+              "queryRef": "_Measures.Duration of index rebuild in period - Index optimize",
+              "nativeQueryRef": "Rebuild sec. total",
+              "displayName": "Rebuild sec. total"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Number of index reorganize in period - Index optimize"
+                }
+              },
+              "queryRef": "_Measures.Number of index reorganize in period - Index optimize",
+              "nativeQueryRef": "Reorg. total",
+              "displayName": "Reorg. total"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Duration of index reorganize in period - Index optimize"
+                }
+              },
+              "queryRef": "_Measures.Duration of index reorganize in period - Index optimize",
+              "nativeQueryRef": "Reorg. sec. total",
+              "displayName": "Reorg. sec. total"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Number of statistics update in period - Index optimize"
+                }
+              },
+              "queryRef": "_Measures.Number of statistics update in period - Index optimize",
+              "nativeQueryRef": "Stats. up. total",
+              "displayName": "Stats. up. total"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Duration of statistics update in period - Index optimize"
+                }
+              },
+              "queryRef": "_Measures.Duration of statistics update in period - Index optimize",
+              "nativeQueryRef": "Stats. up. sec. total",
+              "displayName": "Stats. up. sec. total"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "_Measures"
+                  }
+                },
+                "Property": "Latest duration of index rebuild - Index optimize"
+              }
+            },
+            "direction": "Descending"
+          }
+        ]
+      }
+    },
+    "expansionStates": [
+      {
+        "roles": [
+          "Rows"
+        ],
+        "levels": [
+          {
+            "queryRefs": [
+              "Index.Database"
+            ],
+            "isCollapsed": true,
+            "identityKeys": [
+              {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Index"
+                    }
+                  },
+                  "Property": "Database"
+                }
+              }
+            ],
+            "isPinned": true
+          },
+          {
+            "queryRefs": [
+              "Index.Schema"
+            ],
+            "isCollapsed": true,
+            "identityKeys": [
+              {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Index"
+                    }
+                  },
+                  "Property": "Schema"
+                }
+              }
+            ],
+            "isPinned": true
+          },
+          {
+            "queryRefs": [
+              "Index.Object"
+            ],
+            "isCollapsed": true,
+            "identityKeys": [
+              {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Index"
+                    }
+                  },
+                  "Property": "Object"
+                }
+              }
+            ],
+            "isPinned": true
+          },
+          {
+            "queryRefs": [
+              "Index.Index"
+            ],
+            "isCollapsed": true,
+            "isPinned": true
+          }
+        ],
+        "root": {}
+      }
+    ],
+    "objects": {
+      "columnWidth": [
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "390.5595954373926D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Index.Database"
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "text": {
+              "expr": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Details title - Index optimize"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

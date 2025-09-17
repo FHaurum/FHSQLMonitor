@@ -66,18 +66,18 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.9.1';
+		SET @version = '2.11.0';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
 		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
-		SET @productVersion1 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+		SET @productVersion1 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartPos));
 		SET @productStartPos = @productEndPos + 1;
 		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
-		SET @productVersion2 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+		SET @productVersion2 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartPos));
 		SET @productStartPos = @productEndPos + 1;
 		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
-		SET @productVersion3 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+		SET @productVersion3 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartPos));
 	END;
 
 	--
@@ -698,6 +698,7 @@ ELSE BEGIN
 						END
 					AS bigint) AS AgentJobStatsusKey
 				FROM dbo.fhsmAgentJobsPerformanceLatestError AS ajpe
+				WHERE (ajpe.RunStatus <> 4);	-- Filter out wrongly collected In progress records
 			';
 			EXEC(@stmt);
 		END;
@@ -808,13 +809,13 @@ ELSE BEGIN
 						SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 						SET @productStartPos = 1;
 						SET @productEndPos = CHARINDEX(''.'', @productVersion, @productStartPos);
-						SET @productVersion1 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+						SET @productVersion1 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartPos));
 						SET @productStartPos = @productEndPos + 1;
 						SET @productEndPos = CHARINDEX(''.'', @productVersion, @productStartPos);
-						SET @productVersion2 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+						SET @productVersion2 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartPos));
 						SET @productStartPos = @productEndPos + 1;
 						SET @productEndPos = CHARINDEX(''.'', @productVersion, @productStartPos);
-						SET @productVersion3 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+						SET @productVersion3 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartPos));
 					END;
 
 					--
@@ -1131,7 +1132,7 @@ ELSE BEGIN
 								ORDER BY ajtParent.StartDateTime DESC
 							) AS job
 							WHERE (1 = 1)
-								AND (sjh.run_status <> 1)
+								AND (sjh.run_status NOT IN (1, 4))	-- Ignore 1:Succeeded and 4:In progress
 								AND (sjh.step_id <> 0)
 								'' + @parameterStmt + ''
 								'' + @whereStmtError + '';

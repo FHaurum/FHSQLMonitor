@@ -1,0 +1,207 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "name": "2fea1262685d0d3c2882",
+  "position": {
+    "x": 10,
+    "y": 565,
+    "z": 2000,
+    "height": 455,
+    "width": 940
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Blocked process"
+                    }
+                  },
+                  "Property": "Data set"
+                }
+              },
+              "queryRef": "Blocked process.Data set",
+              "nativeQueryRef": "Set",
+              "displayName": "Set"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Blocked process"
+                    }
+                  },
+                  "Property": "Type"
+                }
+              },
+              "queryRef": "Blocked process.Type",
+              "nativeQueryRef": "Type"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Blocked process"
+                    }
+                  },
+                  "Property": "Statement"
+                }
+              },
+              "queryRef": "Blocked process.Statement",
+              "nativeQueryRef": "Statement"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Blocked process"
+                    }
+                  },
+                  "Property": "Timestamp (UTC)"
+                }
+              },
+              "queryRef": "Blocked process.Timestamp (UTC)",
+              "nativeQueryRef": "Timestamp (UTC)"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Blocks and deadlocks"
+                    }
+                  },
+                  "Property": "Client application"
+                }
+              },
+              "queryRef": "Blocks and deadlocks.ClientApp",
+              "nativeQueryRef": "Client application"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Blocks and deadlocks"
+                    }
+                  },
+                  "Property": "Host name"
+                }
+              },
+              "queryRef": "Blocks and deadlocks.HostName",
+              "nativeQueryRef": "HostName"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Blocks and deadlocks"
+                    }
+                  },
+                  "Property": "Login name"
+                }
+              },
+              "queryRef": "Blocks and deadlocks.LoginName",
+              "nativeQueryRef": "LoginName"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Database"
+                    }
+                  },
+                  "Property": "Database"
+                }
+              },
+              "queryRef": "Database.Database",
+              "nativeQueryRef": "Database"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Blocked process"
+                    }
+                  },
+                  "Property": "Sort order"
+                }
+              },
+              "queryRef": "Blocked process.Sort order",
+              "nativeQueryRef": "Sort order"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Blocked process"
+                  }
+                },
+                "Property": "Sort order"
+              }
+            },
+            "direction": "Descending"
+          }
+        ]
+      }
+    },
+    "objects": {
+      "general": [
+        {
+          "properties": {}
+        }
+      ],
+      "columnHeaders": [
+        {
+          "properties": {
+            "bold": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "text": {
+              "expr": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Title Blocks - Blocks and deadlocks"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

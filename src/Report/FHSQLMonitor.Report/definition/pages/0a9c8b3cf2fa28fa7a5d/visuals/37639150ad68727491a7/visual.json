@@ -1,0 +1,244 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "name": "37639150ad68727491a7",
+  "position": {
+    "x": 10,
+    "y": 110,
+    "z": 1000,
+    "height": 910,
+    "width": 1900,
+    "tabOrder": 1000
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Database state history"
+                    }
+                  },
+                  "Property": "Type"
+                }
+              },
+              "queryRef": "Database state history.Type",
+              "nativeQueryRef": "Type"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Database state history"
+                    }
+                  },
+                  "Property": "Key"
+                }
+              },
+              "queryRef": "Database state history.Key",
+              "nativeQueryRef": "Key"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Database state history"
+                    }
+                  },
+                  "Property": "From"
+                }
+              },
+              "queryRef": "Database state history.From",
+              "nativeQueryRef": "From (UTC)",
+              "displayName": "From (UTC)"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Database state history"
+                    }
+                  },
+                  "Property": "To"
+                }
+              },
+              "queryRef": "Database state history.To",
+              "nativeQueryRef": "To (UTC)",
+              "displayName": "To (UTC)"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Database state history"
+                    }
+                  },
+                  "Property": "Value"
+                }
+              },
+              "queryRef": "Database state history.Value",
+              "nativeQueryRef": "Value"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Database state history"
+                  }
+                },
+                "Property": "From"
+              }
+            },
+            "direction": "Descending"
+          }
+        ]
+      }
+    },
+    "objects": {
+      "total": [
+        {
+          "properties": {
+            "totals": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Database configuration history'"
+                }
+              }
+            },
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "visualTooltip": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "section": {
+              "expr": {
+                "Literal": {
+                  "Value": "'04bf5338cda2e337cb46'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "a8da72ac4b8d8931a36c",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Database state history"
+              }
+            },
+            "Property": "Type"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "997830edfe940ca851a6",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Database state history"
+              }
+            },
+            "Property": "Key"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "19a5fe35111eacfc901f",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Database state history"
+              }
+            },
+            "Property": "From"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "a8d5f2e2b369b8cd54f2",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Database state history"
+              }
+            },
+            "Property": "To"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "8b8a3d9cea2d7723189a",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Database state history"
+              }
+            },
+            "Property": "Value"
+          }
+        },
+        "type": "Categorical"
+      }
+    ]
+  }
+}

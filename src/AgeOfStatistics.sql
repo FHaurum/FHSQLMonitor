@@ -66,18 +66,18 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.9.1';
+		SET @version = '2.11.0';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
 		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
-		SET @productVersion1 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+		SET @productVersion1 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartPos));
 		SET @productStartPos = @productEndPos + 1;
 		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
-		SET @productVersion2 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+		SET @productVersion2 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartPos));
 		SET @productStartPos = @productEndPos + 1;
 		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
-		SET @productVersion3 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+		SET @productVersion3 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartPos));
 	END;
 
 	--
@@ -287,6 +287,11 @@ ELSE BEGIN
 					,sa.ModificationCounter
 					,sa.PersistedSamplePercent
 					,sa.IsHypothetical
+					,CASE sa.IsHypothetical
+						WHEN 0 THEN ''No''
+						WHEN 1 THEN ''Yes''
+						ELSE ''N.A.''
+					END AS IsHypotheticalTxt
 					,CAST(sa.Timestamp AS date) AS Date
 					,(DATEPART(HOUR, sa.Timestamp) * 60 * 60) + (DATEPART(MINUTE, sa.Timestamp) * 60) + (DATEPART(SECOND, sa.Timestamp)) AS TimeKey
 					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(sa.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
@@ -391,6 +396,11 @@ ELSE BEGIN
 					,sai.UnfilteredRows
 					,sai.ModificationCounter
 					,sai.IsHypothetical
+					,CASE sai.IsHypothetical
+						WHEN 0 THEN ''No''
+						WHEN 1 THEN ''Yes''
+						ELSE ''N.A.''
+					END AS IsHypotheticalTxt
 					,sai.PartitionNumber
 					,CAST(sai.Timestamp AS date) AS Date
 					,(DATEPART(HOUR, sai.Timestamp) * 60 * 60) + (DATEPART(MINUTE, sai.Timestamp) * 60) + (DATEPART(SECOND, sai.Timestamp)) AS TimeKey

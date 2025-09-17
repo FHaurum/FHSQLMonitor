@@ -1,0 +1,121 @@
+table 'Log shipping monitor secondary restores'
+	lineageTag: 34958661-2521-4683-a98d-9cebe39c43a6
+
+	column 'Last restored latency'
+		dataType: int64
+		formatString: #,0
+		lineageTag: cb2e5350-4781-4f63-9c8e-63193f5f8825
+		summarizeBy: none
+		sourceColumn: Last restored latency
+
+		annotation SummarizationSetBy = User
+
+	column 'Time since previous restore'
+		dataType: int64
+		formatString: #,0
+		lineageTag: ef159f39-e21b-4179-8f0e-bdfbb74a219f
+		summarizeBy: none
+		sourceColumn: Time since previous restore
+
+		annotation SummarizationSetBy = User
+
+	column Date
+		dataType: dateTime
+		isHidden
+		formatString: Long Date
+		lineageTag: 6a455247-978a-4cfb-a1fc-b5f2da81fa90
+		summarizeBy: none
+		sourceColumn: Date
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column TimeKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 83afaca3-c015-4f19-b414-02975da85c76
+		summarizeBy: none
+		sourceColumn: TimeKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column DatabaseKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 52100027-c356-4d4a-8a19-51b15745b802
+		summarizeBy: none
+		sourceColumn: DatabaseKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column ServerKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 6d7ab46e-f90f-42d8-af2e-947f06ee35f4
+		summarizeBy: none
+		sourceColumn: ServerKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Secondary database-server'
+		dataType: string
+		lineageTag: 2200b85e-10ac-464f-b834-3d195b31ef4b
+		summarizeBy: none
+		sourceColumn: Secondary database-server
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Log shipping monitor secondary restores' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Log shipping")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db     = dbList{[Name = #"Database name"]}[Data], 
+				  table  = db{[Schema = #"Schema name", Item = "Log shipping monitor secondary restores"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  selectColumns = Table.SelectColumns(
+				    datasetToUse, 
+				    {
+				      "LastRestoredLatency", 
+				      "SecondaryDatabaseServer", 
+				      "TimeSincePreviousRestore", 
+				      "Date", 
+				      "TimeKey", 
+				      "DatabaseKey", 
+				      "ServerKey"
+				    }
+				  ), 
+				  renameColumns = Table.RenameColumns(
+				    selectColumns, 
+				    {
+				      {"LastRestoredLatency", "Last restored latency"}, 
+				      {"SecondaryDatabaseServer", "Secondary database-server"}, 
+				      {"TimeSincePreviousRestore", "Time since previous restore"}
+				    }
+				  )
+				in
+				  renameColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

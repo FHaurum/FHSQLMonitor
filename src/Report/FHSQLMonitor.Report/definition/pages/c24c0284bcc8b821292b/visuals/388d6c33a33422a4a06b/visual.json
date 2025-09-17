@@ -1,0 +1,171 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "name": "388d6c33a33422a4a06b",
+  "position": {
+    "x": 10,
+    "y": 80,
+    "z": 2500,
+    "height": 293,
+    "width": 940,
+    "tabOrder": 5000
+  },
+  "visual": {
+    "visualType": "lineChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Date"
+                    }
+                  },
+                  "Property": "Date"
+                }
+              },
+              "queryRef": "Date.Date",
+              "nativeQueryRef": "Date",
+              "active": true
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Nonleaf allocation count - Index leaf statistics"
+                }
+              },
+              "queryRef": "_Measures.Nonleaf allocation count - Index leaf statistics",
+              "nativeQueryRef": "Allocation",
+              "displayName": "Allocation"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Nonleaf delete count - Index leaf statistics"
+                }
+              },
+              "queryRef": "_Measures.Nonleaf delete count - Index leaf statistics",
+              "nativeQueryRef": "Delete",
+              "displayName": "Delete"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Nonleaf insert count - Index leaf statistics"
+                }
+              },
+              "queryRef": "_Measures.Nonleaf insert count - Index leaf statistics",
+              "nativeQueryRef": "Insert",
+              "displayName": "Insert"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Nonleaf page merge count - Index leaf statistics"
+                }
+              },
+              "queryRef": "_Measures.Nonleaf page merge count - Index leaf statistics",
+              "nativeQueryRef": "Page merge",
+              "displayName": "Page merge"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Nonleaf update count - Index leaf statistics"
+                }
+              },
+              "queryRef": "_Measures.Nonleaf update count - Index leaf statistics",
+              "nativeQueryRef": "Update",
+              "displayName": "Update"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Date"
+                  }
+                },
+                "Property": "Date"
+              }
+            },
+            "direction": "Ascending"
+          }
+        ],
+        "isDefaultSort": true
+      }
+    },
+    "visualContainerObjects": {
+      "subTitle": [
+        {
+          "properties": {
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "''"
+                }
+              }
+            },
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "title": [
+        {
+          "properties": {
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Nonleaf data - Types'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

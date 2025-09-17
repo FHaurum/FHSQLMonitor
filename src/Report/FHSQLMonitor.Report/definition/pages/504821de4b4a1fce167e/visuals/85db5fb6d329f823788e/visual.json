@@ -1,0 +1,448 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "name": "85db5fb6d329f823788e",
+  "position": {
+    "x": 10,
+    "y": 404,
+    "z": 1000,
+    "height": 293,
+    "width": 1730,
+    "tabOrder": 3000
+  },
+  "visual": {
+    "visualType": "pivotTable",
+    "query": {
+      "queryState": {
+        "Rows": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Index"
+                    }
+                  },
+                  "Property": "Database"
+                }
+              },
+              "queryRef": "Index.Database",
+              "nativeQueryRef": "Database",
+              "active": true
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Index"
+                    }
+                  },
+                  "Property": "Schema"
+                }
+              },
+              "queryRef": "Index.Schema",
+              "nativeQueryRef": "Schema",
+              "active": false
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Index"
+                    }
+                  },
+                  "Property": "Object"
+                }
+              },
+              "queryRef": "Index.Object",
+              "nativeQueryRef": "Object",
+              "active": false
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Index"
+                    }
+                  },
+                  "Property": "Index"
+                }
+              },
+              "queryRef": "Index.Index",
+              "nativeQueryRef": "Index",
+              "active": false
+            }
+          ]
+        },
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Latest number of seeks - Index usage"
+                }
+              },
+              "queryRef": "_Measures.Latest number of seeks - Index usage",
+              "nativeQueryRef": "Seeks",
+              "displayName": "Seeks"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Latest time of seek - Index usage"
+                }
+              },
+              "queryRef": "_Measures.Latest seek time - Index usage",
+              "nativeQueryRef": "Seek time",
+              "displayName": "Seek time"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Latest number of scans - Index usage"
+                }
+              },
+              "queryRef": "_Measures.Latest number of scans - Index usage",
+              "nativeQueryRef": "Scans",
+              "displayName": "Scans"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Latest time of scan - Index usage"
+                }
+              },
+              "queryRef": "_Measures.Latest scan time - Index usage",
+              "nativeQueryRef": "Scan time",
+              "displayName": "Scan time"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Latest number of lookups - Index usage"
+                }
+              },
+              "queryRef": "_Measures.Latest number of lookups - Index usage",
+              "nativeQueryRef": "Lookups",
+              "displayName": "Lookups"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Latest time of lookup - Index usage"
+                }
+              },
+              "queryRef": "_Measures.Latest lookup time - Index usage",
+              "nativeQueryRef": "Lookup time",
+              "displayName": "Lookup time"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Latest number of updates - Index usage"
+                }
+              },
+              "queryRef": "_Measures.Latest number of updates - Index usage",
+              "nativeQueryRef": "Updates",
+              "displayName": "Updates"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Latest time of update - Index usage"
+                }
+              },
+              "queryRef": "_Measures.Latest update time - Index usage",
+              "nativeQueryRef": "Update time",
+              "displayName": "Update time"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Number of seeks in period - Index usage"
+                }
+              },
+              "queryRef": "_Measures.Number of seeks in period - Index usage",
+              "nativeQueryRef": "Seeks total",
+              "displayName": "Seeks total"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Number of scans in period - Index usage"
+                }
+              },
+              "queryRef": "_Measures.Number of scans in period - Index usage",
+              "nativeQueryRef": "Scans total",
+              "displayName": "Scans total"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Number of lookups in period - Index usage"
+                }
+              },
+              "queryRef": "_Measures.Number of lookups in period - Index usage",
+              "nativeQueryRef": "Lookups total",
+              "displayName": "Lookups total"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Number of updates in period - Index usage"
+                }
+              },
+              "queryRef": "_Measures.Number of updates in period - Index usage",
+              "nativeQueryRef": "Updates total",
+              "displayName": "Updates total"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Used - Index usage"
+                }
+              },
+              "queryRef": "_Measures.Used - Index usage",
+              "nativeQueryRef": "U",
+              "displayName": "U"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Difference - Index usage"
+                }
+              },
+              "queryRef": "_Measures.Difference - Index usage",
+              "nativeQueryRef": "Difference",
+              "displayName": "Difference"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Sort value - Index usage"
+                }
+              },
+              "queryRef": "_Measures.Sort value - Index usage",
+              "nativeQueryRef": "Sort",
+              "displayName": "Sort"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "_Measures"
+                  }
+                },
+                "Property": "Sort value - Index usage"
+              }
+            },
+            "direction": "Descending"
+          }
+        ]
+      }
+    },
+    "expansionStates": [
+      {
+        "roles": [
+          "Rows"
+        ],
+        "levels": [
+          {
+            "queryRefs": [
+              "Index.Database"
+            ],
+            "isCollapsed": true,
+            "identityKeys": [
+              {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Index"
+                    }
+                  },
+                  "Property": "Database"
+                }
+              }
+            ],
+            "isPinned": true
+          },
+          {
+            "queryRefs": [
+              "Index.Schema"
+            ],
+            "isCollapsed": true,
+            "identityKeys": [
+              {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Index"
+                    }
+                  },
+                  "Property": "Schema"
+                }
+              }
+            ],
+            "isPinned": true
+          },
+          {
+            "queryRefs": [
+              "Index.Object"
+            ],
+            "isCollapsed": true,
+            "identityKeys": [
+              {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Index"
+                    }
+                  },
+                  "Property": "Object"
+                }
+              }
+            ],
+            "isPinned": true
+          },
+          {
+            "queryRefs": [
+              "Index.Index"
+            ],
+            "isCollapsed": true,
+            "isPinned": true
+          }
+        ],
+        "root": {}
+      }
+    ],
+    "objects": {
+      "columnWidth": [
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "234.85701517141393D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Index.Database"
+          }
+        },
+        {
+          "properties": {},
+          "selector": {
+            "metadata": "_Measures.Sort value - Index usage"
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "text": {
+              "expr": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Details title - Index usage"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

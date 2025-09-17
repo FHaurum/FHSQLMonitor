@@ -1,0 +1,183 @@
+table 'Log shipping monitor secondary database state'
+	lineageTag: 1ea1173a-cc9e-4741-b2db-af18e3984470
+
+	column 'History retention period'
+		dataType: int64
+		formatString: #,0
+		lineageTag: dc1830fc-99df-40c9-8ac6-4ddd96a96f3d
+		summarizeBy: none
+		sourceColumn: History retention period
+
+		annotation SummarizationSetBy = User
+
+	column 'Primary database'
+		dataType: string
+		lineageTag: 8bc7b7ec-fb87-4cde-8916-e8fdbb393148
+		summarizeBy: none
+		sourceColumn: Primary database
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Primary server'
+		dataType: string
+		lineageTag: d3e4517f-071c-4e04-bf04-13999ca9a7c7
+		summarizeBy: none
+		sourceColumn: Primary server
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Restore threshold'
+		dataType: int64
+		formatString: #,0
+		lineageTag: 601dbfe1-9db9-4a58-8f06-9516c1d0263d
+		summarizeBy: none
+		sourceColumn: Restore threshold
+
+		annotation SummarizationSetBy = User
+
+	column 'Secondary database'
+		dataType: string
+		lineageTag: 73aaa271-e763-4f7b-80c8-fc2fbeadfb1c
+		summarizeBy: none
+		sourceColumn: Secondary database
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Secondary server'
+		dataType: string
+		lineageTag: 90aab606-3182-4bc3-a617-d1d78a5065b7
+		summarizeBy: none
+		sourceColumn: Secondary server
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Threshold alert'
+		dataType: int64
+		formatString: #,0
+		lineageTag: 591bda8b-98b3-4aba-9b8e-8634b970ab83
+		summarizeBy: none
+		sourceColumn: Threshold alert
+
+		annotation SummarizationSetBy = User
+
+	column ThresholdAlertEnabled
+		dataType: boolean
+		isHidden
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 4705a50a-45f5-4a5c-a15c-14058955de80
+		summarizeBy: none
+		sourceColumn: ThresholdAlertEnabled
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Threshold alert enabled'
+		dataType: string
+		lineageTag: 7b9de348-006d-4fdc-8ce3-10a207dbf5b4
+		summarizeBy: none
+		sourceColumn: Threshold alert enabled
+
+		annotation SummarizationSetBy = Automatic
+
+	column DatabaseKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 403ad455-e56e-4529-977d-44874ad22394
+		summarizeBy: none
+		sourceColumn: DatabaseKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Max. timestamp'
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: 1b591504-8167-41f3-b1e2-26f068ec73c6
+		summarizeBy: none
+		sourceColumn: Max. timestamp
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	column 'Min. timestamp'
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: 0ee54fd9-0c84-445a-b058-885981d9819f
+		summarizeBy: none
+		sourceColumn: Min. timestamp
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	column ServerKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 33fccbfa-e847-478e-926f-59cb31d7516a
+		summarizeBy: none
+		sourceColumn: ServerKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Log shipping monitor secondary database state' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Log shipping")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db     = dbList{[Name = #"Database name"]}[Data], 
+				  table  = db{[Schema = #"Schema name", Item = "Log shipping monitor secondary database state"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  selectColumns = Table.SelectColumns(
+				    datasetToUse, 
+				    {
+				      "HistoryRetentionPeriod", 
+				      "MaxTimestamp", 
+				      "MinTimestamp", 
+				      "PrimaryDatabase", 
+				      "PrimaryServer", 
+				      "RestoreThreshold", 
+				      "SecondaryDatabase", 
+				      "SecondaryServer", 
+				      "ThresholdAlert", 
+				      "ThresholdAlertEnabled", 
+				      "ThresholdAlertEnabledTxt", 
+				      "DatabaseKey", 
+				      "ServerKey"
+				    }
+				  ), 
+				  renameColumns = Table.RenameColumns(
+				    selectColumns, 
+				    {
+				      {"HistoryRetentionPeriod", "History retention period"}, 
+				      {"MaxTimestamp", "Max. timestamp"}, 
+				      {"MinTimestamp", "Min. timestamp"}, 
+				      {"PrimaryDatabase", "Primary database"}, 
+				      {"PrimaryServer", "Primary server"}, 
+				      {"RestoreThreshold", "Restore threshold"}, 
+				      {"SecondaryDatabase", "Secondary database"}, 
+				      {"SecondaryServer", "Secondary server"}, 
+				      {"ThresholdAlert", "Threshold alert"}, 
+				      {"ThresholdAlertEnabledTxt", "Threshold alert enabled"}
+				    }
+				  )
+				in
+				  renameColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

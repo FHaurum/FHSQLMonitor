@@ -1,0 +1,206 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "name": "528ae6231b780e25a401",
+  "position": {
+    "x": 10,
+    "y": 80,
+    "z": 6000,
+    "height": 220,
+    "width": 780,
+    "tabOrder": 4000
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Server"
+                    }
+                  },
+                  "Property": "Server"
+                }
+              },
+              "queryRef": "Server.Server",
+              "nativeQueryRef": "Server1"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Database"
+                    }
+                  },
+                  "Property": "Database - Drill-through for Log shipping history"
+                }
+              },
+              "queryRef": "Database.Database - Drill-through for Log shipping history",
+              "nativeQueryRef": "Database",
+              "displayName": "Database"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Log shipping monitor primary database state"
+                    }
+                  },
+                  "Property": "Backup threshold"
+                }
+              },
+              "queryRef": "Log shipping monitor primary states.Backup threshold",
+              "nativeQueryRef": "Backup thr.",
+              "displayName": "Backup thr."
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Log shipping monitor primary database state"
+                    }
+                  },
+                  "Property": "Threshold alert"
+                }
+              },
+              "queryRef": "Log shipping monitor primary states.Threshold alert",
+              "nativeQueryRef": "Alert thr.",
+              "displayName": "Alert thr."
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Log shipping monitor primary database state"
+                    }
+                  },
+                  "Property": "History retention period"
+                }
+              },
+              "queryRef": "Log shipping monitor primary states.History retention period",
+              "nativeQueryRef": "History R",
+              "displayName": "History R"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Log shipping monitor primary database state"
+                    }
+                  },
+                  "Property": "Min. timestamp"
+                }
+              },
+              "queryRef": "Log shipping monitor primary database state.Min. timestamp",
+              "nativeQueryRef": "Min. time",
+              "displayName": "Min. time"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Log shipping monitor primary database state"
+                    }
+                  },
+                  "Property": "Max. timestamp"
+                }
+              },
+              "queryRef": "Log shipping monitor primary database state.Max. timestamp",
+              "nativeQueryRef": "Max. time",
+              "displayName": "Max. time"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Server"
+                  }
+                },
+                "Property": "Server"
+              }
+            },
+            "direction": "Ascending"
+          },
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Database"
+                  }
+                },
+                "Property": "Database - Drill-through for Log shipping history"
+              }
+            },
+            "direction": "Ascending"
+          }
+        ]
+      }
+    },
+    "objects": {
+      "total": [
+        {
+          "properties": {
+            "totals": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "text": {
+              "expr": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Title MPD - Log shipping configuration"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "visualTooltip": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

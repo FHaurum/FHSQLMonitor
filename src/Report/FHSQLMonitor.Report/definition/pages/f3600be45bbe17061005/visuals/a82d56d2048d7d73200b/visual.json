@@ -1,0 +1,220 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "name": "a82d56d2048d7d73200b",
+  "position": {
+    "x": 10,
+    "y": 565,
+    "z": 4000,
+    "height": 212,
+    "width": 1900,
+    "tabOrder": 2000
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Resource governor workload groups"
+                    }
+                  },
+                  "Property": "Pool name"
+                }
+              },
+              "queryRef": "Resource governor workload groups.PoolName",
+              "nativeQueryRef": "Name",
+              "displayName": "Name"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Resource governor workload groups"
+                    }
+                  },
+                  "Property": "Workload group name"
+                }
+              },
+              "queryRef": "Resource governor workload groups.WorkloadGroupName",
+              "nativeQueryRef": "Workload group name1"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Resource governor workload groups"
+                    }
+                  },
+                  "Property": "Importance"
+                }
+              },
+              "queryRef": "Resource governor workload groups.Importance",
+              "nativeQueryRef": "Importance"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Resource governor workload groups"
+                    }
+                  },
+                  "Property": "Request max. memory grant %"
+                }
+              },
+              "queryRef": "Resource governor workload groups.RequestMaxMemoryGrantPercent",
+              "nativeQueryRef": "Request max. memory grant %2"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Resource governor workload groups"
+                    }
+                  },
+                  "Property": "Request max. CPU time sec."
+                }
+              },
+              "queryRef": "Resource governor workload groups.RequestMaxCPUtimeSec",
+              "nativeQueryRef": "Request max. CPU time sec."
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Resource governor workload groups"
+                    }
+                  },
+                  "Property": "Request memory grant timeout sec."
+                }
+              },
+              "queryRef": "Resource governor workload groups.RequestMemoryGrantTimeoutSec",
+              "nativeQueryRef": "Request memory grant timeout sec."
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Resource governor workload groups"
+                    }
+                  },
+                  "Property": "Max. DOP"
+                }
+              },
+              "queryRef": "Resource governor workload groups.MaxDOP",
+              "nativeQueryRef": "Max. DOP"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Resource governor workload groups"
+                    }
+                  },
+                  "Property": "Group max. requests"
+                }
+              },
+              "queryRef": "Resource governor workload groups.GroupMaxRequests",
+              "nativeQueryRef": "Group max. requests"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Resource governor workload groups"
+                    }
+                  },
+                  "Property": "Request max. memory grant % numeric"
+                }
+              },
+              "queryRef": "Resource governor workload groups.RequestMaxMemoryGrantPercentNumeric",
+              "nativeQueryRef": "Request max. memory grant %1",
+              "displayName": "Request max. memory grant %"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Resource governor workload groups"
+                    }
+                  },
+                  "Property": "Timestamp"
+                }
+              },
+              "queryRef": "Resource governor workload groups.Timestamp",
+              "nativeQueryRef": "Timestamp"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Resource governor workload groups"
+                  }
+                },
+                "Property": "Pool name"
+              }
+            },
+            "direction": "Ascending"
+          }
+        ]
+      }
+    },
+    "objects": {
+      "total": [
+        {
+          "properties": {
+            "totals": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Workload groups'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

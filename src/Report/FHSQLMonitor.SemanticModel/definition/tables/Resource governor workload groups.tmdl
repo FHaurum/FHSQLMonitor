@@ -1,19 +1,19 @@
 table 'Resource governor workload groups'
 	lineageTag: 9640ced1-046d-4e6a-bcd6-38debec8803e
 
-	column PoolName
+	column 'Pool name'
 		dataType: string
 		lineageTag: e47606ef-0098-4120-b156-3d5480f654f9
 		summarizeBy: none
-		sourceColumn: PoolName
+		sourceColumn: Pool name
 
 		annotation SummarizationSetBy = Automatic
 
-	column WorkloadGroupName
+	column 'Workload group name'
 		dataType: string
 		lineageTag: 0714c9c4-8bc0-4ba7-8af2-54d88e960965
 		summarizeBy: none
-		sourceColumn: WorkloadGroupName
+		sourceColumn: Workload group name
 
 		annotation SummarizationSetBy = Automatic
 
@@ -25,51 +25,51 @@ table 'Resource governor workload groups'
 
 		annotation SummarizationSetBy = Automatic
 
-	column RequestMaxMemoryGrantPercent
+	column 'Request max. memory grant %'
 		dataType: string
 		lineageTag: b83c0a05-62f2-4f05-9261-02fc8a34e0dd
 		summarizeBy: none
-		sourceColumn: RequestMaxMemoryGrantPercent
+		sourceColumn: Request max. memory grant %
 
 		annotation SummarizationSetBy = Automatic
 
-	column RequestMaxCPUtimeSec
+	column 'Request max. CPU time sec.'
 		dataType: string
 		lineageTag: c3c840a5-d91a-4b47-9644-d6c934b5a82b
 		summarizeBy: none
-		sourceColumn: RequestMaxCPUtimeSec
+		sourceColumn: Request max. CPU time sec.
 
 		annotation SummarizationSetBy = Automatic
 
-	column RequestMemoryGrantTimeoutSec
+	column 'Request memory grant timeout sec.'
 		dataType: string
 		lineageTag: 0004cd3d-1d6e-46b3-88a2-8b8ce96d84b8
 		summarizeBy: none
-		sourceColumn: RequestMemoryGrantTimeoutSec
+		sourceColumn: Request memory grant timeout sec.
 
 		annotation SummarizationSetBy = Automatic
 
-	column MaxDOP
+	column 'Max. DOP'
 		dataType: string
 		lineageTag: 984bf051-c140-48d2-afa9-ac2685871676
 		summarizeBy: none
-		sourceColumn: MaxDOP
+		sourceColumn: Max. DOP
 
 		annotation SummarizationSetBy = Automatic
 
-	column GroupMaxRequests
+	column 'Group max. requests'
 		dataType: string
 		lineageTag: 4080d1c2-08e2-4a69-8922-86533109e3c2
 		summarizeBy: none
-		sourceColumn: GroupMaxRequests
+		sourceColumn: Group max. requests
 
 		annotation SummarizationSetBy = Automatic
 
-	column RequestMaxMemoryGrantPercentNumeric
+	column 'Request max. memory grant % numeric'
 		dataType: string
 		lineageTag: d54d362c-ad1b-4df9-bd89-632c493e4590
 		summarizeBy: none
-		sourceColumn: RequestMaxMemoryGrantPercentNumeric
+		sourceColumn: Request max. memory grant % numeric
 
 		annotation SummarizationSetBy = Automatic
 
@@ -99,9 +99,22 @@ table 'Resource governor workload groups'
 				  db     = dbList{[Name = #"Database name"]}[Data], 
 				  table  = db{[Schema = #"Schema name", Item = "Resource governor workload groups"]}[Data], 
 				  emptyDataset = Table.FirstN(table, 0), 
-				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset,
+				  renameColumns = Table.RenameColumns(
+				    datasetToUse, 
+				    {
+				      {"GroupMaxRequests", "Group max. requests"}, 
+				      {"MaxDOP", "Max. DOP"}, 
+				      {"PoolName", "Pool name"}, 
+				      {"RequestMaxCPUtimeSec", "Request max. CPU time sec."}, 
+				      {"RequestMaxMemoryGrantPercent", "Request max. memory grant %"}, 
+				      {"RequestMaxMemoryGrantPercentNumeric", "Request max. memory grant % numeric"}, 
+				      {"RequestMemoryGrantTimeoutSec", "Request memory grant timeout sec."}, 
+				      {"WorkloadGroupName", "Workload group name"}
+				    }
+				  )
 				in
-				  datasetToUse
+				  renameColumns
 				```
 
 	annotation PBI_NavigationStepName = Navigation

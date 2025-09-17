@@ -15,10 +15,13 @@ table 'Index usage'
 
 	column LastUserSeek
 		dataType: dateTime
+		isHidden
 		formatString: General Date
 		lineageTag: c96e0c73-b3bd-42e9-aaa7-53a28bb04b06
 		summarizeBy: none
 		sourceColumn: LastUserSeek
+
+		changedProperty = IsHidden
 
 		annotation SummarizationSetBy = Automatic
 
@@ -36,10 +39,13 @@ table 'Index usage'
 
 	column LastUserScan
 		dataType: dateTime
+		isHidden
 		formatString: General Date
 		lineageTag: 2d113ff7-3126-49d0-b9a1-9ea97984233b
 		summarizeBy: none
 		sourceColumn: LastUserScan
+
+		changedProperty = IsHidden
 
 		annotation SummarizationSetBy = Automatic
 
@@ -57,10 +63,13 @@ table 'Index usage'
 
 	column LastUserLookup
 		dataType: dateTime
+		isHidden
 		formatString: General Date
 		lineageTag: 3e329446-1442-47e6-b5f6-e38afd787f13
 		summarizeBy: none
 		sourceColumn: LastUserLookup
+
+		changedProperty = IsHidden
 
 		annotation SummarizationSetBy = Automatic
 
@@ -78,10 +87,13 @@ table 'Index usage'
 
 	column LastUserUpdate
 		dataType: dateTime
+		isHidden
 		formatString: General Date
 		lineageTag: 1c775ecc-28e0-48e4-ba27-b3b3bf877f34
 		summarizeBy: none
 		sourceColumn: LastUserUpdate
+
+		changedProperty = IsHidden
 
 		annotation SummarizationSetBy = Automatic
 

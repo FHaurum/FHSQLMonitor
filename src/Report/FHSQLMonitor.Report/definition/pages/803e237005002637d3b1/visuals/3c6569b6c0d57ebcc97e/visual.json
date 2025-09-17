@@ -1,0 +1,428 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "name": "3c6569b6c0d57ebcc97e",
+  "position": {
+    "x": 10,
+    "y": 807,
+    "z": 250,
+    "height": 213,
+    "width": 1900,
+    "tabOrder": 13000
+  },
+  "visual": {
+    "visualType": "pivotTable",
+    "query": {
+      "queryState": {
+        "Rows": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Index"
+                    }
+                  },
+                  "Property": "Database"
+                }
+              },
+              "queryRef": "Index.Database",
+              "nativeQueryRef": "Database",
+              "active": true
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "File group"
+                    }
+                  },
+                  "Property": "File group"
+                }
+              },
+              "queryRef": "File group.File group",
+              "nativeQueryRef": "File group",
+              "active": true
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Index"
+                    }
+                  },
+                  "Property": "Schema"
+                }
+              },
+              "queryRef": "Index.Schema",
+              "nativeQueryRef": "Schema",
+              "active": true
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Index"
+                    }
+                  },
+                  "Property": "Object"
+                }
+              },
+              "queryRef": "Index.Object",
+              "nativeQueryRef": "Object",
+              "active": true
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Index"
+                    }
+                  },
+                  "Property": "Index"
+                }
+              },
+              "queryRef": "Index.Index",
+              "nativeQueryRef": "Index",
+              "active": false
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Allocation units"
+                    }
+                  },
+                  "Property": "Partition no."
+                }
+              },
+              "queryRef": "Allocation units.PartitionNumber",
+              "nativeQueryRef": "Partition no.",
+              "active": false
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Allocation units"
+                    }
+                  },
+                  "Property": "Allocation unit type"
+                }
+              },
+              "queryRef": "Allocation units.AllocationUnitTypeDesc",
+              "nativeQueryRef": "AllocationUnitTypeDesc",
+              "active": false
+            }
+          ]
+        },
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Data space KB - Allocation units"
+                }
+              },
+              "queryRef": "_Measures.Data space KB - Allocation units",
+              "nativeQueryRef": "Data space KB",
+              "displayName": "Data space KB"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Used space KB - Allocation units"
+                }
+              },
+              "queryRef": "_Measures.Used space KB - Allocation units",
+              "nativeQueryRef": "Used space KB",
+              "displayName": "Used space KB"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Total space KB - Allocation units"
+                }
+              },
+              "queryRef": "_Measures.Total space KB - Allocation units",
+              "nativeQueryRef": "Total space KB",
+              "displayName": "Total space KB"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "_Measures"
+                  }
+                },
+                "Property": "Total space KB - Allocation units"
+              }
+            },
+            "direction": "Descending"
+          }
+        ]
+      }
+    },
+    "expansionStates": [
+      {
+        "roles": [
+          "Rows"
+        ],
+        "levels": [
+          {
+            "queryRefs": [
+              "Index.Database"
+            ],
+            "isPinned": true
+          },
+          {
+            "queryRefs": [
+              "File group.File group"
+            ],
+            "isPinned": true
+          },
+          {
+            "queryRefs": [
+              "Index.Schema"
+            ],
+            "isPinned": true
+          },
+          {
+            "queryRefs": [
+              "Index.Object"
+            ],
+            "isCollapsed": true,
+            "isPinned": true
+          },
+          {
+            "queryRefs": [
+              "Index.Index"
+            ],
+            "isCollapsed": true,
+            "isPinned": true
+          },
+          {
+            "queryRefs": [
+              "Allocation units.PartitionNumber"
+            ],
+            "isCollapsed": true,
+            "isPinned": true
+          },
+          {
+            "queryRefs": [
+              "Allocation units.AllocationUnitTypeDesc"
+            ],
+            "isCollapsed": true,
+            "isPinned": true
+          }
+        ],
+        "root": {}
+      }
+    ],
+    "objects": {
+      "columnWidth": [
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "280.0394288318498D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Database file.Database name"
+          }
+        },
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "77.62469044652607D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "_Measures.Test"
+          }
+        }
+      ],
+      "general": [
+        {
+          "properties": {
+            "layout": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Tabular'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Allocation units'"
+                }
+              }
+            },
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "titleWrap": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "'12'"
+                }
+              }
+            },
+            "bold": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "fontFamily": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Segoe UI'"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "background": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "color": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Literal": {
+                      "Value": "'#BCD9FF'"
+                    }
+                  }
+                }
+              }
+            },
+            "transparency": {
+              "expr": {
+                "Literal": {
+                  "Value": "70D"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "padding": [
+        {
+          "properties": {
+            "bottom": {
+              "expr": {
+                "Literal": {
+                  "Value": "0D"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "border": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "color": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Literal": {
+                      "Value": "'#BCD9FF'"
+                    }
+                  }
+                }
+              }
+            },
+            "radius": {
+              "expr": {
+                "Literal": {
+                  "Value": "10D"
+                }
+              }
+            },
+            "width": {
+              "expr": {
+                "Literal": {
+                  "Value": "1D"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

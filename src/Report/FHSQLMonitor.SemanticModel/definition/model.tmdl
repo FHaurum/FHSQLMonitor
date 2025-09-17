@@ -28,11 +28,11 @@ queryGroup 'Connection parameters'
 
 annotation __PBI_TimeIntelligenceEnabled = 0
 
-annotation PBIDesktopVersion = 2.145.1602.0 (25.07)+10647c9fa319b5e39936cdb21328038c371d1fe4
+annotation PBIDesktopVersion = 2.146.1454.0 (25.08)+901d6c338d1dea81ac3e53073ffb10469f0f37b8
 
 annotation PBI_ProTooling = ["DevMode"]
 
-annotation PBI_QueryOrder = ["Agent job","Agent job status","Always On group-replica","Blocks and deadlocks","Connection info","Database","Database file","Database scoped configuration","Agent alerts","Agent jobs","Agent jobs - grid","Agent jobs - list","Agent jobs performance","Agent jobs performance errors","Allocation units","Always On database states","Always On group states","Always On read only routing","Always On replicas","Backup age","Backup status","Blocked process","Connections","CPU per database","CPU utilization","Database IO","Database scoped configurations","Database size","Database state","Database state history","Deadlock","Disk size","Index configuration","Index operational","Index optimize","Index physical","Index usage","Instance configurations","Instance configurations history","Instance dump files","Instance hardware","Instance hardware history","Instance services","Instance SQL agent properties","Instance SQL agent properties history","Instance suspect pages","Lifecycle","Missing indexes","Missing indexes - Index details","OH errors","Partitioned indexes","Performance statistics","Plan cache usage","Plan guides","Query statements","Query statistics","Resource governor configuration","Resource governor external resource pool affinity","Resource governor external resource pools","Resource governor resource pool affinity","Resource governor resource pools","Resource governor workload groups","Statistics age","Statistics age incremental","Date","Disk","File group","Index","Index alloc type","Junk dimensions","Missing index statement","_Measures","Server name","Database name","Schema name","Data load list","Configurations","Data load","LastRefresh","Log","Processing","Retentions","Schedules","Table size","Trace flags","Trace flags history","Triggers","Object","Object partition","Performance counter","Query statistic","Time","Wait type","Wait statistics","Who is active","WSFC quorum members","Task name version","WSFC quorum state"]
+annotation PBI_QueryOrder = ["Agent job","Agent job status","Always On group-replica","Blocks and deadlocks","Connection info","Database","Database file","Database scoped configuration","Agent alerts","Agent jobs","Agent jobs - grid","Agent jobs - list","Agent jobs performance","Agent jobs performance errors","Allocation units","Always On database states","Always On group states","Always On read only routing","Always On replicas","Always On synchronization lag","Backup age","Backup status","Blocked process","Connections","CPU per database","CPU utilization","Database IO","Database scoped configurations","Database size","Database state","Database state history","Deadlock","Disk size","Error logs","Index configuration","Index not used","Index operational","Index optimize","Index physical","Index usage","Instance configurations","Instance configurations history","Instance dump files","Instance hardware","Instance hardware history","Instance services","Instance SQL agent properties","Instance SQL agent properties history","Instance suspect pages","Lifecycle","Log shipping monitor error details","Log shipping monitor history details","Log shipping monitor primaries","Log shipping monitor primary database state","Log shipping monitor secondary copies","Log shipping monitor secondary database state","Log shipping monitor secondary restores","Log shipping primary database state","Log shipping primary databases","Log shipping primary secondary database state","Log shipping secondaries","Log shipping secondary database state","Log shipping secondary databases","Log shipping secondary primary database state","Log shipping state history","Missing indexes","Missing indexes - Index details","OH errors","Partitioned indexes","Performance statistics","Plan cache usage","Plan guides","Query statements","Query statistics","Resource governor configuration","Resource governor external resource pool affinity","Resource governor external resource pools","Resource governor resource pool affinity","Resource governor resource pools","Resource governor workload groups","Statistics age","Statistics age incremental","Date","Disk","File group","Index","Index alloc type","Junk dimensions","Missing index statement","_Measures","Server name","Database name","Schema name","Data load list","Configurations","Data load","LastRefresh","Log","Processing","Retentions","Schedules","Table size","Trace flags","Trace flags history","Triggers","VLF size","Object","Object partition","Performance counter","Query statistic","Server","Time","Wait type","Wait statistics","Who is active","WSFC quorum members","Task name version","WSFC quorum state"]
 
 annotation __TEdtr = 1
 
@@ -151,6 +151,26 @@ ref table 'Always On read only routing'
 ref table 'Always On replicas'
 ref table 'Always On database states'
 ref table 'Always On group-replica'
+ref table 'Error logs'
+ref table 'Index not used'
+ref table 'Log shipping monitor primary database state'
+ref table 'Log shipping monitor secondary database state'
+ref table 'Log shipping primary database state'
+ref table 'Log shipping primary secondary database state'
+ref table 'Log shipping secondary database state'
+ref table 'Log shipping secondary primary database state'
+ref table 'Log shipping monitor primaries'
+ref table 'Log shipping monitor secondary copies'
+ref table 'Log shipping monitor secondary restores'
+ref table 'Log shipping primary databases'
+ref table 'Log shipping secondaries'
+ref table 'Log shipping secondary databases'
+ref table 'Log shipping monitor error details'
+ref table 'Log shipping monitor history details'
+ref table Server
+ref table 'Log shipping state history'
+ref table 'Always On synchronization lag'
+ref table 'VLF size'
 
 ref cultureInfo en-US
 

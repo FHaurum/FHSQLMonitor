@@ -1,0 +1,456 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "name": "fb23e85e907604013527",
+  "position": {
+    "x": 10,
+    "y": 598,
+    "z": 3000,
+    "height": 196,
+    "width": 1730,
+    "tabOrder": 1000
+  },
+  "visual": {
+    "visualType": "pivotTable",
+    "query": {
+      "queryState": {
+        "Rows": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Index"
+                    }
+                  },
+                  "Property": "Index"
+                }
+              },
+              "queryRef": "Index.Index",
+              "nativeQueryRef": "Index",
+              "active": true
+            }
+          ]
+        },
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Index columns - Index details - Index configuration"
+                }
+              },
+              "queryRef": "_Measures.Index columns - Index definition",
+              "nativeQueryRef": "Index columns",
+              "displayName": "Index columns"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Included columns - Index details - Index configuration"
+                }
+              },
+              "queryRef": "_Measures.Included columns - Index definition",
+              "nativeQueryRef": "Included columns",
+              "displayName": "Included columns"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Index type desc - Index details - Index configuration"
+                }
+              },
+              "queryRef": "_Measures.Index type desc - Index details - Index definition",
+              "nativeQueryRef": "Type",
+              "displayName": "Type"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Is primary key - Index details - Index configuration"
+                }
+              },
+              "queryRef": "_Measures.Is primary key - Index details - Index definition",
+              "nativeQueryRef": "Pri.",
+              "displayName": "Pri."
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Is unique - Index details - Index configuration"
+                }
+              },
+              "queryRef": "_Measures.Is unique - Index details - Index definition",
+              "nativeQueryRef": "Unq.",
+              "displayName": "Unq."
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Is disabled - Index details - Index configuration"
+                }
+              },
+              "queryRef": "_Measures.Is disabled - Index details - Index definition",
+              "nativeQueryRef": "Dis.",
+              "displayName": "Dis."
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Is hypothetical - Index details - Index configuration"
+                }
+              },
+              "queryRef": "_Measures.Is hypothetical - Index details - Index definition",
+              "nativeQueryRef": "Hyp.",
+              "displayName": "Hyp."
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Has filter - Index details - Index configuration"
+                }
+              },
+              "queryRef": "_Measures.Has filter - Index details - Index definition",
+              "nativeQueryRef": "Fil.",
+              "displayName": "Fil."
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Latest number of seeks - Index usage"
+                }
+              },
+              "queryRef": "_Measures.Latest number of seeks - Index usage",
+              "nativeQueryRef": "Seeks",
+              "displayName": "Seeks"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Latest number of scans - Index usage"
+                }
+              },
+              "queryRef": "_Measures.Latest number of scans - Index usage",
+              "nativeQueryRef": "Scans",
+              "displayName": "Scans"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Latest number of lookups - Index usage"
+                }
+              },
+              "queryRef": "_Measures.Latest number of lookups - Index usage",
+              "nativeQueryRef": "Lookups",
+              "displayName": "Lookups"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Latest number of updates - Index usage"
+                }
+              },
+              "queryRef": "_Measures.Latest number of updates - Index usage",
+              "nativeQueryRef": "Updates",
+              "displayName": "Updates"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Number of seeks in period - Index usage"
+                }
+              },
+              "queryRef": "_Measures.Number of seeks in period - Index usage",
+              "nativeQueryRef": "Seeks total",
+              "displayName": "Seeks total"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Number of scans in period - Index usage"
+                }
+              },
+              "queryRef": "_Measures.Number of scans in period - Index usage",
+              "nativeQueryRef": "Scans total",
+              "displayName": "Scans total"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Number of lookups in period - Index usage"
+                }
+              },
+              "queryRef": "_Measures.Number of lookups in period - Index usage",
+              "nativeQueryRef": "Lookups total",
+              "displayName": "Lookups total"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Number of updates in period - Index usage"
+                }
+              },
+              "queryRef": "_Measures.Number of updates in period - Index usage",
+              "nativeQueryRef": "Updates total",
+              "displayName": "Updates total"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Difference - Index usage"
+                }
+              },
+              "queryRef": "_Measures.Difference - Index usage",
+              "nativeQueryRef": "Difference",
+              "displayName": "Difference"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Filter definition - Index details - Index configuration"
+                }
+              },
+              "queryRef": "_Measures.Filter definition - Index details - Index definition",
+              "nativeQueryRef": "Filter",
+              "displayName": "Filter"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "_Measures"
+                  }
+                },
+                "Property": "Index columns - Index details - Index configuration"
+              }
+            },
+            "direction": "Ascending"
+          }
+        ]
+      }
+    },
+    "expansionStates": [
+      {
+        "roles": [
+          "Rows"
+        ],
+        "levels": [
+          {
+            "queryRefs": [
+              "Index.Index"
+            ],
+            "isCollapsed": true,
+            "isPinned": true
+          }
+        ],
+        "root": {}
+      }
+    ],
+    "objects": {
+      "columnWidth": [
+        {
+          "properties": {},
+          "selector": {
+            "metadata": "_Measures.Latest number of seeks - Index usage"
+          }
+        },
+        {
+          "properties": {},
+          "selector": {
+            "metadata": "_Measures.Latest number of updates - Index usage"
+          }
+        },
+        {
+          "properties": {},
+          "selector": {
+            "metadata": "_Measures.Latest number of lookups - Index usage"
+          }
+        },
+        {
+          "properties": {},
+          "selector": {
+            "metadata": "_Measures.Latest number of scans - Index usage"
+          }
+        },
+        {
+          "properties": {},
+          "selector": {
+            "metadata": "_Measures.Number of seeks in period - Index usage"
+          }
+        },
+        {
+          "properties": {},
+          "selector": {
+            "metadata": "_Measures.Number of updates in period - Index usage"
+          }
+        },
+        {
+          "properties": {},
+          "selector": {
+            "metadata": "_Measures.Number of lookups in period - Index usage"
+          }
+        },
+        {
+          "properties": {},
+          "selector": {
+            "metadata": "_Measures.Number of scans in period - Index usage"
+          }
+        },
+        {
+          "properties": {},
+          "selector": {
+            "metadata": "_Measures.Index columns - Index definition"
+          }
+        },
+        {
+          "properties": {},
+          "selector": {
+            "metadata": "_Measures.Included columns - Index definition"
+          }
+        },
+        {
+          "properties": {},
+          "selector": {
+            "metadata": "Index.Index"
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "text": {
+              "expr": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Title - Index details - Index usage"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "4befcf22348b7044ed30",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "_Measures"
+              }
+            },
+            "Property": "VLF - Index details - Index configuration"
+          }
+        },
+        "type": "Advanced",
+        "howCreated": "User"
+      }
+    ]
+  }
+}

@@ -1,0 +1,172 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "name": "cc01c83875aceb585ca0",
+  "position": {
+    "x": 10,
+    "y": 110,
+    "z": 1000,
+    "height": 910,
+    "width": 1900,
+    "tabOrder": 6000
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Instance hardware history"
+                    }
+                  },
+                  "Property": "Key"
+                }
+              },
+              "queryRef": "Instance hardware history.Key",
+              "nativeQueryRef": "Key1"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Instance hardware history"
+                    }
+                  },
+                  "Property": "From"
+                }
+              },
+              "queryRef": "Instance hardware history.From",
+              "nativeQueryRef": "From (UTC)",
+              "displayName": "From (UTC)"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Instance hardware history"
+                    }
+                  },
+                  "Property": "To"
+                }
+              },
+              "queryRef": "Instance hardware history.To",
+              "nativeQueryRef": "To (UTC)",
+              "displayName": "To (UTC)"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Instance hardware history"
+                    }
+                  },
+                  "Property": "Value"
+                }
+              },
+              "queryRef": "Instance hardware history.Value",
+              "nativeQueryRef": "Value1"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Instance hardware history"
+                  }
+                },
+                "Property": "From"
+              }
+            },
+            "direction": "Descending"
+          }
+        ]
+      }
+    },
+    "objects": {
+      "total": [
+        {
+          "properties": {
+            "totals": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "columnWidth": [
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "1290.6195047635906D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Instance hardware history.Value"
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Instance hardware history'"
+                }
+              }
+            },
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "visualTooltip": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "section": {
+              "expr": {
+                "Literal": {
+                  "Value": "'04bf5338cda2e337cb46'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

@@ -1,0 +1,234 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "name": "1a2b5f95b69a673446e0",
+  "position": {
+    "x": 10,
+    "y": 815,
+    "z": 1000,
+    "height": 205,
+    "width": 1900,
+    "tabOrder": 12000
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Server"
+                    }
+                  },
+                  "Property": "Server"
+                }
+              },
+              "queryRef": "Server.Server",
+              "nativeQueryRef": "Server1"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Database"
+                    }
+                  },
+                  "Property": "Database - Drill-through for Log shipping history"
+                }
+              },
+              "queryRef": "Database.Database - Drill-through for Log shipping history",
+              "nativeQueryRef": "Database",
+              "displayName": "Database"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Monitor server - Secondary primary database - Log shipping configuration"
+                }
+              },
+              "queryRef": "_Measures.Monitor server secondary primary databases",
+              "nativeQueryRef": "Mon. server",
+              "displayName": "Mon. server"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Monitor server security - Secondary primary database - Log shipping configuration"
+                }
+              },
+              "queryRef": "_Measures.Monitor security secondary primary databases",
+              "nativeQueryRef": "Mon. security",
+              "displayName": "Mon. security"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "File retention - Secondary primary database - Log shipping configuration"
+                }
+              },
+              "queryRef": "_Measures.File retention - Log shipping configuration",
+              "nativeQueryRef": "File R",
+              "displayName": "File R"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Log shipping secondary primary database state"
+                    }
+                  },
+                  "Property": "Backup source directory"
+                }
+              },
+              "queryRef": "Log shipping secondary states.Backup source directory",
+              "nativeQueryRef": "Backup source directory"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Log shipping secondary primary database state"
+                    }
+                  },
+                  "Property": "Backup destination directory"
+                }
+              },
+              "queryRef": "Log shipping secondary states.Backup destination directory",
+              "nativeQueryRef": "Backup destination directory"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Log shipping secondary primary database state"
+                    }
+                  },
+                  "Property": "Min. timestamp"
+                }
+              },
+              "queryRef": "Log shipping secondary primary database state.Min. timestamp",
+              "nativeQueryRef": "Min. time",
+              "displayName": "Min. time"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Log shipping secondary primary database state"
+                    }
+                  },
+                  "Property": "Max. timestamp"
+                }
+              },
+              "queryRef": "Log shipping secondary primary database state.Max. timestamp",
+              "nativeQueryRef": "Max. time",
+              "displayName": "Max. time"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Server"
+                  }
+                },
+                "Property": "Server"
+              }
+            },
+            "direction": "Ascending"
+          },
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Database"
+                  }
+                },
+                "Property": "Database - Drill-through for Log shipping history"
+              }
+            },
+            "direction": "Ascending"
+          }
+        ]
+      }
+    },
+    "objects": {
+      "total": [
+        {
+          "properties": {
+            "totals": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "text": {
+              "expr": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Title SPD - Log shipping configuration"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "visualTooltip": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

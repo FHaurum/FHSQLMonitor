@@ -1,0 +1,154 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "name": "b55586e09571dafa33ce",
+  "position": {
+    "x": 970,
+    "y": 726,
+    "z": 1250,
+    "height": 294,
+    "width": 940,
+    "tabOrder": 125
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Log shipping monitor error details"
+                    }
+                  },
+                  "Property": "Log time"
+                }
+              },
+              "queryRef": "Log shipping monitor error details.Log time",
+              "nativeQueryRef": "Log time1"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Log shipping monitor error details"
+                    }
+                  },
+                  "Property": "Agent type"
+                }
+              },
+              "queryRef": "Log shipping monitor error details.Agent type",
+              "nativeQueryRef": "Agent type1"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Log shipping monitor error details"
+                    }
+                  },
+                  "Property": "Session id."
+                }
+              },
+              "queryRef": "Log shipping monitor error details.Session id.",
+              "nativeQueryRef": "Session id.1"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Log shipping monitor error details"
+                    }
+                  },
+                  "Property": "Sequence no."
+                }
+              },
+              "queryRef": "Log shipping monitor error details.Sequence no.",
+              "nativeQueryRef": "Sequence no."
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Log shipping monitor error details"
+                    }
+                  },
+                  "Property": "Source"
+                }
+              },
+              "queryRef": "Log shipping monitor error details.Source",
+              "nativeQueryRef": "Source"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Log shipping monitor error details"
+                    }
+                  },
+                  "Property": "Message"
+                }
+              },
+              "queryRef": "Log shipping monitor error details.Message",
+              "nativeQueryRef": "Message1"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Log shipping monitor error details"
+                    }
+                  },
+                  "Property": "Help URL"
+                }
+              },
+              "queryRef": "Log shipping monitor error details.Help URL",
+              "nativeQueryRef": "Help URL"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Log shipping monitor error details"
+                  }
+                },
+                "Property": "Log time"
+              }
+            },
+            "direction": "Descending"
+          }
+        ]
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Error'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

@@ -1,87 +1,27 @@
 table 'Index configuration'
 	lineageTag: 0afa5c34-57fa-4c90-b768-5dad6a411b69
 
-	column IsUnique
-		dataType: int64
-		isHidden
-		formatString: 0
-		lineageTag: b6b1c969-bd03-4331-9da5-5cf6a3ef1677
-		summarizeBy: none
-		sourceColumn: IsUnique
-
-		changedProperty = IsHidden
-
-		annotation SummarizationSetBy = User
-
-	column IsPrimaryKey
-		dataType: int64
-		isHidden
-		formatString: 0
-		lineageTag: f91e73a7-d6f0-4a34-baeb-a5630511f7ad
-		summarizeBy: none
-		sourceColumn: IsPrimaryKey
-
-		changedProperty = IsHidden
-
-		annotation SummarizationSetBy = User
-
-	column IsDisabled
-		dataType: int64
-		isHidden
-		formatString: 0
-		lineageTag: a43bfe13-c7c8-425f-b0da-ff1c7c78290f
-		summarizeBy: none
-		sourceColumn: IsDisabled
-
-		changedProperty = IsHidden
-
-		annotation SummarizationSetBy = User
-
-	column IsHypothetical
-		dataType: int64
-		isHidden
-		formatString: 0
-		lineageTag: d987a37b-4620-4604-b91f-11bce0c76c1e
-		summarizeBy: none
-		sourceColumn: IsHypothetical
-
-		changedProperty = IsHidden
-
-		annotation SummarizationSetBy = User
-
-	column HasFilter
-		dataType: int64
-		isHidden
-		formatString: 0
-		lineageTag: 33d2c268-7655-4205-8b97-b5035054e04a
-		summarizeBy: none
-		sourceColumn: HasFilter
-
-		changedProperty = IsHidden
-
-		annotation SummarizationSetBy = User
-
-	column FilterDefinition
+	column 'Filter definition'
 		dataType: string
 		lineageTag: b4a58680-f3ea-47ee-8965-d2f3778ade03
 		summarizeBy: none
-		sourceColumn: FilterDefinition
+		sourceColumn: Filter definition
 
 		annotation SummarizationSetBy = Automatic
 
-	column IndexColumns
+	column 'Index columns'
 		dataType: string
 		lineageTag: 31bffe7e-ff7c-48b6-824e-355e4db9d474
 		summarizeBy: none
-		sourceColumn: IndexColumns
+		sourceColumn: Index columns
 
 		annotation SummarizationSetBy = Automatic
 
-	column IncludedColumns
+	column 'Included columns'
 		dataType: string
 		lineageTag: 35a52113-d0d6-41da-a2a1-086142add5be
 		summarizeBy: none
-		sourceColumn: IncludedColumns
+		sourceColumn: Included columns
 
 		annotation SummarizationSetBy = Automatic
 
@@ -117,11 +57,51 @@ table 'Index configuration'
 
 		annotation SummarizationSetBy = Automatic
 
+	column 'Has filter'
+		dataType: string
+		lineageTag: 5cb5a69f-e993-4c19-ac18-faba4d6f0e0e
+		summarizeBy: none
+		sourceColumn: Has filter
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Is disabled'
+		dataType: string
+		lineageTag: 2a3a2824-9692-45e1-a0a0-5f36c0c69bb7
+		summarizeBy: none
+		sourceColumn: Is disabled
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Is hypothetical'
+		dataType: string
+		lineageTag: 0fd76442-e9c2-469c-8760-ce4dbd275438
+		summarizeBy: none
+		sourceColumn: Is hypothetical
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Is primary Key'
+		dataType: string
+		lineageTag: 8546c511-6c68-46e3-b860-acbb81484789
+		summarizeBy: none
+		sourceColumn: Is primary Key
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Is unique'
+		dataType: string
+		lineageTag: 3a6905da-16dd-483f-9054-cde64ddc592d
+		summarizeBy: none
+		sourceColumn: Is unique
+
+		annotation SummarizationSetBy = Automatic
+
 	column TableIsHeap
 		dataType: boolean
 		isHidden
 		formatString: """TRUE"";""TRUE"";""FALSE"""
-		lineageTag: 10f93b8d-415e-42ad-be23-8cc4fce9c486
+		lineageTag: fda18a2d-25e0-4cf2-8c2d-bae976dbd517
 		summarizeBy: none
 		sourceColumn: TableIsHeap
 
@@ -157,22 +137,35 @@ table 'Index configuration'
 				  selectColumns = Table.SelectColumns(
 				    datasetToUse,
 				    {
-				      "TableIsHeap",
-				      "IndexTypeDesc",
-				      "IsUnique",
-				      "IsPrimaryKey",
-				      "IsDisabled",
-				      "IsHypothetical",
-				      "HasFilter",
-				      "FilterDefinition",
-				      "IndexColumns",
-				      "IncludedColumns",
-				      "ObjectKey",
-				      "IndexKey"
+				      "FilterDefinition", 
+				      "HasFilterTxt", 
+				      "IncludedColumns", 
+				      "IndexColumns", 
+				      "IndexTypeDesc", 
+				      "IsDisabledTxt", 
+				      "IsHypotheticalTxt", 
+				      "IsPrimaryKeyTxt", 
+				      "IsUniqueTxt", 
+				      "TableIsHeap", 
+				      "IndexKey", 
+				      "ObjectKey"
+				    }
+				  ), 
+				  renamedColumns = Table.RenameColumns(
+				    selectColumns, 
+				    {
+				      {"FilterDefinition", "Filter definition"}, 
+				      {"HasFilterTxt", "Has filter"}, 
+				      {"IncludedColumns", "Included columns"}, 
+				      {"IndexColumns", "Index columns"}, 
+				      {"IsDisabledTxt", "Is disabled"}, 
+				      {"IsHypotheticalTxt", "Is hypothetical"}, 
+				      {"IsPrimaryKeyTxt", "Is primary Key"}, 
+				      {"IsUniqueTxt", "Is unique"}
 				    }
 				  )
 				in
-				  selectColumns
+				  renamedColumns
 				```
 
 	annotation PBI_NavigationStepName = Navigation

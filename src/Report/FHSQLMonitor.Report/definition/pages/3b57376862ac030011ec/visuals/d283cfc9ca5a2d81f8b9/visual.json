@@ -1,0 +1,126 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "name": "d283cfc9ca5a2d81f8b9",
+  "position": {
+    "x": 10,
+    "y": 726,
+    "z": 1500,
+    "height": 294,
+    "width": 940,
+    "tabOrder": 250
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Log shipping monitor history details"
+                    }
+                  },
+                  "Property": "Log time"
+                }
+              },
+              "queryRef": "Log shipping monitor history details.Log time",
+              "nativeQueryRef": "Log time"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Log shipping monitor history details"
+                    }
+                  },
+                  "Property": "Agent type"
+                }
+              },
+              "queryRef": "Log shipping monitor history details.Agent type",
+              "nativeQueryRef": "Agent type"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Log shipping monitor history details"
+                    }
+                  },
+                  "Property": "Session id."
+                }
+              },
+              "queryRef": "Log shipping monitor history details.Session id.",
+              "nativeQueryRef": "Session id."
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Log shipping monitor history details"
+                    }
+                  },
+                  "Property": "Session status"
+                }
+              },
+              "queryRef": "Log shipping monitor history details.Session status",
+              "nativeQueryRef": "Session status"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Log shipping monitor history details"
+                    }
+                  },
+                  "Property": "Message"
+                }
+              },
+              "queryRef": "Log shipping monitor history details.Message",
+              "nativeQueryRef": "Message"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Log shipping monitor history details"
+                  }
+                },
+                "Property": "Log time"
+              }
+            },
+            "direction": "Descending"
+          }
+        ]
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'History'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

@@ -1,0 +1,1538 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/bookmark/1.4.0/schema.json",
+  "displayName": "Filter panel opened - Always On configuration",
+  "name": "e44a615a6a632e9a6d4f",
+  "options": {
+    "applyOnlyToTargetVisuals": true,
+    "targetVisualNames": [
+      "838d25e52dc52852653f",
+      "cd6ca9316dbdecf20b15",
+      "5ca1298215243e383f03",
+      "a81e2fb67cfda0662597",
+      "55d23a3b4b0fd7ba2755",
+      "02a7ed213620aeaebdf2",
+      "8d3332ee50fc77205c7f",
+      "79c0c7c6b6866ec0208d",
+      "c824ff3efcfff66ffa85",
+      "8c30d542cb92b5052ec0",
+      "4f1321bbc4c9d9e18fc4",
+      "530e67f0c606a2521c41"
+    ],
+    "suppressData": true
+  },
+  "explorationState": {
+    "version": "1.3",
+    "activeSection": "c7e11a29172ff9b6c79c",
+    "sections": {
+      "c7e11a29172ff9b6c79c": {
+        "filters": {
+          "byName": {
+            "6db3cad4a86003850507": {
+              "name": "6db3cad4a86003850507",
+              "type": "Categorical",
+              "filter": {
+                "Version": 2,
+                "From": [
+                  {
+                    "Name": "d",
+                    "Entity": "Documentation - report pages",
+                    "Type": 0
+                  }
+                ],
+                "Where": [
+                  {
+                    "Condition": {
+                      "In": {
+                        "Expressions": [
+                          {
+                            "Column": {
+                              "Expression": {
+                                "SourceRef": {
+                                  "Source": "d"
+                                }
+                              },
+                              "Property": "Page"
+                            }
+                          }
+                        ],
+                        "Values": [
+                          [
+                            {
+                              "Literal": {
+                                "Value": "'Always On configuration'"
+                              }
+                            }
+                          ]
+                        ]
+                      }
+                    }
+                  }
+                ]
+              },
+              "expression": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Documentation - report pages"
+                    }
+                  },
+                  "Property": "Page"
+                }
+              },
+              "howCreated": 1
+            }
+          }
+        },
+        "visualContainers": {
+          "0ef36f16f6cf55fec6eb": {
+            "filters": {
+              "byExpr": [
+                {
+                  "name": "3f814dbb4c499a1c8e4d",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Always On replicas"
+                        }
+                      },
+                      "Property": "Endpoint URL"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "14ceff4b7ab9609218e6",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Always On replicas"
+                        }
+                      },
+                      "Property": "Availability mode"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "9e4a31869a10d07d0990",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Always On replicas"
+                        }
+                      },
+                      "Property": "Failover mode"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "45f2951bb85c10a50e10",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Always On replicas"
+                        }
+                      },
+                      "Property": "Primary role allow connections"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "dbcc730f95ce03589452",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Always On replicas"
+                        }
+                      },
+                      "Property": "Secondary role allow connections"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "7a2d1139a7b03387c1ec",
+                  "type": "Advanced",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Always On replicas"
+                        }
+                      },
+                      "Property": "Backup priority"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "ded535f9ea59273d8d0d",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Always On replicas"
+                        }
+                      },
+                      "Property": "Read only routing URL"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "03c10b3e2c0e0d01d9d4",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Always On replicas"
+                        }
+                      },
+                      "Property": "Read-write routing URL"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "8575182077d485e200e1",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Always On replicas"
+                        }
+                      },
+                      "Property": "Min. timestamp"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "1477abae47c2b04e4de6",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Always On replicas"
+                        }
+                      },
+                      "Property": "Max. timestamp"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "df6d004a365c18ab87ec",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Always On group-replica"
+                        }
+                      },
+                      "Property": "Group"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "973c3495cce2069673d9",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Always On group-replica"
+                        }
+                      },
+                      "Property": "Replica"
+                    }
+                  },
+                  "howCreated": 0
+                }
+              ]
+            },
+            "singleVisual": {
+              "visualType": "tableEx",
+              "objects": {},
+              "orderBy": [
+                {
+                  "Direction": 1,
+                  "Expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Always On group-replica"
+                        }
+                      },
+                      "Property": "Group"
+                    }
+                  }
+                },
+                {
+                  "Direction": 1,
+                  "Expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Always On group-replica"
+                        }
+                      },
+                      "Property": "Replica"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "0fed95a379efd6d93aef": {
+            "singleVisual": {
+              "visualType": "actionButton",
+              "objects": {}
+            }
+          },
+          "1a6d052307c8a0b4e702": {
+            "filters": {
+              "byExpr": [
+                {
+                  "name": "9f54d4a1cb3958625cdb",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "WSFC quorum state"
+                        }
+                      },
+                      "Property": "Cluster name"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "318c9615e0a092c30565",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "WSFC quorum state"
+                        }
+                      },
+                      "Property": "Quorum type"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "7dff3a50301787c694c4",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "WSFC quorum state"
+                        }
+                      },
+                      "Property": "Quorum state"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "478c05ab5de27c253607",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "WSFC quorum state"
+                        }
+                      },
+                      "Property": "Min. timestamp"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "0dd392c7e841ad92cbe8",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "WSFC quorum state"
+                        }
+                      },
+                      "Property": "Max. timestamp"
+                    }
+                  },
+                  "howCreated": 0
+                }
+              ]
+            },
+            "singleVisual": {
+              "visualType": "tableEx",
+              "objects": {}
+            }
+          },
+          "40d6ef138c25fac19e84": {
+            "singleVisual": {
+              "visualType": "actionButton",
+              "objects": {}
+            }
+          },
+          "40ef5d1708e556af9875": {
+            "filters": {
+              "byExpr": [
+                {
+                  "name": "9cac7fd13bc2017ae941",
+                  "type": "Advanced",
+                  "expression": {
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "_Measures"
+                        }
+                      },
+                      "Property": "Data range - Always On configuration"
+                    }
+                  },
+                  "howCreated": 0
+                }
+              ]
+            },
+            "singleVisual": {
+              "visualType": "card",
+              "objects": {}
+            }
+          },
+          "5180814fb691a6421c60": {
+            "filters": {
+              "byExpr": [
+                {
+                  "name": "6f15a596e3c7990c7b14",
+                  "type": "Advanced",
+                  "expression": {
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "_Measures"
+                        }
+                      },
+                      "Property": "Info text"
+                    }
+                  },
+                  "howCreated": 0
+                }
+              ]
+            },
+            "singleVisual": {
+              "visualType": "card",
+              "objects": {}
+            }
+          },
+          "7aa789af318f5515069b": {
+            "singleVisual": {
+              "visualType": "actionButton",
+              "objects": {}
+            }
+          },
+          "93673d63c270d60c71f1": {
+            "filters": {
+              "byExpr": [
+                {
+                  "name": "1713f4c19bb1421ea582",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Always On group states"
+                        }
+                      },
+                      "Property": "Primary recovery health"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "63b65632eb0ece4b8a90",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Always On group states"
+                        }
+                      },
+                      "Property": "Secondary recovery health"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "bb3cc9c6108c04645cbe",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Always On group states"
+                        }
+                      },
+                      "Property": "Synchronization health"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "84343d36d31ac791301e",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Always On group states"
+                        }
+                      },
+                      "Property": "Min. timestamp"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "ae4f6005528e586c259b",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Always On group states"
+                        }
+                      },
+                      "Property": "Max. timestamp"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "cf24275b6616808e4c63",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Always On group-replica"
+                        }
+                      },
+                      "Property": "Group"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "44d16070dd964b24a737",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Always On group-replica"
+                        }
+                      },
+                      "Property": "Replica"
+                    }
+                  },
+                  "howCreated": 0
+                }
+              ]
+            },
+            "singleVisual": {
+              "visualType": "tableEx",
+              "objects": {},
+              "orderBy": [
+                {
+                  "Direction": 1,
+                  "Expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Always On group-replica"
+                        }
+                      },
+                      "Property": "Group"
+                    }
+                  }
+                },
+                {
+                  "Direction": 1,
+                  "Expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Always On group-replica"
+                        }
+                      },
+                      "Property": "Replica"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "969ae3fbd5c310354727": {
+            "filters": {
+              "byExpr": [
+                {
+                  "name": "7fd2b1b0177d2c4b2960",
+                  "type": "Advanced",
+                  "expression": {
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "_Measures"
+                        }
+                      },
+                      "Property": "Info last refresh"
+                    }
+                  },
+                  "howCreated": 0
+                }
+              ]
+            },
+            "singleVisual": {
+              "visualType": "card",
+              "objects": {}
+            }
+          },
+          "9985681ca5d15a8fdb54": {
+            "filters": {
+              "byExpr": [
+                {
+                  "name": "d9b2886cb97c4e020b47",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Always On database states"
+                        }
+                      },
+                      "Property": "Database"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "098f12475c849860a844",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Always On database states"
+                        }
+                      },
+                      "Property": "Is local"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "9004394cc64a0655ce4d",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Always On database states"
+                        }
+                      },
+                      "Property": "Is primary replica"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "176fdd3b5ba1084a42dd",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Always On database states"
+                        }
+                      },
+                      "Property": "Synchronization state"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "43e9d7b786d6206061c0",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Always On database states"
+                        }
+                      },
+                      "Property": "Is commit participant"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "077541b6030860e83a77",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Always On database states"
+                        }
+                      },
+                      "Property": "Synchronization health"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "48aac63266d352347dee",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Always On database states"
+                        }
+                      },
+                      "Property": "Database state"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "b86ddf65832d8c0a0012",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Always On database states"
+                        }
+                      },
+                      "Property": "Is suspended"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "ec7fe229e8606906755e",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Always On database states"
+                        }
+                      },
+                      "Property": "Suspend reason"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "b66487f0279276bbbdd5",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Always On database states"
+                        }
+                      },
+                      "Property": "Min. timestamp"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "2166cfce763a89d29b5e",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Always On database states"
+                        }
+                      },
+                      "Property": "Max. timestamp"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "91fc654556a6c70b88ac",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Always On group-replica"
+                        }
+                      },
+                      "Property": "Group"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "01a61aa0d7249068bcda",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Always On group-replica"
+                        }
+                      },
+                      "Property": "Replica"
+                    }
+                  },
+                  "howCreated": 0
+                }
+              ]
+            },
+            "singleVisual": {
+              "visualType": "tableEx",
+              "objects": {},
+              "orderBy": [
+                {
+                  "Direction": 1,
+                  "Expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Always On group-replica"
+                        }
+                      },
+                      "Property": "Group"
+                    }
+                  }
+                },
+                {
+                  "Direction": 1,
+                  "Expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Always On group-replica"
+                        }
+                      },
+                      "Property": "Replica"
+                    }
+                  }
+                },
+                {
+                  "Direction": 1,
+                  "Expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Always On database states"
+                        }
+                      },
+                      "Property": "Database"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "ca0625cf6ff5cbdf58fa": {
+            "filters": {
+              "byExpr": [
+                {
+                  "name": "32d680047ce352a2a057",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "WSFC quorum members"
+                        }
+                      },
+                      "Property": "Member"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "e9287fff06a79e645dde",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "WSFC quorum members"
+                        }
+                      },
+                      "Property": "Member type"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "2460a62dc06009ab5ec8",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "WSFC quorum members"
+                        }
+                      },
+                      "Property": "Member state"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "961244b08539d904d1e3",
+                  "type": "Advanced",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "WSFC quorum members"
+                        }
+                      },
+                      "Property": "No. of quorum votes"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "77a3ccc06c6d343dd698",
+                  "type": "Advanced",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "WSFC quorum members"
+                        }
+                      },
+                      "Property": "No. of current votes"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "82591a3b70ba19a6a870",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "WSFC quorum members"
+                        }
+                      },
+                      "Property": "Min. timestamp"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "c2439295981a0b80db47",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "WSFC quorum members"
+                        }
+                      },
+                      "Property": "Max. timestamp"
+                    }
+                  },
+                  "howCreated": 0
+                }
+              ]
+            },
+            "singleVisual": {
+              "visualType": "tableEx",
+              "objects": {},
+              "orderBy": [
+                {
+                  "Direction": 1,
+                  "Expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "WSFC quorum members"
+                        }
+                      },
+                      "Property": "Member type"
+                    }
+                  }
+                },
+                {
+                  "Direction": 1,
+                  "Expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "WSFC quorum members"
+                        }
+                      },
+                      "Property": "Member"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "d8083f322de4a3da5848": {
+            "filters": {
+              "byExpr": [
+                {
+                  "name": "f28c35fc606c10ba7756",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Always On read only routing"
+                        }
+                      },
+                      "Property": "Replica replica"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "64527d263034369e70b2",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Always On read only routing"
+                        }
+                      },
+                      "Property": "Read only routing URL"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "2db87172986c00653806",
+                  "type": "Advanced",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Always On read only routing"
+                        }
+                      },
+                      "Property": "Routing priority"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "de90c0e0409c187952a4",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Always On read only routing"
+                        }
+                      },
+                      "Property": "Secondary role allow connections"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "a9e63497a17314b9a72b",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Always On read only routing"
+                        }
+                      },
+                      "Property": "Min. timestamp"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "477871700083754e6d09",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Always On read only routing"
+                        }
+                      },
+                      "Property": "Max. timestamp"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "662d4999108ad003a15a",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Always On group-replica"
+                        }
+                      },
+                      "Property": "Group"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "5be8b165b7c23ac320ba",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Always On group-replica"
+                        }
+                      },
+                      "Property": "Replica"
+                    }
+                  },
+                  "howCreated": 0
+                }
+              ]
+            },
+            "singleVisual": {
+              "visualType": "tableEx",
+              "objects": {},
+              "orderBy": [
+                {
+                  "Direction": 1,
+                  "Expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Always On group-replica"
+                        }
+                      },
+                      "Property": "Group"
+                    }
+                  }
+                },
+                {
+                  "Direction": 1,
+                  "Expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Always On group-replica"
+                        }
+                      },
+                      "Property": "Replica"
+                    }
+                  }
+                },
+                {
+                  "Direction": 1,
+                  "Expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Always On read only routing"
+                        }
+                      },
+                      "Property": "Replica replica"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "d9fa9eec701dd8653e00": {
+            "singleVisual": {
+              "visualType": "textbox",
+              "objects": {}
+            }
+          },
+          "5ca1298215243e383f03": {
+            "filters": {
+              "byExpr": [
+                {
+                  "name": "a1581d17d98cb4adeea0",
+                  "type": "Advanced",
+                  "filter": {
+                    "Version": 2,
+                    "From": [
+                      {
+                        "Name": "_",
+                        "Entity": "_Measures",
+                        "Type": 0
+                      }
+                    ],
+                    "Where": [
+                      {
+                        "Condition": {
+                          "Not": {
+                            "Expression": {
+                              "Comparison": {
+                                "ComparisonKind": 0,
+                                "Left": {
+                                  "Measure": {
+                                    "Expression": {
+                                      "SourceRef": {
+                                        "Source": "_"
+                                      }
+                                    },
+                                    "Property": "VLF Filter - Database configuration"
+                                  }
+                                },
+                                "Right": {
+                                  "Literal": {
+                                    "Value": "null"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  "expression": {
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "_Measures"
+                        }
+                      },
+                      "Property": "VLF Filter - Database configuration"
+                    }
+                  },
+                  "howCreated": 1
+                },
+                {
+                  "name": "94bae694196e4aceb937",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Database scoped configuration"
+                        }
+                      },
+                      "Property": "Key"
+                    }
+                  },
+                  "howCreated": 0
+                }
+              ]
+            },
+            "singleVisual": {
+              "visualType": "slicer",
+              "objects": {
+                "merge": {
+                  "data": [
+                    {
+                      "properties": {
+                        "mode": {
+                          "expr": {
+                            "Literal": {
+                              "Value": "'Dropdown'"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "activeProjections": {
+                "Values": [
+                  {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Database scoped configuration"
+                        }
+                      },
+                      "Property": "Key"
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "a81e2fb67cfda0662597": {
+            "singleVisual": {
+              "visualType": "shape",
+              "objects": {}
+            }
+          },
+          "55d23a3b4b0fd7ba2755": {
+            "singleVisual": {
+              "visualType": "actionButton",
+              "objects": {}
+            }
+          },
+          "02a7ed213620aeaebdf2": {
+            "singleVisual": {
+              "visualType": "shape",
+              "objects": {}
+            }
+          },
+          "8d3332ee50fc77205c7f": {
+            "filters": {
+              "byExpr": [
+                {
+                  "name": "a1581d17d98cb4adeea0",
+                  "type": "Advanced",
+                  "filter": {
+                    "Version": 2,
+                    "From": [
+                      {
+                        "Name": "_",
+                        "Entity": "_Measures",
+                        "Type": 0
+                      }
+                    ],
+                    "Where": [
+                      {
+                        "Condition": {
+                          "Not": {
+                            "Expression": {
+                              "Comparison": {
+                                "ComparisonKind": 0,
+                                "Left": {
+                                  "Measure": {
+                                    "Expression": {
+                                      "SourceRef": {
+                                        "Source": "_"
+                                      }
+                                    },
+                                    "Property": "VLF Filter - Database configuration"
+                                  }
+                                },
+                                "Right": {
+                                  "Literal": {
+                                    "Value": "null"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  "expression": {
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "_Measures"
+                        }
+                      },
+                      "Property": "VLF Filter - Database configuration"
+                    }
+                  },
+                  "howCreated": 1
+                },
+                {
+                  "name": "891bce221109124b0036",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Database"
+                        }
+                      },
+                      "Property": "Database"
+                    }
+                  },
+                  "howCreated": 0
+                }
+              ]
+            },
+            "singleVisual": {
+              "visualType": "slicer",
+              "objects": {
+                "merge": {
+                  "data": [
+                    {
+                      "properties": {
+                        "mode": {
+                          "expr": {
+                            "Literal": {
+                              "Value": "'Dropdown'"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "activeProjections": {
+                "Values": [
+                  {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Database"
+                        }
+                      },
+                      "Property": "Database"
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "79c0c7c6b6866ec0208d": {
+            "filters": {
+              "byExpr": [
+                {
+                  "name": "0441443506d06dc0ee2c",
+                  "type": "Advanced",
+                  "expression": {
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "_Measures"
+                        }
+                      },
+                      "Property": "Show filters Headers - Database configuration"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "cf0604554ac9c2d04c7d",
+                  "type": "Advanced",
+                  "expression": {
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "_Measures"
+                        }
+                      },
+                      "Property": "Show filters - Database configuration"
+                    }
+                  },
+                  "howCreated": 0
+                }
+              ]
+            },
+            "singleVisual": {
+              "visualType": "tableEx",
+              "objects": {}
+            }
+          },
+          "c824ff3efcfff66ffa85": {
+            "singleVisual": {
+              "visualType": "shape",
+              "objects": {}
+            }
+          },
+          "8c30d542cb92b5052ec0": {
+            "singleVisual": {
+              "visualType": "actionButton",
+              "objects": {}
+            }
+          },
+          "4f1321bbc4c9d9e18fc4": {
+            "filters": {
+              "byExpr": [
+                {
+                  "name": "b6f0ae1b91204aad304a",
+                  "type": "Advanced",
+                  "expression": {
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "_Measures"
+                        }
+                      },
+                      "Property": "Open filter button tooltip - Database configuration"
+                    }
+                  },
+                  "howCreated": 0
+                }
+              ]
+            },
+            "singleVisual": {
+              "visualType": "card",
+              "objects": {}
+            }
+          },
+          "530e67f0c606a2521c41": {
+            "singleVisual": {
+              "visualType": "actionButton",
+              "objects": {}
+            }
+          }
+        },
+        "visualContainerGroups": {
+          "838d25e52dc52852653f": {
+            "isHidden": false
+          },
+          "cd6ca9316dbdecf20b15": {
+            "isHidden": true
+          }
+        }
+      }
+    },
+    "objects": {
+      "merge": {
+        "outspacePane": [
+          {
+            "properties": {
+              "expanded": {
+                "expr": {
+                  "Literal": {
+                    "Value": "false"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

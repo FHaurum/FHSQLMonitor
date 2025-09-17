@@ -57,6 +57,20 @@ table 'Instance suspect pages'
 
 		annotation PBI_FormatHint = {"isCustom":true}
 
+	column Date
+		dataType: dateTime
+		isHidden
+		formatString: Long Date
+		lineageTag: afa6fa59-8e45-4fed-9b02-757cadf4e527
+		summarizeBy: none
+		sourceColumn: Date
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
 	partition 'Instance suspect pages' = m
 		mode: import
 		queryGroup: Facts

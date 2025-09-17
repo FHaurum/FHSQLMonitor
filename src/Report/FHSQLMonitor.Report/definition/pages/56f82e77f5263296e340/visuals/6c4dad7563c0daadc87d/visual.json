@@ -1,0 +1,244 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "name": "6c4dad7563c0daadc87d",
+  "position": {
+    "x": 10,
+    "y": 110,
+    "z": 1000,
+    "height": 910,
+    "width": 1900,
+    "tabOrder": 1000
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Log shipping state history"
+                    }
+                  },
+                  "Property": "Type"
+                }
+              },
+              "queryRef": "Log shipping state history.Type",
+              "nativeQueryRef": "Type1"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Log shipping state history"
+                    }
+                  },
+                  "Property": "Key"
+                }
+              },
+              "queryRef": "Log shipping state history.Key",
+              "nativeQueryRef": "Key1"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Log shipping state history"
+                    }
+                  },
+                  "Property": "From"
+                }
+              },
+              "queryRef": "Log shipping state history.From",
+              "nativeQueryRef": "From (UTC)",
+              "displayName": "From (UTC)"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Log shipping state history"
+                    }
+                  },
+                  "Property": "To"
+                }
+              },
+              "queryRef": "Log shipping state history.To",
+              "nativeQueryRef": "To (UTC)",
+              "displayName": "To (UTC)"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Log shipping state history"
+                    }
+                  },
+                  "Property": "Value"
+                }
+              },
+              "queryRef": "Log shipping state history.Value",
+              "nativeQueryRef": "Value1"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Log shipping state history"
+                  }
+                },
+                "Property": "From"
+              }
+            },
+            "direction": "Descending"
+          }
+        ]
+      }
+    },
+    "objects": {
+      "total": [
+        {
+          "properties": {
+            "totals": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Log shipping configuration history'"
+                }
+              }
+            },
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "visualTooltip": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "section": {
+              "expr": {
+                "Literal": {
+                  "Value": "'04bf5338cda2e337cb46'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "e8be7b0781455a7d1b35",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Log shipping state history"
+              }
+            },
+            "Property": "Type"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "d32c5fcaa59d57c299ef",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Log shipping state history"
+              }
+            },
+            "Property": "Key"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "fa4a72a74fccbd4fdd5c",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Log shipping state history"
+              }
+            },
+            "Property": "From"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "4647004178b830d6a547",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Log shipping state history"
+              }
+            },
+            "Property": "To"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "9ad5c74a953f975fbc50",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Log shipping state history"
+              }
+            },
+            "Property": "Value"
+          }
+        },
+        "type": "Categorical"
+      }
+    ]
+  }
+}

@@ -1,0 +1,300 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "name": "2e9ad6ceaebe18db7c6b",
+  "position": {
+    "x": 10,
+    "y": 145,
+    "z": 4000,
+    "height": 423,
+    "width": 1900,
+    "tabOrder": 2000
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Missing index statement - Index details"
+                    }
+                  },
+                  "Property": "Statement"
+                }
+              },
+              "queryRef": "Missing index statement - Index details.Statement",
+              "nativeQueryRef": "Statement"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Missing indexes - Index details"
+                    }
+                  },
+                  "Property": "Equality columns"
+                }
+              },
+              "queryRef": "Missing indexes - Index details.Equality columns",
+              "nativeQueryRef": "Equality columns"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Missing indexes - Index details"
+                    }
+                  },
+                  "Property": "Inequality columns"
+                }
+              },
+              "queryRef": "Missing indexes - Index details.Inequality columns",
+              "nativeQueryRef": "Inequality columns"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Missing indexes - Index details"
+                    }
+                  },
+                  "Property": "Included columns"
+                }
+              },
+              "queryRef": "Missing indexes - Index details.Included columns",
+              "nativeQueryRef": "Included columns"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Avg. user impact - Index details - Missing indexes"
+                }
+              },
+              "queryRef": "_Measures.Avg. user impact - Index details - Missing indexes",
+              "nativeQueryRef": "Avg. user impact",
+              "displayName": "Avg. user impact"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Avg. total user cost - Index details - Missing indexes"
+                }
+              },
+              "queryRef": "_Measures.Avg. total user cost - Index details - Missing indexes",
+              "nativeQueryRef": "Avg. total user cost",
+              "displayName": "Avg. total user cost"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "User seeks - Index details - Missing indexes"
+                }
+              },
+              "queryRef": "_Measures.User seeks - Index details - Missing indexes",
+              "nativeQueryRef": "User seeks",
+              "displayName": "User seeks"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Last user seeks - Index details - Missing indexes"
+                }
+              },
+              "queryRef": "_Measures.Last user seeks - Index details - Missing indexes",
+              "nativeQueryRef": "Last user seeks",
+              "displayName": "Last user seeks"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Missing indexes - Index details"
+                  }
+                },
+                "Property": "Equality columns"
+              }
+            },
+            "direction": "Ascending"
+          }
+        ]
+      }
+    },
+    "objects": {
+      "total": [
+        {
+          "properties": {
+            "totals": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "columnWidth": [
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "290.861780276325D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Missing indexes - Index details.Included columns"
+          }
+        },
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "208.82695048108778D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Missing indexes - Index details.Inequality columns"
+          }
+        },
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "238.8154788459239D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Missing indexes - Index details.Equality columns"
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Title - Index details - Missing indexes"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "62c92b7be68e58e729b7",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "_Measures"
+              }
+            },
+            "Property": "VLF - Missing indexes - Index details"
+          }
+        },
+        "type": "Advanced",
+        "filter": {
+          "Version": 2,
+          "From": [
+            {
+              "Name": "_",
+              "Entity": "_Measures",
+              "Type": 0
+            }
+          ],
+          "Where": [
+            {
+              "Condition": {
+                "Not": {
+                  "Expression": {
+                    "Comparison": {
+                      "ComparisonKind": 0,
+                      "Left": {
+                        "Measure": {
+                          "Expression": {
+                            "SourceRef": {
+                              "Source": "_"
+                            }
+                          },
+                          "Property": "VLF - Missing indexes - Index details"
+                        }
+                      },
+                      "Right": {
+                        "Literal": {
+                          "Value": "null"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "howCreated": "User"
+      }
+    ]
+  }
+}

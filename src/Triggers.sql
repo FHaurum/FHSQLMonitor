@@ -66,18 +66,18 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.9.1';
+		SET @version = '2.11.0';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
 		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
-		SET @productVersion1 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+		SET @productVersion1 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartPos));
 		SET @productStartPos = @productEndPos + 1;
 		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
-		SET @productVersion2 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+		SET @productVersion2 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartPos));
 		SET @productStartPos = @productEndPos + 1;
 		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
-		SET @productVersion3 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+		SET @productVersion3 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartPos));
 	END;
 
 	--
@@ -226,9 +226,24 @@ ELSE BEGIN
 					,t.Name AS TriggerName
 					,t.CreateDate
 					,t.ModifyDate
-					,t.IsMsShipped
+					,t.IsMsShipped AS IsMSShipped
+					,CASE t.IsMsShipped
+						WHEN 0 THEN ''No''
+						WHEN 1 THEN ''Yes''
+						ELSE ''N.A.''
+					END AS IsMSShippedTxt
 					,t.IsDisabled
+					,CASE t.IsDisabled
+						WHEN 0 THEN ''No''
+						WHEN 1 THEN ''Yes''
+						ELSE ''N.A.''
+					END AS IsDisabledTxt
 					,t.IsNotForReplication
+					,CASE t.IsNotForReplication
+						WHEN 0 THEN ''No''
+						WHEN 1 THEN ''Yes''
+						ELSE ''N.A.''
+					END AS IsNotForReplicationTxt
 					,CASE t.IsInsteadOfTrigger
 						WHEN 0 THEN ''After trigger''
 						ELSE ''Instead of trigger''

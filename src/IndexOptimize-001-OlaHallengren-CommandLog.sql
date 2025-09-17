@@ -36,15 +36,15 @@ BEGIN
 
 	SET @productStartPos = 1;
 	SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
-	SET @productVersion1 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+	SET @productVersion1 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartPos));
 
 	SET @productStartPos = @productEndPos + 1;
 	SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
-	SET @productVersion2 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+	SET @productVersion2 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartPos));
 
 	SET @productStartPos = @productEndPos + 1;
 	SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
-	SET @productVersion3 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+	SET @productVersion3 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartPos));
 
 	IF (@edition = 'SQL Azure')
 		OR (SUBSTRING(@edition, 1, CHARINDEX(' ', @edition)) = 'Developer')

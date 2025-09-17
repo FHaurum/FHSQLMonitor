@@ -1,0 +1,290 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "name": "0ef36f16f6cf55fec6eb",
+  "position": {
+    "x": 10,
+    "y": 620,
+    "z": 2000,
+    "height": 180,
+    "width": 1900
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Always On group-replica"
+                    }
+                  },
+                  "Property": "Group"
+                }
+              },
+              "queryRef": "Always On group-replica.Group",
+              "nativeQueryRef": "Group1"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Always On group-replica"
+                    }
+                  },
+                  "Property": "Replica"
+                }
+              },
+              "queryRef": "Always On group-replica.Replica",
+              "nativeQueryRef": "Replica1"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Always On replicas"
+                    }
+                  },
+                  "Property": "Endpoint URL"
+                }
+              },
+              "queryRef": "Always On replicas.Endpoint URL",
+              "nativeQueryRef": "Endpoint URL"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Always On replicas"
+                    }
+                  },
+                  "Property": "Availability mode"
+                }
+              },
+              "queryRef": "Always On replicas.Availability mode",
+              "nativeQueryRef": "Availability",
+              "displayName": "Availability"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Always On replicas"
+                    }
+                  },
+                  "Property": "Failover mode"
+                }
+              },
+              "queryRef": "Always On replicas.Failover mode",
+              "nativeQueryRef": "Failover",
+              "displayName": "Failover"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Always On replicas"
+                    }
+                  },
+                  "Property": "Primary role allow connections"
+                }
+              },
+              "queryRef": "Always On replicas.Primary role allow connections",
+              "nativeQueryRef": "Primary conn.",
+              "displayName": "Primary conn."
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Always On replicas"
+                    }
+                  },
+                  "Property": "Secondary role allow connections"
+                }
+              },
+              "queryRef": "Always On replicas.Secondary role allow connections",
+              "nativeQueryRef": "Secondary conn.",
+              "displayName": "Secondary conn."
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Always On replicas"
+                    }
+                  },
+                  "Property": "Backup priority"
+                }
+              },
+              "queryRef": "Always On replicas.Backup priority",
+              "nativeQueryRef": "Backup priority"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Always On replicas"
+                    }
+                  },
+                  "Property": "Read only routing URL"
+                }
+              },
+              "queryRef": "Always On replicas.Read only routing URL",
+              "nativeQueryRef": "Read only routing URL"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Always On replicas"
+                    }
+                  },
+                  "Property": "Read-write routing URL"
+                }
+              },
+              "queryRef": "Always On replicas.Read-write routing URL",
+              "nativeQueryRef": "Read-write routing URL"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Always On replicas"
+                    }
+                  },
+                  "Property": "Min. timestamp"
+                }
+              },
+              "queryRef": "Always On replicas.Min. timestamp",
+              "nativeQueryRef": "Min. time",
+              "displayName": "Min. time"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Always On replicas"
+                    }
+                  },
+                  "Property": "Max. timestamp"
+                }
+              },
+              "queryRef": "Always On replicas.Max. timestamp",
+              "nativeQueryRef": "Max. time",
+              "displayName": "Max. time"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Always On group-replica"
+                  }
+                },
+                "Property": "Group"
+              }
+            },
+            "direction": "Ascending"
+          },
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Always On group-replica"
+                  }
+                },
+                "Property": "Replica"
+              }
+            },
+            "direction": "Ascending"
+          }
+        ]
+      }
+    },
+    "objects": {
+      "total": [
+        {
+          "properties": {
+            "totals": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Always On replicas'"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "visualTooltip": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            },
+            "section": {
+              "expr": {
+                "Literal": {
+                  "Value": "'___AUTO___'"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "visualHeader": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

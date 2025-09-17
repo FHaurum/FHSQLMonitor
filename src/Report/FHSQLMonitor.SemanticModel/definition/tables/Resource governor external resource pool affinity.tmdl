@@ -1,27 +1,19 @@
 table 'Resource governor external resource pool affinity'
 	lineageTag: 9b87492a-ffc5-47c9-b11d-afbf3e9ee091
 
-	column PoolName
+	column 'Pool name'
 		dataType: string
 		lineageTag: acfeae9e-e52a-42ef-8856-70cb16fea8dd
 		summarizeBy: none
-		sourceColumn: PoolName
+		sourceColumn: Pool name
 
 		annotation SummarizationSetBy = Automatic
 
-	column ProcessorGroup
+	column 'Processor group'
 		dataType: string
 		lineageTag: e63aa8f1-b40b-4072-83fe-90d38e0bbafb
 		summarizeBy: none
-		sourceColumn: ProcessorGroup
-
-		annotation SummarizationSetBy = Automatic
-
-	column CPUmask
-		dataType: string
-		lineageTag: 19f0a0b0-a9d3-4834-9cbf-6c7dc65e9c9d
-		summarizeBy: none
-		sourceColumn: CPUmask
+		sourceColumn: Processor group
 
 		annotation SummarizationSetBy = Automatic
 
@@ -38,6 +30,14 @@ table 'Resource governor external resource pool affinity'
 
 		annotation PBI_FormatHint = {"isCustom":true}
 
+	column 'CPU mask'
+		dataType: string
+		lineageTag: 45a7215f-acab-4391-9ef2-9173b75a4a90
+		summarizeBy: none
+		sourceColumn: CPU mask
+
+		annotation SummarizationSetBy = Automatic
+
 	partition 'Resource governor external resource pool affinity' = m
 		mode: import
 		queryGroup: Facts
@@ -51,9 +51,17 @@ table 'Resource governor external resource pool affinity'
 				  db     = dbList{[Name = #"Database name"]}[Data], 
 				  table  = db{[Schema = #"Schema name", Item = "Resource governor external resource pool affinity"]}[Data], 
 				  emptyDataset = Table.FirstN(table, 0), 
-				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset,
+				  renameColumns = Table.RenameColumns(
+				    datasetToUse, 
+				    {
+				      {"CPUMask", "CPU mask"}, 
+				      {"PoolName", "Pool name"}, 
+				      {"ProcessorGroup", "Processor group"}
+				    }
+				  )
 				in
-				  datasetToUse
+				  renameColumns
 				```
 
 	annotation PBI_NavigationStepName = Navigation

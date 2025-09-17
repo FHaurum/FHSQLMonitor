@@ -26,56 +26,11 @@ table 'Database state'
 
 		annotation SummarizationSetBy = Automatic
 
-	column 'Auto close'
-		dataType: boolean
-		formatString: """TRUE"";""TRUE"";""FALSE"""
-		lineageTag: 536fb947-2540-436f-841d-b09f6698c553
-		summarizeBy: none
-		sourceColumn: Auto close
-
-		annotation SummarizationSetBy = Automatic
-
-	column 'Auto shrink'
-		dataType: boolean
-		formatString: """TRUE"";""TRUE"";""FALSE"""
-		lineageTag: 041433b4-4f5a-471c-94c9-6809351cf92a
-		summarizeBy: none
-		sourceColumn: Auto shrink
-
-		annotation SummarizationSetBy = Automatic
-
-	column 'Auto update stats. async.'
-		dataType: boolean
-		formatString: """TRUE"";""TRUE"";""FALSE"""
-		lineageTag: dc907573-5e1a-433c-bba4-d3e248120737
-		summarizeBy: none
-		sourceColumn: Auto update stats. async.
-
-		annotation SummarizationSetBy = Automatic
-
-	column 'Mixed page allocation'
-		dataType: boolean
-		formatString: """TRUE"";""TRUE"";""FALSE"""
-		lineageTag: b50b7730-ba77-4d61-b8e5-890def976209
-		summarizeBy: none
-		sourceColumn: Mixed page allocation
-
-		annotation SummarizationSetBy = Automatic
-
 	column 'Page verify'
 		dataType: string
 		lineageTag: 1f39b7f7-1745-4193-937d-3924b4fc9c3e
 		summarizeBy: none
 		sourceColumn: Page verify
-
-		annotation SummarizationSetBy = Automatic
-
-	column RCSI
-		dataType: boolean
-		formatString: """TRUE"";""TRUE"";""FALSE"""
-		lineageTag: 8380541c-8bbb-42d1-a91e-c649508b5ec8
-		summarizeBy: none
-		sourceColumn: RCSI
 
 		annotation SummarizationSetBy = Automatic
 
@@ -130,22 +85,13 @@ table 'Database state'
 
 		annotation PBI_FormatHint = {"isCustom":true}
 
-	column Encrypted
-		dataType: boolean
-		formatString: """TRUE"";""TRUE"";""FALSE"""
-		lineageTag: 698df864-93a4-4806-b6aa-9e38a4d735e3
-		summarizeBy: none
-		sourceColumn: Encrypted
-
-		annotation SummarizationSetBy = Automatic
-
-	column 'Is on Always On primary'
+	column IsOnAlwaysOnPrimary
 		dataType: int64
 		isHidden
 		formatString: 0
 		lineageTag: 64ca9ec9-67cb-40a0-9291-0ac0accb9cb9
 		summarizeBy: none
-		sourceColumn: Is on Always On primary
+		sourceColumn: IsOnAlwaysOnPrimary
 
 		changedProperty = IsHidden
 
@@ -156,6 +102,170 @@ table 'Database state'
 		lineageTag: d2878ec6-6079-4db0-a930-61e210d0aa68
 		summarizeBy: none
 		sourceColumn: Always On group
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Auto close'
+		dataType: string
+		lineageTag: 24c7db5f-bb6a-4f4f-834e-303e8c2dd266
+		summarizeBy: none
+		sourceColumn: Auto close
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Auto shrink'
+		dataType: string
+		lineageTag: 957aac7f-db84-49d9-ad48-b45aa821b078
+		summarizeBy: none
+		sourceColumn: Auto shrink
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Auto update stats. async.'
+		dataType: string
+		lineageTag: c9788893-8bb0-4822-9649-c8f7fc7a46b4
+		summarizeBy: none
+		sourceColumn: Auto update stats. async.
+
+		annotation SummarizationSetBy = Automatic
+
+	column Encrypted
+		dataType: string
+		lineageTag: cde211e9-4e46-488b-86d1-9e468700a084
+		summarizeBy: none
+		sourceColumn: Encrypted
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Mixed page allocation'
+		dataType: string
+		lineageTag: 8473a268-d5e6-458e-a8d8-c2f20a62340a
+		summarizeBy: none
+		sourceColumn: Mixed page allocation
+
+		annotation SummarizationSetBy = Automatic
+
+	column RCSI
+		dataType: string
+		lineageTag: 70746f61-d5f7-4e6b-b734-aff511b4eb0b
+		summarizeBy: none
+		sourceColumn: RCSI
+
+		annotation SummarizationSetBy = Automatic
+
+	column IsReadCommittedSnapshotOn
+		dataType: boolean
+		isHidden
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: d37bba29-e1fc-4bf2-889a-5fce0f92b468
+		summarizeBy: none
+		sourceColumn: IsReadCommittedSnapshotOn
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column IsAutoCloseOn
+		dataType: boolean
+		isHidden
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 4d454fc4-6d47-409c-906a-e4033fe1797b
+		summarizeBy: none
+		sourceColumn: IsAutoCloseOn
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column IsAutoShrinkOn
+		dataType: boolean
+		isHidden
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: d742dcb1-85a7-4261-a362-94630262e196
+		summarizeBy: none
+		sourceColumn: IsAutoShrinkOn
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column IsAutoUpdateStatsAsyncOn
+		dataType: boolean
+		isHidden
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 10c0ea84-e7e8-4222-8a8d-f327e0e0ff9c
+		summarizeBy: none
+		sourceColumn: IsAutoUpdateStatsAsyncOn
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column IsEncrypted
+		dataType: boolean
+		isHidden
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 4d3d2d1a-60b7-4352-9f43-e414de054b5f
+		summarizeBy: none
+		sourceColumn: IsEncrypted
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Param. forced'
+		dataType: string
+		lineageTag: 179fc0e0-4d6b-4bb2-b2ab-061717468d84
+		summarizeBy: none
+		sourceColumn: Param. forced
+
+		annotation SummarizationSetBy = Automatic
+
+	column IsInStandby
+		dataType: boolean
+		isHidden
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 49340b2d-6669-4a90-894d-4050df75d4b6
+		summarizeBy: none
+		sourceColumn: IsInStandby
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column Standby
+		dataType: string
+		lineageTag: f378bd57-e32a-4e9b-931f-36bde944f1e4
+		summarizeBy: none
+		sourceColumn: Standby
+
+		annotation SummarizationSetBy = Automatic
+
+	column IsReadOnly
+		dataType: boolean
+		isHidden
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 27ae7085-265c-4f67-8ea9-fd4c417022de
+		summarizeBy: none
+		sourceColumn: IsReadOnly
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Read only'
+		dataType: string
+		lineageTag: 915d84f9-cbd7-495d-b4f2-769a3f3fd8a3
+		summarizeBy: none
+		sourceColumn: Read only
+
+		annotation SummarizationSetBy = Automatic
+
+	column State
+		dataType: string
+		lineageTag: ac0badbf-e599-445a-896b-ffb7d3338755
+		summarizeBy: none
+		sourceColumn: State
 
 		annotation SummarizationSetBy = Automatic
 
@@ -181,39 +291,52 @@ table 'Database state'
 				      "CompatibilityLevel", 
 				      "DelayedDurability", 
 				      "IsAutoCloseOn", 
+				      "IsAutoCloseOnTxt", 
 				      "IsAutoShrinkOn", 
+				      "IsAutoShrinkOnTxt", 
 				      "IsAutoUpdateStatsAsyncOn", 
+				      "IsAutoUpdateStatsAsyncOnTxt", 
 				      "IsEncrypted", 
-				      "IsMixedPageAllocationOn", 
+				      "IsEncryptedTxt", 
+				      "IsInStandby", 
+				      "IsInStandbyTxt", 
+				      "IsMixedPageAllocationOnTxt", 
 				      "IsOnAlwaysOnPrimary", 
+				      "IsParameterizationForcedTxt", 
 				      "IsReadCommittedSnapshotOn", 
+				      "IsReadCommittedSnapshotOnTxt", 
+				      "IsReadOnly", 
+				      "IsReadOnlyTxt", 
+				      "MaxTimestamp", 
+				      "MinTimestamp", 
 				      "PageVerifyOption", 
 				      "RecoveryModel", 
+				      "State", 
 				      "TargetRecoveryTimeInSeconds", 
-				      "MinTimestamp", 
-				      "MaxTimestamp", 
 				      "DatabaseKey"
 				    }
 				  ), 
 				  renameColumns = Table.RenameColumns(
 				    selectColumns, 
 				    {
+				      {"AlwaysOnGroupName", "Always On group"}, 
 				      {"CollationName", "Collation"}, 
 				      {"CompatibilityLevel", "Comp. level"}, 
-				      {"RecoveryModel", "Recovery model"}, 
-				      {"IsReadCommittedSnapshotOn", "RCSI"}, 
-				      {"IsMixedPageAllocationOn", "Mixed page allocation"}, 
-				      {"PageVerifyOption", "Page verify"}, 
-				      {"IsAutoCloseOn", "Auto close"}, 
-				      {"IsAutoShrinkOn", "Auto shrink"}, 
-				      {"IsAutoUpdateStatsAsyncOn", "Auto update stats. async."}, 
-				      {"IsEncrypted", "Encrypted"}, 
-				      {"AlwaysOnGroupName", "Always On group"}, 
-				      {"IsOnAlwaysOnPrimary", "Is on Always On primary"}, 
 				      {"DelayedDurability", "Delayed durability"}, 
-				      {"TargetRecoveryTimeInSeconds", "Target recovery time in sec."}, 
+				      {"IsAutoCloseOnTxt", "Auto close"}, 
+				      {"IsAutoShrinkOnTxt", "Auto shrink"}, 
+				      {"IsAutoUpdateStatsAsyncOnTxt", "Auto update stats. async."}, 
+				      {"IsEncryptedTxt", "Encrypted"}, 
+				      {"IsInStandbyTxt", "Standby" }, 
+				      {"IsMixedPageAllocationOnTxt", "Mixed page allocation"}, 
+				      {"IsParameterizationForcedTxt", "Param. forced"}, 
+				      {"IsReadCommittedSnapshotOnTxt", "RCSI"}, 
+				      {"IsReadOnlyTxt", "Read only" }, 
+				      {"MaxTimestamp", "Max. timestamp"}, 
 				      {"MinTimestamp", "Min. timestamp"}, 
-				      {"MaxTimestamp", "Max. timestamp"}
+				      {"PageVerifyOption", "Page verify"}, 
+				      {"RecoveryModel", "Recovery model"}, 
+				      {"TargetRecoveryTimeInSeconds", "Target recovery time in sec."}
 				    }
 				  )
 				in

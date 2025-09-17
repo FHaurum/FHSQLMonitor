@@ -1,0 +1,325 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "name": "cc3e0eca6506ed090d43",
+  "position": {
+    "x": 10,
+    "y": 80,
+    "z": 1000,
+    "height": 940,
+    "width": 1730,
+    "tabOrder": 1000
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Index physical"
+                    }
+                  },
+                  "Property": "Mode"
+                }
+              },
+              "queryRef": "Index physical.Mode",
+              "nativeQueryRef": "Mode"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Index alloc type"
+                    }
+                  },
+                  "Property": "Alloc. unit type"
+                }
+              },
+              "queryRef": "Index alloc type.IndexAllocType",
+              "nativeQueryRef": "Alloc. type",
+              "displayName": "Alloc. type"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Index physical"
+                    }
+                  },
+                  "Property": "Index depth"
+                }
+              },
+              "queryRef": "Index physical.Index depth",
+              "nativeQueryRef": "Depth",
+              "displayName": "Depth"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Index physical"
+                    }
+                  },
+                  "Property": "Index level"
+                }
+              },
+              "queryRef": "Index physical.Index level",
+              "nativeQueryRef": "Level",
+              "displayName": "Level"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Avg. fragmentation in percent - Index physical"
+                }
+              },
+              "queryRef": "_Measures.Avg. fragmentation in percent - Index physical",
+              "nativeQueryRef": "Avg. frag. %",
+              "displayName": "Avg. frag. %"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Fragment count - Index physical"
+                }
+              },
+              "queryRef": "_Measures.Fragment count - Index physical",
+              "nativeQueryRef": "Frag. count",
+              "displayName": "Frag. count"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Page count - Index physical"
+                }
+              },
+              "queryRef": "_Measures.Page count - Index physical",
+              "nativeQueryRef": "Page count",
+              "displayName": "Page count"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Index physical"
+                    }
+                  },
+                  "Property": "PartitionNumber"
+                }
+              },
+              "queryRef": "Index physical.PartitionNumber",
+              "nativeQueryRef": "Partition",
+              "displayName": "Partition"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Index alloc type"
+                    }
+                  },
+                  "Property": "Index type"
+                }
+              },
+              "queryRef": "Index alloc type.Index type",
+              "nativeQueryRef": "Index type"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Index alloc type"
+                    }
+                  },
+                  "Property": "Database"
+                }
+              },
+              "queryRef": "Index alloc type.Database",
+              "nativeQueryRef": "Database"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Index alloc type"
+                    }
+                  },
+                  "Property": "Schema"
+                }
+              },
+              "queryRef": "Index alloc type.Schema",
+              "nativeQueryRef": "Schema"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Index alloc type"
+                    }
+                  },
+                  "Property": "Object"
+                }
+              },
+              "queryRef": "Index alloc type.Object",
+              "nativeQueryRef": "Object"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Index alloc type"
+                    }
+                  },
+                  "Property": "Index"
+                }
+              },
+              "queryRef": "Index alloc type.Index",
+              "nativeQueryRef": "Index"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "_Measures"
+                  }
+                },
+                "Property": "Avg. fragmentation in percent - Index physical"
+              }
+            },
+            "direction": "Descending"
+          }
+        ]
+      }
+    },
+    "objects": {
+      "total": [
+        {
+          "properties": {
+            "totals": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Title - Index physical"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "50de4667b7e872dabde9",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "_Measures"
+              }
+            },
+            "Property": "VLF - Index physical"
+          }
+        },
+        "type": "Advanced",
+        "filter": {
+          "Version": 2,
+          "From": [
+            {
+              "Name": "_",
+              "Entity": "_Measures",
+              "Type": 0
+            }
+          ],
+          "Where": [
+            {
+              "Condition": {
+                "Comparison": {
+                  "ComparisonKind": 0,
+                  "Left": {
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Source": "_"
+                        }
+                      },
+                      "Property": "VLF - Index physical"
+                    }
+                  },
+                  "Right": {
+                    "Literal": {
+                      "Value": "1L"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "howCreated": "User"
+      }
+    ]
+  }
+}

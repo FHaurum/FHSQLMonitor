@@ -1,67 +1,67 @@
 table 'Resource governor resource pools'
 	lineageTag: d6453e72-11dc-45c6-a987-88961d8af30e
 
-	column PoolName
+	column 'Pool name'
 		dataType: string
 		lineageTag: feed7dbe-94b4-4c7d-aa3d-2030cc9b5c50
 		summarizeBy: none
-		sourceColumn: PoolName
+		sourceColumn: Pool name
 
 		annotation SummarizationSetBy = Automatic
 
-	column MinCPUpercent
+	column 'Min. CPU %'
 		dataType: string
 		lineageTag: 08591a13-0fef-4f51-8403-7f32b4344de3
 		summarizeBy: none
-		sourceColumn: MinCPUpercent
+		sourceColumn: Min. CPU %
 
 		annotation SummarizationSetBy = Automatic
 
-	column MaxCPUpercent
+	column 'Max. CPU %'
 		dataType: string
 		lineageTag: 6a01fb7a-6788-4600-a833-7a534b970c2d
 		summarizeBy: none
-		sourceColumn: MaxCPUpercent
+		sourceColumn: Max. CPU %
 
 		annotation SummarizationSetBy = Automatic
 
-	column MinMemoryPercent
+	column 'Min. memory %'
 		dataType: string
 		lineageTag: f1440126-90e0-4a4e-903d-9a6d9beb8af9
 		summarizeBy: none
-		sourceColumn: MinMemoryPercent
+		sourceColumn: Min. memory %
 
 		annotation SummarizationSetBy = Automatic
 
-	column MaxMemoryPercent
+	column 'Max. memory %'
 		dataType: string
 		lineageTag: d905da75-558d-4174-b8e1-4884d3ebae32
 		summarizeBy: none
-		sourceColumn: MaxMemoryPercent
+		sourceColumn: Max. memory %
 
 		annotation SummarizationSetBy = Automatic
 
-	column CapCPUpercent
+	column 'Cap CPU %'
 		dataType: string
 		lineageTag: 598007b3-82ad-4f05-bb5f-7be58b80614f
 		summarizeBy: none
-		sourceColumn: CapCPUpercent
+		sourceColumn: Cap CPU %
 
 		annotation SummarizationSetBy = Automatic
 
-	column MinIOPSperVolume
+	column 'Min. IOPS per volume'
 		dataType: string
 		lineageTag: 1dfcc463-6dd1-4799-84c6-760bc96054be
 		summarizeBy: none
-		sourceColumn: MinIOPSperVolume
+		sourceColumn: Min. IOPS per volume
 
 		annotation SummarizationSetBy = Automatic
 
-	column MaxIOPSperVolume
+	column 'Max. IOPS per volume'
 		dataType: string
 		lineageTag: f404caad-54cd-45d9-a6e8-951e786ea447
 		summarizeBy: none
-		sourceColumn: MaxIOPSperVolume
+		sourceColumn: Max. IOPS per volume
 
 		annotation SummarizationSetBy = Automatic
 
@@ -91,9 +91,22 @@ table 'Resource governor resource pools'
 				  db     = dbList{[Name = #"Database name"]}[Data], 
 				  table  = db{[Schema = #"Schema name", Item = "Resource governor resource pools"]}[Data], 
 				  emptyDataset = Table.FirstN(table, 0), 
-				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset,
+				  renameColumns = Table.RenameColumns(
+				    datasetToUse, 
+				    {
+				      {"CapCPUpercent", "Cap CPU %"}, 
+				      {"MaxCPUpercent", "Max. CPU %"}, 
+				      {"MaxIOPSperVolume", "Max. IOPS per volume"}, 
+				      {"MaxMemoryPercent", "Max. memory %"}, 
+				      {"MinCPUpercent", "Min. CPU %"}, 
+				      {"MinIOPSperVolume", "Min. IOPS per volume"}, 
+				      {"MinMemoryPercent", "Min. memory %"}, 
+				      {"PoolName", "Pool name"}
+				    }
+				  )
 				in
-				  datasetToUse
+				  renameColumns
 				```
 
 	annotation PBI_NavigationStepName = Navigation

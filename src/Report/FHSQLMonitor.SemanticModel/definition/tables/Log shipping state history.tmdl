@@ -1,0 +1,114 @@
+table 'Log shipping state history'
+	lineageTag: 24abccba-e68d-4f00-bc22-389302e690a2
+
+	column Type
+		dataType: string
+		lineageTag: a43df9dd-598d-4455-8d8e-aa9208100ba4
+		summarizeBy: none
+		sourceColumn: Type
+
+		annotation SummarizationSetBy = Automatic
+
+	column Key
+		dataType: string
+		lineageTag: 1d6b69a6-5bb4-4141-8011-c8ec98a15802
+		summarizeBy: none
+		sourceColumn: Key
+
+		annotation SummarizationSetBy = Automatic
+
+	column From
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: 2ecf6a83-8931-46b2-8bd0-74374c6f6b1d
+		summarizeBy: none
+		sourceColumn: From
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	column To
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: 51c77d7e-3c9a-4fe7-ae9a-8a63f3a678e8
+		summarizeBy: none
+		sourceColumn: To
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	column Value
+		dataType: string
+		lineageTag: 32f88f0f-e144-4f6e-827e-136b20ac14f0
+		summarizeBy: none
+		sourceColumn: Value
+
+		annotation SummarizationSetBy = Automatic
+
+	column DatabaseKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 441d330e-9d60-4781-b0f6-d10e4364ddb9
+		summarizeBy: none
+		sourceColumn: DatabaseKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column ServerKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 5bb2fc00-7a21-408e-8084-7c10220a03e6
+		summarizeBy: none
+		sourceColumn: ServerKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Log shipping state history' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Log shipping")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db     = dbList{[Name = #"Database name"]}[Data], 
+				  table  = db{[Schema = #"Schema name", Item = "Log shipping state history"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  selectColumns = Table.SelectColumns(
+				    datasetToUse, 
+				    {
+				      "Type", 
+				      "Key", 
+				      "ValidFrom", 
+				      "ValidTo", 
+				      "Value", 
+				      "DatabaseKey", 
+				      "ServerKey"
+				    }
+				  ), 
+				  renameColumns = Table.RenameColumns(
+				    selectColumns, 
+				    {
+				      {"ValidFrom", "From"}, 
+				      {"ValidTo", "To"}
+				    }
+				  )
+				in
+				  renameColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

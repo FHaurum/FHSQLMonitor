@@ -1,0 +1,164 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "name": "dc8313240e3ac8d16d86",
+  "position": {
+    "x": 10,
+    "y": 80,
+    "z": 6000,
+    "height": 212,
+    "width": 1900,
+    "tabOrder": 4000
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Resource governor configuration"
+                    }
+                  },
+                  "Property": "Is enabled"
+                }
+              },
+              "queryRef": "Resource governor configuration.IsEnabled",
+              "nativeQueryRef": "IsEnabled"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Resource governor configuration"
+                    }
+                  },
+                  "Property": "Max outstanding IO per volume"
+                }
+              },
+              "queryRef": "Resource governor configuration.MaxOutstandingIOperVolume",
+              "nativeQueryRef": "Max outstanding IO per volume"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Resource governor configuration"
+                    }
+                  },
+                  "Property": "Classifier function"
+                }
+              },
+              "queryRef": "Resource governor configuration.ClassifierFunction",
+              "nativeQueryRef": "Classifier function"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Resource governor configuration"
+                    }
+                  },
+                  "Property": "Classifier function definition"
+                }
+              },
+              "queryRef": "Resource governor configuration.ClassifierFunctionDefinition",
+              "nativeQueryRef": "Classifier function definition"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Resource governor configuration"
+                    }
+                  },
+                  "Property": "Timestamp"
+                }
+              },
+              "queryRef": "Resource governor configuration.Timestamp",
+              "nativeQueryRef": "Timestamp"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Resource governor configuration"
+                  }
+                },
+                "Property": "Classifier function"
+              }
+            },
+            "direction": "Ascending"
+          }
+        ]
+      }
+    },
+    "objects": {
+      "total": [
+        {
+          "properties": {
+            "totals": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "columnWidth": [
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "793.96776777693D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Resource governor configuration.ClassifierFunctionDefinition"
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Classifier definitions'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

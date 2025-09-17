@@ -247,10 +247,6 @@ relationship 2a9d294e-569d-b38e-f636-93a4167d0e51
 	fromColumn: 'Index configuration'.IndexKey
 	toColumn: Index.IndexKey
 
-relationship 68a508c1-c8c4-8da1-cd8d-e6e1a7cb3a9c
-	fromColumn: 'Index configuration'.TableIsHeap
-	toColumn: 'Table type'.TableIsHeap
-
 relationship 339cdc59-9483-4d4e-7b44-1a91f282974e
 	isActive: false
 	fromColumn: 'Table size'.IndexKey
@@ -401,4 +397,215 @@ relationship 5fe73e18-6c38-b7ae-343b-664ac2d728c8
 relationship 0d764450-3dcd-b1e0-cfee-dba9f2cb4dbc
 	fromColumn: 'Always On replicas'.AlwaysOnGroupReplicaKey
 	toColumn: 'Always On group-replica'.AlwaysOnGroupReplicaKey
+
+relationship 31656dfd-16cc-aadc-dceb-eead15e61279
+	fromColumn: 'Index configuration'.TableIsHeap
+	toColumn: 'Table type'.TableIsHeap
+
+relationship f7910ddc-c412-ef93-83fb-d630e95d0e2f
+	fromColumn: 'Error logs'.Date
+	toColumn: Date.Date
+
+relationship cd1467a7-aeab-50ab-5a9a-47172b3727e6
+	fromColumn: 'Instance dump files'.Date
+	toColumn: Date.Date
+
+relationship b1bf4dce-2d99-d47c-7a71-216bf7ea00e3
+	fromColumn: 'Instance suspect pages'.Date
+	toColumn: Date.Date
+
+relationship 409673a5-6e42-6d22-9c85-6fcfe5045d74
+	crossFilteringBehavior: bothDirections
+	fromCardinality: one
+	fromColumn: Index.IndexKey
+	toColumn: 'Index not used'.IndexKey
+
+relationship f9ce0a22-d6d5-ec6f-f47c-f4d0396e7b7a
+	isActive: false
+	fromColumn: 'Table size'.IndexKey
+	toColumn: 'Index not used'.IndexKey
+
+relationship da45f51d-81ae-7db2-cfc7-59b7994edd9d
+	fromColumn: 'Index usage'.ObjectKey
+	toColumn: Object.ObjectKey
+
+relationship 78c64dd4-459e-b887-5cfe-2c9a3e1c1bc5
+	fromColumn: 'Log shipping monitor primary database state'.DatabaseKey
+	toColumn: Database.DatabaseKey
+
+relationship 6f914215-d4be-e285-3ebe-71ba0dfda058
+	fromColumn: 'Log shipping monitor secondary database state'.DatabaseKey
+	toColumn: Database.DatabaseKey
+
+relationship 104051c0-0f3f-2437-d675-2b534c61ecf0
+	fromColumn: 'Log shipping primary database state'.DatabaseKey
+	toColumn: Database.DatabaseKey
+
+relationship c85f3115-03a9-b7a6-3058-f944fd440b42
+	fromColumn: 'Log shipping primary secondary database state'.DatabaseKey
+	toColumn: Database.DatabaseKey
+
+relationship fb0557e7-ae04-5ddd-d884-8936e134dba1
+	fromColumn: 'Log shipping secondary database state'.DatabaseKey
+	toColumn: Database.DatabaseKey
+
+relationship 9abba87b-5b1f-d2f6-754f-6fcf6784d2d0
+	fromColumn: 'Log shipping secondary primary database state'.DatabaseKey
+	toColumn: Database.DatabaseKey
+
+relationship 1020bfe2-69e7-8895-725d-08781e897624
+	fromColumn: 'Log shipping monitor primaries'.DatabaseKey
+	toColumn: Database.DatabaseKey
+
+relationship 4e347972-f4ab-e8b3-f027-0ea9e821e114
+	fromColumn: 'Log shipping monitor primaries'.Date
+	toColumn: Date.Date
+
+relationship 7761208b-30c4-7eee-f461-f3d2fef40b38
+	fromColumn: 'Log shipping monitor primaries'.TimeKey
+	toColumn: Time.TimeKey
+
+relationship 75785e28-ac05-ae96-c70b-3e44c75958f3
+	fromColumn: 'Log shipping monitor secondary copies'.DatabaseKey
+	toColumn: Database.DatabaseKey
+
+relationship 92d3e210-135d-3a72-14c1-e40dcdfdeb9c
+	fromColumn: 'Log shipping monitor secondary copies'.Date
+	toColumn: Date.Date
+
+relationship 776ab941-f7bc-795f-186d-7df7c618a1c4
+	fromColumn: 'Log shipping monitor secondary copies'.TimeKey
+	toColumn: Time.TimeKey
+
+relationship c49fa530-95b0-a615-24d5-b6d2c4b36cbf
+	fromColumn: 'Log shipping monitor secondary restores'.Date
+	toColumn: Date.Date
+
+relationship a834d16f-a003-4dda-875d-0f0cce07fe69
+	fromColumn: 'Log shipping monitor secondary restores'.TimeKey
+	toColumn: Time.TimeKey
+
+relationship ecdb3582-59c0-cd86-53c2-584c63bca1df
+	fromColumn: 'Log shipping monitor secondary restores'.DatabaseKey
+	toColumn: Database.DatabaseKey
+
+relationship f6df2ce6-7035-23a4-77e0-d4cbbc0ea87b
+	fromColumn: 'Log shipping primary databases'.Date
+	toColumn: Date.Date
+
+relationship af947b36-0280-ef63-58e0-e63ae5ae4d95
+	fromColumn: 'Log shipping primary databases'.TimeKey
+	toColumn: Time.TimeKey
+
+relationship 23dcd3b5-fb0a-cb27-fe4c-30d7cd0c7b66
+	fromColumn: 'Log shipping primary databases'.DatabaseKey
+	toColumn: Database.DatabaseKey
+
+relationship d456d6ae-da87-38a4-f173-40080a77c2b5
+	fromColumn: 'Log shipping secondaries'.Date
+	toColumn: Date.Date
+
+relationship 5f6c9f6d-6565-4175-bd15-36d5ffa5a4b8
+	fromColumn: 'Log shipping secondaries'.TimeKey
+	toColumn: Time.TimeKey
+
+relationship 3f2b540a-6996-f71f-a96b-16715ad78861
+	fromColumn: 'Log shipping secondaries'.DatabaseKey
+	toColumn: Database.DatabaseKey
+
+relationship c0cbdc67-02d7-c8f5-c9e7-d2bb99a65b3f
+	fromColumn: 'Log shipping secondary databases'.Date
+	toColumn: Date.Date
+
+relationship 3816b5fe-a628-9044-a011-6aade10d804e
+	fromColumn: 'Log shipping secondary databases'.TimeKey
+	toColumn: Time.TimeKey
+
+relationship e9502d89-337d-6e4d-1417-2bd0e206d7a0
+	fromColumn: 'Log shipping secondary databases'.DatabaseKey
+	toColumn: Database.DatabaseKey
+
+relationship c6368d86-d946-ad72-8dc7-4c446c7e9ef2
+	fromColumn: 'Log shipping monitor error details'.Date
+	toColumn: Date.Date
+
+relationship 96607ed4-9a49-7d46-671f-194227cc3a2a
+	fromColumn: 'Log shipping monitor history details'.Date
+	toColumn: Date.Date
+
+relationship b624777b-9de0-6224-0c06-bed57ed42de6
+	fromColumn: 'Log shipping monitor error details'.TimeKey
+	toColumn: Time.TimeKey
+
+relationship 68e8c79f-2b14-440f-f8b1-8937d5c1bcaf
+	fromColumn: 'Log shipping monitor history details'.TimeKey
+	toColumn: Time.TimeKey
+
+relationship 101e16ba-c628-c5d5-9f68-3f7dcf9e689b
+	fromColumn: 'Log shipping monitor error details'.DatabaseKey
+	toColumn: Database.DatabaseKey
+
+relationship 05b1ba3c-cd65-b99e-0026-26300c9598a7
+	fromColumn: 'Log shipping monitor history details'.DatabaseKey
+	toColumn: Database.DatabaseKey
+
+relationship 8126b081-4e02-8a95-a208-808f59f4ec81
+	fromColumn: 'Log shipping monitor primaries'.ServerKey
+	toColumn: Server.ServerKey
+
+relationship 7461ade9-1625-477d-d624-64a9affc9fad
+	fromColumn: 'Log shipping monitor secondary copies'.ServerKey
+	toColumn: Server.ServerKey
+
+relationship baa1c7c0-a6a8-aa12-ec3e-3b7608b8a546
+	fromColumn: 'Log shipping monitor secondary restores'.ServerKey
+	toColumn: Server.ServerKey
+
+relationship 208cf2e0-fd42-868b-2e52-adde4b862a89
+	fromColumn: 'Log shipping secondaries'.ServerKey
+	toColumn: Server.ServerKey
+
+relationship 6d8fc9bb-cac4-4fc3-ff52-e855c292e174
+	fromColumn: 'Log shipping monitor primary database state'.ServerKey
+	toColumn: Server.ServerKey
+
+relationship 84f3fd3c-4387-a459-c4a8-6801078cf144
+	fromColumn: 'Log shipping monitor secondary database state'.ServerKey
+	toColumn: Server.ServerKey
+
+relationship c89d2521-412f-003f-b99e-4410801924db
+	fromColumn: 'Log shipping secondary primary database state'.ServerKey
+	toColumn: Server.ServerKey
+
+relationship 1e0dc305-a141-de1c-f4b2-c362929393cf
+	fromColumn: 'Log shipping primary secondary database state'.ServerKey
+	toColumn: Server.ServerKey
+
+relationship a4dfdfeb-deb0-1418-e808-022bbe8ab774
+	fromColumn: 'Log shipping state history'.DatabaseKey
+	toColumn: Database.DatabaseKey
+
+relationship bd184a30-8a46-7c66-c43c-429d7dbf4b5a
+	fromColumn: 'Log shipping state history'.ServerKey
+	toColumn: Server.ServerKey
+
+relationship c7a53da3-dea7-b895-fddd-693b8e4a4fee
+	fromColumn: 'Always On synchronization lag'.DatabaseKey
+	toColumn: Database.DatabaseKey
+
+relationship 32bc3e80-8487-9137-5105-bf31876632ef
+	fromColumn: 'Always On synchronization lag'.TimeKey
+	toColumn: Time.TimeKey
+
+relationship 61f84589-cddc-9548-1e04-f1cbdc5974c4
+	fromColumn: 'Always On synchronization lag'.Date
+	toColumn: Date.Date
+
+relationship 800f0f08-dfba-7a91-e076-33247f709af5
+	fromColumn: 'VLF size'.Date
+	toColumn: Date.Date
+
+relationship 44da3ad5-4834-4ccf-04de-c16bb7f4cffc
+	fromColumn: 'VLF size'.DatabaseFileKey
+	toColumn: 'Database file'.DatabaseFileKey
 

@@ -1,0 +1,253 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/bookmarksMetadata/1.0.0/schema.json",
+  "items": [
+    {
+      "name": "6624140b42a70e02ba0b",
+      "displayName": "Agent jobs performance",
+      "children": [
+        "8d0535f0c803eb7b2a39",
+        "e0ca07801a999e49306c"
+      ]
+    },
+    {
+      "name": "54061e4a8f40b56bc171",
+      "displayName": "Always On configuration",
+      "children": [
+        "875b5d69e7476d1e27da",
+        "e44a615a6a632e9a6d4f"
+      ]
+    },
+    {
+      "name": "47d4b2ace288e89c6a2a",
+      "displayName": "Always On traffic",
+      "children": [
+        "3f62f492447b596a2d2f",
+        "543ae3f5177ce21d3dfb"
+      ]
+    },
+    {
+      "name": "ce956200d4514408a7d0",
+      "displayName": "Backup status",
+      "children": [
+        "2c42bab05d1429e38eb0",
+        "3cea7f9363b21a4ec71b"
+      ]
+    },
+    {
+      "name": "1488511406e310854a02",
+      "displayName": "Blocks and deadlocks",
+      "children": [
+        "8cfb515400030e1658ea",
+        "2c7a2b2560102cb8d1d0"
+      ]
+    },
+    {
+      "name": "1b200cf7a3f2097187f6",
+      "displayName": "Connections",
+      "children": [
+        "3b2d95eed0685fe467d6",
+        "878ea6e1fe1ac12f25c5"
+      ]
+    },
+    {
+      "name": "680d2b6b8c18e7164f3f",
+      "displayName": "CPU",
+      "children": [
+        "8768c0ebf7bac3491c7f",
+        "0b43a165fbe3cee5eab4"
+      ]
+    },
+    {
+      "name": "fb181c66b732d10c9057",
+      "displayName": "Database configuration",
+      "children": [
+        "864eb7c85d85100c4e3b",
+        "0975a692dececb162e3a"
+      ]
+    },
+    {
+      "name": "03033078472d9f1e9c1a",
+      "displayName": "Database IO",
+      "children": [
+        "5422b859b4cb3567b776",
+        "1b4b58969ea71005972b"
+      ]
+    },
+    {
+      "name": "1a43906ae7ea2825188e",
+      "displayName": "Database size",
+      "children": [
+        "f84fd06d60220e6bd599",
+        "7f60af701e2b5545b7c2"
+      ]
+    },
+    {
+      "name": "ef4a91efaeabc6a01e0b",
+      "displayName": "Index configuration",
+      "children": [
+        "c21b667220744313a2c1",
+        "7dd70c300e81cddbc462"
+      ]
+    },
+    {
+      "name": "c7d64510d782974b5a48",
+      "displayName": "Index leaf statistics",
+      "children": [
+        "cdfd8e6d575e0d70e129",
+        "fd2199402089c7bad36d"
+      ]
+    },
+    {
+      "name": "39271aa54d6c883f894f",
+      "displayName": "Index optimize",
+      "children": [
+        "d1312105741e1d6ce702",
+        "62a36104ff0f9de5496e"
+      ]
+    },
+    {
+      "name": "29d6b9da65de053897b4",
+      "displayName": "Index physical",
+      "children": [
+        "39a619637ae4a102e10a",
+        "ed7609f49a88387d978d"
+      ]
+    },
+    {
+      "name": "25f3a2afb3df02cdf75c",
+      "displayName": "Index usage",
+      "children": [
+        "83412d4a585a9b59f8e9",
+        "6ae9f050909181290faf"
+      ]
+    },
+    {
+      "name": "b08e5209409c9a5093cc",
+      "displayName": "Instance status",
+      "children": [
+        "0e4d30e00aa2a010bbe5",
+        "51305957e08e43eb0b2e"
+      ]
+    },
+    {
+      "name": "fb7ec9e9827597988b19",
+      "displayName": "Lock statistics",
+      "children": [
+        "79ae90db18a8f8dd892e",
+        "27450c2f4a3fe7a751c2"
+      ]
+    },
+    {
+      "name": "2ad5c7836c83636b08b5",
+      "displayName": "Log shipping configuration",
+      "children": [
+        "240c28d30e2c71ee2b0e",
+        "984d790bcc6e604546c0"
+      ]
+    },
+    {
+      "name": "5c6e8aee260200c03067",
+      "displayName": "Missing indexes",
+      "children": [
+        "a9744d7c12689a88bb03",
+        "42cf72b8918e9349b018"
+      ]
+    },
+    {
+      "name": "5ae83bb4d43577aecfbb",
+      "displayName": "Monitor status",
+      "children": [
+        "3cb6378751b0eb7b3265",
+        "2227ec7c28272f18d368"
+      ]
+    },
+    {
+      "name": "8b82d5b04408ce1730e0",
+      "displayName": "OH errors",
+      "children": [
+        "c2dcf591d045c19db6aa",
+        "f0a77a9fbcce820d3a48"
+      ]
+    },
+    {
+      "name": "d059221062ec1a441d28",
+      "displayName": "Partitioned indexes",
+      "children": [
+        "b5d2bd332794873f7dea",
+        "f0b383ea78f4711c1305"
+      ]
+    },
+    {
+      "name": "0f854c2a4f2376d0c1da",
+      "displayName": "Performance statistics",
+      "children": [
+        "58373b6df5431326ad11",
+        "7608d9159e609f270ff1"
+      ]
+    },
+    {
+      "name": "72e3f2420c47c3219a37",
+      "displayName": "Plan cache usage",
+      "children": [
+        "4b40cd90e0d7d90a1138",
+        "5346fdc7b018c886b57c"
+      ]
+    },
+    {
+      "name": "4b63660b416deaa37fed",
+      "displayName": "Plan guides",
+      "children": [
+        "48bf76aa63d9d8f7d2ac",
+        "1bdfb6440e6d4f6b04fd"
+      ]
+    },
+    {
+      "name": "e9ced7dbf5c92da66562",
+      "displayName": "Query statistics",
+      "children": [
+        "0444ad709ebfeb434ae2",
+        "999043f4a3d298a26d22"
+      ]
+    },
+    {
+      "name": "fedee9b3b530f69f000d",
+      "displayName": "Resource Governor",
+      "children": [
+        "bc53cf0954117c2effa6",
+        "08c62ae23621cd44dfe4"
+      ]
+    },
+    {
+      "name": "9f19fb8856e73fe36856",
+      "displayName": "Statistics",
+      "children": [
+        "c6b19aedb97b0a326da9",
+        "19f22bbbb8d51b8f2796"
+      ]
+    },
+    {
+      "name": "d1cd6c33bcef96a15ff3",
+      "displayName": "Table size",
+      "children": [
+        "79831c413630525d8ae5",
+        "435e34837b479d4500a5"
+      ]
+    },
+    {
+      "name": "9d63946d215d8286772a",
+      "displayName": "Triggers",
+      "children": [
+        "3032e1a772f24f82e4a9",
+        "8991cac89a0fa35cd4d6"
+      ]
+    },
+    {
+      "name": "11b0751ca0203bace0e6",
+      "displayName": "Wait statistics",
+      "children": [
+        "6d0d3d010a723568777b",
+        "83734444193d3a080083"
+      ]
+    }
+  ]
+}

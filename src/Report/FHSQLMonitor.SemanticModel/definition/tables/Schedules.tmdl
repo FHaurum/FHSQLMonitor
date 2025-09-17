@@ -1,15 +1,6 @@
 table Schedules
 	lineageTag: 2de1f86e-599c-4505-9f28-a284fcc8a1ae
 
-	column Enabled
-		dataType: boolean
-		formatString: """TRUE"";""TRUE"";""FALSE"""
-		lineageTag: 6229c590-9c40-4c9e-ae91-555f2050e61b
-		summarizeBy: none
-		sourceColumn: Enabled
-
-		annotation SummarizationSetBy = Automatic
-
 	column Name
 		dataType: string
 		lineageTag: 88603033-e792-4788-b5a0-2ac236bb00aa
@@ -25,126 +16,6 @@ table Schedules
 		sourceColumn: Task
 
 		annotation SummarizationSetBy = Automatic
-
-	column 'Execution delay in sec.'
-		dataType: int64
-		formatString: 0
-		lineageTag: 7ab4110a-db3d-4d9f-acc9-412a2031ee30
-		summarizeBy: none
-		sourceColumn: Execution delay in sec.
-
-		annotation SummarizationSetBy = User
-
-	column 'From time'
-		dataType: dateTime
-		formatString: hh:nn:ss
-		lineageTag: 60684e16-f823-43a0-8fdf-894a0d1ab081
-		summarizeBy: none
-		sourceColumn: From time
-
-		annotation SummarizationSetBy = Automatic
-
-		annotation UnderlyingDateTimeDataType = Time
-
-		annotation PBI_FormatHint = {"isCustom":true}
-
-	column 'To time'
-		dataType: dateTime
-		formatString: hh:nn:ss
-		lineageTag: d3d07880-5ca5-4a05-9f86-15a3b70379e8
-		summarizeBy: none
-		sourceColumn: To time
-
-		annotation SummarizationSetBy = Automatic
-
-		annotation UnderlyingDateTimeDataType = Time
-
-		annotation PBI_FormatHint = {"isCustom":true}
-
-	column Monday
-		dataType: boolean
-		formatString: """TRUE"";""TRUE"";""FALSE"""
-		lineageTag: 127464f6-8e02-46a9-b13b-11863100a4af
-		summarizeBy: none
-		sourceColumn: Monday
-
-		annotation SummarizationSetBy = Automatic
-
-	column Tuesday
-		dataType: boolean
-		formatString: """TRUE"";""TRUE"";""FALSE"""
-		lineageTag: 1b42a8a8-7403-4324-a3ab-1e735038de30
-		summarizeBy: none
-		sourceColumn: Tuesday
-
-		annotation SummarizationSetBy = Automatic
-
-	column Wednesday
-		dataType: boolean
-		formatString: """TRUE"";""TRUE"";""FALSE"""
-		lineageTag: 0aafe7da-571c-43eb-ab29-3ba0b443ee1e
-		summarizeBy: none
-		sourceColumn: Wednesday
-
-		annotation SummarizationSetBy = Automatic
-
-	column Thursday
-		dataType: boolean
-		formatString: """TRUE"";""TRUE"";""FALSE"""
-		lineageTag: b12da94d-94d2-49ba-909d-d9b567e8aed0
-		summarizeBy: none
-		sourceColumn: Thursday
-
-		annotation SummarizationSetBy = Automatic
-
-	column Friday
-		dataType: boolean
-		formatString: """TRUE"";""TRUE"";""FALSE"""
-		lineageTag: 679bcb2c-c93b-4395-99ee-4d5bafe2e2e7
-		summarizeBy: none
-		sourceColumn: Friday
-
-		annotation SummarizationSetBy = Automatic
-
-	column Saturday
-		dataType: boolean
-		formatString: """TRUE"";""TRUE"";""FALSE"""
-		lineageTag: 7c9433af-b21f-4f74-8cc0-a297f36d714b
-		summarizeBy: none
-		sourceColumn: Saturday
-
-		annotation SummarizationSetBy = Automatic
-
-	column Sunday
-		dataType: boolean
-		formatString: """TRUE"";""TRUE"";""FALSE"""
-		lineageTag: 9f2c6e25-2f63-4d13-aee7-f10d290bea82
-		summarizeBy: none
-		sourceColumn: Sunday
-
-		annotation SummarizationSetBy = Automatic
-
-	column 'Last started UTC'
-		dataType: dateTime
-		formatString: dd-mmm-yyyy hh:nn:ss
-		lineageTag: dea16020-ed97-44e7-8c72-ae32c3cb4b33
-		summarizeBy: none
-		sourceColumn: Last started UTC
-
-		annotation SummarizationSetBy = Automatic
-
-		annotation PBI_FormatHint = {"isCustom":true}
-
-	column 'Last executed UTC'
-		dataType: dateTime
-		formatString: dd-mmm-yyyy hh:nn:ss
-		lineageTag: d3d79f31-f255-4072-a3b4-7e81ffb78bf6
-		summarizeBy: none
-		sourceColumn: Last executed UTC
-
-		annotation SummarizationSetBy = Automatic
-
-		annotation PBI_FormatHint = {"isCustom":true}
 
 	column 'Last error message'
 		dataType: string
@@ -162,6 +33,127 @@ table Schedules
 
 		annotation SummarizationSetBy = Automatic
 
+	column Enabled
+		dataType: string
+		lineageTag: 9e44a175-9f54-4795-a468-7c4e11346fb5
+		summarizeBy: none
+		sourceColumn: Enabled
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'From time'
+		dataType: dateTime
+		formatString: hh:nn:ss
+		lineageTag: e8ab0b48-4eb6-4203-927f-06f2440bad41
+		summarizeBy: none
+		sourceColumn: From time
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Time
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	column 'Last executed UTC'
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: 1af4b59b-c67d-42f9-bbc7-4215507c9e46
+		summarizeBy: none
+		sourceColumn: Last executed UTC
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	column 'Last started UTC'
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: 4a52ce74-2c04-401b-8a05-636fd90174cf
+		summarizeBy: none
+		sourceColumn: Last started UTC
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	column 'To time'
+		dataType: dateTime
+		formatString: hh:nn:ss
+		lineageTag: 2e93c642-2787-4328-8e57-c1af41e1083b
+		summarizeBy: none
+		sourceColumn: To time
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Time
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	column Monday
+		dataType: string
+		lineageTag: 1b31c39e-1fef-45f5-867c-d2a83578c5cc
+		summarizeBy: none
+		sourceColumn: Monday
+
+		annotation SummarizationSetBy = Automatic
+
+	column Tuesday
+		dataType: string
+		lineageTag: 80504f3c-2819-47af-82e5-39876aeb2822
+		summarizeBy: none
+		sourceColumn: Tuesday
+
+		annotation SummarizationSetBy = Automatic
+
+	column Wednesday
+		dataType: string
+		lineageTag: 0b7a1c94-389d-4d59-a534-d74eea60c3e8
+		summarizeBy: none
+		sourceColumn: Wednesday
+
+		annotation SummarizationSetBy = Automatic
+
+	column Thursday
+		dataType: string
+		lineageTag: 92d501bb-a4fb-47f5-b5c4-3bdeb81deecb
+		summarizeBy: none
+		sourceColumn: Thursday
+
+		annotation SummarizationSetBy = Automatic
+
+	column Friday
+		dataType: string
+		lineageTag: 20b4343f-058b-42f4-9e66-4a8ceab35d6d
+		summarizeBy: none
+		sourceColumn: Friday
+
+		annotation SummarizationSetBy = Automatic
+
+	column Saturday
+		dataType: string
+		lineageTag: ea9cefd0-d56a-4a8a-af33-e2d484eef453
+		summarizeBy: none
+		sourceColumn: Saturday
+
+		annotation SummarizationSetBy = Automatic
+
+	column Sunday
+		dataType: string
+		lineageTag: a33e18da-e586-4150-8248-b4121682b48e
+		summarizeBy: none
+		sourceColumn: Sunday
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Execution delay in sec.'
+		dataType: int64
+		formatString: 0
+		lineageTag: c1e36f43-5d9a-4fe8-bda4-196fa69ee878
+		summarizeBy: none
+		sourceColumn: Execution delay in sec.
+
+		annotation SummarizationSetBy = User
+
 	partition Schedules = m
 		mode: import
 		queryGroup: Framework
@@ -170,10 +162,45 @@ table Schedules
 				  dbList = Sql.Databases(#"Server name"), 
 				  db     = dbList{[Name = #"Database name"]}[Data], 
 				  table  = db{[Schema = #"Schema name", Item = "Schedules"]}[Data], 
-				  renameColumns = Table.RenameColumns(
-				    table, 
+				  selectColumns = Table.SelectColumns(
+				    table,
 				    {
-				      {"LastErrorMessage", "Last error message"}
+				      "EnabledTxt", 
+				      "ExecutionDelaySec", 
+				      "FromTime", 
+				      "LastErrorMessage", 
+				      "LastExecutedUTC", 
+				      "LastStartedUTC", 
+				      "Name", 
+				      "Parameter", 
+				      "Task", 
+				      "ToTime", 
+				      "MondayTxt", 
+				      "TuesdayTxt", 
+				      "WednesdayTxt", 
+				      "ThursdayTxt", 
+				      "FridayTxt", 
+				      "SaturdayTxt", 
+				      "SundayTxt"
+				    }
+				  ), 
+				  renameColumns = Table.RenameColumns(
+				    selectColumns, 
+				    {
+				      {"EnabledTxt", "Enabled"}, 
+				      {"ExecutionDelaySec", "Execution delay in sec."}, 
+				      {"FromTime", "From time"}, 
+				      {"LastErrorMessage", "Last error message"}, 
+				      {"LastExecutedUTC", "Last executed UTC"}, 
+				      {"LastStartedUTC", "Last started UTC"}, 
+				      {"ToTime", "To time"}, 
+				      {"MondayTxt", "Monday"}, 
+				      {"TuesdayTxt", "Tuesday"}, 
+				      {"WednesdayTxt", "Wednesday"}, 
+				      {"ThursdayTxt", "Thursday"}, 
+				      {"FridayTxt", "Friday"}, 
+				      {"SaturdayTxt", "Saturday"}, 
+				      {"SundayTxt", "Sunday"}
 				    }
 				  )
 				in

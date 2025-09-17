@@ -1,0 +1,470 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "name": "c63f001295b897510a80",
+  "position": {
+    "x": 10,
+    "y": 145,
+    "z": 2000,
+    "height": 875,
+    "width": 1900,
+    "tabOrder": 2000
+  },
+  "visual": {
+    "visualType": "pivotTable",
+    "query": {
+      "queryState": {
+        "Rows": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Index"
+                    }
+                  },
+                  "Property": "Database"
+                }
+              },
+              "queryRef": "Index.Database",
+              "nativeQueryRef": "Database1",
+              "active": true
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Index"
+                    }
+                  },
+                  "Property": "Schema"
+                }
+              },
+              "queryRef": "Index.Schema",
+              "nativeQueryRef": "Schema1",
+              "active": true
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Index"
+                    }
+                  },
+                  "Property": "Object"
+                }
+              },
+              "queryRef": "Index.Object",
+              "nativeQueryRef": "Object1",
+              "active": true
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Index"
+                    }
+                  },
+                  "Property": "Index"
+                }
+              },
+              "queryRef": "Index.Index",
+              "nativeQueryRef": "Index",
+              "active": true
+            }
+          ]
+        },
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Index columns - Index configuration"
+                }
+              },
+              "queryRef": "_Measures.Index columns - Index configuration",
+              "nativeQueryRef": "Index columns",
+              "displayName": "Index columns"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Included columns - Index configuration"
+                }
+              },
+              "queryRef": "_Measures.Included columns - Index configuration",
+              "nativeQueryRef": "Included columns",
+              "displayName": "Included columns"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Rows - Index configuration"
+                }
+              },
+              "queryRef": "_Measures.Rows - Index configuration",
+              "nativeQueryRef": "Rows",
+              "displayName": "Rows"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Index ratio of data - Index configuration"
+                }
+              },
+              "queryRef": "_Measures.Index ratio of data - Index configuration",
+              "nativeQueryRef": "Index/Data %",
+              "displayName": "Index/Data %"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Index type description - Index configuration"
+                }
+              },
+              "queryRef": "_Measures.Index type description - Index configuration",
+              "nativeQueryRef": "Type",
+              "displayName": "Type"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Is primary key - Index configuration"
+                }
+              },
+              "queryRef": "_Measures.Is primary key - Index configuration",
+              "nativeQueryRef": "Pri.",
+              "displayName": "Pri."
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Is unique - Index configuration"
+                }
+              },
+              "queryRef": "_Measures.Is unique - Index configuration",
+              "nativeQueryRef": "Unq.",
+              "displayName": "Unq."
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Is disabled - Index configuration"
+                }
+              },
+              "queryRef": "_Measures.Is disabled - Index configuration",
+              "nativeQueryRef": "Dis.",
+              "displayName": "Dis."
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Is hypothetical - Index configuration"
+                }
+              },
+              "queryRef": "_Measures.Is hypothetical - Index configuration",
+              "nativeQueryRef": "Hyp.",
+              "displayName": "Hyp."
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Filter definition - Index configuration"
+                }
+              },
+              "queryRef": "_Measures.Filter definition - Index configuration",
+              "nativeQueryRef": "Filter definition",
+              "displayName": "Filter definition"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "_Measures"
+                  }
+                },
+                "Property": "Rows - Index configuration"
+              }
+            },
+            "direction": "Descending"
+          }
+        ]
+      }
+    },
+    "expansionStates": [
+      {
+        "roles": [
+          "Rows"
+        ],
+        "levels": [
+          {
+            "queryRefs": [
+              "Index.Database"
+            ],
+            "identityKeys": [
+              {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Index"
+                    }
+                  },
+                  "Property": "Database"
+                }
+              }
+            ],
+            "isPinned": true
+          },
+          {
+            "queryRefs": [
+              "Index.Schema"
+            ],
+            "isPinned": true
+          },
+          {
+            "queryRefs": [
+              "Index.Object"
+            ],
+            "isPinned": true
+          },
+          {
+            "queryRefs": [
+              "Index.Index"
+            ],
+            "isCollapsed": true,
+            "isPinned": true
+          }
+        ],
+        "root": {}
+      }
+    ],
+    "objects": {
+      "total": [
+        {
+          "properties": {}
+        }
+      ],
+      "columnWidth": [
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "180.70784746583408D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Index.Index"
+          }
+        },
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "205.46717123636552D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Index.Database"
+          }
+        },
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "387.0473492970104D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "_Measures.Index columns - Index configuration"
+          }
+        },
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "226.50957158931294D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "_Measures.Included columns - Index configuration"
+          }
+        }
+      ],
+      "general": [
+        {
+          "properties": {
+            "layout": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Tabular'"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "rowHeaders": [
+        {
+          "properties": {
+            "repeatRowHeaders": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "subTotals": [
+        {
+          "properties": {
+            "rowSubtotals": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "perRowLevel": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "levelSubtotalEnabled": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Index.Object"
+          }
+        },
+        {
+          "properties": {
+            "levelSubtotalEnabled": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Index.Index"
+          }
+        },
+        {
+          "properties": {
+            "levelSubtotalEnabled": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Index.Schema"
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Index configuration'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

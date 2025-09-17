@@ -66,18 +66,18 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.9.1';
+		SET @version = '2.11.0';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
 		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
-		SET @productVersion1 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+		SET @productVersion1 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartPos));
 		SET @productStartPos = @productEndPos + 1;
 		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
-		SET @productVersion2 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+		SET @productVersion2 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartPos));
 		SET @productStartPos = @productEndPos + 1;
 		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
-		SET @productVersion3 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+		SET @productVersion3 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartPos));
 	END;
 
 	--
@@ -275,25 +275,31 @@ ELSE BEGIN
 						pvt.GroupA														AS AGGroupName
 						,pvt.GroupB														AS AGReplicaName
 						,pvt.GroupC														AS AGDatabaseName
+						,CAST(pvt.is_local AS bit)										AS IsLocal
 						,CASE pvt.is_local
 							WHEN ''0'' THEN ''No''
 							WHEN ''1'' THEN ''Yes''
-						END																AS IsLocal
+							ELSE ''N.A.''
+						END																AS IsLocalTxt
+						,CAST(pvt.is_primary_replica AS bit)							AS IsPrimaryReplica
 						,CASE pvt.is_primary_replica
 							WHEN ''0'' THEN ''No''
 							WHEN ''1'' THEN ''Yes''
-						END																AS IsPrimaryReplica
+							ELSE ''N.A.''
+						END																AS IsPrimaryReplicaTxt
 						,dbo.fhsmFNConvertToDisplayTxt(pvt.synchronization_state_desc)	AS SynchronizationState
+						,CAST(pvt.is_commit_participant AS bit)							AS IsCommitParticipant
 						,CASE pvt.is_commit_participant
 							WHEN ''0'' THEN ''No''
 							WHEN ''1'' THEN ''Yes''
-						END																AS IsCommitParticipant
+						END																AS IsCommitParticipantTxt
 						,dbo.fhsmFNConvertToDisplayTxt(pvt.synchronization_health_desc)	AS SynchronizationHealth
 						,dbo.fhsmFNConvertToDisplayTxt(pvt.database_state_desc)			AS DatabaseState
+						,CAST(pvt.is_suspended AS bit)									AS IsSuspended
 						,CASE pvt.is_suspended
 							WHEN ''0'' THEN ''No''
 							WHEN ''1'' THEN ''Yes''
-						END																AS IsSuspended
+						END																AS IsSuspendedTxt
 						,dbo.fhsmFNConvertToDisplayTxt(pvt.suspend_reason_desc)			AS SuspendReason
 						,(SELECT MIN(aoState.Timestamp) FROM dbo.fhsmAlwaysOnState AS aoState WHERE (aoState.GroupA = pvt.GroupA) AND (aoState.GroupB = pvt.GroupB) AND (aoState.GroupC = pvt.GroupC) AND (aoState.Query = 6) AND (aoState.ValidTo = ''9999-12-31 23:59:59.000'')) AS MinTimestamp
 						,(SELECT MAX(aoState.Timestamp) FROM dbo.fhsmAlwaysOnState AS aoState WHERE (aoState.GroupA = pvt.GroupA) AND (aoState.GroupB = pvt.GroupB) AND (aoState.GroupC = pvt.GroupC) AND (aoState.Query = 6) AND (aoState.ValidTo = ''9999-12-31 23:59:59.000'')) AS MaxTimestamp
@@ -525,29 +531,91 @@ ELSE BEGIN
 						,pvt.collation_name AS CollationName
 						,CAST(pvt.compatibility_level AS int) AS CompatibilityLevel
 						,CASE pvt.delayed_durability
-							WHEN 0 THEN ''DISABLED''
-							WHEN 1 THEN ''ALLOWED''
-							WHEN 2 THEN ''FORCED''
+							WHEN 0 THEN ''Disabled''
+							WHEN 1 THEN ''Allowed''
+							WHEN 2 THEN ''Forced''
 							ELSE ''?:'' + pvt.delayed_durability
 						END AS DelayedDurability
 						,CAST(pvt.is_auto_close_on AS bit) AS IsAutoCloseOn
+						,CASE CAST(pvt.is_auto_close_on AS bit)
+							WHEN 0 THEN ''No''
+							WHEN 1 THEN ''Yes''
+							ELSE ''N.A.''
+						END AS IsAutoCloseOnTxt
 						,CAST(pvt.is_auto_shrink_on AS bit) AS IsAutoShrinkOn
+						,CASE CAST(pvt.is_auto_shrink_on AS bit)
+							WHEN 0 THEN ''No''
+							WHEN 1 THEN ''Yes''
+							ELSE ''N.A.''
+						END AS IsAutoShrinkOnTxt
 						,CAST(pvt.is_auto_update_stats_async_on AS bit) AS IsAutoUpdateStatsAsyncOn
+						,CASE CAST(pvt.is_auto_update_stats_async_on AS bit)
+							WHEN 0 THEN ''No''
+							WHEN 1 THEN ''Yes''
+							ELSE ''N.A.''
+						END AS IsAutoUpdateStatsAsyncOnTxt
 						,CAST(pvt.is_encrypted AS bit) AS IsEncrypted
+						,CASE CAST(pvt.is_encrypted AS bit)
+							WHEN 0 THEN ''No''
+							WHEN 1 THEN ''Yes''
+							ELSE ''N.A.''
+						END AS IsEncryptedTxt
+						,CAST(pvt.is_in_standby AS bit) AS IsInStandby
+						,CASE CAST(pvt.is_in_standby AS bit)
+							WHEN 0 THEN ''No''
+							WHEN 1 THEN ''Yes''
+							ELSE ''N.A.''
+						END AS IsInStandbyTxt
 						,CAST(pvt.is_mixed_page_allocation_on AS bit) AS IsMixedPageAllocationOn
+						,CASE CAST(pvt.is_mixed_page_allocation_on AS bit)
+							WHEN 0 THEN ''No''
+							WHEN 1 THEN ''Yes''
+							ELSE ''N.A.''
+						END AS IsMixedPageAllocationOnTxt
 						,CASE pvt.page_verify_option
-							WHEN 0 THEN ''NONE''
-							WHEN 1 THEN ''TORN_PAGE_DETECTION''
-							WHEN 2 THEN ''CHECKSUM''
+							WHEN 0 THEN ''None''
+							WHEN 1 THEN ''Torn page detection''
+							WHEN 2 THEN ''Checksum''
 							ELSE ''?:'' + pvt.page_verify_option
 						END AS PageVerifyOption
+			';
+			SET @stmt += '
+						,CAST(pvt.is_parameterization_forced AS bit) AS IsParameterizationForced
+						,CASE CAST(pvt.is_parameterization_forced AS bit)
+							WHEN 0 THEN ''No''
+							WHEN 1 THEN ''Yes''
+							ELSE ''N.A.''
+						END AS IsParameterizationForcedTxt
 						,CAST(pvt.is_read_committed_snapshot_on AS bit) AS IsReadCommittedSnapshotOn
+						,CASE CAST(pvt.is_read_committed_snapshot_on AS bit)
+							WHEN 0 THEN ''No''
+							WHEN 1 THEN ''Yes''
+							ELSE ''N.A.''
+						END AS IsReadCommittedSnapshotOnTxt
+						,CAST(pvt.is_read_only AS bit) AS IsReadOnly
+						,CASE CAST(pvt.is_read_only AS bit)
+							WHEN 0 THEN ''No''
+							WHEN 1 THEN ''Yes''
+							ELSE ''N.A.''
+						END AS IsReadOnlyTxt
 						,CASE pvt.recovery_model
-							WHEN 1 THEN ''FULL''
-							WHEN 2 THEN ''BULK_LOGGED''
-							WHEN 3 THEN ''SIMPLE''
+							WHEN 1 THEN ''Full''
+							WHEN 2 THEN ''Bulk logged''
+							WHEN 3 THEN ''Simple''
 							ELSE ''?:'' + pvt.recovery_model
 						END AS RecoveryModel
+						,CASE pvt.state
+							WHEN  0 THEN ''Online''
+							WHEN  1 THEN ''Restoring''
+							WHEN  2 THEN ''Recovering''
+							WHEN  3 THEN ''Recovery pending''
+							WHEN  4 THEN ''Suspect''
+							WHEN  5 THEN ''Emergency''
+							WHEN  6 THEN ''Offline''
+							WHEN  7 THEN ''Copying''
+							WHEN 10 THEN ''Offline secondary''
+							ELSE ''?:'' + pvt.state
+						END AS State
 						,CAST(pvt.target_recovery_time_in_seconds AS int) AS TargetRecoveryTimeInSeconds
 						,pvt.replica_id AS ReplicaId
 						,pvt.AlwaysOnGroupName
@@ -571,9 +639,10 @@ ELSE BEGIN
 						MAX(_Value_)
 						FOR [Key] IN (
 							[collation_name], [compatibility_level], [delayed_durability]
-							,[is_auto_close_on], [is_auto_shrink_on], [is_auto_update_stats_async_on], [is_encrypted], [is_mixed_page_allocation_on]
-							,[is_read_committed_snapshot_on], [page_verify_option], [recovery_model], [target_recovery_time_in_seconds]
-							,[replica_id], [AlwaysOnGroupName], [IsOnAlwaysOnPrimary])
+							,[is_auto_close_on], [is_auto_shrink_on], [is_auto_update_stats_async_on], [is_encrypted], [is_in_standby]
+							,[is_mixed_page_allocation_on], [is_parameterization_forced], [is_read_committed_snapshot_on], [is_read_only]
+							,[page_verify_option], [recovery_model], [state], [target_recovery_time_in_seconds], [replica_id]
+							,[AlwaysOnGroupName], [IsOnAlwaysOnPrimary])
 					) AS pvt;
 			';
 			EXEC(@stmt);

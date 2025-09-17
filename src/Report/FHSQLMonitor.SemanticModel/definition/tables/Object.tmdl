@@ -37,6 +37,30 @@ table Object
 
 		annotation SummarizationSetBy = Automatic
 
+	column 'Database - Drill-through for Index details'
+		dataType: string
+		lineageTag: f1c227e3-055f-44c3-bd86-75a9e4597f31
+		summarizeBy: none
+		sourceColumn: Database - Drill-through for Index details
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Schema - Drill-through for Index details'
+		dataType: string
+		lineageTag: ed7c3728-dee6-431d-a6d3-e693d0783ea4
+		summarizeBy: none
+		sourceColumn: Schema - Drill-through for Index details
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Object - Drill-through for Index details'
+		dataType: string
+		lineageTag: 5fdc566a-19d5-4147-bab1-d53c60c8cfdf
+		summarizeBy: none
+		sourceColumn: Object - Drill-through for Index details
+
+		annotation SummarizationSetBy = Automatic
+
 	partition Object = m
 		mode: import
 		queryGroup: Dimensions
@@ -58,9 +82,32 @@ table Object
 				  db     = dbList{[Name = #"Database name"]}[Data], 
 				  table  = db{[Schema = #"Schema name", Item = "Object"]}[Data], 
 				  emptyDataset = Table.FirstN(table, 0), 
-				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  addDuplicateColumns = Table.AddColumn(
+				    datasetToUse,
+				    "DuplicatedColumns", 
+				    each [
+				      Dup.Database = [Database], 
+				      Dup.Schema = [Schema], 
+				      Dup.Object = [Object]
+				    ]
+				  ),
+				  expandDuplicateColumns = Table.ExpandRecordColumn(
+				    addDuplicateColumns,
+				    "DuplicatedColumns", 
+				    {
+				      "Dup.Database", 
+				      "Dup.Schema", 
+				      "Dup.Object"
+				    }, 
+				    {
+				      "Database - Drill-through for Index details", 
+				      "Schema - Drill-through for Index details", 
+				      "Object - Drill-through for Index details"
+				    }
+				  )
 				in
-				  datasetToUse
+				  expandDuplicateColumns
 				```
 
 	annotation PBI_ResultType = Table

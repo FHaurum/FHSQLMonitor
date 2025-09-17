@@ -1,0 +1,107 @@
+table 'Log shipping primary secondary database state'
+	lineageTag: 87586854-3ad9-4956-b5ad-14ab68f27811
+
+	column 'Secondary database'
+		dataType: string
+		lineageTag: 8ec612fd-9f97-4989-8297-e5a2c52a4cd6
+		summarizeBy: none
+		sourceColumn: Secondary database
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Secondary server'
+		dataType: string
+		lineageTag: 52f0a62d-d727-4004-ac7d-5273ba88bd13
+		summarizeBy: none
+		sourceColumn: Secondary server
+
+		annotation SummarizationSetBy = Automatic
+
+	column DatabaseKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 78117338-2ae1-45dd-8e6b-eeb6f8659497
+		summarizeBy: none
+		sourceColumn: DatabaseKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Max. timestamp'
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: abb69dba-d7f4-4384-85a8-0b42c840d6ed
+		summarizeBy: none
+		sourceColumn: Max. timestamp
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	column 'Min. timestamp'
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: 0ee0b5bc-ebf2-4dde-9b33-4b721f598e45
+		summarizeBy: none
+		sourceColumn: Min. timestamp
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	column ServerKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 64f3e762-0bee-4fc0-91d5-81ef2a0afe41
+		summarizeBy: none
+		sourceColumn: ServerKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Log shipping primary secondary database state' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Log shipping")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db     = dbList{[Name = #"Database name"]}[Data], 
+				  table  = db{[Schema = #"Schema name", Item = "Log shipping primary secondary database state"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  selectColumns = Table.SelectColumns(
+				    datasetToUse, 
+				    {
+				      "MaxTimestamp", 
+				      "MinTimestamp", 
+				      "SecondaryDatabase", 
+				      "SecondaryServer", 
+				      "DatabaseKey", 
+				      "ServerKey"
+				    }
+				  ), 
+				  renameColumns = Table.RenameColumns(
+				    selectColumns, 
+				    {
+				      {"MaxTimestamp", "Max. timestamp"}, 
+				      {"MinTimestamp", "Min. timestamp"}, 
+				      {"SecondaryDatabase", "Secondary database"}, 
+				      {"SecondaryServer", "Secondary server"}
+				    }
+				  )
+				in
+				  renameColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

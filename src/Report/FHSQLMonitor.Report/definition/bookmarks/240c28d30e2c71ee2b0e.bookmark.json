@@ -1,0 +1,1368 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/bookmark/1.4.0/schema.json",
+  "displayName": "Filter panel closed  - Log shipping configuration",
+  "name": "240c28d30e2c71ee2b0e",
+  "options": {
+    "applyOnlyToTargetVisuals": true,
+    "targetVisualNames": [
+      "c75f911daeb12db91790",
+      "10c1afb9a79cae2dda6b",
+      "1f2d490ce13cb0892701",
+      "38f163ae3c9282e26ecc",
+      "ca9966957c0a7811ce72",
+      "f1cc2606de0e3b892a1c",
+      "16d6043b0908c0930b1e",
+      "f66033a26445c480c73b",
+      "e5bb79369cd499aa4a50",
+      "b7f7867b2a3125ea1248",
+      "f8ac9ef50a747220ba0b"
+    ],
+    "suppressData": true
+  },
+  "explorationState": {
+    "version": "1.3",
+    "activeSection": "2c56fdd6b0643008a03c",
+    "sections": {
+      "2c56fdd6b0643008a03c": {
+        "filters": {
+          "byName": {
+            "6db3cad4a86003850507": {
+              "name": "6db3cad4a86003850507",
+              "type": "Categorical",
+              "filter": {
+                "Version": 2,
+                "From": [
+                  {
+                    "Name": "d",
+                    "Entity": "Documentation - report pages",
+                    "Type": 0
+                  }
+                ],
+                "Where": [
+                  {
+                    "Condition": {
+                      "In": {
+                        "Expressions": [
+                          {
+                            "Column": {
+                              "Expression": {
+                                "SourceRef": {
+                                  "Source": "d"
+                                }
+                              },
+                              "Property": "Page"
+                            }
+                          }
+                        ],
+                        "Values": [
+                          [
+                            {
+                              "Literal": {
+                                "Value": "'Log shipping configuration'"
+                              }
+                            }
+                          ]
+                        ]
+                      }
+                    }
+                  }
+                ]
+              },
+              "expression": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Documentation - report pages"
+                    }
+                  },
+                  "Property": "Page"
+                }
+              },
+              "howCreated": 1
+            }
+          }
+        },
+        "visualContainers": {
+          "10f9f27fe6d90192b87d": {
+            "singleVisual": {
+              "visualType": "actionButton",
+              "objects": {}
+            }
+          },
+          "1a2b5f95b69a673446e0": {
+            "filters": {
+              "byExpr": [
+                {
+                  "name": "6b6d00e54be79ee04402",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Log shipping secondary primary database state"
+                        }
+                      },
+                      "Property": "Primary server"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "71f0b9c5ddd2bce945b9",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Database"
+                        }
+                      },
+                      "Property": "Database"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "c57c04106c98b26540ab",
+                  "type": "Advanced",
+                  "expression": {
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "_Measures"
+                        }
+                      },
+                      "Property": "Monitor server - Secondary primary database - Log shipping configuration"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "94c63e0509071b5272ee",
+                  "type": "Advanced",
+                  "expression": {
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "_Measures"
+                        }
+                      },
+                      "Property": "Monitor server security - Secondary primary database - Log shipping configuration"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "09c2e6f679013357270c",
+                  "type": "Advanced",
+                  "expression": {
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "_Measures"
+                        }
+                      },
+                      "Property": "File retention - Secondary primary database - Log shipping configuration"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "0ef4e9840c10601e5370",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Log shipping secondary primary database state"
+                        }
+                      },
+                      "Property": "Backup source directory"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "639a7180db0ebd778178",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Log shipping secondary primary database state"
+                        }
+                      },
+                      "Property": "Backup destination directory"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "16f654fcad04d807e6b8",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Log shipping secondary primary database state"
+                        }
+                      },
+                      "Property": "Min. timestamp"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "d3dda4b7b3853dce880d",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Log shipping secondary primary database state"
+                        }
+                      },
+                      "Property": "Max. timestamp"
+                    }
+                  },
+                  "howCreated": 0
+                }
+              ]
+            },
+            "singleVisual": {
+              "visualType": "tableEx",
+              "objects": {},
+              "orderBy": [
+                {
+                  "Direction": 1,
+                  "Expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Log shipping secondary primary database state"
+                        }
+                      },
+                      "Property": "Primary server"
+                    }
+                  }
+                },
+                {
+                  "Direction": 1,
+                  "Expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Database"
+                        }
+                      },
+                      "Property": "Database"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "1de1870f0d53cc9b3ea4": {
+            "singleVisual": {
+              "visualType": "actionButton",
+              "objects": {}
+            }
+          },
+          "23cb09d13b0c96406a22": {
+            "filters": {
+              "byExpr": [
+                {
+                  "name": "7855fdc29e6e914bb00c",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Log shipping monitor secondary database state"
+                        }
+                      },
+                      "Property": "Primary server"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "71588237897c57cbd080",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Database"
+                        }
+                      },
+                      "Property": "Database"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "c6f8499a164d74ea1c9c",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Log shipping monitor secondary database state"
+                        }
+                      },
+                      "Property": "Secondary server"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "1c09b93ae6b48d26e08c",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Log shipping monitor secondary database state"
+                        }
+                      },
+                      "Property": "Secondary database"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "46a0d6e9c6db3c30099c",
+                  "type": "Advanced",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Log shipping monitor secondary database state"
+                        }
+                      },
+                      "Property": "Restore threshold"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "7c2aa12c6c50ea03b027",
+                  "type": "Advanced",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Log shipping monitor secondary database state"
+                        }
+                      },
+                      "Property": "Threshold alert"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "031be1fc3315c5aa06b9",
+                  "type": "Advanced",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Log shipping monitor secondary database state"
+                        }
+                      },
+                      "Property": "History retention period"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "4724dbb2077e1730c18b",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Log shipping monitor secondary database state"
+                        }
+                      },
+                      "Property": "Min. timestamp"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "96a9a01caa8db08ad252",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Log shipping monitor secondary database state"
+                        }
+                      },
+                      "Property": "Max. timestamp"
+                    }
+                  },
+                  "howCreated": 0
+                }
+              ]
+            },
+            "singleVisual": {
+              "visualType": "tableEx",
+              "objects": {},
+              "orderBy": [
+                {
+                  "Direction": 1,
+                  "Expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Log shipping monitor secondary database state"
+                        }
+                      },
+                      "Property": "Primary server"
+                    }
+                  }
+                },
+                {
+                  "Direction": 1,
+                  "Expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Database"
+                        }
+                      },
+                      "Property": "Database"
+                    }
+                  }
+                },
+                {
+                  "Direction": 1,
+                  "Expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Log shipping monitor secondary database state"
+                        }
+                      },
+                      "Property": "Secondary server"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "4460c42aac71e2b1d2ac": {
+            "filters": {
+              "byExpr": [
+                {
+                  "name": "4fd0aff4abb90b9560e6",
+                  "type": "Advanced",
+                  "expression": {
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "_Measures"
+                        }
+                      },
+                      "Property": "Info last refresh"
+                    }
+                  },
+                  "howCreated": 0
+                }
+              ]
+            },
+            "singleVisual": {
+              "visualType": "card",
+              "objects": {}
+            }
+          },
+          "528ae6231b780e25a401": {
+            "filters": {
+              "byExpr": [
+                {
+                  "name": "286ac2e9cc62aa0bdc11",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Log shipping monitor primary database state"
+                        }
+                      },
+                      "Property": "Primary server"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "cf8474d8a9a4735b82c2",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Database"
+                        }
+                      },
+                      "Property": "Database"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "a48e8cb60ed9e98ee11b",
+                  "type": "Advanced",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Log shipping monitor primary database state"
+                        }
+                      },
+                      "Property": "Backup threshold"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "ec2424bb9943e9978524",
+                  "type": "Advanced",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Log shipping monitor primary database state"
+                        }
+                      },
+                      "Property": "Threshold alert"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "a3f22d10b862c9c15000",
+                  "type": "Advanced",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Log shipping monitor primary database state"
+                        }
+                      },
+                      "Property": "History retention period"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "cd05d6f8c46c699a16dc",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Log shipping monitor primary database state"
+                        }
+                      },
+                      "Property": "Min. timestamp"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "b60217fadbd33a3e5c20",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Log shipping monitor primary database state"
+                        }
+                      },
+                      "Property": "Max. timestamp"
+                    }
+                  },
+                  "howCreated": 0
+                }
+              ]
+            },
+            "singleVisual": {
+              "visualType": "tableEx",
+              "objects": {},
+              "orderBy": [
+                {
+                  "Direction": 1,
+                  "Expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Log shipping monitor primary database state"
+                        }
+                      },
+                      "Property": "Primary server"
+                    }
+                  }
+                },
+                {
+                  "Direction": 1,
+                  "Expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Database"
+                        }
+                      },
+                      "Property": "Database"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "6391322a8963d6bb9d06": {
+            "singleVisual": {
+              "visualType": "actionButton",
+              "objects": {}
+            }
+          },
+          "99edbd4a13db173c0066": {
+            "filters": {
+              "byExpr": [
+                {
+                  "name": "251b48351b0d0aebb80d",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Log shipping primary secondary database state"
+                        }
+                      },
+                      "Property": "Secondary server"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "7061c5f100c14457ed0a",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Database"
+                        }
+                      },
+                      "Property": "Database"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "157d9fd431e12705d848",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Log shipping primary secondary database state"
+                        }
+                      },
+                      "Property": "Min. timestamp"
+                    }
+                  },
+                  "howCreated": 0
+                }
+              ]
+            },
+            "singleVisual": {
+              "visualType": "tableEx",
+              "objects": {},
+              "orderBy": [
+                {
+                  "Direction": 1,
+                  "Expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Log shipping primary secondary database state"
+                        }
+                      },
+                      "Property": "Secondary server"
+                    }
+                  }
+                },
+                {
+                  "Direction": 1,
+                  "Expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Database"
+                        }
+                      },
+                      "Property": "Database"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "a001034c4753436c050a": {
+            "filters": {
+              "byExpr": [
+                {
+                  "name": "d1e925400d39ecd11a88",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Database"
+                        }
+                      },
+                      "Property": "Database"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "5196befc90606863386b",
+                  "type": "Advanced",
+                  "expression": {
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "_Measures"
+                        }
+                      },
+                      "Property": "Monitor server - Primary database - Log shipping configuration"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "fdbf9ef439dc80308dce",
+                  "type": "Advanced",
+                  "expression": {
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "_Measures"
+                        }
+                      },
+                      "Property": "Monitor server security - Primary database - Log shipping configuration"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "d456a06a33005d92ce04",
+                  "type": "Advanced",
+                  "expression": {
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "_Measures"
+                        }
+                      },
+                      "Property": "Backup retention - Primary database - Log shipping configuration"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "e66d9da10c6b2899ad20",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Log shipping primary database state"
+                        }
+                      },
+                      "Property": "Backup compression"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "50bd1616277849a78d31",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Log shipping primary database state"
+                        }
+                      },
+                      "Property": "Backup share"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "4bbb99db01ecb4d58d34",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Log shipping primary database state"
+                        }
+                      },
+                      "Property": "Backup directory"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "ebc59700a9eb41bc1441",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Log shipping primary database state"
+                        }
+                      },
+                      "Property": "Min. timestamp"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "18009dbd98b18716440c",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Log shipping primary database state"
+                        }
+                      },
+                      "Property": "Max. timestamp"
+                    }
+                  },
+                  "howCreated": 0
+                }
+              ]
+            },
+            "singleVisual": {
+              "visualType": "tableEx",
+              "objects": {},
+              "orderBy": [
+                {
+                  "Direction": 1,
+                  "Expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Database"
+                        }
+                      },
+                      "Property": "Database"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "b283da722beb0ec7e8b9": {
+            "filters": {
+              "byExpr": [
+                {
+                  "name": "3f7e14daa65300a48087",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Database"
+                        }
+                      },
+                      "Property": "Database"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "214261a81d06b791069a",
+                  "type": "Advanced",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Log shipping secondary database state"
+                        }
+                      },
+                      "Property": "Restore delay"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "39238f36a930d738e08d",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Log shipping secondary database state"
+                        }
+                      },
+                      "Property": "Restore all"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "7ee9d8062e02774ae5d2",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Log shipping secondary database state"
+                        }
+                      },
+                      "Property": "Restore mode"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "68df186b25e40035d9e2",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Log shipping secondary database state"
+                        }
+                      },
+                      "Property": "Disconnect users"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "9ff5b6f5d27e9ad47030",
+                  "type": "Advanced",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Log shipping secondary database state"
+                        }
+                      },
+                      "Property": "Block size"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "5589fa4c5285ba1d5c65",
+                  "type": "Advanced",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Log shipping secondary database state"
+                        }
+                      },
+                      "Property": "Buffer count"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "c083d33d800d92095e39",
+                  "type": "Advanced",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Log shipping secondary database state"
+                        }
+                      },
+                      "Property": "Max. transfer size"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "3634438c786c36005083",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Log shipping secondary database state"
+                        }
+                      },
+                      "Property": "Min. timestamp"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "49dd1385baa8b7ab40ab",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Log shipping secondary database state"
+                        }
+                      },
+                      "Property": "Max. timestamp"
+                    }
+                  },
+                  "howCreated": 0
+                }
+              ]
+            },
+            "singleVisual": {
+              "visualType": "tableEx",
+              "objects": {},
+              "orderBy": [
+                {
+                  "Direction": 1,
+                  "Expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Database"
+                        }
+                      },
+                      "Property": "Database"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "b579e84ec2513b3de0cb": {
+            "filters": {
+              "byExpr": [
+                {
+                  "name": "f3298d8d4a7300ed4ad9",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Database"
+                        }
+                      },
+                      "Property": "Database"
+                    }
+                  },
+                  "howCreated": 0
+                }
+              ]
+            },
+            "singleVisual": {
+              "visualType": "textSlicer",
+              "objects": {}
+            }
+          },
+          "b9273ca726568ba0d922": {
+            "singleVisual": {
+              "visualType": "textbox",
+              "objects": {}
+            }
+          },
+          "e039e587dd3db230655d": {
+            "filters": {
+              "byExpr": [
+                {
+                  "name": "fbe95619b5c7c15dcbb7",
+                  "type": "Advanced",
+                  "expression": {
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "_Measures"
+                        }
+                      },
+                      "Property": "Info text"
+                    }
+                  },
+                  "howCreated": 0
+                }
+              ]
+            },
+            "singleVisual": {
+              "visualType": "card",
+              "objects": {}
+            }
+          },
+          "f0834de758068807597c": {
+            "filters": {
+              "byExpr": [
+                {
+                  "name": "1b335a78a456463c89dd",
+                  "type": "Advanced",
+                  "expression": {
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "_Measures"
+                        }
+                      },
+                      "Property": "Data range - Log shipping configuration"
+                    }
+                  },
+                  "howCreated": 0
+                }
+              ]
+            },
+            "singleVisual": {
+              "visualType": "card",
+              "objects": {}
+            }
+          },
+          "1f2d490ce13cb0892701": {
+            "singleVisual": {
+              "visualType": "shape",
+              "objects": {}
+            }
+          },
+          "38f163ae3c9282e26ecc": {
+            "singleVisual": {
+              "visualType": "actionButton",
+              "objects": {}
+            }
+          },
+          "ca9966957c0a7811ce72": {
+            "singleVisual": {
+              "visualType": "shape",
+              "objects": {}
+            }
+          },
+          "f1cc2606de0e3b892a1c": {
+            "filters": {
+              "byExpr": [
+                {
+                  "name": "6894b847c9e71e3e852b",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Database"
+                        }
+                      },
+                      "Property": "Database"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "6942a5b1bb30c012279a",
+                  "type": "Advanced",
+                  "filter": {
+                    "Version": 2,
+                    "From": [
+                      {
+                        "Name": "_",
+                        "Entity": "_Measures",
+                        "Type": 0
+                      }
+                    ],
+                    "Where": [
+                      {
+                        "Condition": {
+                          "Not": {
+                            "Expression": {
+                              "Comparison": {
+                                "ComparisonKind": 0,
+                                "Left": {
+                                  "Measure": {
+                                    "Expression": {
+                                      "SourceRef": {
+                                        "Source": "_"
+                                      }
+                                    },
+                                    "Property": "VLF Filter - Log shipping configuration"
+                                  }
+                                },
+                                "Right": {
+                                  "Literal": {
+                                    "Value": "null"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  "expression": {
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "_Measures"
+                        }
+                      },
+                      "Property": "VLF Filter - Log shipping configuration"
+                    }
+                  },
+                  "howCreated": 1
+                }
+              ]
+            },
+            "singleVisual": {
+              "visualType": "slicer",
+              "objects": {
+                "merge": {
+                  "data": [
+                    {
+                      "properties": {
+                        "mode": {
+                          "expr": {
+                            "Literal": {
+                              "Value": "'Dropdown'"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "activeProjections": {
+                "Values": [
+                  {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Database"
+                        }
+                      },
+                      "Property": "Database"
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "16d6043b0908c0930b1e": {
+            "filters": {
+              "byExpr": [
+                {
+                  "name": "507013f219d12d2c3a27",
+                  "type": "Advanced",
+                  "expression": {
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "_Measures"
+                        }
+                      },
+                      "Property": "Show filters Headers - Log shipping configuration"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "089bfa4e337a0040cd63",
+                  "type": "Advanced",
+                  "expression": {
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "_Measures"
+                        }
+                      },
+                      "Property": "Show filters - Log shipping configuration"
+                    }
+                  },
+                  "howCreated": 0
+                }
+              ]
+            },
+            "singleVisual": {
+              "visualType": "tableEx",
+              "objects": {}
+            }
+          },
+          "f66033a26445c480c73b": {
+            "singleVisual": {
+              "visualType": "shape",
+              "objects": {}
+            }
+          },
+          "e5bb79369cd499aa4a50": {
+            "singleVisual": {
+              "visualType": "actionButton",
+              "objects": {}
+            }
+          },
+          "b7f7867b2a3125ea1248": {
+            "filters": {
+              "byExpr": [
+                {
+                  "name": "c2aee2246bd7ed405e0b",
+                  "type": "Advanced",
+                  "expression": {
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "_Measures"
+                        }
+                      },
+                      "Property": "Open filter button tooltip - Log shipping configuration"
+                    }
+                  },
+                  "howCreated": 0
+                }
+              ]
+            },
+            "singleVisual": {
+              "visualType": "card",
+              "objects": {}
+            }
+          },
+          "f8ac9ef50a747220ba0b": {
+            "singleVisual": {
+              "visualType": "actionButton",
+              "objects": {}
+            }
+          }
+        },
+        "visualContainerGroups": {
+          "c75f911daeb12db91790": {
+            "isHidden": true
+          },
+          "10c1afb9a79cae2dda6b": {
+            "isHidden": false
+          }
+        }
+      }
+    },
+    "objects": {
+      "merge": {
+        "outspacePane": [
+          {
+            "properties": {
+              "expanded": {
+                "expr": {
+                  "Literal": {
+                    "Value": "true"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

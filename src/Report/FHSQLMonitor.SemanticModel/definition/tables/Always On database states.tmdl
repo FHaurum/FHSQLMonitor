@@ -9,35 +9,11 @@ table 'Always On database states'
 
 		annotation SummarizationSetBy = Automatic
 
-	column 'Is local'
-		dataType: string
-		lineageTag: 1809f168-9d00-4d4b-8565-b9aa51d00dba
-		summarizeBy: none
-		sourceColumn: Is local
-
-		annotation SummarizationSetBy = Automatic
-
-	column 'Is primary replica'
-		dataType: string
-		lineageTag: 460a8345-e350-4f9d-8f10-32cabb5be01a
-		summarizeBy: none
-		sourceColumn: Is primary replica
-
-		annotation SummarizationSetBy = Automatic
-
 	column 'Synchronization state'
 		dataType: string
 		lineageTag: b09e423c-702a-4288-b8d2-d44422eef62d
 		summarizeBy: none
 		sourceColumn: Synchronization state
-
-		annotation SummarizationSetBy = Automatic
-
-	column 'Is commit participant'
-		dataType: string
-		lineageTag: 7ec9fd34-192d-40b5-ada8-90331f5bac62
-		summarizeBy: none
-		sourceColumn: Is commit participant
 
 		annotation SummarizationSetBy = Automatic
 
@@ -54,14 +30,6 @@ table 'Always On database states'
 		lineageTag: fe9c7293-d6ce-4bf2-b96b-2c0d1bfc8376
 		summarizeBy: none
 		sourceColumn: Database state
-
-		annotation SummarizationSetBy = Automatic
-
-	column 'Is suspended'
-		dataType: string
-		lineageTag: c8fa6359-9e63-4fea-b44d-447da0d98fbe
-		summarizeBy: none
-		sourceColumn: Is suspended
 
 		annotation SummarizationSetBy = Automatic
 
@@ -107,6 +75,38 @@ table 'Always On database states'
 
 		annotation SummarizationSetBy = Automatic
 
+	column 'Is commit participant'
+		dataType: string
+		lineageTag: 50364d27-b4aa-48ed-bc3d-dbe9dbdaccf0
+		summarizeBy: none
+		sourceColumn: Is commit participant
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Is local'
+		dataType: string
+		lineageTag: 3d3a6c0b-1691-4c09-ba94-be979b30a14e
+		summarizeBy: none
+		sourceColumn: Is local
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Is primary replica'
+		dataType: string
+		lineageTag: 9e2374b6-d853-42ac-9272-150a31ce8030
+		summarizeBy: none
+		sourceColumn: Is primary replica
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Is suspended'
+		dataType: string
+		lineageTag: 850ab1b6-f147-47e3-90c6-50c586826f88
+		summarizeBy: none
+		sourceColumn: Is suspended
+
+		annotation SummarizationSetBy = Automatic
+
 	partition 'Always On database states' = m
 		mode: import
 		queryGroup: Facts
@@ -125,16 +125,16 @@ table 'Always On database states'
 				    datasetToUse, 
 				    {
 				      "AGDatabaseName", 
-				      "IsLocal", 
-				      "IsPrimaryReplica", 
-				      "SynchronizationState", 
-				      "IsCommitParticipant", 
-				      "SynchronizationHealth", 
 				      "DatabaseState", 
-				      "IsSuspended", 
-				      "SuspendReason", 
-				      "MinTimestamp", 
+				      "IsCommitParticipantTxt", 
+				      "IsLocalTxt", 
+				      "IsPrimaryReplicaTxt", 
+				      "IsSuspendedTxt", 
 				      "MaxTimestamp", 
+				      "MinTimestamp", 
+				      "SuspendReason", 
+				      "SynchronizationHealth", 
+				      "SynchronizationState", 
 				      "AlwaysOnGroupReplicaKey"
 				    }
 				  ), 
@@ -142,16 +142,16 @@ table 'Always On database states'
 				    selectColumns, 
 				    {
 				      {"AGDatabaseName", "Database"}, 
-				      {"IsLocal", "Is local"}, 
-				      {"IsPrimaryReplica", "Is primary replica"}, 
-				      {"SynchronizationState", "Synchronization state"}, 
-				      {"IsCommitParticipant", "Is commit participant"}, 
-				      {"SynchronizationHealth", "Synchronization health"}, 
 				      {"DatabaseState", "Database state"}, 
-				      {"IsSuspended", "Is suspended"}, 
-				      {"SuspendReason", "Suspend reason"}, 
+				      {"IsCommitParticipantTxt", "Is commit participant"}, 
+				      {"IsLocalTxt", "Is local"}, 
+				      {"IsPrimaryReplicaTxt", "Is primary replica"}, 
+				      {"IsSuspendedTxt", "Is suspended"}, 
 				      {"MinTimestamp", "Min. timestamp"}, 
-				      {"MaxTimestamp", "Max. timestamp"}
+				      {"MaxTimestamp", "Max. timestamp"}, 
+				      {"SuspendReason", "Suspend reason"}, 
+				      {"SynchronizationHealth", "Synchronization health"}, 
+				      {"SynchronizationState", "Synchronization state"}
 				    }
 				  )
 				in

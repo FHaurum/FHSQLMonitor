@@ -1,0 +1,523 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "name": "3dcaea2f05360d5a32c8",
+  "position": {
+    "x": 10,
+    "y": 80,
+    "z": 2000,
+    "height": 455,
+    "width": 1900
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Agent jobs - grid"
+                    }
+                  },
+                  "Property": "Job"
+                }
+              },
+              "queryRef": "Agent jobs - grid.Job",
+              "nativeQueryRef": "Job"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Agent jobs - grid"
+                    }
+                  },
+                  "Property": "Job enabled"
+                }
+              },
+              "queryRef": "Agent jobs - grid.Job enabled",
+              "nativeQueryRef": "Job ena.",
+              "displayName": "Job ena."
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Agent jobs - grid"
+                    }
+                  },
+                  "Property": "Schedule enabled"
+                }
+              },
+              "queryRef": "Agent jobs - grid.Schedule enabled",
+              "nativeQueryRef": "Schd. ena.",
+              "displayName": "Schd. ena."
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Agent jobs - grid"
+                    }
+                  },
+                  "Property": "0"
+                }
+              },
+              "queryRef": "Agent jobs - grid.0",
+              "nativeQueryRef": "0"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Agent jobs - grid"
+                    }
+                  },
+                  "Property": "1"
+                }
+              },
+              "queryRef": "Agent jobs - grid.1",
+              "nativeQueryRef": "1"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Agent jobs - grid"
+                    }
+                  },
+                  "Property": "2"
+                }
+              },
+              "queryRef": "Agent jobs - grid.2",
+              "nativeQueryRef": "2"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Agent jobs - grid"
+                    }
+                  },
+                  "Property": "3"
+                }
+              },
+              "queryRef": "Agent jobs - grid.3",
+              "nativeQueryRef": "3"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Agent jobs - grid"
+                    }
+                  },
+                  "Property": "4"
+                }
+              },
+              "queryRef": "Agent jobs - grid.4",
+              "nativeQueryRef": "4"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Agent jobs - grid"
+                    }
+                  },
+                  "Property": "5"
+                }
+              },
+              "queryRef": "Agent jobs - grid.5",
+              "nativeQueryRef": "5"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Agent jobs - grid"
+                    }
+                  },
+                  "Property": "6"
+                }
+              },
+              "queryRef": "Agent jobs - grid.6",
+              "nativeQueryRef": "6"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Agent jobs - grid"
+                    }
+                  },
+                  "Property": "7"
+                }
+              },
+              "queryRef": "Agent jobs - grid.7",
+              "nativeQueryRef": "7"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Agent jobs - grid"
+                    }
+                  },
+                  "Property": "8"
+                }
+              },
+              "queryRef": "Agent jobs - grid.8",
+              "nativeQueryRef": "8"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Agent jobs - grid"
+                    }
+                  },
+                  "Property": "9"
+                }
+              },
+              "queryRef": "Agent jobs - grid.9",
+              "nativeQueryRef": "9"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Agent jobs - grid"
+                    }
+                  },
+                  "Property": "10"
+                }
+              },
+              "queryRef": "Agent jobs - grid.10",
+              "nativeQueryRef": "10"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Agent jobs - grid"
+                    }
+                  },
+                  "Property": "11"
+                }
+              },
+              "queryRef": "Agent jobs - grid.11",
+              "nativeQueryRef": "11"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Agent jobs - grid"
+                    }
+                  },
+                  "Property": "12"
+                }
+              },
+              "queryRef": "Agent jobs - grid.12",
+              "nativeQueryRef": "12"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Agent jobs - grid"
+                    }
+                  },
+                  "Property": "13"
+                }
+              },
+              "queryRef": "Agent jobs - grid.13",
+              "nativeQueryRef": "13"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Agent jobs - grid"
+                    }
+                  },
+                  "Property": "14"
+                }
+              },
+              "queryRef": "Agent jobs - grid.14",
+              "nativeQueryRef": "14"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Agent jobs - grid"
+                    }
+                  },
+                  "Property": "15"
+                }
+              },
+              "queryRef": "Agent jobs - grid.15",
+              "nativeQueryRef": "15"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Agent jobs - grid"
+                    }
+                  },
+                  "Property": "16"
+                }
+              },
+              "queryRef": "Agent jobs - grid.16",
+              "nativeQueryRef": "16"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Agent jobs - grid"
+                    }
+                  },
+                  "Property": "17"
+                }
+              },
+              "queryRef": "Agent jobs - grid.17",
+              "nativeQueryRef": "17"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Agent jobs - grid"
+                    }
+                  },
+                  "Property": "18"
+                }
+              },
+              "queryRef": "Agent jobs - grid.18",
+              "nativeQueryRef": "18"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Agent jobs - grid"
+                    }
+                  },
+                  "Property": "19"
+                }
+              },
+              "queryRef": "Agent jobs - grid.19",
+              "nativeQueryRef": "19"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Agent jobs - grid"
+                    }
+                  },
+                  "Property": "20"
+                }
+              },
+              "queryRef": "Agent jobs - grid.20",
+              "nativeQueryRef": "20"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Agent jobs - grid"
+                    }
+                  },
+                  "Property": "21"
+                }
+              },
+              "queryRef": "Agent jobs - grid.21",
+              "nativeQueryRef": "21"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Agent jobs - grid"
+                    }
+                  },
+                  "Property": "22"
+                }
+              },
+              "queryRef": "Agent jobs - grid.22",
+              "nativeQueryRef": "22"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Agent jobs - grid"
+                    }
+                  },
+                  "Property": "23"
+                }
+              },
+              "queryRef": "Agent jobs - grid.23",
+              "nativeQueryRef": "23"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Agent jobs - grid"
+                    }
+                  },
+                  "Property": "When"
+                }
+              },
+              "queryRef": "Agent jobs - grid.When",
+              "nativeQueryRef": "When"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Agent jobs - grid"
+                    }
+                  },
+                  "Property": "When details"
+                }
+              },
+              "queryRef": "Agent jobs - grid.When details",
+              "nativeQueryRef": "When details"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Agent jobs - grid"
+                    }
+                  },
+                  "Property": "Active"
+                }
+              },
+              "queryRef": "Agent jobs - grid.Active",
+              "nativeQueryRef": "Active"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Agent jobs - grid"
+                    }
+                  },
+                  "Property": "Schedule id"
+                }
+              },
+              "queryRef": "Agent jobs - grid.Schedule id",
+              "nativeQueryRef": "Schd. id",
+              "displayName": "Schd. id"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Agent jobs - grid"
+                  }
+                },
+                "Property": "Job"
+              }
+            },
+            "direction": "Ascending"
+          }
+        ]
+      }
+    },
+    "objects": {
+      "columnWidth": [
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "287.443608688996D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Agent jobs - grid.Job"
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Regular schedules'"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "visualTooltip": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

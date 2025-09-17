@@ -1,0 +1,150 @@
+table 'Log shipping monitor error details'
+	lineageTag: 80588a42-5522-4530-b233-4597e5bb992a
+
+	column 'Agent type'
+		dataType: int64
+		formatString: #,0
+		lineageTag: 5c60e0bf-734e-4d5b-b8ac-1f099a7e9e78
+		summarizeBy: none
+		sourceColumn: Agent type
+
+		annotation SummarizationSetBy = User
+
+	column 'Help URL'
+		dataType: string
+		lineageTag: 3ba161d9-7e21-4d17-836a-4bddd99f558b
+		summarizeBy: none
+		sourceColumn: Help URL
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Log time'
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: 06facf60-7c89-4451-8215-e9408531ec9f
+		summarizeBy: none
+		sourceColumn: Log time
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	column Message
+		dataType: string
+		lineageTag: 56b1dba4-6d6b-4d5b-8d49-0443a3f2f8f9
+		summarizeBy: none
+		sourceColumn: Message
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Sequence no.'
+		dataType: int64
+		formatString: #,0
+		lineageTag: d48616f7-37e9-4bbd-822b-42617283684a
+		summarizeBy: none
+		sourceColumn: Sequence no.
+
+		annotation SummarizationSetBy = User
+
+	column 'Session id.'
+		dataType: int64
+		formatString: #,0
+		lineageTag: 720e7288-25d0-4c13-8719-3134d1ec6e1e
+		summarizeBy: none
+		sourceColumn: Session id.
+
+		annotation SummarizationSetBy = User
+
+	column Source
+		dataType: string
+		lineageTag: a8481743-31d5-4203-848d-8cc93e7b17de
+		summarizeBy: none
+		sourceColumn: Source
+
+		annotation SummarizationSetBy = Automatic
+
+	column Date
+		dataType: dateTime
+		isHidden
+		formatString: Long Date
+		lineageTag: 6ab70aa5-1a42-47a1-bbe8-36fb1826a728
+		summarizeBy: none
+		sourceColumn: Date
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column TimeKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 2a0b0618-bfd7-4d85-8851-c5deec660117
+		summarizeBy: none
+		sourceColumn: TimeKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column DatabaseKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 1ce78951-88c7-4d7a-8226-f9304cfe0cab
+		summarizeBy: none
+		sourceColumn: DatabaseKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Log shipping monitor error details' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Log shipping")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db     = dbList{[Name = #"Database name"]}[Data], 
+				  table  = db{[Schema = #"Schema name", Item = "Log shipping monitor error details"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  selectColumns = Table.SelectColumns(
+				    datasetToUse, 
+				    {
+				      "AgentType", 
+				      "HelpURL", 
+				      "LogTime", 
+				      "Message", 
+				      "SequenceNumber", 
+				      "SessionId", 
+				      "Source", 
+				      "Date", 
+				      "TimeKey", 
+				      "DatabaseKey"
+				    }
+				  ), 
+				  renameColumns = Table.RenameColumns(
+				    selectColumns, 
+				    {
+				      {"AgentType", "Agent type"}, 
+				      {"HelpURL", "Help URL"}, 
+				      {"LogTime", "Log time"}, 
+				      {"SequenceNumber", "Sequence no."}, 
+				      {"SessionId", "Session id."}
+				    }
+				  )
+				in
+				  renameColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

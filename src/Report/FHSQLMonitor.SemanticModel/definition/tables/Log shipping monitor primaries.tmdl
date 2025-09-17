@@ -1,0 +1,110 @@
+table 'Log shipping monitor primaries'
+	lineageTag: 20fb4f4f-925b-4e6f-9727-fd405dd8f4ba
+
+	column 'Time since previous backup'
+		dataType: int64
+		formatString: #,0
+		lineageTag: c56e7e2a-dcaf-4de7-9c2c-c451b4f76d60
+		summarizeBy: none
+		sourceColumn: Time since previous backup
+
+		annotation SummarizationSetBy = User
+
+	column Date
+		dataType: dateTime
+		isHidden
+		formatString: Long Date
+		lineageTag: 6f3d65a9-b2be-45c8-af68-02017ee94ae5
+		summarizeBy: none
+		sourceColumn: Date
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column TimeKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: dfd2d18a-394e-4a1e-a497-5274e9578b5c
+		summarizeBy: none
+		sourceColumn: TimeKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column DatabaseKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 601e40db-ba5a-4a7a-904d-f9e5221dbe1c
+		summarizeBy: none
+		sourceColumn: DatabaseKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column ServerKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 48795b9c-475e-46b7-a6c4-247475929101
+		summarizeBy: none
+		sourceColumn: ServerKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Primary database-server'
+		dataType: string
+		lineageTag: 1f4aaa38-3344-434e-9553-86e85eb586a2
+		summarizeBy: none
+		sourceColumn: Primary database-server
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Log shipping monitor primaries' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Log shipping")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db     = dbList{[Name = #"Database name"]}[Data], 
+				  table  = db{[Schema = #"Schema name", Item = "Log shipping monitor primaries"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  selectColumns = Table.SelectColumns(
+				    datasetToUse, 
+				    {
+				      "PrimaryDatabaseServer", 
+				      "TimeSincePreviousBackup", 
+				      "Date", 
+				      "TimeKey", 
+				      "DatabaseKey", 
+				      "ServerKey"
+				    }
+				  ), 
+				  renameColumns = Table.RenameColumns(
+				    selectColumns, 
+				    {
+				      {"PrimaryDatabaseServer", "Primary database-server"}, 
+				      {"TimeSincePreviousBackup", "Time since previous backup"}
+				    }
+				  )
+				in
+				  renameColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

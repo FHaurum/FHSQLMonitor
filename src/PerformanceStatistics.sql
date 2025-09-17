@@ -72,18 +72,18 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.9.1';
+		SET @version = '2.11.0';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
 		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
-		SET @productVersion1 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+		SET @productVersion1 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartPos));
 		SET @productStartPos = @productEndPos + 1;
 		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
-		SET @productVersion2 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+		SET @productVersion2 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartPos));
 		SET @productStartPos = @productEndPos + 1;
 		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
-		SET @productVersion3 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+		SET @productVersion3 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartPos));
 	END;
 
 	--
@@ -366,6 +366,8 @@ ELSE BEGIN
 		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES ('SQL Server 2017 XTP Transactions', 'Transactions created/sec', NULL);
 		/* Added by Flemming Haurum */
 		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Buffer Node', 'Page life expectancy', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Database Replica', 'Mirrored Write Transactions/sec', NULL);
+		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Database Replica', 'Transaction Delay', NULL);
 		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Resource Pool Stats', 'CPU usage %', NULL);
 		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Resource Pool Stats', 'CPU usage % base', NULL);
 		INSERT INTO @fhsmPerfmonCounters(ObjectName, CounterName, InstanceName) VALUES(@serviceName + ':Workload Group Stats', 'CPU usage %', NULL);
@@ -602,21 +604,90 @@ ELSE BEGIN
 					FROM AllData AS a;
 			';
 			EXEC(@stmt);
+
+			--
+			-- Register extended properties on fact view dbo.fhsmPerformStatisticsActual
+			--
+			BEGIN
+				SET @objectName = 'dbo.fhsmPerformStatisticsActual';
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+			END;
 		END;
 
 		--
-		-- Register extended properties on fact view dbo.fhsmPerformStatisticsActual
+		-- Create fact view @pbiSchema.[Always On synchronization lag]
 		--
 		BEGIN
-			SET @objectName = 'dbo.fhsmPerformStatisticsActual';
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
+			SET @stmt = '
+				IF OBJECT_ID(''' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Always On synchronization lag') + ''', ''V'') IS NULL
+				BEGIN
+					EXEC(''CREATE VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Always On synchronization lag') + ' AS SELECT ''''dummy'''' AS Txt'');
+				END;
+			';
+			EXEC(@stmt);
 
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+			SET @stmt = '
+				ALTER VIEW  ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Always On synchronization lag') + '
+				AS
+				WITH
+				mirrorWriteTrnsMS AS (
+					SELECT
+						psa.InstanceName
+						,psa.CounterValue
+						,psa.Timestamp
+						,psa.TimestampUTC
+					FROM dbo.fhsmPerformStatisticsActual AS psa
+					WHERE (psa.ObjectName LIKE ''%:Database Replica'') AND (psa.CounterName = ''Mirrored Write Transactions/sec'')
+				)
+				,trnDelayMS AS (
+					SELECT
+						psa.InstanceName
+						,psa.CounterValue
+						,psa.Timestamp
+						,psa.TimestampUTC
+					FROM dbo.fhsmPerformStatisticsActual AS psa
+					WHERE (psa.ObjectName LIKE ''%:Database Replica'') AND (psa.CounterName = ''Transaction Delay'')
+				)
+				SELECT
+					CASE
+						WHEN mirrorWriteTrnsMS.CounterValue <> 0 THEN
+							(CAST(
+								CASE
+									WHEN trnDelayMS.CounterValue = 0 THEN 1
+									ELSE trnDelayMS.CounterValue END AS decimal(19,2)
+							) / mirrorWriteTrnsMS.CounterValue)
+						ELSE CAST(NULL AS decimal(19,2))
+					END AS SynchronizationLagMS
+					,mirrorWriteTrnsMS.Timestamp
+					,CAST(mirrorWriteTrnsMS.Timestamp AS date) AS Date
+					,(DATEPART(HOUR, mirrorWriteTrnsMS.Timestamp) * 60 * 60) + (DATEPART(MINUTE, mirrorWriteTrnsMS.Timestamp) * 60) + (DATEPART(SECOND, mirrorWriteTrnsMS.Timestamp)) AS TimeKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(mirrorWriteTrnsMS.InstanceName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
+				FROM mirrorWriteTrnsMS
+				INNER JOIN trnDelayMS ON (trnDelayMS.InstanceName = mirrorWriteTrnsMS.InstanceName) AND (trnDelayMS.TimestampUTC = mirrorWriteTrnsMS.TimestampUTC);
+			';
+			EXEC(@stmt);
+
+			--
+			-- Register extended properties on fact view @pbiSchema.[Always On synchronization lag]
+			--
+			BEGIN
+				SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Always On synchronization lag');
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+			END;
 		END;
 
 		--
@@ -651,24 +722,24 @@ ELSE BEGIN
 					OR ((psa.ObjectName LIKE ''%:SQL Statistics'')       AND (psa.CounterName = ''SQL Compilations/sec''))
 					OR ((psa.ObjectName LIKE ''%:Resource Pool Stats'')  AND (psa.CounterName = ''CPU usage %''))
 					OR ((psa.ObjectName LIKE ''%:Workload Group Stats'') AND (psa.CounterName = ''CPU usage %''))
-				)
+				);
 			';
 			EXEC(@stmt);
-		END;
 
-		--
-		-- Register extended properties on fact view @pbiSchema.[Performance statistics]
-		--
-		BEGIN
-			SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Performance statistics');
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
+			--
+			-- Register extended properties on fact view @pbiSchema.[Performance statistics]
+			--
+			BEGIN
+				SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Performance statistics');
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
 
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+			END;
 		END;
 	END;
 
@@ -829,7 +900,22 @@ ELSE BEGIN
 			,SrcTable, SrcAlias, SrcWhere, SrcDateColumn
 			,SrcColumn1, SrcColumn2, SrcColumn3
 			,OutputColumn1, OutputColumn2, OutputColumn3
+			,CreateAutoIndex
 		) AS (
+			SELECT
+				'Database' AS DimensionName
+				,'DatabaseKey' AS DimensionKey
+				,'dbo.fhsmPerfmonStatistics' AS SrcTable
+				,'src' AS SrcAlias
+				,'WHERE (src.ObjectName LIKE ''%:Database Replica'') AND (src.CounterName IN (''Mirrored Write Transactions/sec'', ''Transaction Delay''))
+				' AS SrcWhere
+				,'src.[Timestamp]' AS SrcDateColumn
+				,'src.[InstanceName]', NULL, NULL
+				,'Database', NULL, NULL
+				,0 AS CreateAutoIndex
+			
+			UNION ALL
+
 			SELECT
 				'Performance counter' AS DimensionName
 				,'PerfmonKey' AS DimensionKey
@@ -839,6 +925,7 @@ ELSE BEGIN
 				,'src.[Timestamp]' AS SrcDateColumn
 				,'src.[ObjectName]', 'src.[CounterName]', 'src.[InstanceName]'
 				,'Object', 'Counter', 'Instance'
+				,NULL AS CreateAutoIndex
 		)
 		MERGE dbo.fhsmDimensions AS tgt
 		USING dimensions AS src ON (src.DimensionName = tgt.DimensionName) AND (src.SrcTable = tgt.SrcTable)
@@ -855,18 +942,21 @@ ELSE BEGIN
 				,tgt.OutputColumn1 = src.OutputColumn1
 				,tgt.OutputColumn2 = src.OutputColumn2
 				,tgt.OutputColumn3 = src.OutputColumn3
+				,tgt.CreateAutoIndex= src.CreateAutoIndex
 		WHEN NOT MATCHED BY TARGET
 			THEN INSERT(
 				DimensionName, DimensionKey
 				,SrcTable, SrcAlias, SrcWhere, SrcDateColumn
 				,SrcColumn1, SrcColumn2, SrcColumn3
 				,OutputColumn1, OutputColumn2, OutputColumn3
+				,CreateAutoIndex
 			)
 			VALUES(
 				src.DimensionName, src.DimensionKey
 				,src.SrcTable, src.SrcAlias, src.SrcWhere, src.SrcDateColumn
 				,src.SrcColumn1, src.SrcColumn2, src.SrcColumn3
 				,src.OutputColumn1, src.OutputColumn2, src.OutputColumn3
+				,CreateAutoIndex
 			);
 	END;
 

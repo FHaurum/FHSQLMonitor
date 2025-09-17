@@ -33,6 +33,7 @@ table 'Documentation - hidden pages'
 				        { "Instance hardware history", "instance-configuration/#instance-hardware-history" },
 				        { "Instance SQL agent properties history", "instance-configuration/#sql-agent-properties-history" },
 				        { "Instance trace flags history" , "instance-configuration/#trace-flags-history" },
+				        { "Log shipping configuration history", "log-shipping-configuration/#history" },
 				        { "Processing details" , "monitor-status/#processing-details" }
 				    }
 				)

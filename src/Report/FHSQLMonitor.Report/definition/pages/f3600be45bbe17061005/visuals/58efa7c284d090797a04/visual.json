@@ -1,0 +1,166 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "name": "58efa7c284d090797a04",
+  "position": {
+    "x": 1290,
+    "y": 807,
+    "z": 1000,
+    "height": 212,
+    "width": 620,
+    "tabOrder": 9000
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Resource governor external resource pools"
+                    }
+                  },
+                  "Property": "Pool name"
+                }
+              },
+              "queryRef": "Resource governor external resource pools.PoolName",
+              "nativeQueryRef": "Name",
+              "displayName": "Name"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Resource governor external resource pools"
+                    }
+                  },
+                  "Property": "Max. CPU %"
+                }
+              },
+              "queryRef": "Resource governor external resource pools.MaxCPUpercent",
+              "nativeQueryRef": "Max. CPU %1"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Resource governor external resource pools"
+                    }
+                  },
+                  "Property": "Max. memory %"
+                }
+              },
+              "queryRef": "Resource governor external resource pools.MaxMemoryPercent",
+              "nativeQueryRef": "Max. mem. %",
+              "displayName": "Max. mem. %"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Resource governor external resource pools"
+                    }
+                  },
+                  "Property": "Max. processes"
+                }
+              },
+              "queryRef": "Resource governor external resource pools.MaxProcesses",
+              "nativeQueryRef": "Max. procs.",
+              "displayName": "Max. procs."
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Resource governor external resource pools"
+                    }
+                  },
+                  "Property": "Version"
+                }
+              },
+              "queryRef": "Resource governor external resource pools.Version",
+              "nativeQueryRef": "Ver.",
+              "displayName": "Ver."
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Resource governor external resource pools"
+                    }
+                  },
+                  "Property": "Timestamp"
+                }
+              },
+              "queryRef": "Resource governor external resource pools.Timestamp",
+              "nativeQueryRef": "Timestamp"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Resource governor external resource pools"
+                  }
+                },
+                "Property": "Pool name"
+              }
+            },
+            "direction": "Ascending"
+          }
+        ]
+      }
+    },
+    "objects": {
+      "total": [
+        {
+          "properties": {
+            "totals": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'External resource pools'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

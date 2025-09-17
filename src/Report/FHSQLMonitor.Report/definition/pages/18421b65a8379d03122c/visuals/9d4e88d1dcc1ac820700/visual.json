@@ -1,0 +1,258 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "name": "9d4e88d1dcc1ac820700",
+  "position": {
+    "x": 10,
+    "y": 489,
+    "z": 5000,
+    "height": 250,
+    "width": 940,
+    "tabOrder": 3000
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Instance configurations"
+                    }
+                  },
+                  "Property": "Configuration"
+                }
+              },
+              "queryRef": "Instance configurations.Configuration",
+              "nativeQueryRef": "Configuration"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Instance configurations"
+                    }
+                  },
+                  "Property": "Value"
+                }
+              },
+              "queryRef": "Instance configurations.Value",
+              "nativeQueryRef": "Value"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Instance configurations"
+                    }
+                  },
+                  "Property": "Indicator"
+                }
+              },
+              "queryRef": "Instance configurations.Indicator",
+              "nativeQueryRef": "Flag",
+              "displayName": "Flag"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Instance configurations"
+                    }
+                  },
+                  "Property": "DefaultValue"
+                }
+              },
+              "queryRef": "Instance configurations.DefaultValue",
+              "nativeQueryRef": "Def. value",
+              "displayName": "Def. value"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Instance configurations"
+                    }
+                  },
+                  "Property": "DefaultIndicator"
+                }
+              },
+              "queryRef": "Instance configurations.DefaultIndicator",
+              "nativeQueryRef": "Def. flag",
+              "displayName": "Def. flag"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Instance configurations"
+                    }
+                  },
+                  "Property": "Id"
+                }
+              },
+              "queryRef": "Instance configurations.Id",
+              "nativeQueryRef": "Id"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Instance configurations"
+                    }
+                  },
+                  "Property": "Timestamp"
+                }
+              },
+              "queryRef": "Instance configurations.Timestamp",
+              "nativeQueryRef": "Time",
+              "displayName": "Time"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Instance configurations"
+                  }
+                },
+                "Property": "Configuration"
+              }
+            },
+            "direction": "Ascending"
+          }
+        ]
+      }
+    },
+    "objects": {
+      "total": [
+        {
+          "properties": {
+            "totals": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "columnWidth": [
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "411.5805568405751D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Instance configurations.Configuration"
+          }
+        },
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "52.76690918750121D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Instance configurations.Id"
+          }
+        }
+      ],
+      "columnFormatting": [
+        {
+          "properties": {
+            "alignment": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Center'"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Instance configurations.DefaultIndicator"
+          }
+        },
+        {
+          "properties": {
+            "alignment": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Center'"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Instance configurations.Indicator"
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "text": {
+              "expr": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Title - Configurations - Instance configuration"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "visualTooltip": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            },
+            "section": {
+              "expr": {
+                "Literal": {
+                  "Value": "'___AUTO___'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

@@ -68,18 +68,18 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.9.1';
+		SET @version = '2.11.0';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
 		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
-		SET @productVersion1 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+		SET @productVersion1 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartPos));
 		SET @productStartPos = @productEndPos + 1;
 		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
-		SET @productVersion2 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+		SET @productVersion2 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartPos));
 		SET @productStartPos = @productEndPos + 1;
 		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
-		SET @productVersion3 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+		SET @productVersion3 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartPos));
 	END;
 
 	--
@@ -485,6 +485,11 @@ ELSE BEGIN
 			SET @stmt += '
 				SELECT
 					CAST(COALESCE((tableIsHeap.IsHeap), 0) AS bit) AS TableIsHeap
+					,CASE CAST(COALESCE((tableIsHeap.IsHeap), 0) AS bit)
+						WHEN 0 THEN ''No''
+						WHEN 1 THEN ''Yes''
+						ELSE ''N.A.''
+					END AS TableIsHeapTxt
 					,CASE iu.IndexType
 						WHEN 0 THEN ''HEAP''
 						WHEN 1 THEN ''CL''
@@ -495,17 +500,62 @@ ELSE BEGIN
 						WHEN 6 THEN ''NCL-COL''
 						WHEN 7 THEN ''NCL-HASH''
 					END AS IndexTypeDesc
-					,iu.IsUnique			+ 0 AS IsUnique
-					,iu.IsPrimaryKey		+ 0 AS IsPrimaryKey
-					,iu.IsUniqueConstraint	+ 0 AS IsUniqueConstraint
+					,iu.IsUnique
+					,CASE iu.IsUnique
+						WHEN 0 THEN ''No''
+						WHEN 1 THEN ''Yes''
+						ELSE ''N.A.''
+					END AS IsUniqueTxt
+					,iu.IsPrimaryKey
+					,CASE iu.IsPrimaryKey
+						WHEN 0 THEN ''No''
+						WHEN 1 THEN ''Yes''
+						ELSE ''N.A.''
+					END AS IsPrimaryKeyTxt
+					,iu.IsUniqueConstraint
+					,CASE iu.IsUniqueConstraint
+						WHEN 0 THEN ''No''
+						WHEN 1 THEN ''Yes''
+						ELSE ''N.A.''
+					END AS IsUniqueConstraintTxt
 					,iu.[FillFactor]
-					,iu.IsDisabled			+ 0 AS IsDisabled
-					,iu.IsHypothetical		+ 0 AS IsHypothetical
-					,iu.AllowRowLocks		+ 0 AS AllowRowLocks
-					,iu.AllowPageLocks		+ 0 AS AllowPageLocks
-					,iu.HasFilter			+ 0 AS HasFilter
+					,iu.IsDisabled
+					,CASE iu.IsDisabled
+						WHEN 0 THEN ''No''
+						WHEN 1 THEN ''Yes''
+						ELSE ''N.A.''
+					END AS IsDisabledTxt
+					,iu.IsHypothetical
+					,CASE iu.IsHypothetical
+						WHEN 0 THEN ''No''
+						WHEN 1 THEN ''Yes''
+						ELSE ''N.A.''
+					END AS IsHypotheticalTxt
+					,iu.AllowRowLocks
+					,CASE iu.AllowRowLocks
+						WHEN 0 THEN ''No''
+						WHEN 1 THEN ''Yes''
+						ELSE ''N.A.''
+					END AS AllowRowLocksTxt
+					,iu.AllowPageLocks
+					,CASE iu.AllowPageLocks
+						WHEN 0 THEN ''No''
+						WHEN 1 THEN ''Yes''
+						ELSE ''N.A.''
+					END AS AllowPageLocksTxt
+					,iu.HasFilter
+					,CASE iu.HasFilter
+						WHEN 0 THEN ''No''
+						WHEN 1 THEN ''Yes''
+						ELSE ''N.A.''
+					END AS HasFilterTxt
 					,iu.FilterDefinition
-					,iu.AutoCreated			+ 0 AS AutoCreated
+					,iu.AutoCreated
+					,CASE iu.AutoCreated
+						WHEN 0 THEN ''No''
+						WHEN 1 THEN ''Yes''
+						ELSE ''N.A.''
+					END AS AutoCreatedTxt
 					,iu.IndexColumns
 					,iu.IncludedColumns
 					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iu.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
@@ -528,21 +578,83 @@ ELSE BEGIN
 				));
 			';
 			EXEC(@stmt);
+
+			--
+			-- Register extended properties on fact view @pbiSchema.[Index configuration]
+			--
+			BEGIN
+				SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Index configuration');
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+			END;
 		END;
 
 		--
-		-- Register extended properties on fact view @pbiSchema.[Index configuration]
+		-- Create fact view @pbiSchema.[Index not used]
 		--
 		BEGIN
-			SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Index configuration');
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
+			SET @stmt = '
+				IF OBJECT_ID(''' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Index not used') + ''', ''V'') IS NULL
+				BEGIN
+					EXEC(''CREATE VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Index not used') + ' AS SELECT ''''dummy'''' AS Txt'');
+				END;
+			';
+			EXEC(@stmt);
 
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+			SET @stmt = '
+				ALTER VIEW  ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Index not used') + '
+				AS
+				SELECT
+					 (SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iuExists.DatabaseName, DEFAULT,             DEFAULT,             DEFAULT,            DEFAULT, DEFAULT) AS k) AS DatabaseKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iuExists.DatabaseName, iuExists.SchemaName, DEFAULT,             DEFAULT,            DEFAULT, DEFAULT) AS k) AS SchemaKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iuExists.DatabaseName, iuExists.SchemaName, iuExists.ObjectName, DEFAULT,            DEFAULT, DEFAULT) AS k) AS ObjectKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iuExists.DatabaseName, iuExists.SchemaName, iuExists.ObjectName, iuExists.IndexName, DEFAULT, DEFAULT) AS k) AS IndexKey
+				FROM (
+					SELECT
+						iu.DatabaseName
+						,iu.SchemaName
+						,iu.ObjectName
+						,iu.IndexName
+					FROM dbo.fhsmIndexUsage AS iu
+					WHERE
+						(iu.TimestampUTC = (
+							SELECT MAX(iuLatest.TimestampUTC)
+							FROM dbo.fhsmIndexUsage AS iuLatest
+						))
+						AND (iu.IndexName IS NOT NULL)
+				) AS iuExists
+				WHERE NOT EXISTS (
+					SELECT *
+					FROM dbo.fhsmIndexUsageDelta AS iud
+					WHERE
+						(iud.DatabaseName = iuExists.DatabaseName)
+						AND (iud.SchemaName = iuExists.SchemaName)
+						AND (iud.ObjectName = iuExists.ObjectName)
+						AND (iud.IndexName = iuExists.IndexName)
+				);
+			';
+			EXEC(@stmt);
+
+			--
+			-- Register extended properties on fact view @pbiSchema.[Index not used]
+			--
+			BEGIN
+				SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Index not used');
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+			END;
 		END;
 
 		--
@@ -572,9 +684,9 @@ ELSE BEGIN
 					,iud.Timestamp
 					,CAST(iud.Timestamp AS date) AS Date
 					,(DATEPART(HOUR, iud.Timestamp) * 60 * 60) + (DATEPART(MINUTE, iud.Timestamp) * 60) + (DATEPART(SECOND, iud.Timestamp)) AS TimeKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iud.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iud.DatabaseName, iud.SchemaName, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS SchemaKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iud.DatabaseName, iud.SchemaName, iud.ObjectName, DEFAULT, DEFAULT, DEFAULT) AS k) AS ObjectKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iud.DatabaseName, DEFAULT,        DEFAULT,        DEFAULT,                           DEFAULT, DEFAULT) AS k) AS DatabaseKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iud.DatabaseName, iud.SchemaName, DEFAULT,        DEFAULT,                           DEFAULT, DEFAULT) AS k) AS SchemaKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iud.DatabaseName, iud.SchemaName, iud.ObjectName, DEFAULT,                           DEFAULT, DEFAULT) AS k) AS ObjectKey
 					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(iud.DatabaseName, iud.SchemaName, iud.ObjectName, COALESCE(iud.IndexName, ''N.A.''), DEFAULT, DEFAULT) AS k) AS IndexKey
 				FROM (
 					SELECT
@@ -595,21 +707,21 @@ ELSE BEGIN
 					AND ((iud.IndexName = iuExists.IndexName) OR ((iud.IndexName IS NULL) AND (iuExists.IndexName IS NULL)));
 			';
 			EXEC(@stmt);
-		END;
 
-		--
-		-- Register extended properties on fact view @pbiSchema.[Index usage]
-		--
-		BEGIN
-			SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Index usage');
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
+			--
+			-- Register extended properties on fact view @pbiSchema.[Index usage]
+			--
+			BEGIN
+				SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Index usage');
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
 
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+			END;
 		END;
 	END;
 

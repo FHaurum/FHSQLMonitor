@@ -47,33 +47,6 @@ table Triggers
 
 		annotation PBI_FormatHint = {"isCustom":true}
 
-	column 'Is ms shipped'
-		dataType: boolean
-		formatString: """TRUE"";""TRUE"";""FALSE"""
-		lineageTag: 7b72f4d6-a002-4ac5-8d9b-ef3ef1e55106
-		summarizeBy: none
-		sourceColumn: Is ms shipped
-
-		annotation SummarizationSetBy = Automatic
-
-	column 'Is disabled'
-		dataType: boolean
-		formatString: """TRUE"";""TRUE"";""FALSE"""
-		lineageTag: 7134b25d-12ce-4565-8448-b1fb41139015
-		summarizeBy: none
-		sourceColumn: Is disabled
-
-		annotation SummarizationSetBy = Automatic
-
-	column 'Is not for replication'
-		dataType: boolean
-		formatString: """TRUE"";""TRUE"";""FALSE"""
-		lineageTag: 44358346-7b34-406e-9482-eaaa42d724e2
-		summarizeBy: none
-		sourceColumn: Is not for replication
-
-		annotation SummarizationSetBy = Automatic
-
 	column 'Trigger type'
 		dataType: string
 		lineageTag: a95feeb7-9062-4025-8639-c88227eeca44
@@ -102,6 +75,66 @@ table Triggers
 
 		annotation SummarizationSetBy = Automatic
 
+	column 'Is disabled'
+		dataType: string
+		lineageTag: ad451ec7-abba-4e89-b389-94c428d44edb
+		summarizeBy: none
+		sourceColumn: Is disabled
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Is MS shipped'
+		dataType: string
+		lineageTag: de375ee6-3e44-4110-95fd-3138e7d0be28
+		summarizeBy: none
+		sourceColumn: Is MS shipped
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Is not for replication'
+		dataType: string
+		lineageTag: f7301a56-6b84-426e-bc0b-c62b81edf3c5
+		summarizeBy: none
+		sourceColumn: Is not for replication
+
+		annotation SummarizationSetBy = Automatic
+
+	column IsDisabled
+		dataType: boolean
+		isHidden
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: d93e0b61-c4ef-480f-8974-1dbd17179f2a
+		summarizeBy: none
+		sourceColumn: IsDisabled
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column IsMSShipped
+		dataType: boolean
+		isHidden
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 85d2ca0f-b3e9-4ab4-8ed0-67c8feede585
+		summarizeBy: none
+		sourceColumn: IsMSShipped
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column IsNotForReplication
+		dataType: boolean
+		isHidden
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 4f039bea-5134-4965-bf8f-e4f5cec64eb6
+		summarizeBy: none
+		sourceColumn: IsNotForReplication
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
 	partition Triggers = m
 		mode: import
 		queryGroup: Facts
@@ -116,17 +149,36 @@ table Triggers
 				  table  = db{[Schema = #"Schema name", Item = "Triggers"]}[Data], 
 				  emptyDataset = Table.FirstN(table, 0), 
 				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
-				  renameColumns = Table.RenameColumns(
+				  selectColumns = Table.SelectColumns(
 				    datasetToUse, 
 				    {
+				      "CreateDate", 
+				      "IsDisabled", 
+				      "IsDisabledTxt", 
+				      "IsMSShipped", 
+				      "IsMSShippedTxt", 
+				      "IsNotForReplication", 
+				      "IsNotForReplicationTxt", 
+				      "ModifyDate", 
+				      "ParentClass", 
+				      "ParentObject", 
+				      "TriggerName", 
+				      "TriggerType", 
+				      "Type", 
+				      "DatabaseKey"
+				    }
+				  ), 
+				  renameColumns = Table.RenameColumns(
+				    selectColumns, 
+				    {
+				      {"CreateDate", "Created date"}, 
+				      {"IsDisabledTxt", "Is disabled"}, 
+				      {"IsMSShippedTxt", "Is MS shipped"}, 
+				      {"IsNotForReplicationTxt", "Is not for replication"}, 
+				      {"ModifyDate", "Modified date"}, 
 				      {"ParentClass", "Parent class"}, 
 				      {"ParentObject", "Parent object"}, 
 				      {"TriggerName", "Trigger name"}, 
-				      {"CreateDate", "Created date"}, 
-				      {"ModifyDate", "Modified date"}, 
-				      {"IsMsShipped", "Is ms shipped"}, 
-				      {"IsDisabled", "Is disabled"}, 
-				      {"IsNotForReplication", "Is not for replication"}, 
 				      {"TriggerType", "Trigger type"}
 				    }
 				  )

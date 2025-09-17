@@ -1,0 +1,199 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "name": "65943585ca18dcd2dda0",
+  "position": {
+    "x": 10,
+    "y": 565,
+    "z": 1000,
+    "height": 455,
+    "width": 940
+  },
+  "visual": {
+    "visualType": "pivotTable",
+    "query": {
+      "queryState": {
+        "Rows": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Agent job"
+                    }
+                  },
+                  "Property": "Job name"
+                }
+              },
+              "queryRef": "Agent job.Job name",
+              "nativeQueryRef": "Job name",
+              "active": true
+            }
+          ]
+        },
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Success rate - Agent jobs performance"
+                }
+              },
+              "queryRef": "_Measures.Success rate - Agent jobs performance",
+              "nativeQueryRef": "Success rate",
+              "displayName": "Success rate"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Executions (Succeeded) - Agent jobs performance"
+                }
+              },
+              "queryRef": "_Measures.Executions (Succeeded) - Agent jobs performance",
+              "nativeQueryRef": "Succeeded",
+              "displayName": "Succeeded"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Executions (Ended with errors) - Agent jobs performance"
+                }
+              },
+              "queryRef": "_Measures.Executions (Ended with errors) - Agent jobs performance",
+              "nativeQueryRef": "Ended with errors",
+              "displayName": "Ended with errors"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Executions (Failed) - Agent jobs performance"
+                }
+              },
+              "queryRef": "_Measures.Executions (Failed) - Agent jobs performance",
+              "nativeQueryRef": "Failed",
+              "displayName": "Failed"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Executions (Other errors) - Agent jobs performance"
+                }
+              },
+              "queryRef": "_Measures.Executions (Other errors) - Agent jobs performance",
+              "nativeQueryRef": "Other errors",
+              "displayName": "Other errors"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Executions (Missing data) - Agent jobs performance"
+                }
+              },
+              "queryRef": "_Measures.Executions (Missing data) - Agent jobs performance",
+              "nativeQueryRef": "Missing data",
+              "displayName": "Missing data"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "_Measures"
+                  }
+                },
+                "Property": "Success rate - Agent jobs performance"
+              }
+            },
+            "direction": "Ascending"
+          }
+        ]
+      }
+    },
+    "expansionStates": [
+      {
+        "roles": [
+          "Rows"
+        ],
+        "levels": [
+          {
+            "queryRefs": [
+              "Agent job.Job name"
+            ],
+            "isCollapsed": true,
+            "isPinned": true
+          }
+        ],
+        "root": {}
+      }
+    ],
+    "objects": {
+      "columnWidth": [
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "305.6155721866881D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Agent job.Job name"
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Agent jobs performance'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

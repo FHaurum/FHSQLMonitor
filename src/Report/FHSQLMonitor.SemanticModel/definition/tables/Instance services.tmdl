@@ -33,15 +33,6 @@ table 'Instance services'
 
 		annotation SummarizationSetBy = Automatic
 
-	column 'IFI enabled'
-		dataType: int64
-		formatString: 0
-		lineageTag: 2ff0dfd5-7a0b-4eb5-85dc-e57d398d7424
-		summarizeBy: none
-		sourceColumn: IFI enabled
-
-		annotation SummarizationSetBy = User
-
 	column Timestamp
 		dataType: dateTime
 		formatString: dd-mmm-yyyy hh:nn:ss
@@ -54,6 +45,14 @@ table 'Instance services'
 		annotation SummarizationSetBy = Automatic
 
 		annotation PBI_FormatHint = {"isCustom":true}
+
+	column 'Instant file initialization enabled'
+		dataType: string
+		lineageTag: add54479-61a0-4e91-bfd7-7c627aca90e8
+		summarizeBy: none
+		sourceColumn: Instant file initialization enabled
+
+		annotation SummarizationSetBy = Automatic
 
 	partition 'Instance services' = m
 		mode: import
@@ -69,13 +68,24 @@ table 'Instance services'
 				  table  = db{[Schema = #"Schema name", Item = "Instance services"]}[Data], 
 				  emptyDataset = Table.FirstN(table, 0), 
 				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
-				  renameColumns = Table.RenameColumns(
+				  selectColumns = Table.SelectColumns(
 				    datasetToUse, 
 				    {
-				      {"StartupType", "Startup type"}, 
+				      "InstantFileInitializationEnabledTxt", 
+				      "Name", 
+				      "ServiceAccount", 
+				      "StartupType", 
+				      "Status", 
+				      "Timestamp"
+				    }
+				  ), 
+				  renameColumns = Table.RenameColumns(
+				    selectColumns, 
+				    {
+				      {"InstantFileInitializationEnabledTxt", "Instant file initialization enabled"}, 
+				      {"Name", "Service"}, 
 				      {"ServiceAccount", "Service account"}, 
-				      {"InstantFileInitializationEnabled", "IFI enabled"}, 
-				      {"Name", "Service"}
+				      {"StartupType", "Startup type"}
 				    }
 				  )
 				in

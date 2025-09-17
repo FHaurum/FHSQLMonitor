@@ -1,0 +1,170 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "name": "a1624922136c7ae0b022",
+  "position": {
+    "x": 10,
+    "y": 110,
+    "z": 1000,
+    "height": 910,
+    "width": 1900,
+    "tabOrder": 6000
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Instance configurations history"
+                    }
+                  },
+                  "Property": "Id"
+                }
+              },
+              "queryRef": "Instance configurations history.Id",
+              "nativeQueryRef": "Id"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Instance configurations history"
+                    }
+                  },
+                  "Property": "From"
+                }
+              },
+              "queryRef": "Instance configurations history.From",
+              "nativeQueryRef": "From (UTC)",
+              "displayName": "From (UTC)"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Instance configurations history"
+                    }
+                  },
+                  "Property": "To"
+                }
+              },
+              "queryRef": "Instance configurations history.To",
+              "nativeQueryRef": "To (UTC)",
+              "displayName": "To (UTC)"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Instance configurations history"
+                    }
+                  },
+                  "Property": "Value"
+                }
+              },
+              "queryRef": "Instance configurations history.Value",
+              "nativeQueryRef": "Value"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Instance configurations history"
+                    }
+                  },
+                  "Property": "Configuration"
+                }
+              },
+              "queryRef": "Instance configurations history.Configuration",
+              "nativeQueryRef": "Configuration"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Instance configurations history"
+                  }
+                },
+                "Property": "From"
+              }
+            },
+            "direction": "Descending"
+          }
+        ]
+      }
+    },
+    "objects": {
+      "total": [
+        {
+          "properties": {
+            "totals": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Instance configurations history'"
+                }
+              }
+            },
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "visualTooltip": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "section": {
+              "expr": {
+                "Literal": {
+                  "Value": "'04bf5338cda2e337cb46'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

@@ -1,0 +1,197 @@
+table 'Log shipping secondary database state'
+	lineageTag: ed8386a8-9f0e-49d3-82dc-74ba31407ed2
+
+	column 'Block size'
+		dataType: int64
+		formatString: #,0
+		lineageTag: 5b2d9976-aedd-44e6-8e0d-1b046553279f
+		summarizeBy: none
+		sourceColumn: Block size
+
+		annotation SummarizationSetBy = User
+
+	column 'Buffer count'
+		dataType: int64
+		formatString: #,0
+		lineageTag: c0998bf0-5de9-4cfb-88f6-bc64ef42c7e2
+		summarizeBy: none
+		sourceColumn: Buffer count
+
+		annotation SummarizationSetBy = User
+
+	column DisconnectUsers
+		dataType: boolean
+		isHidden
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 03ce95d8-6232-4259-b051-820014932b72
+		summarizeBy: none
+		sourceColumn: DisconnectUsers
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Disconnect users'
+		dataType: string
+		lineageTag: 55213c03-11ec-4e7f-98f5-bf1a766aec11
+		summarizeBy: none
+		sourceColumn: Disconnect users
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Max. transfer size'
+		dataType: int64
+		formatString: #,0
+		lineageTag: 4b363994-561d-4a0f-9ba5-952d19c73efe
+		summarizeBy: none
+		sourceColumn: Max. transfer size
+
+		annotation SummarizationSetBy = User
+
+	column RestoreAll
+		dataType: boolean
+		isHidden
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: ee0f0a78-d126-4ad0-aaa4-49b2e38b405c
+		summarizeBy: none
+		sourceColumn: RestoreAll
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Restore all'
+		dataType: string
+		lineageTag: f0ac460a-70d9-4cdd-a7c8-80e838d9a500
+		summarizeBy: none
+		sourceColumn: Restore all
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Restore delay'
+		dataType: int64
+		formatString: #,0
+		lineageTag: cac49e3b-771a-467a-affa-32cc3658a7f6
+		summarizeBy: none
+		sourceColumn: Restore delay
+
+		annotation SummarizationSetBy = User
+
+	column RestoreMode
+		dataType: boolean
+		isHidden
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: c850a8d7-075c-4251-9a39-2ce9ae2d8713
+		summarizeBy: none
+		sourceColumn: RestoreMode
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Restore mode'
+		dataType: string
+		lineageTag: 9561fe9a-3ba6-419d-a4ab-7d1d12d3fe21
+		summarizeBy: none
+		sourceColumn: Restore mode
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Secondary database'
+		dataType: string
+		lineageTag: 663110c9-66fe-444f-b218-9a1124e4a971
+		summarizeBy: none
+		sourceColumn: Secondary database
+
+		annotation SummarizationSetBy = Automatic
+
+	column DatabaseKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: d2190c6a-b060-4d88-a3ea-a259c83ebb4c
+		summarizeBy: none
+		sourceColumn: DatabaseKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Max. timestamp'
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: 7b0bfe6f-b01f-4208-9bf4-00c1b9f989e2
+		summarizeBy: none
+		sourceColumn: Max. timestamp
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	column 'Min. timestamp'
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: 4948a101-fbdd-4f54-9605-d5372f0417fa
+		summarizeBy: none
+		sourceColumn: Min. timestamp
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	partition 'Log shipping secondary database state' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Log shipping")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db     = dbList{[Name = #"Database name"]}[Data], 
+				  table  = db{[Schema = #"Schema name", Item = "Log shipping secondary database state"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  selectColumns = Table.SelectColumns(
+				    datasetToUse, 
+				    {
+				      "BlockSize", 
+				      "BufferCount", 
+				      "DisconnectUsers", 
+				      "DisconnectUsersTxt", 
+				      "MaxTimestamp", 
+				      "MaxTransferSize", 
+				      "MinTimestamp", 
+				      "RestoreAll", 
+				      "RestoreAllTxt", 
+				      "RestoreDelay", 
+				      "RestoreMode", 
+				      "RestoreModeTxt", 
+				      "SecondaryDatabase", 
+				      "DatabaseKey"
+				    }
+				  ), 
+				  renameColumns = Table.RenameColumns(
+				    selectColumns, 
+				    {
+				      {"BlockSize", "Block size"}, 
+				      {"BufferCount", "Buffer count"}, 
+				      {"DisconnectUsersTxt", "Disconnect users"}, 
+				      {"MaxTimestamp", "Max. timestamp"}, 
+				      {"MaxTransferSize", "Max. transfer size"}, 
+				      {"MinTimestamp", "Min. timestamp"}, 
+				      {"RestoreAllTxt", "Restore all"}, 
+				      {"RestoreDelay", "Restore delay"}, 
+				      {"RestoreModeTxt", "Restore mode"}, 
+				      {"SecondaryDatabase", "Secondary database"}
+				    }
+				  )
+				in
+				  renameColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

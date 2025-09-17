@@ -1229,48 +1229,6 @@ cultureInfo en-US
 			        }
 			      ]
 			    },
-			    "agent_jobs__grid.job_enabled": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "Agent jobs - grid",
-			          "ConceptualProperty": "Job enabled"
-			        }
-			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "Job ena.": {
-			            "State": "Suggested",
-			            "Source": {
-			              "Type": "External",
-			              "Agent": "PowerBI.VisualColumnRename"
-			            },
-			            "Weight": 0.9
-			          }
-			        }
-			      ]
-			    },
-			    "agent_jobs__grid.schedule_enabled": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "Agent jobs - grid",
-			          "ConceptualProperty": "Schedule enabled"
-			        }
-			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "Schd. ena.": {
-			            "State": "Suggested",
-			            "Source": {
-			              "Type": "External",
-			              "Agent": "PowerBI.VisualColumnRename"
-			            },
-			            "Weight": 0.9
-			          }
-			        }
-			      ]
-			    },
 			    "agent_jobs__grid.schedule_id": {
 			      "Definition": {
 			        "Binding": {
@@ -1282,48 +1240,6 @@ cultureInfo en-US
 			      "Terms": [
 			        {
 			          "Schd. id": {
-			            "State": "Suggested",
-			            "Source": {
-			              "Type": "External",
-			              "Agent": "PowerBI.VisualColumnRename"
-			            },
-			            "Weight": 0.9
-			          }
-			        }
-			      ]
-			    },
-			    "agent_jobs__list.job_enabled": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "Agent jobs - list",
-			          "ConceptualProperty": "Job enabled"
-			        }
-			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "Job ena.": {
-			            "State": "Suggested",
-			            "Source": {
-			              "Type": "External",
-			              "Agent": "PowerBI.VisualColumnRename"
-			            },
-			            "Weight": 0.9
-			          }
-			        }
-			      ]
-			    },
-			    "agent_jobs__list.schedule_enabled": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "Agent jobs - list",
-			          "ConceptualProperty": "Schedule enabled"
-			        }
-			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "Schd. ena.": {
 			            "State": "Suggested",
 			            "Source": {
 			              "Type": "External",
@@ -5442,27 +5358,6 @@ cultureInfo en-US
 			        }
 			      ]
 			    },
-			    "database_state.auto_update_stats__async_": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "Database state",
-			          "ConceptualProperty": "Auto update stats. async."
-			        }
-			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "Auto upd. stats. async.": {
-			            "State": "Suggested",
-			            "Source": {
-			              "Type": "External",
-			              "Agent": "PowerBI.VisualColumnRename"
-			            },
-			            "Weight": 0.9
-			          }
-			        }
-			      ]
-			    },
 			    "database_state.comp__level": {
 			      "Definition": {
 			        "Binding": {
@@ -5537,27 +5432,6 @@ cultureInfo en-US
 			      "Terms": [
 			        {
 			          "Min. date": {
-			            "State": "Suggested",
-			            "Source": {
-			              "Type": "External",
-			              "Agent": "PowerBI.VisualColumnRename"
-			            },
-			            "Weight": 0.9
-			          }
-			        }
-			      ]
-			    },
-			    "database_state.mixed_page_allocation": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "Database state",
-			          "ConceptualProperty": "Mixed page allocation"
-			        }
-			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "Mixed page alloc.": {
 			            "State": "Suggested",
 			            "Source": {
 			              "Type": "External",
@@ -10750,27 +10624,6 @@ cultureInfo en-US
 			        }
 			      ]
 			    },
-			    "instance_services.ifi_enabled": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "Instance services",
-			          "ConceptualProperty": "IFI enabled"
-			        }
-			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "IFI": {
-			            "State": "Suggested",
-			            "Source": {
-			              "Type": "External",
-			              "Agent": "PowerBI.VisualColumnRename"
-			            },
-			            "Weight": 0.9
-			          }
-			        }
-			      ]
-			    },
 			    "instance_services.startup_type": {
 			      "Definition": {
 			        "Binding": {
@@ -14726,28 +14579,6 @@ cultureInfo en-US
 			        }
 			      ]
 			    },
-			    "plan_guide.is_disabled": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "Plan guides",
-			          "ConceptualProperty": "Is disabled"
-			        }
-			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "is disabled": {
-			            "State": "Generated"
-			          }
-			        },
-			        {
-			          "disabled": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        }
-			      ]
-			    },
 			    "plan_guide.message": {
 			      "Definition": {
 			        "Binding": {
@@ -17377,7 +17208,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "Resource governor external resource pool affinity",
-			          "ConceptualProperty": "PoolName"
+			          "ConceptualProperty": "Pool name"
 			        }
 			      },
 			      "State": "Generated",
@@ -17398,34 +17229,22 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "Resource governor external resource pools",
-			          "ConceptualProperty": "MaxCPUpercent"
+			          "ConceptualProperty": "Max. CPU %"
 			        }
 			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "MaxCPU %": {
-			            "State": "Suggested",
-			            "Source": {
-			              "Type": "External",
-			              "Agent": "PowerBI.VisualColumnRename"
-			            },
-			            "Weight": 0.9
-			          }
-			        }
-			      ]
+			      "State": "Generated"
 			    },
 			    "resource_governor_external_resource_pools.maxmemorypercent": {
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "Resource governor external resource pools",
-			          "ConceptualProperty": "MaxMemoryPercent"
+			          "ConceptualProperty": "Max. memory %"
 			        }
 			      },
 			      "State": "Generated",
 			      "Terms": [
 			        {
-			          "MaxMem. %": {
+			          "Max. mem. %": {
 			            "State": "Suggested",
 			            "Source": {
 			              "Type": "External",
@@ -17440,13 +17259,13 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "Resource governor external resource pools",
-			          "ConceptualProperty": "MaxProcesses"
+			          "ConceptualProperty": "Max. processes"
 			        }
 			      },
 			      "State": "Generated",
 			      "Terms": [
 			        {
-			          "MaxProcs.": {
+			          "Max. procs.": {
 			            "State": "Suggested",
 			            "Source": {
 			              "Type": "External",
@@ -17461,7 +17280,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "Resource governor external resource pools",
-			          "ConceptualProperty": "PoolName"
+			          "ConceptualProperty": "Pool name"
 			        }
 			      },
 			      "State": "Generated",
@@ -17503,7 +17322,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "Resource governor resource pool affinity",
-			          "ConceptualProperty": "PoolName"
+			          "ConceptualProperty": "Pool name"
 			        }
 			      },
 			      "State": "Generated",
@@ -17524,7 +17343,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "Resource governor resource pools",
-			          "ConceptualProperty": "PoolName"
+			          "ConceptualProperty": "Pool name"
 			        }
 			      },
 			      "State": "Generated",
@@ -17545,7 +17364,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "Resource governor workload groups",
-			          "ConceptualProperty": "PoolName"
+			          "ConceptualProperty": "Pool name"
 			        }
 			      },
 			      "State": "Generated",
@@ -17566,34 +17385,22 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "Resource governor workload groups",
-			          "ConceptualProperty": "RequestMaxMemoryGrantPercent"
+			          "ConceptualProperty": "Request max. memory grant %"
 			        }
 			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "RequestMaxMemoryGrant %": {
-			            "State": "Suggested",
-			            "Source": {
-			              "Type": "External",
-			              "Agent": "PowerBI.VisualColumnRename"
-			            },
-			            "Weight": 0.9
-			          }
-			        }
-			      ]
+			      "State": "Generated"
 			    },
 			    "resource_governor_workload_groups.requestmaxmemorygrantpercentnumeric": {
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "Resource governor workload groups",
-			          "ConceptualProperty": "RequestMaxMemoryGrantPercentNumeric"
+			          "ConceptualProperty": "Request max. memory grant % numeric"
 			        }
 			      },
 			      "State": "Generated",
 			      "Terms": [
 			        {
-			          "RequestMaxMemoryGrant %": {
+			          "Request max. memory grant %": {
 			            "State": "Suggested",
 			            "Source": {
 			              "Type": "External",
@@ -17734,268 +17541,6 @@ cultureInfo en-US
 			          }
 			        }
 			      ]
-			    },
-			    "retension.enabled": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "Retentions",
-			          "ConceptualProperty": "Enabled"
-			        }
-			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "enabled": {
-			            "State": "Generated"
-			          }
-			        }
-			      ]
-			    },
-			    "retension.last_executed_UTC": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "Retentions",
-			          "ConceptualProperty": "Last executed UTC"
-			        }
-			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "last executed UTC": {
-			            "State": "Generated"
-			          }
-			        },
-			        {
-			          "date": {
-			            "State": "Generated",
-			            "Weight": 0.7
-			          }
-			        },
-			        {
-			          "end executed utc": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.591
-			          }
-			        },
-			        {
-			          "final executed utc": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.591
-			          }
-			        },
-			        {
-			          "closing executed utc": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.591
-			          }
-			        },
-			        {
-			          "concluding executed utc": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.591
-			          }
-			        },
-			        {
-			          "finishing executed utc": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.591
-			          }
-			        },
-			        {
-			          "former executed utc": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.591
-			          }
-			        },
-			        {
-			          "latest executed utc": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.591
-			          }
-			        },
-			        {
-			          "latter executed utc": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.591
-			          }
-			        },
-			        {
-			          "past executed utc": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.591
-			          }
-			        },
-			        {
-			          "remaining executed utc": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.591
-			          }
-			        }
-			      ],
-			      "SemanticType": "Time"
-			    },
-			    "retension.last_started_UTC": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "Retentions",
-			          "ConceptualProperty": "Last started UTC"
-			        }
-			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "last started UTC": {
-			            "State": "Generated"
-			          }
-			        },
-			        {
-			          "date": {
-			            "State": "Generated",
-			            "Weight": 0.7
-			          }
-			        },
-			        {
-			          "end started utc": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.591
-			          }
-			        },
-			        {
-			          "final started utc": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.591
-			          }
-			        },
-			        {
-			          "closing started utc": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.591
-			          }
-			        },
-			        {
-			          "concluding started utc": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.591
-			          }
-			        },
-			        {
-			          "finishing started utc": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.591
-			          }
-			        },
-			        {
-			          "former started utc": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.591
-			          }
-			        },
-			        {
-			          "latest started utc": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.591
-			          }
-			        },
-			        {
-			          "latter started utc": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.591
-			          }
-			        },
-			        {
-			          "past started utc": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.591
-			          }
-			        },
-			        {
-			          "remaining started utc": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.591
-			          }
-			        }
-			      ],
-			      "SemanticType": "Time"
 			    },
 			    "retension.table": {
 			      "Definition": {
@@ -18188,257 +17733,6 @@ cultureInfo en-US
 			        }
 			      ]
 			    },
-			    "schedule.enabled": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "Schedules",
-			          "ConceptualProperty": "Enabled"
-			        }
-			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "enabled": {
-			            "State": "Generated"
-			          }
-			        }
-			      ]
-			    },
-			    "schedule.execution_delay_in_sec_": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "Schedules",
-			          "ConceptualProperty": "Execution delay in sec."
-			        }
-			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "execution delay in sec.": {
-			            "State": "Generated"
-			          }
-			        },
-			        {
-			          "execution postponement in sec.": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.52
-			          }
-			        },
-			        {
-			          "execution interruption in sec.": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.52
-			          }
-			        },
-			        {
-			          "execution suspension in sec.": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.52
-			          }
-			        },
-			        {
-			          "execution adjournment in sec.": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.52
-			          }
-			        },
-			        {
-			          "execution deferral in sec.": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.52
-			          }
-			        },
-			        {
-			          "execution deferment in sec.": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.52
-			          }
-			        },
-			        {
-			          "execution stay in sec.": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.504
-			          }
-			        },
-			        {
-			          "execution interval in sec.": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.494
-			          }
-			        },
-			        {
-			          "execution holdup in sec.": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.494
-			          }
-			        },
-			        {
-			          "execution stoppage in sec.": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.494
-			          }
-			        },
-			        {
-			          "Delay": {
-			            "State": "Suggested",
-			            "Source": {
-			              "Type": "External",
-			              "Agent": "PowerBI.VisualColumnRename"
-			            },
-			            "Weight": 0.9
-			          }
-			        }
-			      ]
-			    },
-			    "schedule.friday": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "Schedules",
-			          "ConceptualProperty": "Friday"
-			        }
-			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "friday": {
-			            "State": "Generated"
-			          }
-			        },
-			        {
-			          "Fri.": {
-			            "State": "Suggested",
-			            "Source": {
-			              "Type": "External",
-			              "Agent": "PowerBI.VisualColumnRename"
-			            },
-			            "Weight": 0.9
-			          }
-			        }
-			      ]
-			    },
-			    "schedule.from_time": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "Schedules",
-			          "ConceptualProperty": "From time"
-			        }
-			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "from time": {
-			            "State": "Generated"
-			          }
-			        },
-			        {
-			          "time": {
-			            "State": "Generated",
-			            "Weight": 0.7
-			          }
-			        },
-			        {
-			          "from duration": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.75
-			          }
-			        },
-			        {
-			          "from interval": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.75
-			          }
-			        },
-			        {
-			          "from moment": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.75
-			          }
-			        },
-			        {
-			          "from period": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.727
-			          }
-			        },
-			        {
-			          "from timetable": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.727
-			          }
-			        },
-			        {
-			          "From": {
-			            "State": "Suggested",
-			            "Source": {
-			              "Type": "External",
-			              "Agent": "PowerBI.VisualColumnRename"
-			            },
-			            "Weight": 0.9
-			          }
-			        }
-			      ],
-			      "SemanticType": "Time"
-			    },
 			    "schedule.last_error_message": {
 			      "Definition": {
 			        "Binding": {
@@ -18571,278 +17865,6 @@ cultureInfo en-US
 			        }
 			      ]
 			    },
-			    "schedule.last_executed_UTC": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "Schedules",
-			          "ConceptualProperty": "Last executed UTC"
-			        }
-			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "last executed UTC": {
-			            "State": "Generated"
-			          }
-			        },
-			        {
-			          "date": {
-			            "State": "Generated",
-			            "Weight": 0.7
-			          }
-			        },
-			        {
-			          "end executed utc": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.591
-			          }
-			        },
-			        {
-			          "final executed utc": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.591
-			          }
-			        },
-			        {
-			          "closing executed utc": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.591
-			          }
-			        },
-			        {
-			          "concluding executed utc": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.591
-			          }
-			        },
-			        {
-			          "finishing executed utc": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.591
-			          }
-			        },
-			        {
-			          "former executed utc": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.591
-			          }
-			        },
-			        {
-			          "latest executed utc": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.591
-			          }
-			        },
-			        {
-			          "latter executed utc": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.591
-			          }
-			        },
-			        {
-			          "past executed utc": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.591
-			          }
-			        },
-			        {
-			          "remaining executed utc": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.591
-			          }
-			        }
-			      ],
-			      "SemanticType": "Time"
-			    },
-			    "schedule.last_started_UTC": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "Schedules",
-			          "ConceptualProperty": "Last started UTC"
-			        }
-			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "last started UTC": {
-			            "State": "Generated"
-			          }
-			        },
-			        {
-			          "date": {
-			            "State": "Generated",
-			            "Weight": 0.7
-			          }
-			        },
-			        {
-			          "end started utc": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.591
-			          }
-			        },
-			        {
-			          "final started utc": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.591
-			          }
-			        },
-			        {
-			          "closing started utc": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.591
-			          }
-			        },
-			        {
-			          "concluding started utc": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.591
-			          }
-			        },
-			        {
-			          "finishing started utc": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.591
-			          }
-			        },
-			        {
-			          "former started utc": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.591
-			          }
-			        },
-			        {
-			          "latest started utc": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.591
-			          }
-			        },
-			        {
-			          "latter started utc": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.591
-			          }
-			        },
-			        {
-			          "past started utc": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.591
-			          }
-			        },
-			        {
-			          "remaining started utc": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.591
-			          }
-			        }
-			      ],
-			      "SemanticType": "Time"
-			    },
-			    "schedule.monday": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "Schedules",
-			          "ConceptualProperty": "Monday"
-			        }
-			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "monday": {
-			            "State": "Generated"
-			          }
-			        },
-			        {
-			          "Mon.": {
-			            "State": "Suggested",
-			            "Source": {
-			              "Type": "External",
-			              "Agent": "PowerBI.VisualColumnRename"
-			            },
-			            "Weight": 0.9
-			          }
-			        }
-			      ]
-			    },
 			    "schedule.name": {
 			      "Definition": {
 			        "Binding": {
@@ -18889,58 +17911,6 @@ cultureInfo en-US
 			        }
 			      ],
 			      "NameType": "Name"
-			    },
-			    "schedule.saturday": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "Schedules",
-			          "ConceptualProperty": "Saturday"
-			        }
-			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "saturday": {
-			            "State": "Generated"
-			          }
-			        },
-			        {
-			          "Sat.": {
-			            "State": "Suggested",
-			            "Source": {
-			              "Type": "External",
-			              "Agent": "PowerBI.VisualColumnRename"
-			            },
-			            "Weight": 0.9
-			          }
-			        }
-			      ]
-			    },
-			    "schedule.sunday": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "Schedules",
-			          "ConceptualProperty": "Sunday"
-			        }
-			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "sunday": {
-			            "State": "Generated"
-			          }
-			        },
-			        {
-			          "Sun.": {
-			            "State": "Suggested",
-			            "Source": {
-			              "Type": "External",
-			              "Agent": "PowerBI.VisualColumnRename"
-			            },
-			            "Weight": 0.9
-			          }
-			        }
-			      ]
 			    },
 			    "schedule.task": {
 			      "Definition": {
@@ -19054,167 +18024,6 @@ cultureInfo en-US
 			              "Agent": "Thesaurus"
 			            },
 			            "Weight": 0.476
-			          }
-			        }
-			      ]
-			    },
-			    "schedule.thursday": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "Schedules",
-			          "ConceptualProperty": "Thursday"
-			        }
-			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "thursday": {
-			            "State": "Generated"
-			          }
-			        },
-			        {
-			          "Thr.": {
-			            "State": "Suggested",
-			            "Source": {
-			              "Type": "External",
-			              "Agent": "PowerBI.VisualColumnRename"
-			            },
-			            "Weight": 0.9
-			          }
-			        }
-			      ]
-			    },
-			    "schedule.to_time": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "Schedules",
-			          "ConceptualProperty": "To time"
-			        }
-			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "to time": {
-			            "State": "Generated"
-			          }
-			        },
-			        {
-			          "time": {
-			            "State": "Generated",
-			            "Weight": 0.7
-			          }
-			        },
-			        {
-			          "to duration": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.75
-			          }
-			        },
-			        {
-			          "to interval": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.75
-			          }
-			        },
-			        {
-			          "to moment": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.75
-			          }
-			        },
-			        {
-			          "to period": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.727
-			          }
-			        },
-			        {
-			          "to timetable": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.727
-			          }
-			        },
-			        {
-			          "To": {
-			            "State": "Suggested",
-			            "Source": {
-			              "Type": "External",
-			              "Agent": "PowerBI.VisualColumnRename"
-			            },
-			            "Weight": 0.9
-			          }
-			        }
-			      ],
-			      "SemanticType": "Time"
-			    },
-			    "schedule.tuesday": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "Schedules",
-			          "ConceptualProperty": "Tuesday"
-			        }
-			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "tuesday": {
-			            "State": "Generated"
-			          }
-			        },
-			        {
-			          "Tue.": {
-			            "State": "Suggested",
-			            "Source": {
-			              "Type": "External",
-			              "Agent": "PowerBI.VisualColumnRename"
-			            },
-			            "Weight": 0.9
-			          }
-			        }
-			      ]
-			    },
-			    "schedule.wednesday": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "Schedules",
-			          "ConceptualProperty": "Wednesday"
-			        }
-			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "wednesday": {
-			            "State": "Generated"
-			          }
-			        },
-			        {
-			          "Wed.": {
-			            "State": "Suggested",
-			            "Source": {
-			              "Type": "External",
-			              "Agent": "PowerBI.VisualColumnRename"
-			            },
-			            "Weight": 0.9
 			          }
 			        }
 			      ]
@@ -19505,38 +18314,6 @@ cultureInfo en-US
 			              "Agent": "Thesaurus"
 			            },
 			            "Weight": 0.475
-			          }
-			        }
-			      ]
-			    },
-			    "statistics_age.is_hypothetical": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "Statistics age",
-			          "ConceptualProperty": "Is hypothetical"
-			        }
-			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "is hypothetical": {
-			            "State": "Generated"
-			          }
-			        },
-			        {
-			          "hypothetical": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "imaginary": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.476
 			          }
 			        }
 			      ]
@@ -20117,38 +18894,6 @@ cultureInfo en-US
 			              "Agent": "Thesaurus"
 			            },
 			            "Weight": 0.475
-			          }
-			        }
-			      ]
-			    },
-			    "statistics_age_incremental.is_hypothetical": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "Statistics age incremental",
-			          "ConceptualProperty": "Is hypothetical"
-			        }
-			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "is hypothetical": {
-			            "State": "Generated"
-			          }
-			        },
-			        {
-			          "hypothetical": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "imaginary": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.476
 			          }
 			        }
 			      ]
@@ -22565,86 +21310,6 @@ cultureInfo en-US
 			        }
 			      ]
 			    },
-			    "trigger.is_disabled": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "Triggers",
-			          "ConceptualProperty": "Is disabled"
-			        }
-			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "is disabled": {
-			            "State": "Generated"
-			          }
-			        },
-			        {
-			          "disabled": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        }
-			      ]
-			    },
-			    "trigger.is_ms_shipped": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "Triggers",
-			          "ConceptualProperty": "Is ms shipped"
-			        }
-			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "is ms shipped": {
-			            "State": "Generated"
-			          }
-			        },
-			        {
-			          "MS shipped": {
-			            "State": "Suggested",
-			            "Source": {
-			              "Type": "External",
-			              "Agent": "PowerBI.VisualColumnRename"
-			            },
-			            "Weight": 0.9
-			          }
-			        }
-			      ]
-			    },
-			    "trigger.is_not_for_replication": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "Triggers",
-			          "ConceptualProperty": "Is not for replication"
-			        }
-			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "is not for replication": {
-			            "State": "Generated"
-			          }
-			        },
-			        {
-			          "is not": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "Not for repl.": {
-			            "State": "Suggested",
-			            "Source": {
-			              "Type": "External",
-			              "Agent": "PowerBI.VisualColumnRename"
-			            },
-			            "Weight": 0.9
-			          }
-			        }
-			      ]
-			    },
 			    "trigger.modified_date": {
 			      "Definition": {
 			        "Binding": {
@@ -24271,7 +22936,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Avg SQL - CPU"
+			          "ConceptualProperty": "Avg. SQL - CPU"
 			        }
 			      },
 			      "State": "Generated",
@@ -24323,7 +22988,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Avg compilations/sec - Performance statistics"
+			          "ConceptualProperty": "Avg. compilations/sec - Performance statistics"
 			        }
 			      },
 			      "State": "Generated",
@@ -24491,7 +23156,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Avg perf. value - Performance statistics"
+			          "ConceptualProperty": "Avg. perf. value - Performance statistics"
 			        }
 			      },
 			      "State": "Generated",
@@ -24612,7 +23277,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Avg batch requests/sec - Performance statistics"
+			          "ConceptualProperty": "Avg. batch requests/sec - Performance statistics"
 			        }
 			      },
 			      "State": "Generated",
@@ -24780,7 +23445,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Avg Bytes Received from Replica - Always On traffic"
+			          "ConceptualProperty": "Avg. Bytes Received from Replica - Always On performance"
 			        }
 			      },
 			      "State": "Generated",
@@ -24812,7 +23477,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Avg Bytes Sent to Replica - Always On traffic"
+			          "ConceptualProperty": "Avg. Bytes Sent to Replica - Always On performance"
 			        }
 			      },
 			      "State": "Generated",
@@ -24844,7 +23509,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Avg Bytes Sent to Transport - Always On traffic"
+			          "ConceptualProperty": "Avg. Bytes Sent to Transport - Always On performance"
 			        }
 			      },
 			      "State": "Generated",
@@ -24876,7 +23541,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Avg Other - CPU"
+			          "ConceptualProperty": "Avg. Other - CPU"
 			        }
 			      },
 			      "State": "Generated",
@@ -24928,7 +23593,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Avg page life expectancy #000 - Performance statistics"
+			          "ConceptualProperty": "Avg. page life expectancy #000 - Performance statistics"
 			        }
 			      },
 			      "State": "Generated",
@@ -24960,7 +23625,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Avg page life expectancy #001 - Performance statistics"
+			          "ConceptualProperty": "Avg. page life expectancy #001 - Performance statistics"
 			        }
 			      },
 			      "State": "Generated",
@@ -24992,7 +23657,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Avg page life expectancy - Performance statistics"
+			          "ConceptualProperty": "Avg. page life expectancy - Performance statistics"
 			        }
 			      },
 			      "State": "Generated",
@@ -25024,7 +23689,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Avg sessions - Connections"
+			          "ConceptualProperty": "Avg. sessions - Connections"
 			        }
 			      },
 			      "State": "Generated",
@@ -25156,7 +23821,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Avg system sessions latest day - Connections"
+			          "ConceptualProperty": "Avg. system sessions latest day - Connections"
 			        }
 			      },
 			      "State": "Generated",
@@ -25188,7 +23853,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Avg system sessions ratio since past - Connections"
+			          "ConceptualProperty": "Avg. system sessions ratio since past - Connections"
 			        }
 			      },
 			      "State": "Generated",
@@ -25220,7 +23885,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Avg user sessions latest day - Connections"
+			          "ConceptualProperty": "Avg. user sessions latest day - Connections"
 			        }
 			      },
 			      "State": "Generated",
@@ -25252,7 +23917,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Avg user sessions ratio since past - Connections"
+			          "ConceptualProperty": "Avg. user sessions ratio since past - Connections"
 			        }
 			      },
 			      "State": "Generated",
@@ -25284,7 +23949,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Current size MB"
+			          "ConceptualProperty": "Current size MB - Database size"
 			        }
 			      },
 			      "State": "Generated",
@@ -30482,7 +29147,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Is filters applied - Always On traffic"
+			          "ConceptualProperty": "Is filters applied - Always On performance"
 			        }
 			      },
 			      "State": "Generated",
@@ -32004,7 +30669,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Is ms shipped - Triggers"
+			          "ConceptualProperty": "Is MS shipped - Triggers"
 			        }
 			      },
 			      "State": "Generated",
@@ -42544,7 +41209,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Open filter button tooltip - Always On traffic"
+			          "ConceptualProperty": "Open filter button tooltip - Always On performance"
 			        }
 			      },
 			      "State": "Generated",
@@ -44984,7 +43649,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Past avg system sessions - Connections"
+			          "ConceptualProperty": "Past avg. system sessions - Connections"
 			        }
 			      },
 			      "State": "Generated",
@@ -45266,7 +43931,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Past avg user sessions - Connections"
+			          "ConceptualProperty": "Past avg. user sessions - Connections"
 			        }
 			      },
 			      "State": "Generated",
@@ -50083,7 +48748,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Show filters - Always On traffic"
+			          "ConceptualProperty": "Show filters - Always On performance"
 			        }
 			      },
 			      "State": "Generated",
@@ -52013,7 +50678,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Show filters Headers - Always On traffic"
+			          "ConceptualProperty": "Show filters Headers - Always On performance"
 			        }
 			      },
 			      "State": "Generated",
@@ -54633,7 +53298,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Used size MB"
+			          "ConceptualProperty": "Used size MB - Database size"
 			        }
 			      },
 			      "State": "Generated",
@@ -58841,7 +57506,7 @@ cultureInfo en-US
 			      "State": "Generated",
 			      "Terms": [
 			        {
-			          "Filter definition": {
+			          "Filter": {
 			            "State": "Suggested",
 			            "Source": {
 			              "Type": "External",
@@ -58882,56 +57547,11 @@ cultureInfo en-US
 			      },
 			      "State": "Generated"
 			    },
-			    "index_definition.isprimarykey": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "Index configuration",
-			          "ConceptualProperty": "IsPrimaryKey"
-			        }
-			      },
-			      "State": "Generated"
-			    },
-			    "index_definition.isunique": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "Index configuration",
-			          "ConceptualProperty": "IsUnique"
-			        }
-			      },
-			      "State": "Generated"
-			    },
-			    "index_definition.isdisabled": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "Index configuration",
-			          "ConceptualProperty": "IsDisabled"
-			        }
-			      },
-			      "State": "Generated"
-			    },
-			    "index_definition.ishypothetical": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "Index configuration",
-			          "ConceptualProperty": "IsHypothetical"
-			        }
-			      },
-			      "State": "Generated"
-			    },
-			    "index_definition.hasfilter": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "Index configuration",
-			          "ConceptualProperty": "HasFilter"
-			        }
-			      },
-			      "State": "Generated"
-			    },
 			    "index_definition.filterdefinition": {
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "Index configuration",
-			          "ConceptualProperty": "FilterDefinition"
+			          "ConceptualProperty": "Filter definition"
 			        }
 			      },
 			      "State": "Generated"
@@ -60895,6 +59515,120 @@ cultureInfo en-US
 			        }
 			      ]
 			    },
+			    "table_measures.show_filters__always_on_configuration": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Show filters - Always On configuration"
+			        }
+			      },
+			      "State": "Generated"
+			    },
+			    "table_measures.show_filters_headers__always_on_configuration": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Show filters Headers - Always On configuration"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Filters": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "agent_jobs__grid.job_enabled": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Agent jobs - grid",
+			          "ConceptualProperty": "Job enabled"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Job ena.": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "agent_jobs__grid.schedule_enabled": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Agent jobs - grid",
+			          "ConceptualProperty": "Schedule enabled"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Schd. ena.": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "agent_jobs__list.job_enabled": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Agent jobs - list",
+			          "ConceptualProperty": "Job enabled"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Job ena.": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "agent_jobs__list.schedule_enabled": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Agent jobs - list",
+			          "ConceptualProperty": "Schedule enabled"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Schd. ena.": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
 			    "always_on_database_states.is_local": {
 			      "Definition": {
 			        "Binding": {
@@ -60979,26 +59713,1584 @@ cultureInfo en-US
 			        }
 			      ]
 			    },
-			    "table_measures.show_filters__always_on_configuration": {
+			    "database_state.auto_update_stats__async_": {
 			      "Definition": {
 			        "Binding": {
-			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Show filters - Always On configuration"
+			          "ConceptualEntity": "Database state",
+			          "ConceptualProperty": "Auto update stats. async."
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Auto upd. stats. async.": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "database_state.mixed_page_allocation": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Database state",
+			          "ConceptualProperty": "Mixed page allocation"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Mixed page alloc.": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "instance_services.instant_file_initialization_enabled": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Instance services",
+			          "ConceptualProperty": "Instant file initialization enabled"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "IFI": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "schedules.monday": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Schedules",
+			          "ConceptualProperty": "Monday"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Mon.": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "schedules.tuesday": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Schedules",
+			          "ConceptualProperty": "Tuesday"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Tue.": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "schedules.wednesday": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Schedules",
+			          "ConceptualProperty": "Wednesday"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Wed.": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "schedules.thursday": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Schedules",
+			          "ConceptualProperty": "Thursday"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Thr.": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "schedules.friday": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Schedules",
+			          "ConceptualProperty": "Friday"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Fri.": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "schedules.saturday": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Schedules",
+			          "ConceptualProperty": "Saturday"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Sat.": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "schedules.sunday": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Schedules",
+			          "ConceptualProperty": "Sunday"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Sun.": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "schedules.from_time": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Schedules",
+			          "ConceptualProperty": "From time"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "From": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "schedules.to_time": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Schedules",
+			          "ConceptualProperty": "To time"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "To": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "schedules.execution_delay_in_sec_": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Schedules",
+			          "ConceptualProperty": "Execution delay in sec."
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Delay": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "resource_governor_configuration.isenabled": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Resource governor configuration",
+			          "ConceptualProperty": "Is enabled"
 			        }
 			      },
 			      "State": "Generated"
 			    },
-			    "table_measures.show_filters_headers__always_on_configuration": {
+			    "resource_governor_workload_groups.workload_group_name": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Resource governor workload groups",
+			          "ConceptualProperty": "Workload group name"
+			        }
+			      },
+			      "State": "Generated"
+			    },
+			    "triggers.is_disabled": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Triggers",
+			          "ConceptualProperty": "Is disabled"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Disabled": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "triggers.is_ms_shipped": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Triggers",
+			          "ConceptualProperty": "Is MS shipped"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "MS shipped": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "triggers.is_not_for_replication": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Triggers",
+			          "ConceptualProperty": "Is not for replication"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Not for repl.": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "database.database__drillthrough_for_configuration_history": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Database",
+			          "ConceptualProperty": "Database - Drill-through for Configuration history"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Database": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "object.database__drillthrough_for_index_details": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Object",
+			          "ConceptualProperty": "Database - Drill-through for Index details"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Database": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "object.schema__drillthrough_for_index_details": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Object",
+			          "ConceptualProperty": "Schema - Drill-through for Index details"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Schema": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "object.object__drillthrough_for_index_details": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Object",
+			          "ConceptualProperty": "Object - Drill-through for Index details"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Object": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.show_filters_headers__instance_status": {
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Show filters Headers - Always On configuration"
+			          "ConceptualProperty": "Show filters Headers - Instance status"
 			        }
 			      },
 			      "State": "Generated",
 			      "Terms": [
 			        {
 			          "Filters": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.show_filters__instance_status": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Show filters - Instance status"
+			        }
+			      },
+			      "State": "Generated"
+			    },
+			    "table_measures.rows__index_not_used__index_usage": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Rows - index not used - Index usage"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Index rows": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.difference__index_usage": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Difference - Index usage"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Difference": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.used__index_usage": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Used - Index usage"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "U": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.sort_value__index_usage": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Sort value - Index usage"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Sort": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "log_shipping_monitor_secondary_states.threshold_alert": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Log shipping monitor secondary database state",
+			          "ConceptualProperty": "Threshold alert"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Alert thr.": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "log_shipping_monitor_secondary_states.threshold_alert_enabled": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Log shipping monitor secondary database state",
+			          "ConceptualProperty": "Threshold alert enabled"
+			        }
+			      },
+			      "State": "Generated"
+			    },
+			    "log_shipping_monitor_secondary_states.history_retention_period": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Log shipping monitor secondary database state",
+			          "ConceptualProperty": "History retention period"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Hist. R": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "log_shipping_monitor_primary_states.threshold_alert": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Log shipping monitor primary database state",
+			          "ConceptualProperty": "Threshold alert"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Alert thr.": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "log_shipping_primary_database_states.user_specified_monitor": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Log shipping primary database state",
+			          "ConceptualProperty": "User specified monitor"
+			        }
+			      },
+			      "State": "Generated"
+			    },
+			    "log_shipping_primary_database_states.monitor_server_security_mode": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Log shipping primary database state",
+			          "ConceptualProperty": "Monitor server security mode"
+			        }
+			      },
+			      "State": "Generated"
+			    },
+			    "log_shipping_monitor_primary_states.history_retention_period": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Log shipping monitor primary database state",
+			          "ConceptualProperty": "History retention period"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "History R": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "log_shipping_primary_database_states.backup_retention_period": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Log shipping primary database state",
+			          "ConceptualProperty": "Backup retention period"
+			        }
+			      },
+			      "State": "Generated"
+			    },
+			    "log_shipping_monitor_primary_states.backup_threshold": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Log shipping monitor primary database state",
+			          "ConceptualProperty": "Backup threshold"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Backup thr.": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "log_shipping_monitor_secondary_states.restore_threshold": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Log shipping monitor secondary database state",
+			          "ConceptualProperty": "Restore threshold"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Res. thr.": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "log_shipping_secondary_states.primary_server": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Log shipping secondary primary database state",
+			          "ConceptualProperty": "Primary server"
+			        }
+			      },
+			      "State": "Generated"
+			    },
+			    "log_shipping_secondary_states.primary_database": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Log shipping secondary primary database state",
+			          "ConceptualProperty": "Primary database"
+			        }
+			      },
+			      "State": "Generated"
+			    },
+			    "log_shipping_secondary_states.file_retention_period": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Log shipping secondary primary database state",
+			          "ConceptualProperty": "File retention period"
+			        }
+			      },
+			      "State": "Generated"
+			    },
+			    "log_shipping_secondary_states.monitor_server_security_mode": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Log shipping secondary primary database state",
+			          "ConceptualProperty": "Monitor server security mode"
+			        }
+			      },
+			      "State": "Generated"
+			    },
+			    "log_shipping_secondary_states.user_specified_monitor": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Log shipping secondary primary database state",
+			          "ConceptualProperty": "User specified monitor"
+			        }
+			      },
+			      "State": "Generated"
+			    },
+			    "log_shipping_monitor_primary_states.primary_server": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Log shipping monitor primary database state",
+			          "ConceptualProperty": "Primary server"
+			        }
+			      },
+			      "State": "Generated"
+			    },
+			    "log_shipping_monitor_primary_states.primary_database": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Log shipping monitor primary database state",
+			          "ConceptualProperty": "Primary database"
+			        }
+			      },
+			      "State": "Generated"
+			    },
+			    "log_shipping_primary_database_states.primary_database": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Log shipping primary database state",
+			          "ConceptualProperty": "Primary database"
+			        }
+			      },
+			      "State": "Generated"
+			    },
+			    "log_shipping_secondary_database_states.secondary_database": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Log shipping secondary database state",
+			          "ConceptualProperty": "Secondary database"
+			        }
+			      },
+			      "State": "Generated"
+			    },
+			    "table_measures.monitor_server_primary_databases": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Monitor server - Primary database - Log shipping configuration"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Mon. server": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.monitor_security_primary_databases": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Monitor server security - Primary database - Log shipping configuration"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Mon. security": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "log_shipping_primary_secondary_states.secondary_server": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Log shipping primary secondary database state",
+			          "ConceptualProperty": "Secondary server"
+			        }
+			      },
+			      "State": "Generated"
+			    },
+			    "log_shipping_primary_secondary_states.secondary_database": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Log shipping primary secondary database state",
+			          "ConceptualProperty": "Secondary database"
+			        }
+			      },
+			      "State": "Generated"
+			    },
+			    "table_measures.monitor_server_secondary_primary_databases": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Monitor server - Secondary primary database - Log shipping configuration"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Mon. server": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.monitor_security_secondary_primary_databases": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Monitor server security - Secondary primary database - Log shipping configuration"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Mon. security": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "log_shipping_primary_database_states.backup_compression": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Log shipping primary database state",
+			          "ConceptualProperty": "Backup compression"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Compression": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.backup_retention__log_shipping_configuration": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Backup retention - Primary database - Log shipping configuration"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Backup R": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.file_retention__log_shipping_configuration": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "File retention - Secondary primary database - Log shipping configuration"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "File R": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "log_shipping_secondary_database_states.restore_all": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Log shipping secondary database state",
+			          "ConceptualProperty": "Restore all"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Res. all": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "log_shipping_secondary_database_states.restore_delay": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Log shipping secondary database state",
+			          "ConceptualProperty": "Restore delay"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Res. delay": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "log_shipping_secondary_database_states.restore_mode": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Log shipping secondary database state",
+			          "ConceptualProperty": "Restore mode"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Res. mode": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "log_shipping_monitor_primary_database_state.min__timestamp": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Log shipping monitor primary database state",
+			          "ConceptualProperty": "Min. timestamp"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Min. time": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "log_shipping_monitor_primary_database_state.max__timestamp": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Log shipping monitor primary database state",
+			          "ConceptualProperty": "Max. timestamp"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Max. time": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "log_shipping_monitor_secondary_database_state.min__timestamp": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Log shipping monitor secondary database state",
+			          "ConceptualProperty": "Min. timestamp"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Min. time": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "log_shipping_monitor_secondary_database_state.max__timestamp": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Log shipping monitor secondary database state",
+			          "ConceptualProperty": "Max. timestamp"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Max. time": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "log_shipping_primary_database_state.min__timestamp": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Log shipping primary database state",
+			          "ConceptualProperty": "Min. timestamp"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Min. time": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "log_shipping_primary_database_state.max__timestamp": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Log shipping primary database state",
+			          "ConceptualProperty": "Max. timestamp"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Max. time": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "log_shipping_primary_secondary_database_state.min__timestamp": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Log shipping primary secondary database state",
+			          "ConceptualProperty": "Min. timestamp"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Time": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "log_shipping_secondary_database_state.min__timestamp": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Log shipping secondary database state",
+			          "ConceptualProperty": "Min. timestamp"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Min. time": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "log_shipping_secondary_database_state.max__timestamp": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Log shipping secondary database state",
+			          "ConceptualProperty": "Max. timestamp"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Max. time": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "log_shipping_secondary_primary_database_state.min__timestamp": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Log shipping secondary primary database state",
+			          "ConceptualProperty": "Min. timestamp"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Min. time": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "log_shipping_secondary_primary_database_state.max__timestamp": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Log shipping secondary primary database state",
+			          "ConceptualProperty": "Max. timestamp"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Max. time": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.show_filters__log_shipping_configuration": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Show filters - Log shipping configuration"
+			        }
+			      },
+			      "State": "Generated"
+			    },
+			    "table_measures.show_filters_headers__log_shipping_configuration": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Show filters Headers - Log shipping configuration"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Filters": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "log_shipping_monitor_primaries.avg__time_since_previous_backup__log_shipping_monitor_primaries": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Avg. time since previous backup - Monitor primaries - Log shipping status"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Avg. time since previous backup (Monitor)": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.avg__time_since_previous_copy__monitor_secondary_copies__log_shipping_status": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Avg. time since previous copy - Monitor secondary copies - Log shipping status"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Avg. time since previous copy (Monitor)": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.avg__time_since_previous_restore__monitor_secondary_restores__log_shipping_status": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Avg. time since previous restore - Monitor secondary restores - Log shipping status"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Avg. time since previous restore (Monitor)": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.avg__time_since_previous_backup__primary_databases__log_shipping_status": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Avg. time since previous backup - Primary databases - Log shipping status"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Avg. time since previous backup (Primary)": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.avg__time_since_previous_copy__secondaries__log_shipping_status": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Avg. time since previous copy - Secondaries - Log shipping status"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Avg. time since previous copy (Secondary)": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.avg__time_since_previous_restore__secondary_databases__log_shipping_status": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Avg. time since previous restore - Secondary databases - Log shipping status"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Avg. time since previous restore (Secondary)": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "server.server": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Server",
+			          "ConceptualProperty": "Server"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Secondary server": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "log_shipping_monitor_primaries.primary_databaseserver": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Log shipping monitor primaries",
+			          "ConceptualProperty": "Primary database-server"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Database-server": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "log_shipping_monitor_secondary_copies.secondary_databaseserver": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Log shipping monitor secondary copies",
+			          "ConceptualProperty": "Secondary database-server"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Database-server": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "log_shipping_monitor_secondary_restores.secondary_databaseserver": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Log shipping monitor secondary restores",
+			          "ConceptualProperty": "Secondary database-server"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Database-server": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "log_shipping_secondaries.primary_databaseserver": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Log shipping secondaries",
+			          "ConceptualProperty": "Primary database-server"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Database-server": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "log_shipping_state_history.from": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Log shipping state history",
+			          "ConceptualProperty": "From"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "From (UTC)": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "log_shipping_state_history.to": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Log shipping state history",
+			          "ConceptualProperty": "To"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "To (UTC)": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "database.database__drillthrough_for_log_shipping_history": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Database",
+			          "ConceptualProperty": "Database - Drill-through for Log shipping history"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Database": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        },
+			        {
+			          "Secondary database": {
 			            "State": "Suggested",
 			            "Source": {
 			              "Type": "External",

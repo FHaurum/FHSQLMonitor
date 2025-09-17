@@ -1,0 +1,179 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "name": "fdd2e1c7070dd0b8902c",
+  "position": {
+    "x": 10,
+    "y": 727,
+    "z": 1000,
+    "height": 293,
+    "width": 1900,
+    "tabOrder": 8000
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Instance suspect pages"
+                    }
+                  },
+                  "Property": "Database"
+                }
+              },
+              "queryRef": "Instance suspect pages.Database",
+              "nativeQueryRef": "Database"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Instance suspect pages"
+                    }
+                  },
+                  "Property": "FileId"
+                }
+              },
+              "queryRef": "Instance suspect pages.FileId",
+              "nativeQueryRef": "File id",
+              "displayName": "File id"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Instance suspect pages"
+                    }
+                  },
+                  "Property": "PageId"
+                }
+              },
+              "queryRef": "Instance suspect pages.PageId",
+              "nativeQueryRef": "Page id",
+              "displayName": "Page id"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Instance suspect pages"
+                    }
+                  },
+                  "Property": "ErrorCount"
+                }
+              },
+              "queryRef": "Instance suspect pages.ErrorCount",
+              "nativeQueryRef": "Error count",
+              "displayName": "Error count"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Instance suspect pages"
+                    }
+                  },
+                  "Property": "EventType"
+                }
+              },
+              "queryRef": "Instance suspect pages.EventType",
+              "nativeQueryRef": "Event type",
+              "displayName": "Event type"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Instance suspect pages"
+                    }
+                  },
+                  "Property": "Updated"
+                }
+              },
+              "queryRef": "Instance suspect pages.Updated",
+              "nativeQueryRef": "Updated1"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Instance suspect pages"
+                  }
+                },
+                "Property": "Updated"
+              }
+            },
+            "direction": "Descending"
+          }
+        ]
+      }
+    },
+    "objects": {
+      "total": [
+        {
+          "properties": {
+            "totals": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Suspect pages'"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "visualTooltip": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            },
+            "section": {
+              "expr": {
+                "Literal": {
+                  "Value": "'180f79a413775d9b3a90'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

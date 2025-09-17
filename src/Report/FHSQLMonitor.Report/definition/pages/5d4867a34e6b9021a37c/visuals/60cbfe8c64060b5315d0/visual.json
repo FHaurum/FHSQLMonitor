@@ -1,0 +1,371 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "name": "60cbfe8c64060b5315d0",
+  "position": {
+    "x": 10,
+    "y": 80,
+    "z": 2000,
+    "height": 940,
+    "width": 1730,
+    "tabOrder": 7007
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Avg. user impact - Missing indexes"
+                }
+              },
+              "queryRef": "_Measures.Avg. user impact",
+              "nativeQueryRef": "User impact",
+              "displayName": "User impact"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Avg. total user cost - Missing indexes"
+                }
+              },
+              "queryRef": "_Measures.Avg. total user cost",
+              "nativeQueryRef": "Total user cost",
+              "displayName": "Total user cost"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "User seeks - Missing indexes"
+                }
+              },
+              "queryRef": "_Measures.User seeks - Missing indexes",
+              "nativeQueryRef": "User seeks",
+              "displayName": "User seeks"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Last user seek - Missing indexes"
+                }
+              },
+              "queryRef": "_Measures.Last user seek",
+              "nativeQueryRef": "Last user seek",
+              "displayName": "Last user seek"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Object"
+                    }
+                  },
+                  "Property": "Database - Drill-through for Index details"
+                }
+              },
+              "queryRef": "Object.Database - Drill-through for Index details",
+              "nativeQueryRef": "Database",
+              "displayName": "Database"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Object"
+                    }
+                  },
+                  "Property": "Schema - Drill-through for Index details"
+                }
+              },
+              "queryRef": "Object.Schema - Drill-through for Index details",
+              "nativeQueryRef": "Schema",
+              "displayName": "Schema"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Object"
+                    }
+                  },
+                  "Property": "Object - Drill-through for Index details"
+                }
+              },
+              "queryRef": "Object.Object - Drill-through for Index details",
+              "nativeQueryRef": "Object",
+              "displayName": "Object"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Missing index statement"
+                    }
+                  },
+                  "Property": "Statement"
+                }
+              },
+              "queryRef": "Missing index statement.Statement",
+              "nativeQueryRef": "Statement"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Missing indexes"
+                    }
+                  },
+                  "Property": "Equality columns"
+                }
+              },
+              "queryRef": "Missing indexes.Equality columns",
+              "nativeQueryRef": "Equality columns"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Missing indexes"
+                    }
+                  },
+                  "Property": "Inequality columns"
+                }
+              },
+              "queryRef": "Missing indexes.Inequality columns",
+              "nativeQueryRef": "Inequality columns"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Missing indexes"
+                    }
+                  },
+                  "Property": "Included columns"
+                }
+              },
+              "queryRef": "Missing indexes.Included columns",
+              "nativeQueryRef": "Included columns"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "_Measures"
+                  }
+                },
+                "Property": "User seeks - Missing indexes"
+              }
+            },
+            "direction": "Descending"
+          }
+        ]
+      }
+    },
+    "objects": {
+      "total": [
+        {
+          "properties": {
+            "totals": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "columnWidth": [
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "150.2091589901769D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Missing indexes.Equality columns"
+          }
+        },
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "167.25849295149527D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Missing indexes.Inequality columns"
+          }
+        },
+        {
+          "properties": {},
+          "selector": {
+            "metadata": "_Measures.Avg. user impact"
+          }
+        },
+        {
+          "properties": {},
+          "selector": {
+            "metadata": "_Measures.Avg. total user cost"
+          }
+        },
+        {
+          "properties": {},
+          "selector": {
+            "metadata": "_Measures.User seeks - Missing indexes"
+          }
+        },
+        {
+          "properties": {},
+          "selector": {
+            "metadata": "_Measures.Last user seek"
+          }
+        },
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "465.5306047455474D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Missing index statement.Statement"
+          }
+        },
+        {
+          "properties": {},
+          "selector": {
+            "metadata": "Missing indexes.Included columns"
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Title - Missing indexes"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "d2c5797504b41d784a01",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "_Measures"
+              }
+            },
+            "Property": "VLF - Missing indexes"
+          }
+        },
+        "type": "Advanced",
+        "filter": {
+          "Version": 2,
+          "From": [
+            {
+              "Name": "_",
+              "Entity": "_Measures",
+              "Type": 0
+            }
+          ],
+          "Where": [
+            {
+              "Condition": {
+                "Comparison": {
+                  "ComparisonKind": 0,
+                  "Left": {
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Source": "_"
+                        }
+                      },
+                      "Property": "VLF - Missing indexes"
+                    }
+                  },
+                  "Right": {
+                    "Literal": {
+                      "Value": "1L"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "howCreated": "User"
+      }
+    ]
+  }
+}

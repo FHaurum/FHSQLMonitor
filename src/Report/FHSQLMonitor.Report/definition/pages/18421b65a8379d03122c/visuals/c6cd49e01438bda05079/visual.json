@@ -1,0 +1,187 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "name": "c6cd49e01438bda05079",
+  "position": {
+    "x": 970,
+    "y": 80,
+    "z": 6000,
+    "height": 212,
+    "width": 940,
+    "tabOrder": 4000
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Instance services"
+                    }
+                  },
+                  "Property": "Service"
+                }
+              },
+              "queryRef": "Instance services.Service",
+              "nativeQueryRef": "Service"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Instance services"
+                    }
+                  },
+                  "Property": "Status"
+                }
+              },
+              "queryRef": "Instance services.Status",
+              "nativeQueryRef": "Status"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Instance services"
+                    }
+                  },
+                  "Property": "Startup type"
+                }
+              },
+              "queryRef": "Instance services.Startup type",
+              "nativeQueryRef": "Startup",
+              "displayName": "Startup"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Instance services"
+                    }
+                  },
+                  "Property": "Service account"
+                }
+              },
+              "queryRef": "Instance services.Service account",
+              "nativeQueryRef": "Service account"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Instance services"
+                    }
+                  },
+                  "Property": "Instant file initialization enabled"
+                }
+              },
+              "queryRef": "Instance services.Instant file initialization enabled",
+              "nativeQueryRef": "IFI",
+              "displayName": "IFI"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Instance services"
+                    }
+                  },
+                  "Property": "Timestamp"
+                }
+              },
+              "queryRef": "Instance services.Timestamp",
+              "nativeQueryRef": "Time",
+              "displayName": "Time"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Instance services"
+                  }
+                },
+                "Property": "Service"
+              }
+            },
+            "direction": "Ascending"
+          }
+        ]
+      }
+    },
+    "objects": {
+      "total": [
+        {
+          "properties": {
+            "totals": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "columnWidth": [
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "346.9574278049099D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Instance services.Service"
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Services'"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "visualTooltip": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

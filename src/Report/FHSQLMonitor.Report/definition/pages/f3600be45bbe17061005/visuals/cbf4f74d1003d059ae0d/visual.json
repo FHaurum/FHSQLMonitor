@@ -1,0 +1,205 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "name": "cbf4f74d1003d059ae0d",
+  "position": {
+    "x": 10,
+    "y": 322,
+    "z": 5000,
+    "height": 213,
+    "width": 1900,
+    "tabOrder": 3000
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Resource governor resource pools"
+                    }
+                  },
+                  "Property": "Pool name"
+                }
+              },
+              "queryRef": "Resource governor resource pools.PoolName",
+              "nativeQueryRef": "Name",
+              "displayName": "Name"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Resource governor resource pools"
+                    }
+                  },
+                  "Property": "Min. CPU %"
+                }
+              },
+              "queryRef": "Resource governor resource pools.MinCPUpercent",
+              "nativeQueryRef": "Min. CPU %"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Resource governor resource pools"
+                    }
+                  },
+                  "Property": "Max. CPU %"
+                }
+              },
+              "queryRef": "Resource governor resource pools.MaxCPUpercent",
+              "nativeQueryRef": "Max. CPU %"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Resource governor resource pools"
+                    }
+                  },
+                  "Property": "Min. memory %"
+                }
+              },
+              "queryRef": "Resource governor resource pools.MinMemoryPercent",
+              "nativeQueryRef": "Min. memory %"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Resource governor resource pools"
+                    }
+                  },
+                  "Property": "Max. memory %"
+                }
+              },
+              "queryRef": "Resource governor resource pools.MaxMemoryPercent",
+              "nativeQueryRef": "Max. memory %"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Resource governor resource pools"
+                    }
+                  },
+                  "Property": "Cap CPU %"
+                }
+              },
+              "queryRef": "Resource governor resource pools.CapCPUpercent",
+              "nativeQueryRef": "Cap CPU %"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Resource governor resource pools"
+                    }
+                  },
+                  "Property": "Min. IOPS per volume"
+                }
+              },
+              "queryRef": "Resource governor resource pools.MinIOPSperVolume",
+              "nativeQueryRef": "Min. IOPS per volume"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Resource governor resource pools"
+                    }
+                  },
+                  "Property": "Max. IOPS per volume"
+                }
+              },
+              "queryRef": "Resource governor resource pools.MaxIOPSperVolume",
+              "nativeQueryRef": "Max. IOPS per volume"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Resource governor resource pools"
+                    }
+                  },
+                  "Property": "Timestamp"
+                }
+              },
+              "queryRef": "Resource governor resource pools.Timestamp",
+              "nativeQueryRef": "Timestamp"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Resource governor resource pools"
+                  }
+                },
+                "Property": "Pool name"
+              }
+            },
+            "direction": "Ascending"
+          }
+        ]
+      }
+    },
+    "objects": {
+      "total": [
+        {
+          "properties": {
+            "totals": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Resource pools'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

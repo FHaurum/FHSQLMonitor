@@ -1,15 +1,6 @@
 table Retentions
 	lineageTag: 43f18a8f-7646-427a-bc78-f6cd3a13d618
 
-	column Enabled
-		dataType: boolean
-		formatString: """TRUE"";""TRUE"";""FALSE"""
-		lineageTag: c5abcebb-151a-4eb5-ad28-b4bbc166df64
-		summarizeBy: none
-		sourceColumn: Enabled
-
-		annotation SummarizationSetBy = Automatic
-
 	column Table
 		dataType: string
 		lineageTag: 11a3beb7-1daf-4faa-be6d-885a494a35b8
@@ -27,10 +18,29 @@ table Retentions
 
 		annotation SummarizationSetBy = User
 
+	column Enabled
+		dataType: string
+		lineageTag: c7f69771-1e15-4fe1-9a0d-cf8c84fb9877
+		summarizeBy: none
+		sourceColumn: Enabled
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Last executed UTC'
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: 5b193872-d00b-4a67-9fb0-8e168a7317b2
+		summarizeBy: none
+		sourceColumn: Last executed UTC
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
 	column 'Last started UTC'
 		dataType: dateTime
 		formatString: dd-mmm-yyyy hh:nn:ss
-		lineageTag: 312d24d9-964f-4cbe-b3fd-428e3007ed34
+		lineageTag: 4ad7b35a-526f-4c0f-bd7f-0886b7e5b0b6
 		summarizeBy: none
 		sourceColumn: Last started UTC
 
@@ -38,16 +48,13 @@ table Retentions
 
 		annotation PBI_FormatHint = {"isCustom":true}
 
-	column 'Last executed UTC'
-		dataType: dateTime
-		formatString: dd-mmm-yyyy hh:nn:ss
-		lineageTag: 1ac58348-dddd-44ea-9d7e-7bbc3c7b57fb
+	column Filter
+		dataType: string
+		lineageTag: b641d9f0-9457-459d-9986-fb23e4b69ce4
 		summarizeBy: none
-		sourceColumn: Last executed UTC
+		sourceColumn: Filter
 
 		annotation SummarizationSetBy = Automatic
-
-		annotation PBI_FormatHint = {"isCustom":true}
 
 	partition Retentions = m
 		mode: import
@@ -60,15 +67,24 @@ table Retentions
 				  selectColumns = Table.SelectColumns(
 				    table,
 				    {
-				      "Enabled", 
-				      "Table", 
 				      "Days", 
-				      "Last started UTC", 
-				      "Last executed UTC"
+				      "EnabledTxt", 
+				      "Filter", 
+				      "LastExecutedUTC", 
+				      "LastStartedUTC", 
+				      "Table"
+				    }
+				  ), 
+				  renamedColumns = Table.RenameColumns(
+				    selectColumns, 
+				    {
+				      {"EnabledTxt", "Enabled"}, 
+				      {"LastExecutedUTC", "Last executed UTC"}, 
+				      {"LastStartedUTC", "Last started UTC"}
 				    }
 				  )
 				in
-				  selectColumns
+				  renamedColumns
 				```
 
 	annotation PBI_NavigationStepName = Navigation

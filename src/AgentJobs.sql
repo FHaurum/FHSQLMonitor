@@ -66,18 +66,18 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.9.1';
+		SET @version = '2.11.0';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
 		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
-		SET @productVersion1 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+		SET @productVersion1 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartPos));
 		SET @productStartPos = @productEndPos + 1;
 		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
-		SET @productVersion2 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+		SET @productVersion2 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartPos));
 		SET @productStartPos = @productEndPos + 1;
 		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
-		SET @productVersion3 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+		SET @productVersion3 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartPos));
 	END;
 
 	--
@@ -212,9 +212,19 @@ ELSE BEGIN
 				SELECT
 					p.JobName
 					,p.JobEnabled
+					,CASE p.JobEnabled
+						WHEN 0 THEN ''No''
+						WHEN 1 THEN ''Yes''
+						ELSE ''N.A.''
+					END AS JobEnabledTxt
 					,p.ScheduleId
 					,p.ScheduleEnabled
-					, p.[0],  p.[1],  p.[2],  p.[3],  p.[4],  p.[5],  p.[6],  p.[7],  p.[8],  p.[9]
+					,CASE p.ScheduleEnabled
+						WHEN 0 THEN ''No''
+						WHEN 1 THEN ''Yes''
+						ELSE ''N.A.''
+					END AS ScheduleEnabledTxt
+					,p.[0],  p.[1],  p.[2],  p.[3],  p.[4],  p.[5],  p.[6],  p.[7],  p.[8],  p.[9]
 					,p.[10], p.[11], p.[12], p.[13], p.[14], p.[15], p.[16], p.[17], p.[18], p.[19]
 					,p.[20], p.[21], p.[22], p.[23]
 					,p.WhenDesc
@@ -393,7 +403,17 @@ ELSE BEGIN
 				SELECT
 					a.JobName,
 					a.JobEnabled,
+					CASE a.JobEnabled
+						WHEN 0 THEN ''No''
+						WHEN 1 THEN ''Yes''
+						ELSE ''N.A.''
+					END AS JobEnabledTxt,
 					a.ScheduleEnabled,
+					CASE a.ScheduleEnabled
+						WHEN 0 THEN ''No''
+						WHEN 1 THEN ''Yes''
+						ELSE ''N.A.''
+					END AS ScheduleEnabledTxt,
 					CASE a.FreqType
 						WHEN   1 THEN ''Once on '' + CAST(a.ActiveStartDate AS nvarchar) + '':'' + CAST(a.ActiveStartTime AS nvarchar)
 						WHEN   4 THEN ''Every '' + CASE WHEN a.FreqInterval = 1 THEN ''day'' ELSE CAST(a.FreqInterval AS nvarchar) + '' days'' END

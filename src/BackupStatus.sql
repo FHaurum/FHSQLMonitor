@@ -66,18 +66,18 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.9.1';
+		SET @version = '2.11.0';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
 		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
-		SET @productVersion1 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+		SET @productVersion1 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartPos));
 		SET @productStartPos = @productEndPos + 1;
 		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
-		SET @productVersion2 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+		SET @productVersion2 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartPos));
 		SET @productStartPos = @productEndPos + 1;
 		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
-		SET @productVersion3 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+		SET @productVersion3 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartPos));
 	END;
 
 	--
@@ -216,7 +216,7 @@ ELSE BEGIN
 				SELECT
 					b.DatabaseName
 					,b.RecoveryModeChangeTimestampUTC
-					,b.RecoveryModel
+					,dbo.fhsmFNConvertToDisplayTxt(b.RecoveryModel) AS RecoveryModel
 					,CASE WHEN (b.LatestFullBackupStartDate = 0) THEN NULL ELSE b.LatestFullBackupStartDate END AS LatestFullBackupStartDate
 					,DATEDIFF(MINUTE, b.LatestFullBackupStartDate, GETDATE()) / 60 AS LatestFullBackupAgeHours
 					,CASE WHEN (b.LatestDiffBackupStartDate = 0) THEN NULL ELSE b.LatestDiffBackupStartDate END AS LatestDiffBackupStartDate
@@ -341,7 +341,17 @@ ELSE BEGIN
 					,bs.BackupSize
 					,bs.CompressedBackupSize
 					,bs.IsCopyOnly
+					,CASE bs.IsCopyOnly
+						WHEN 0 THEN ''No''
+						WHEN 1 THEN ''Yes''
+						ELSE ''N.A.''
+					END AS IsCopyOnlyTxt
 					,bs.IsDamaged
+					,CASE bs.IsDamaged
+						WHEN 0 THEN ''No''
+						WHEN 1 THEN ''Yes''
+						ELSE ''N.A.''
+					END AS IsDamagedTxt
 					,bs.LogicalDeviceName
 					,bs.PhysicalDeviceName
 					,bs.BackupsetName

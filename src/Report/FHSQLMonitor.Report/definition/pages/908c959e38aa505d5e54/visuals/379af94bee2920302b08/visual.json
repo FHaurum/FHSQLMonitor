@@ -1,0 +1,292 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "name": "379af94bee2920302b08",
+  "position": {
+    "x": 10,
+    "y": 80,
+    "z": 1375,
+    "height": 940,
+    "width": 1900,
+    "tabOrder": 2500
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "OH errors"
+                    }
+                  },
+                  "Property": "Start time"
+                }
+              },
+              "queryRef": "OH errors.StartTime",
+              "nativeQueryRef": "Start time1"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "OH errors"
+                    }
+                  },
+                  "Property": "End time"
+                }
+              },
+              "queryRef": "OH errors.EndTime",
+              "nativeQueryRef": "End time1"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "OH errors"
+                    }
+                  },
+                  "Property": "Duration"
+                }
+              },
+              "queryRef": "OH errors.Duration",
+              "nativeQueryRef": "Duration"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "OH errors"
+                    }
+                  },
+                  "Property": "Error no."
+                }
+              },
+              "queryRef": "OH errors.Error no.",
+              "nativeQueryRef": "Error no."
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "OH errors"
+                    }
+                  },
+                  "Property": "Error msg."
+                }
+              },
+              "queryRef": "OH errors.ErrorMessage",
+              "nativeQueryRef": "Error msg."
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "OH errors"
+                    }
+                  },
+                  "Property": "Command"
+                }
+              },
+              "queryRef": "OH errors.Command",
+              "nativeQueryRef": "Command"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Index"
+                    }
+                  },
+                  "Property": "Database"
+                }
+              },
+              "queryRef": "Index.Database",
+              "nativeQueryRef": "Database"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Index"
+                    }
+                  },
+                  "Property": "Schema"
+                }
+              },
+              "queryRef": "Index.Schema",
+              "nativeQueryRef": "Schema"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Index"
+                    }
+                  },
+                  "Property": "Object"
+                }
+              },
+              "queryRef": "Index.Object",
+              "nativeQueryRef": "Object"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Index"
+                    }
+                  },
+                  "Property": "Index"
+                }
+              },
+              "queryRef": "Index.Index",
+              "nativeQueryRef": "Index"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "OH errors"
+                  }
+                },
+                "Property": "Start time"
+              }
+            },
+            "direction": "Descending"
+          }
+        ]
+      }
+    },
+    "objects": {
+      "total": [
+        {
+          "properties": {
+            "totals": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "columnWidth": [
+        {
+          "properties": {},
+          "selector": {
+            "metadata": "OH errors.Command"
+          }
+        },
+        {
+          "properties": {},
+          "selector": {
+            "metadata": "OH errors.StartTime"
+          }
+        },
+        {
+          "properties": {},
+          "selector": {
+            "metadata": "OH errors.EndTime"
+          }
+        },
+        {
+          "properties": {},
+          "selector": {
+            "metadata": "OH errors.Duration"
+          }
+        },
+        {
+          "properties": {},
+          "selector": {
+            "metadata": "OH errors.ErrorMessage"
+          }
+        },
+        {
+          "properties": {},
+          "selector": {
+            "metadata": "Index.Database"
+          }
+        },
+        {
+          "properties": {},
+          "selector": {
+            "metadata": "Index.Schema"
+          }
+        },
+        {
+          "properties": {},
+          "selector": {
+            "metadata": "Index.Object"
+          }
+        },
+        {
+          "properties": {},
+          "selector": {
+            "metadata": "Index.Index"
+          }
+        }
+      ],
+      "columnHeaders": [
+        {
+          "properties": {
+            "autoSizeColumnWidth": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Title - OH errors"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

@@ -1,0 +1,326 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "name": "86d71b09c3f0d47338e7",
+  "position": {
+    "x": 10,
+    "y": 80,
+    "z": 2000,
+    "height": 455,
+    "width": 1900
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Schedules"
+                    }
+                  },
+                  "Property": "Enabled"
+                }
+              },
+              "queryRef": "Schedules.Enabled",
+              "nativeQueryRef": "Enabled"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Schedules"
+                    }
+                  },
+                  "Property": "Name"
+                }
+              },
+              "queryRef": "Schedules.Name",
+              "nativeQueryRef": "Name"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Schedules"
+                    }
+                  },
+                  "Property": "Task"
+                }
+              },
+              "queryRef": "Schedules.Task",
+              "nativeQueryRef": "Task"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Schedules"
+                    }
+                  },
+                  "Property": "Monday"
+                }
+              },
+              "queryRef": "Schedules.Monday",
+              "nativeQueryRef": "Mon.",
+              "displayName": "Mon."
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Schedules"
+                    }
+                  },
+                  "Property": "Tuesday"
+                }
+              },
+              "queryRef": "Schedules.Tuesday",
+              "nativeQueryRef": "Tue.",
+              "displayName": "Tue."
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Schedules"
+                    }
+                  },
+                  "Property": "Wednesday"
+                }
+              },
+              "queryRef": "Schedules.Wednesday",
+              "nativeQueryRef": "Wed.",
+              "displayName": "Wed."
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Schedules"
+                    }
+                  },
+                  "Property": "Thursday"
+                }
+              },
+              "queryRef": "Schedules.Thursday",
+              "nativeQueryRef": "Thr.",
+              "displayName": "Thr."
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Schedules"
+                    }
+                  },
+                  "Property": "Friday"
+                }
+              },
+              "queryRef": "Schedules.Friday",
+              "nativeQueryRef": "Fri.",
+              "displayName": "Fri."
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Schedules"
+                    }
+                  },
+                  "Property": "Saturday"
+                }
+              },
+              "queryRef": "Schedules.Saturday",
+              "nativeQueryRef": "Sat.",
+              "displayName": "Sat."
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Schedules"
+                    }
+                  },
+                  "Property": "Sunday"
+                }
+              },
+              "queryRef": "Schedules.Sunday",
+              "nativeQueryRef": "Sun.",
+              "displayName": "Sun."
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Schedules"
+                    }
+                  },
+                  "Property": "From time"
+                }
+              },
+              "queryRef": "Schedules.From time",
+              "nativeQueryRef": "From",
+              "displayName": "From"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Schedules"
+                    }
+                  },
+                  "Property": "To time"
+                }
+              },
+              "queryRef": "Schedules.To time",
+              "nativeQueryRef": "To",
+              "displayName": "To"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Schedules"
+                    }
+                  },
+                  "Property": "Execution delay in sec."
+                }
+              },
+              "queryRef": "Schedules.Execution delay in sec.",
+              "nativeQueryRef": "Delay",
+              "displayName": "Delay"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Schedules"
+                    }
+                  },
+                  "Property": "Last started UTC"
+                }
+              },
+              "queryRef": "Schedules.LastStartedUTC",
+              "nativeQueryRef": "Last started UTC"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Schedules"
+                    }
+                  },
+                  "Property": "Last executed UTC"
+                }
+              },
+              "queryRef": "Schedules.LastExecutedUTC",
+              "nativeQueryRef": "LastExecutedUTC"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Schedules"
+                    }
+                  },
+                  "Property": "Last error message"
+                }
+              },
+              "queryRef": "Schedules.LastErrorMessage",
+              "nativeQueryRef": "Last error",
+              "displayName": "Last error"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Schedules"
+                    }
+                  },
+                  "Property": "Parameter"
+                }
+              },
+              "queryRef": "Schedules.Parameter",
+              "nativeQueryRef": "Parameter"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Schedules"
+                  }
+                },
+                "Property": "Last started UTC"
+              }
+            },
+            "direction": "Descending"
+          }
+        ]
+      }
+    },
+    "objects": {
+      "total": [
+        {
+          "properties": {
+            "totals": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Schedules'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

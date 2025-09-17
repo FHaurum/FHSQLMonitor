@@ -1,0 +1,147 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "name": "473397d77bbfc89bb75f",
+  "position": {
+    "x": 10,
+    "y": 565,
+    "z": 1000,
+    "height": 455,
+    "width": 1900,
+    "tabOrder": 5000
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Retentions"
+                    }
+                  },
+                  "Property": "Table"
+                }
+              },
+              "queryRef": "Retensions.Table",
+              "nativeQueryRef": "Table"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Retentions"
+                    }
+                  },
+                  "Property": "Filter"
+                }
+              },
+              "queryRef": "Retentions.Filter",
+              "nativeQueryRef": "Filter"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Retentions"
+                    }
+                  },
+                  "Property": "Days"
+                }
+              },
+              "queryRef": "Retensions.Days",
+              "nativeQueryRef": "Days"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Retentions"
+                    }
+                  },
+                  "Property": "Enabled"
+                }
+              },
+              "queryRef": "Retensions.Enabled",
+              "nativeQueryRef": "Enabled"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Retentions"
+                    }
+                  },
+                  "Property": "Last started UTC"
+                }
+              },
+              "queryRef": "Retensions.Last started UTC",
+              "nativeQueryRef": "Last started UTC"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Retentions"
+                    }
+                  },
+                  "Property": "Last executed UTC"
+                }
+              },
+              "queryRef": "Retensions.Last executed UTC",
+              "nativeQueryRef": "Last executed UTC"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Retentions"
+                  }
+                },
+                "Property": "Last started UTC"
+              }
+            },
+            "direction": "Descending"
+          }
+        ]
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Retentions'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

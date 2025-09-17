@@ -17,6 +17,7 @@ IndexOperational.sql
 IndexPhysical.sql
 IndexUsage.sql
 InstanceState.sql
+LogShipping.sql
 MissingIndexes.sql
 PerformanceStatistics.sql
 PlanCacheUsage.sql

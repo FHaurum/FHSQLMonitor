@@ -1,0 +1,110 @@
+table 'Log shipping monitor secondary copies'
+	lineageTag: 10f2ebb8-37f3-4be6-b74c-832f602a3920
+
+	column 'Time since previous copy'
+		dataType: int64
+		formatString: #,0
+		lineageTag: 6862b6d1-3c37-4208-8d79-a3c3ceb4e7de
+		summarizeBy: none
+		sourceColumn: Time since previous copy
+
+		annotation SummarizationSetBy = User
+
+	column Date
+		dataType: dateTime
+		isHidden
+		formatString: Long Date
+		lineageTag: d43e7121-ec87-4ded-854d-e61a1b594ac6
+		summarizeBy: none
+		sourceColumn: Date
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column TimeKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: c9263ea5-cbb8-4223-be94-89363423301a
+		summarizeBy: none
+		sourceColumn: TimeKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column DatabaseKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: aaa6bc10-a684-4e27-8c31-31b16ec60ba0
+		summarizeBy: none
+		sourceColumn: DatabaseKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column ServerKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 62b1e14c-7a25-49b6-b92f-7b56dbfd52b0
+		summarizeBy: none
+		sourceColumn: ServerKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Secondary database-server'
+		dataType: string
+		lineageTag: 9b3c8cd7-325e-4ba0-9e77-fe9e8920319f
+		summarizeBy: none
+		sourceColumn: Secondary database-server
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Log shipping monitor secondary copies' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Log shipping")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db     = dbList{[Name = #"Database name"]}[Data], 
+				  table  = db{[Schema = #"Schema name", Item = "Log shipping monitor secondary copies"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  selectColumns = Table.SelectColumns(
+				    datasetToUse, 
+				    {
+				      "SecondaryDatabaseServer", 
+				      "TimeSincePreviousCopy", 
+				      "Date", 
+				      "TimeKey", 
+				      "DatabaseKey", 
+				      "ServerKey"
+				    }
+				  ), 
+				  renameColumns = Table.RenameColumns(
+				    selectColumns, 
+				    {
+				      {"SecondaryDatabaseServer", "Secondary database-server"}, 
+				      {"TimeSincePreviousCopy", "Time since previous copy"}
+				    }
+				  )
+				in
+				  renameColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

@@ -1,0 +1,215 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "name": "ea145ec8016454c4872d",
+  "position": {
+    "x": 970,
+    "y": 807,
+    "z": 1000,
+    "height": 212,
+    "width": 940,
+    "tabOrder": 10000
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Agent jobs"
+                    }
+                  },
+                  "Property": "Job"
+                }
+              },
+              "queryRef": "Agent jobs.Job",
+              "nativeQueryRef": "Job"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Agent jobs"
+                    }
+                  },
+                  "Property": "Job enabled"
+                }
+              },
+              "queryRef": "Agent jobs.Job enabled",
+              "nativeQueryRef": "Job enabled"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Agent jobs"
+                    }
+                  },
+                  "Property": "Schedules enabled"
+                }
+              },
+              "queryRef": "Agent jobs.Schedules enabled",
+              "nativeQueryRef": "Schedules enabled"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Agent jobs"
+                    }
+                  },
+                  "Property": "E-mail operator"
+                }
+              },
+              "queryRef": "Agent jobs.E-mail operator",
+              "nativeQueryRef": "E-mail operator"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Agent jobs"
+                    }
+                  },
+                  "Property": "Sending e-mail"
+                }
+              },
+              "queryRef": "Agent jobs.Sending e-mail",
+              "nativeQueryRef": "Sending e-mail"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Agent jobs"
+                  }
+                },
+                "Property": "Job"
+              }
+            },
+            "direction": "Ascending"
+          }
+        ]
+      }
+    },
+    "objects": {
+      "columnWidth": [
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "402.53700778233883D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Agent jobs.Job"
+          }
+        }
+      ],
+      "columnFormatting": [
+        {
+          "properties": {
+            "alignment": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Center'"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Agent jobs.Job enabled"
+          }
+        },
+        {
+          "properties": {
+            "alignment": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Center'"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Agent jobs.Schedules enabled"
+          }
+        },
+        {
+          "properties": {
+            "alignment": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Center'"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Agent jobs.E-mail operator"
+          }
+        },
+        {
+          "properties": {
+            "alignment": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Center'"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Agent jobs.Sending e-mail"
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Agent jobs'"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "visualTooltip": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

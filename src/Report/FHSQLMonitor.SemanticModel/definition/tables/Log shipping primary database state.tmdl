@@ -1,0 +1,194 @@
+table 'Log shipping primary database state'
+	lineageTag: 8c794a4c-3bfd-4595-8d0f-d7b5562428c9
+
+	column BackupCompression
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 5f766e35-f738-4225-9278-e542386a39ae
+		summarizeBy: none
+		sourceColumn: BackupCompression
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column 'Backup compression'
+		dataType: string
+		lineageTag: fcc40f2d-906d-41b4-92da-492af15d5dec
+		summarizeBy: none
+		sourceColumn: Backup compression
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Backup directory'
+		dataType: string
+		lineageTag: 553ed592-66b8-476e-84cb-7128217eabcc
+		summarizeBy: none
+		sourceColumn: Backup directory
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Backup retention period'
+		dataType: int64
+		formatString: #,0
+		lineageTag: a24da78e-8c5b-452d-a393-b20b47aff966
+		summarizeBy: none
+		sourceColumn: Backup retention period
+
+		annotation SummarizationSetBy = User
+
+	column 'Backup share'
+		dataType: string
+		lineageTag: c56f4803-b02c-4bb8-a847-b5de8e26e5b3
+		summarizeBy: none
+		sourceColumn: Backup share
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Monitor server'
+		dataType: string
+		lineageTag: 01743a7e-e47d-4cf3-8964-03ea38239043
+		summarizeBy: none
+		sourceColumn: Monitor server
+
+		annotation SummarizationSetBy = Automatic
+
+	column MonitorServerSecurityMode
+		dataType: boolean
+		isHidden
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: cce05f64-a122-4626-b9a7-25e4b5fafd38
+		summarizeBy: none
+		sourceColumn: MonitorServerSecurityMode
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Monitor server security mode'
+		dataType: string
+		lineageTag: f3ce0a5e-abaa-47ad-b043-df8cc636e0b6
+		summarizeBy: none
+		sourceColumn: Monitor server security mode
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Primary database'
+		dataType: string
+		lineageTag: fbb6d9c3-e998-4b25-b62f-79c90d67bc4d
+		summarizeBy: none
+		sourceColumn: Primary database
+
+		annotation SummarizationSetBy = Automatic
+
+	column UserSpecifiedMonitor
+		dataType: boolean
+		isHidden
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: c7706cb3-3b2e-40d8-a198-66d007e2c6a9
+		summarizeBy: none
+		sourceColumn: UserSpecifiedMonitor
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'User specified monitor'
+		dataType: string
+		lineageTag: dd06734b-7a7f-4a45-9070-f1358c08abfb
+		summarizeBy: none
+		sourceColumn: User specified monitor
+
+		annotation SummarizationSetBy = Automatic
+
+	column DatabaseKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 226d73b1-2aac-4298-a0f9-722b7745a05b
+		summarizeBy: none
+		sourceColumn: DatabaseKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Max. timestamp'
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: 371bc6dd-cd5d-4121-b6b2-7f44d937a972
+		summarizeBy: none
+		sourceColumn: Max. timestamp
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	column 'Min. timestamp'
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: 64515b42-86e1-4a1e-ae47-e929625b526b
+		summarizeBy: none
+		sourceColumn: Min. timestamp
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	partition 'Log shipping primary database state' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Log shipping")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db     = dbList{[Name = #"Database name"]}[Data], 
+				  table  = db{[Schema = #"Schema name", Item = "Log shipping primary database state"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  selectColumns = Table.SelectColumns(
+				    datasetToUse, 
+				    {
+				      "BackupCompression", 
+				      "BackupCompressionTxt", 
+				      "BackupDirectory", 
+				      "BackupRetentionPeriod", 
+				      "BackupShare", 
+				      "MaxTimestamp", 
+				      "MinTimestamp", 
+				      "MonitorServer", 
+				      "MonitorServerSecurityMode", 
+				      "MonitorServerSecurityModeTxt", 
+				      "PrimaryDatabase", 
+				      "UserSpecifiedMonitor", 
+				      "UserSpecifiedMonitorTxt", 
+				      "DatabaseKey"
+				    }
+				  ), 
+				  renameColumns = Table.RenameColumns(
+				    selectColumns, 
+				    {
+				      {"BackupCompressionTxt", "Backup compression"}, 
+				      {"BackupDirectory", "Backup directory"}, 
+				      {"BackupRetentionPeriod", "Backup retention period"}, 
+				      {"BackupShare", "Backup share"}, 
+				      {"MaxTimestamp", "Max. timestamp"}, 
+				      {"MinTimestamp", "Min. timestamp"}, 
+				      {"MonitorServer", "Monitor server"}, 
+				      {"MonitorServerSecurityModeTxt", "Monitor server security mode"}, 
+				      {"PrimaryDatabase", "Primary database"}, 
+				      {"UserSpecifiedMonitorTxt", "User specified monitor"}
+				    }
+				  )
+				in
+				  renameColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

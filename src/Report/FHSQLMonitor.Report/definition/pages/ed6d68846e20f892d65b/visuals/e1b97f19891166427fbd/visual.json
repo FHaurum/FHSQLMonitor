@@ -1,0 +1,361 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "name": "e1b97f19891166427fbd",
+  "position": {
+    "x": 10,
+    "y": 80,
+    "z": 1000,
+    "height": 940,
+    "width": 1900,
+    "tabOrder": 7000
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Who is active"
+                    }
+                  },
+                  "Property": "Elapsed time mS"
+                }
+              },
+              "queryRef": "Who is active.Elapsed time mS",
+              "nativeQueryRef": "Elapsed mS",
+              "displayName": "Elapsed mS"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Who is active"
+                    }
+                  },
+                  "Property": "Collection time"
+                }
+              },
+              "queryRef": "Who is active.Collection time",
+              "nativeQueryRef": "Collection time"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Who is active"
+                    }
+                  },
+                  "Property": "SPID"
+                }
+              },
+              "queryRef": "Who is active.Session ID",
+              "nativeQueryRef": "Session ID"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Who is active"
+                    }
+                  },
+                  "Property": "CPU"
+                }
+              },
+              "queryRef": "Who is active.CPU",
+              "nativeQueryRef": "CPU"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Who is active"
+                    }
+                  },
+                  "Property": "Reads"
+                }
+              },
+              "queryRef": "Who is active.Reads",
+              "nativeQueryRef": "Reads"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Who is active"
+                    }
+                  },
+                  "Property": "Used memory"
+                }
+              },
+              "queryRef": "Who is active.Used memory",
+              "nativeQueryRef": "Used mem.",
+              "displayName": "Used mem."
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Database"
+                    }
+                  },
+                  "Property": "Database"
+                }
+              },
+              "queryRef": "Database.Database",
+              "nativeQueryRef": "Database"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Who is active"
+                    }
+                  },
+                  "Property": "Program name"
+                }
+              },
+              "queryRef": "Who is active.Program name",
+              "nativeQueryRef": "Program name"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Who is active"
+                    }
+                  },
+                  "Property": "Host name"
+                }
+              },
+              "queryRef": "Who is active.Host name",
+              "nativeQueryRef": "Host name"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Who is active"
+                    }
+                  },
+                  "Property": "Login name"
+                }
+              },
+              "queryRef": "Who is active.Login name",
+              "nativeQueryRef": "Login name"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Who is active"
+                    }
+                  },
+                  "Property": "SQL"
+                }
+              },
+              "queryRef": "Who is active.SQL",
+              "nativeQueryRef": "SQL"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Who is active"
+                    }
+                  },
+                  "Property": "Wait info"
+                }
+              },
+              "queryRef": "Who is active.Wait info",
+              "nativeQueryRef": "Wait info"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Who is active"
+                    }
+                  },
+                  "Property": "Blocked by SPID"
+                }
+              },
+              "queryRef": "Who is active.Blocked by ID",
+              "nativeQueryRef": "Blocked by ID"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Who is active"
+                    }
+                  },
+                  "Property": "Implicit tran."
+                }
+              },
+              "queryRef": "Who is active.Implicit tran.",
+              "nativeQueryRef": "Implicit tran."
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Who is active"
+                    }
+                  },
+                  "Property": "Open tran. cnt."
+                }
+              },
+              "queryRef": "Who is active.Open tran. cnt.",
+              "nativeQueryRef": "Open tran. cnt."
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Who is active"
+                    }
+                  },
+                  "Property": "Status"
+                }
+              },
+              "queryRef": "Who is active.Status",
+              "nativeQueryRef": "Status"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Who is active"
+                    }
+                  },
+                  "Property": "Sort order"
+                }
+              },
+              "queryRef": "Who is active.SortOrder",
+              "nativeQueryRef": "Sort order"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Who is active"
+                  }
+                },
+                "Property": "Sort order"
+              }
+            },
+            "direction": "Descending"
+          }
+        ]
+      }
+    },
+    "objects": {
+      "columnWidth": [
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "160.031179968072D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Who is active.Program name"
+          }
+        },
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "233.3290307980793D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Who is active.Login name"
+          }
+        },
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "428.5095583261141D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Who is active.SQL"
+          }
+        },
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "140.4914890856827D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Who is active.Wait info"
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "text": {
+              "expr": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Data title - Who is active"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

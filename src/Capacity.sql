@@ -66,18 +66,18 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.9.1';
+		SET @version = '2.11.0';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
 		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
-		SET @productVersion1 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+		SET @productVersion1 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartPos));
 		SET @productStartPos = @productEndPos + 1;
 		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
-		SET @productVersion2 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+		SET @productVersion2 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartPos));
 		SET @productStartPos = @productEndPos + 1;
 		SET @productEndPos = CHARINDEX('.', @productVersion, @productStartPos);
-		SET @productVersion3 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+		SET @productVersion3 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartPos));
 	END;
 
 	--
@@ -87,6 +87,18 @@ ELSE BEGIN
 	BEGIN
 		RAISERROR('!!!', 0, 1) WITH NOWAIT;
 		RAISERROR('!!! Can not install the Disk size part on SQL version SQL2008', 0, 1) WITH NOWAIT;
+		RAISERROR('!!!', 0, 1) WITH NOWAIT;
+	END;
+
+	--
+	-- Check if SQL is lower than 2016 SP2
+	--
+	IF
+		(@productVersion1 < 13)
+		OR ((@productVersion1 = 13) AND (@productVersion2 = 0) AND (@productVersion3 < 5026))
+	BEGIN
+		RAISERROR('!!!', 0, 1) WITH NOWAIT;
+		RAISERROR('!!! Can not install the VLF part on SQL versions lower than SQL2016 SP2', 0, 1) WITH NOWAIT;
 		RAISERROR('!!!', 0, 1) WITH NOWAIT;
 	END;
 
@@ -552,6 +564,76 @@ ELSE BEGIN
 				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
 			END;
 		END;
+
+		--
+		-- Create table dbo.fhsmVLFSize and indexes if they not already exists
+		--
+		BEGIN
+			IF OBJECT_ID('dbo.fhsmVLFSize', 'U') IS NULL
+			BEGIN
+				RAISERROR('Creating table dbo.fhsmVLFSize', 0, 1) WITH NOWAIT;
+
+				SET @stmt = '
+					CREATE TABLE dbo.fhsmVLFSize(
+						Id int identity(1,1) NOT NULL
+						,DatabaseName nvarchar(128) NOT NULL
+						,VLFCount int NOT NULL
+						,ActiveVLF int NOT NULL
+						,VLFSizeMB float NOT NULL
+						,ActiveVLFSizeMB float NOT NULL
+						,TimestampUTC datetime NOT NULL
+						,Timestamp datetime NOT NULL
+						,CONSTRAINT PK_fhsmVLFSize PRIMARY KEY(Id)' + @tableCompressionStmt + '
+					);
+				';
+				EXEC(@stmt);
+			END;
+
+			IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmVLFSize')) AND (i.name = 'NC_fhsmVLFSize_TimestampUTC'))
+			BEGIN
+				RAISERROR('Adding index [NC_fhsmVLFSize_TimestampUTC] to table dbo.fhsmVLFSize', 0, 1) WITH NOWAIT;
+
+				SET @stmt = '
+					CREATE NONCLUSTERED INDEX NC_fhsmVLFSize_TimestampUTC ON dbo.fhsmVLFSize(TimestampUTC)' + @tableCompressionStmt + ';
+				';
+				EXEC(@stmt);
+			END;
+
+			IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmVLFSize')) AND (i.name = 'NC_fhsmVLFSize_Timestamp'))
+			BEGIN
+				RAISERROR('Adding index [NC_fhsmVLFSize_Timestamp] to table dbo.fhsmVLFSize', 0, 1) WITH NOWAIT;
+
+				SET @stmt = '
+					CREATE NONCLUSTERED INDEX NC_fhsmVLFSize_Timestamp ON dbo.fhsmVLFSize(Timestamp)' + @tableCompressionStmt + ';
+				';
+				EXEC(@stmt);
+			END;
+
+			IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmVLFSize')) AND (i.name = 'NC_fhsmVLFSize_DatabaseName'))
+			BEGIN
+				RAISERROR('Adding index [NC_fhsmVLFSize_DatabaseName] to table dbo.fhsmVLFSize', 0, 1) WITH NOWAIT;
+
+				SET @stmt = '
+					CREATE NONCLUSTERED INDEX NC_fhsmVLFSize_DatabaseName ON dbo.fhsmVLFSize(DatabaseName)' + @tableCompressionStmt + ';
+				';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Register extended properties on the table dbo.fhsmVLFSize
+			--
+			BEGIN
+				SET @objectName = 'dbo.fhsmVLFSize';
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+			END;
+		END;
 	END;
 
 	--
@@ -975,6 +1057,60 @@ ELSE BEGIN
 			--
 			BEGIN
 				SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Table size');
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+			END;
+		END;
+
+		--
+		-- Create fact view @pbiSchema.[VLF size]
+		--
+		BEGIN
+			BEGIN
+				SET @stmt = '
+					IF OBJECT_ID(''' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('VLF size') + ''', ''V'') IS NULL
+					BEGIN
+						EXEC(''CREATE VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('VLF size') + ' AS SELECT ''''dummy'''' AS Txt'');
+					END;
+				';
+				EXEC(@stmt);
+
+				SET @stmt = '
+					ALTER VIEW  ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('VLF size') + '
+					AS
+					SELECT
+						vs.VLFCount
+						,vs.ActiveVLF
+						,vs.VLFSizeMB
+						,vs.ActiveVLFSizeMB
+						,CAST(vs.Timestamp AS date) AS Date
+						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(vs.DatabaseName, '''', '''', '''', '''', DEFAULT) AS k) AS DatabaseFileKey
+					FROM dbo.fhsmVLFSize AS vs
+					WHERE (vs.Timestamp IN (
+						SELECT a.Timestamp
+						FROM (
+							SELECT
+								vs2.Timestamp
+								,ROW_NUMBER() OVER(PARTITION BY CAST(vs2.Timestamp AS date) ORDER BY vs2.Timestamp DESC) AS _Rnk_
+							FROM dbo.fhsmVLFSize AS vs2
+						) AS a
+						WHERE (a._Rnk_ = 1)
+					));
+				';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Register extended properties on fact view @pbiSchema.[VLF size]
+			--
+			BEGIN
+				SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('VLF size');
 				SET @objName = PARSENAME(@objectName, 1);
 				SET @schName = PARSENAME(@objectName, 2);
 
@@ -2078,6 +2214,75 @@ ELSE BEGIN
 		END;
 
 		--
+		-- Create stored procedure dbo.fhsmSPVLFSize
+		--
+		BEGIN
+			SET @stmt = '
+				IF OBJECT_ID(''dbo.fhsmSPVLFSize'', ''P'') IS NULL
+				BEGIN
+					EXEC(''CREATE PROC dbo.fhsmSPVLFSize AS SELECT ''''dummy'''' AS Txt'');
+				END;
+			';
+			EXEC(@stmt);
+
+			SET @stmt = '
+				ALTER PROC dbo.fhsmSPVLFSize
+				AS
+				BEGIN
+					SET NOCOUNT ON;
+
+					DECLARE @now datetime;
+					DECLARE @nowUTC datetime;
+
+					--
+					-- Collect data
+					--
+					BEGIN
+						SELECT
+							@now = SYSDATETIME()
+							,@nowUTC = SYSUTCDATETIME();
+
+						--
+						-- Get VLF statistics
+						--
+						IF EXISTS(SELECT * FROM master.sys.system_objects AS so WHERE (so.name = ''dm_db_log_info''))
+						BEGIN
+							INSERT INTO dbo.fhsmVLFSize(DatabaseName, VLFCount, ActiveVLF, VLFSizeMB, ActiveVLFSizeMB, TimestampUTC, Timestamp)
+							SELECT
+								d.name AS DatabaseName
+								,COUNT(d.database_id) AS VLFCount
+								,SUM(CAST(ddli.vlf_active AS int)) AS ActiveVLF
+								,SUM(ddli.vlf_size_mb) AS VLFSizeMB
+								,SUM(ddli.vlf_active * ddli.vlf_size_mb) AS ActiveVLFSizeMB
+								,@nowUTC, @now
+							FROM sys.databases AS d
+							CROSS APPLY sys.dm_db_log_info(d.database_id) AS ddli
+							GROUP BY d.name;
+						END;
+					END;
+
+					RETURN 0;
+				END;
+			';
+			EXEC(@stmt);
+
+			--
+			-- Register extended properties on the stored procedure dbo.fhsmSPVLFSize
+			--
+			BEGIN
+				SET @objectName = 'dbo.fhsmSPVLFSize';
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+			END;
+		END;
+
+		--
 		-- Create stored procedure dbo.fhsmSPCapacity
 		--
 		BEGIN
@@ -2293,6 +2498,52 @@ ELSE BEGIN
 							SET @message = ''After calling dbo.fhsmSPTableSize'';
 							EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''Debug'', @message = @message;
 						END;
+			';
+
+		--
+		-- SQL Versions SQL2016 SP2 or higher
+		--
+		IF
+			NOT (
+				(@productVersion1 < 13)
+				OR ((@productVersion1 = 13) AND (@productVersion2 = 0) AND (@productVersion3 < 5026))
+			)
+		BEGIN
+			SET @stmt += '
+						--
+						-- Calling dbo.fhsmSPVLFSize
+						--
+						BEGIN
+							SET @message = ''Before calling dbo.fhsmSPVLFSize'';
+							EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''Debug'', @message = @message;
+
+							--
+							-- Insert Processing record and remember the @id in the variable @processingId
+							-- Type: 6: Calling dbo.fhsmSPVLFSize
+							--
+							SET @processingId = NULL;
+							SELECT
+								@processingTimestampUTC = SYSUTCDATETIME()
+								,@processingTimestamp = SYSDATETIME();
+							EXEC dbo.fhsmSPProcessing @name = @name, @task = @thisTask, @version = NULL, @type = 6, @timestampUTC = @processingTimestampUTC, @timestamp = @processingTimestamp, @id = @processingId OUTPUT;
+
+							EXEC dbo.fhsmSPVLFSize;
+
+							--
+							-- Update Processing record from before execution with @version, @processingTimestampUTC and @processingTimestamp
+							-- Type: 6: Loading data into dbo.fhsmSPVLFSize
+							--
+							SELECT
+								@processingTimestampUTC = SYSUTCDATETIME()
+								,@processingTimestamp = SYSDATETIME();
+							EXEC dbo.fhsmSPProcessing @name = @name, @task = @thisTask, @version = @version, @type = 6, @timestampUTC = @processingTimestampUTC, @timestamp = @processingTimestamp, @id = @processingId OUTPUT;
+
+							SET @message = ''After calling dbo.fhsmSPVLFSize'';
+							EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''Debug'', @message = @message;
+						END;
+			';
+		END;
+			SET @stmt += '
 					END;
 
 					RETURN 0;
@@ -2518,6 +2769,17 @@ ELSE BEGIN
 			SELECT
 				1								AS Enabled
 				,'dbo.fhsmTableSize'			AS TableName
+				,1								AS Sequence
+				,'TimestampUTC'					AS TimeColumn
+				,1								AS IsUtc
+				,60								AS Days
+				,NULL							AS Filter
+
+			UNION ALL
+
+			SELECT
+				1								AS Enabled
+				,'dbo.fhsmVLFSize'				AS TableName
 				,1								AS Sequence
 				,'TimestampUTC'					AS TimeColumn
 				,1								AS IsUtc
@@ -2794,6 +3056,21 @@ ELSE BEGIN
 				,'src.[Timestamp]' AS SrcDateColumn
 				,'src.[DatabaseName]', 'src.[SchemaName]', 'src.[ObjectName]', 'COALESCE(src.[IndexName], ''N.A.'')', 'CAST(src.[PartitionNumber] AS nvarchar)'
 				,'Database', 'Schema', 'Object', 'Index', 'Partition'
+
+			--
+			-- dbo.fhsmVLFSize
+			--
+			UNION ALL
+
+			SELECT
+				'Database file' AS DimensionName
+				,'DatabaseFileKey' AS DimensionKey
+				,'dbo.fhsmVLFSize' AS SrcTable
+				,'src' AS SrcAlias
+				,NULL AS SrcWhere
+				,'src.[Timestamp]' AS SrcDateColumn
+				,'src.[DatabaseName]', '', '', '', ''
+				,'Database name', 'Logical name', 'Physical name', 'Type', 'File group'
 		)
 		MERGE dbo.fhsmDimensions AS tgt
 		USING dimensions AS src ON (src.DimensionName = tgt.DimensionName) AND (src.SrcTable = tgt.SrcTable)

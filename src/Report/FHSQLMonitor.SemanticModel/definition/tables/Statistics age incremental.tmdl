@@ -49,15 +49,6 @@ table 'Statistics age incremental'
 
 		annotation SummarizationSetBy = User
 
-	column 'Is hypothetical'
-		dataType: boolean
-		formatString: """TRUE"";""TRUE"";""FALSE"""
-		lineageTag: 27b45a83-5578-4626-b0df-22fd64a9a852
-		summarizeBy: none
-		sourceColumn: Is hypothetical
-
-		annotation SummarizationSetBy = Automatic
-
 	column IndexKey
 		dataType: int64
 		isHidden
@@ -105,6 +96,14 @@ table 'Statistics age incremental'
 
 		annotation UnderlyingDateTimeDataType = Date
 
+	column 'Is hypothetical'
+		dataType: string
+		lineageTag: 04e72636-6fd5-48aa-a86a-d5a5596fe7eb
+		summarizeBy: none
+		sourceColumn: Is hypothetical
+
+		annotation SummarizationSetBy = Automatic
+
 	partition 'Statistics age incremental' = m
 		mode: import
 		queryGroup: Facts
@@ -123,22 +122,22 @@ table 'Statistics age incremental'
 				    datasetToUse, 
 				    {
 				      "Age", 
+				      "Date", 
+				      "IsHypotheticalTxt", 
+				      "ModificationCounter", 
+				      "PartitionNumber", 
 				      "Rows", 
 				      "RowsSampled", 
-				      "ModificationCounter", 
-				      "IsHypothetical", 
-				      "PartitionNumber", 
-				      "Date", 
-				      "ObjectPartitionKey", 
-				      "IndexKey"
+				      "IndexKey", 
+				      "ObjectPartitionKey"
 				    }
 				  ), 
 				  renameColumns = Table.RenameColumns(
 				    selectColumns, 
 				    {
-				      {"RowsSampled", "Rows sampled"}, 
+				      {"IsHypotheticalTxt", "Is hypothetical"}, 
 				      {"ModificationCounter", "Modification counter"}, 
-				      {"IsHypothetical", "Is hypothetical"}
+				      {"RowsSampled", "Rows sampled"}
 				    }
 				  )
 				in

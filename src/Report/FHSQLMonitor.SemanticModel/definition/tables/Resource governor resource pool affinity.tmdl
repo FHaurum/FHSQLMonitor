@@ -1,27 +1,27 @@
 table 'Resource governor resource pool affinity'
 	lineageTag: 5e4fc5dd-1d15-447b-8289-98c2aaf42f80
 
-	column PoolName
+	column 'Pool name'
 		dataType: string
 		lineageTag: b653025c-e2e0-40de-9fb6-d77b43969bc3
 		summarizeBy: none
-		sourceColumn: PoolName
+		sourceColumn: Pool name
 
 		annotation SummarizationSetBy = Automatic
 
-	column ProcessorGroup
+	column 'Processor group'
 		dataType: string
 		lineageTag: b4ff6a6a-d1bb-431e-a966-057693de3db8
 		summarizeBy: none
-		sourceColumn: ProcessorGroup
+		sourceColumn: Processor group
 
 		annotation SummarizationSetBy = Automatic
 
-	column SchedulerMask
+	column 'Scheduler mask'
 		dataType: string
 		lineageTag: 46e98f8c-8d48-417f-acd7-17c619687f33
 		summarizeBy: none
-		sourceColumn: SchedulerMask
+		sourceColumn: Scheduler mask
 
 		annotation SummarizationSetBy = Automatic
 
@@ -51,9 +51,17 @@ table 'Resource governor resource pool affinity'
 				  db     = dbList{[Name = #"Database name"]}[Data], 
 				  table  = db{[Schema = #"Schema name", Item = "Resource governor resource pool affinity"]}[Data], 
 				  emptyDataset = Table.FirstN(table, 0), 
-				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset,
+				  renameColumns = Table.RenameColumns(
+				    datasetToUse, 
+				    {
+				      {"PoolName", "Pool name"}, 
+				      {"ProcessorGroup", "Processor group"}, 
+				      {"SchedulerMask", "Scheduler mask"}
+				    }
+				  )
 				in
-				  datasetToUse
+				  renameColumns
 				```
 
 	annotation PBI_NavigationStepName = Navigation

@@ -1,0 +1,518 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "name": "e5af9409b48114c5c4e0",
+  "position": {
+    "x": 10,
+    "y": 80,
+    "z": 500,
+    "height": 940,
+    "width": 1730,
+    "tabOrder": 4000
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Database"
+                    }
+                  },
+                  "Property": "Database"
+                }
+              },
+              "queryRef": "Database.Database",
+              "nativeQueryRef": "Database"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Triggers"
+                    }
+                  },
+                  "Property": "Parent class"
+                }
+              },
+              "queryRef": "Triggers.Parent class",
+              "nativeQueryRef": "Parent class"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Triggers"
+                    }
+                  },
+                  "Property": "Parent object"
+                }
+              },
+              "queryRef": "Triggers.Parent object",
+              "nativeQueryRef": "Parent object"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Triggers"
+                    }
+                  },
+                  "Property": "Trigger name"
+                }
+              },
+              "queryRef": "Triggers.Trigger name",
+              "nativeQueryRef": "Trigger name"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Triggers"
+                    }
+                  },
+                  "Property": "Type"
+                }
+              },
+              "queryRef": "Triggers.Type",
+              "nativeQueryRef": "Type"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Triggers"
+                    }
+                  },
+                  "Property": "Trigger type"
+                }
+              },
+              "queryRef": "Triggers.Trigger type",
+              "nativeQueryRef": "Trigger type"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Triggers"
+                    }
+                  },
+                  "Property": "Is disabled"
+                }
+              },
+              "queryRef": "Triggers.Is disabled",
+              "nativeQueryRef": "Disabled",
+              "displayName": "Disabled"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Triggers"
+                    }
+                  },
+                  "Property": "Is MS shipped"
+                }
+              },
+              "queryRef": "Triggers.Is ms shipped",
+              "nativeQueryRef": "MS shipped",
+              "displayName": "MS shipped"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Triggers"
+                    }
+                  },
+                  "Property": "Is not for replication"
+                }
+              },
+              "queryRef": "Triggers.Is not for replication",
+              "nativeQueryRef": "Not for repl.",
+              "displayName": "Not for repl."
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Triggers"
+                    }
+                  },
+                  "Property": "Created date"
+                }
+              },
+              "queryRef": "Triggers.Created date",
+              "nativeQueryRef": "Created date"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Triggers"
+                    }
+                  },
+                  "Property": "Modified date"
+                }
+              },
+              "queryRef": "Triggers.Modified date",
+              "nativeQueryRef": "Modified date"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Database"
+                  }
+                },
+                "Property": "Database"
+              }
+            },
+            "direction": "Ascending"
+          },
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Triggers"
+                  }
+                },
+                "Property": "Parent class"
+              }
+            },
+            "direction": "Ascending"
+          },
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Triggers"
+                  }
+                },
+                "Property": "Parent object"
+              }
+            },
+            "direction": "Ascending"
+          },
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Triggers"
+                  }
+                },
+                "Property": "Trigger name"
+              }
+            },
+            "direction": "Ascending"
+          }
+        ]
+      }
+    },
+    "objects": {
+      "total": [
+        {
+          "properties": {
+            "totals": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "columnWidth": [
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "461.0307108642455D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Triggers.Parent object"
+          }
+        },
+        {
+          "properties": {},
+          "selector": {
+            "metadata": "Triggers.Trigger type"
+          }
+        },
+        {
+          "properties": {},
+          "selector": {
+            "metadata": "Database.Database"
+          }
+        },
+        {
+          "properties": {},
+          "selector": {
+            "metadata": "Triggers.Created date"
+          }
+        },
+        {
+          "properties": {},
+          "selector": {
+            "metadata": "Triggers.Modified date"
+          }
+        },
+        {
+          "properties": {},
+          "selector": {
+            "metadata": "Triggers.Parent class"
+          }
+        },
+        {
+          "properties": {},
+          "selector": {
+            "metadata": "Triggers.Type"
+          }
+        },
+        {
+          "properties": {},
+          "selector": {
+            "metadata": "Triggers.Is disabled"
+          }
+        },
+        {
+          "properties": {},
+          "selector": {
+            "metadata": "Triggers.Is ms shipped"
+          }
+        },
+        {
+          "properties": {},
+          "selector": {
+            "metadata": "Triggers.Is not for replication"
+          }
+        }
+      ],
+      "values": [
+        {
+          "properties": {
+            "backColor": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Conditional": {
+                      "Cases": [
+                        {
+                          "Condition": {
+                            "Comparison": {
+                              "ComparisonKind": 0,
+                              "Left": {
+                                "Measure": {
+                                  "Expression": {
+                                    "SourceRef": {
+                                      "Entity": "_Measures"
+                                    }
+                                  },
+                                  "Property": "Is disabled - Triggers"
+                                }
+                              },
+                              "Right": {
+                                "Literal": {
+                                  "Value": "1D"
+                                }
+                              }
+                            }
+                          },
+                          "Value": {
+                            "Literal": {
+                              "Value": "'#fec0bf'"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "selector": {
+            "data": [
+              {
+                "dataViewWildcard": {
+                  "matchingOption": 1
+                }
+              }
+            ],
+            "metadata": "Triggers.Is disabled"
+          }
+        },
+        {
+          "properties": {
+            "backColor": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Conditional": {
+                      "Cases": [
+                        {
+                          "Condition": {
+                            "Comparison": {
+                              "ComparisonKind": 0,
+                              "Left": {
+                                "Measure": {
+                                  "Expression": {
+                                    "SourceRef": {
+                                      "Entity": "_Measures"
+                                    }
+                                  },
+                                  "Property": "Is MS shipped - Triggers"
+                                }
+                              },
+                              "Right": {
+                                "Literal": {
+                                  "Value": "1D"
+                                }
+                              }
+                            }
+                          },
+                          "Value": {
+                            "Literal": {
+                              "Value": "'#99e3dd'"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "selector": {
+            "data": [
+              {
+                "dataViewWildcard": {
+                  "matchingOption": 1
+                }
+              }
+            ],
+            "metadata": "Triggers.Is ms shipped"
+          }
+        },
+        {
+          "properties": {
+            "backColor": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Conditional": {
+                      "Cases": [
+                        {
+                          "Condition": {
+                            "Comparison": {
+                              "ComparisonKind": 0,
+                              "Left": {
+                                "Measure": {
+                                  "Expression": {
+                                    "SourceRef": {
+                                      "Entity": "_Measures"
+                                    }
+                                  },
+                                  "Property": "Is not for replication - Triggers"
+                                }
+                              },
+                              "Right": {
+                                "Literal": {
+                                  "Value": "1D"
+                                }
+                              }
+                            }
+                          },
+                          "Value": {
+                            "Literal": {
+                              "Value": "'#fec0bf'"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "selector": {
+            "data": [
+              {
+                "dataViewWildcard": {
+                  "matchingOption": 1
+                }
+              }
+            ],
+            "metadata": "Triggers.Is not for replication"
+          }
+        }
+      ],
+      "columnHeaders": [
+        {
+          "properties": {
+            "autoSizeColumnWidth": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Triggers'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

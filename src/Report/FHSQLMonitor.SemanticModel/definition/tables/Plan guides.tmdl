@@ -40,15 +40,6 @@ table 'Plan guides'
 
 		annotation PBI_FormatHint = {"isCustom":true}
 
-	column 'Is disabled'
-		dataType: boolean
-		formatString: """TRUE"";""TRUE"";""FALSE"""
-		lineageTag: 413d5052-2fae-4e1d-a479-33e39fd10729
-		summarizeBy: none
-		sourceColumn: Is disabled
-
-		annotation SummarizationSetBy = Automatic
-
 	column 'Query text'
 		dataType: string
 		lineageTag: 81ca5d43-6e3f-408b-b779-d33a71e1665e
@@ -144,6 +135,26 @@ table 'Plan guides'
 
 		annotation SummarizationSetBy = Automatic
 
+	column 'Is disabled'
+		dataType: string
+		lineageTag: 6b960afd-83b4-4627-8537-ffdfbc8e4a91
+		summarizeBy: none
+		sourceColumn: Is disabled
+
+		annotation SummarizationSetBy = Automatic
+
+	column IsDisabled
+		dataType: boolean
+		isHidden
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 29a87c28-b633-487a-bc36-3b9630e15514
+		summarizeBy: none
+		sourceColumn: IsDisabled
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
 	partition 'Plan guides' = m
 		mode: import
 		queryGroup: Facts
@@ -158,17 +169,39 @@ table 'Plan guides'
 				  table  = db{[Schema = #"Schema name", Item = "Plan guides"]}[Data], 
 				  emptyDataset = Table.FirstN(table, 0), 
 				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
-				  renameColumns = Table.RenameColumns(
+				  selectColumns = Table.SelectColumns(
 				    datasetToUse, 
 				    {
-				      {"PlanGuideId", "Plan guide id"}, 
+				      "CreateDate", 
+				      "Hints", 
+				      "IsDisabled", 
+				      "IsDisabledTxt", 
+				      "Message",
+				      "ModifyDate", 
+				      "MsgNum", 
+				      "Name", 
+				      "Parameters", 
+				      "PlanGuideId", 
+				      "QueryText", 
+				      "ScopeBatch", 
+				      "ScopedObject", 
+				      "ScopeTypeDesc", 
+				      "Severity", 
+				      "State",
+				      "DatabaseKey"
+				    }
+				  ), 
+				  renameColumns = Table.RenameColumns(
+				    selectColumns, 
+				    {
 				      {"CreateDate", "Created date"}, 
 				      {"ModifyDate", "Modified date"}, 
-				      {"IsDisabled", "Is disabled"}, 
+				      {"IsDisabledTxt", "Is disabled"}, 
+				      {"PlanGuideId", "Plan guide id"}, 
 				      {"QueryText", "Query text"}, 
-				      {"ScopeTypeDesc", "Scope type"}, 
-				      {"ScopedObject", "Scoped object"}, 
 				      {"ScopeBatch", "Scope batch"}, 
+				      {"ScopedObject", "Scoped object"}, 
+				      {"ScopeTypeDesc", "Scope type"}, 
 				      {"MsgNum", "Msg. no."}
 				    }
 				  )

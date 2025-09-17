@@ -21,6 +21,22 @@ table Database
 
 		annotation SummarizationSetBy = Automatic
 
+	column 'Database - Drill-through for Configuration history'
+		dataType: string
+		lineageTag: 6646ea3e-52ee-4676-8c7f-2218c5878725
+		summarizeBy: none
+		sourceColumn: Database - Drill-through for Configuration history
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Database - Drill-through for Log shipping history'
+		dataType: string
+		lineageTag: 8718f200-0e20-4318-88d5-0d7761627f42
+		summarizeBy: none
+		sourceColumn: Database - Drill-through for Log shipping history
+
+		annotation SummarizationSetBy = Automatic
+
 	partition Database = m
 		mode: import
 		queryGroup: Dimensions
@@ -30,7 +46,7 @@ table Database
 				    Table.SelectRows(
 				      #"Data load", 
 				      each List.Contains(
-				        {"Backup", "Blocks and deadlocks", "CPU", "Database configuration", "Plan guides", "Triggers", "Who is active"}, 
+				        {"Backup", "Blocks and deadlocks", "CPU", "Database configuration", "Log shipping", "Plan guides", "Triggers", "Who is active"}, 
 				        [Service]
 				      )
 				        and List.Contains({"Yes"}, [DataLoad])
@@ -45,9 +61,19 @@ table Database
 				  db     = dbList{[Name = #"Database name"]}[Data], 
 				  table  = db{[Schema = #"Schema name", Item = "Database"]}[Data], 
 				  emptyDataset = Table.FirstN(table, 0), 
-				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset,
+				  duplicateColumnForDatabaseDTConfigurationHistory = Table.DuplicateColumn(
+				    datasetToUse, 
+				    "Database", 
+				    "Database - Drill-through for Configuration history"
+				  ),
+				  duplicateColumnForLogShippingDTConfigurationHistory = Table.DuplicateColumn(
+				    duplicateColumnForDatabaseDTConfigurationHistory, 
+				    "Database", 
+				    "Database - Drill-through for Log shipping history"
+				  )
 				in
-				  datasetToUse
+				  duplicateColumnForLogShippingDTConfigurationHistory
 				```
 
 	annotation PBI_ResultType = Table

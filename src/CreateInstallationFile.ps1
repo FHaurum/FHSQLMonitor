@@ -1,6 +1,6 @@
 ﻿$outputFile = "..\build\FHSQLMonitor.sql"
 
-$versionNumber = "v2.9.1"
+$versionNumber = "v2.11.0"
 
 $buildTimeStr = (Get-Date).ToString("yyyy:MM:dd HH:mm:ss")
 
@@ -44,6 +44,7 @@ Add-Content $outputFile "	DECLARE @enableIndexOperational         bit = 1;"
 Add-Content $outputFile "	DECLARE @enableIndexPhysical            bit = 1;"
 Add-Content $outputFile "	DECLARE @enableIndexUsage               bit = 1;"
 Add-Content $outputFile "	DECLARE @enableInstanceState            bit = 1;"
+Add-Content $outputFile "	DECLARE @enableLogShipping              bit = 1;"
 Add-Content $outputFile "	DECLARE @enableMissingIndexes           bit = 1;"
 Add-Content $outputFile "	DECLARE @enablePerformanceStatistics    bit = 1;"
 Add-Content $outputFile "	DECLARE @enablePlanCacheUsage           bit = 1;"
@@ -233,6 +234,7 @@ foreach ($file in $filenames) {
         Add-Content $outputFile "SET @stmt = REPLACE(@stmt, 'SET @enableIndexPhysical = 0;',            'SET @enableIndexPhysical = '            + CAST(@enableIndexPhysical AS nvarchar) + ';');"
         Add-Content $outputFile "SET @stmt = REPLACE(@stmt, 'SET @enableIndexUsage = 0;',               'SET @enableIndexUsage = '               + CAST(@enableIndexUsage AS nvarchar) + ';');"
         Add-Content $outputFile "SET @stmt = REPLACE(@stmt, 'SET @enableInstanceState = 0;',            'SET @enableInstanceState = '            + CAST(@enableInstanceState AS nvarchar) + ';');"
+        Add-Content $outputFile "SET @stmt = REPLACE(@stmt, 'SET @enableLogShipping = 0;',              'SET @enableLogShipping = '              + CAST(@enableLogShipping AS nvarchar) + ';');"
         Add-Content $outputFile "SET @stmt = REPLACE(@stmt, 'SET @enableMissingIndexes = 0;',           'SET @enableMissingIndexes = '           + CAST(@enableMissingIndexes AS nvarchar) + ';');"
         Add-Content $outputFile "SET @stmt = REPLACE(@stmt, 'SET @enablePerformanceStatistics = 0;',    'SET @enablePerformanceStatistics = '    + CAST(@enablePerformanceStatistics AS nvarchar) + ';');"
         Add-Content $outputFile "SET @stmt = REPLACE(@stmt, 'SET @enablePlanCacheUsage = 0;',           'SET @enablePlanCacheUsage = '           + CAST(@enablePlanCacheUsage AS nvarchar) + ';');"

@@ -1,7 +1,19 @@
 # FHSQLMonitor
-You can try the [live demo](https://app.powerbi.com/view?r=eyJrIjoiMDQ2MDQ3ZjQtOGY1Ni00N2UzLTgzOTQtYTliMTkwMDkyZjk5IiwidCI6IjczYzA3MDE0LTAyYzEtNDVkMy04NWFiLTI0NDA1MzU3ZDUyYSIsImMiOjl9), and then continue to read more about the product on my blog [SQL Server Monitoring](https://www.haurumit.dk/sql-server-monitoring)
+You can try the [live demo](https://tinyurl.com/yc6tc7c2), and then continue to read more about the product on my blog [SQL Server Monitoring](https://www.haurumit.dk/sql-server-monitoring)
 
 Have fun :-)
+<p>
+<b>September 17, 2025: Version 2.11.0</b> with:</br>
+<li>Added the "Log shipping" service and the reports "Log shipping configuration" and "Log shipping status".</li>
+<li>The report "Always On performance" was previously named "Always On traffic" and now also shows Average synchronization lag.</li>
+<li>The report "Database configuration" now also show State, Standby, Read only, Is parameterization forced and Always On group.</li>
+<li>The "Capacity" service now also collects information about VLFs (Virtual Log Files) and show these on the report "Database size".</li>
+<li>The report "Index usage" now also show indexes that has not been used at all.</li>
+<li>The "Instance state" service now also collects SQL Server log records with as default a severity level equal to 17 or above.</li>
+<li>The report "Statistics" now also show if the indexex are Hypothetical.</li>
+<li>Reports updated to show No and Yes instead of 0/1 or False/True.</li>
+<li>Fixed error where agent jobs in progress was saved as errors.</li>
+</p>
 <p>
 <b>August 5, 2025: Version 2.9.1</b> with:</br>
 <li>Fixed error when collecting database scoped configuration and some databases are not online.</li>

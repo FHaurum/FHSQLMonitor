@@ -9,15 +9,6 @@ table 'Agent jobs - grid'
 
 		annotation SummarizationSetBy = Automatic
 
-	column 'Job enabled'
-		dataType: boolean
-		formatString: """TRUE"";""TRUE"";""FALSE"""
-		lineageTag: 15eb3f77-10c1-4d49-83bf-74ed6d4644eb
-		summarizeBy: none
-		sourceColumn: Job enabled
-
-		annotation SummarizationSetBy = Automatic
-
 	column 'Schedule id'
 		dataType: int64
 		formatString: 0
@@ -26,15 +17,6 @@ table 'Agent jobs - grid'
 		sourceColumn: Schedule id
 
 		annotation SummarizationSetBy = User
-
-	column 'Schedule enabled'
-		dataType: boolean
-		formatString: """TRUE"";""TRUE"";""FALSE"""
-		lineageTag: 54f1e0bf-29ca-44cf-a263-963768b0994c
-		summarizeBy: none
-		sourceColumn: Schedule enabled
-
-		annotation SummarizationSetBy = Automatic
 
 	column 0
 		dataType: string
@@ -261,6 +243,22 @@ table 'Agent jobs - grid'
 
 		annotation SummarizationSetBy = Automatic
 
+	column 'Job enabled'
+		dataType: string
+		lineageTag: 3fba8f19-4850-48b1-ae2e-08f6e6996607
+		summarizeBy: none
+		sourceColumn: Job enabled
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Schedule enabled'
+		dataType: string
+		lineageTag: 368cb5ca-0438-42e6-b8f0-19ad648bd92b
+		summarizeBy: none
+		sourceColumn: Schedule enabled
+
+		annotation SummarizationSetBy = Automatic
+
 	partition 'Agent jobs - grid' = m
 		mode: import
 		queryGroup: Facts
@@ -275,16 +273,32 @@ table 'Agent jobs - grid'
 				  table  = db{[Schema = #"Schema name", Item = "Agent jobs - grid"]}[Data], 
 				  emptyDataset = Table.FirstN(table, 0), 
 				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
-				  renamedColumns = Table.RenameColumns(
+				  selectColumns = Table.SelectColumns(
 				    datasetToUse, 
 				    {
-				      {"JobName", "Job"}, 
-				      {"JobEnabled", "Job enabled"}, 
-				      {"ScheduleEnabled", "Schedule enabled"}, 
-				      {"WhenDesc", "When"}, 
-				      {"WhenDetailsDesc", "When details"}, 
+				      "ActiveDesc", 
+				      "JobEnabledTxt", 
+				      "JobName", 
+				      "ScheduleEnabledTxt", 
+				      "ScheduleId", 
+				      "Timestamp", 
+				      "WhenDesc", 
+				      "WhenDetailsDesc", 
+				      "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", 
+				      "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", 
+				      "20", "21", "22", "23"
+				    }
+				  ), 
+				  renamedColumns = Table.RenameColumns(
+				    selectColumns, 
+				    {
 				      {"ActiveDesc", "Active"}, 
-				      {"ScheduleId", "Schedule id"}
+				      {"JobEnabledTxt", "Job enabled"}, 
+				      {"JobName", "Job"}, 
+				      {"ScheduleEnabledTxt", "Schedule enabled"}, 
+				      {"ScheduleId", "Schedule id"}, 
+				      {"WhenDesc", "When"}, 
+				      {"WhenDetailsDesc", "When details"}
 				    }
 				  )
 				in

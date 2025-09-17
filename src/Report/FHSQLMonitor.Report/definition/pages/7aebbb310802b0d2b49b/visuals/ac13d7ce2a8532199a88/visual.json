@@ -1,0 +1,147 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "name": "ac13d7ce2a8532199a88",
+  "position": {
+    "x": 10,
+    "y": 404,
+    "z": 2000,
+    "height": 293,
+    "width": 1900
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Instance dump files"
+                    }
+                  },
+                  "Property": "Sequence"
+                }
+              },
+              "queryRef": "Instance dump files.Sequence",
+              "nativeQueryRef": "Sequence"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Size in bytes - Instance status"
+                }
+              },
+              "queryRef": "_Measures.Size in bytes - Instance status",
+              "nativeQueryRef": "Size in bytes",
+              "displayName": "Size in bytes"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Instance dump files"
+                    }
+                  },
+                  "Property": "Created"
+                }
+              },
+              "queryRef": "Instance dump files.Created",
+              "nativeQueryRef": "Created1"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Instance dump files"
+                    }
+                  },
+                  "Property": "Filename"
+                }
+              },
+              "queryRef": "Instance dump files.Filename",
+              "nativeQueryRef": "Filename"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Instance dump files"
+                  }
+                },
+                "Property": "Created"
+              }
+            },
+            "direction": "Descending"
+          }
+        ]
+      }
+    },
+    "objects": {
+      "total": [
+        {
+          "properties": {
+            "totals": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Dump files'"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "visualTooltip": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            },
+            "section": {
+              "expr": {
+                "Literal": {
+                  "Value": "'180f79a413775d9b3a90'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

@@ -1,0 +1,376 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "name": "9985681ca5d15a8fdb54",
+  "position": {
+    "x": 10,
+    "y": 830,
+    "z": 1000,
+    "height": 190,
+    "width": 1900,
+    "tabOrder": 11000
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Always On group-replica"
+                    }
+                  },
+                  "Property": "Group"
+                }
+              },
+              "queryRef": "Always On group-replica.Group",
+              "nativeQueryRef": "Group1"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Always On group-replica"
+                    }
+                  },
+                  "Property": "Replica"
+                }
+              },
+              "queryRef": "Always On group-replica.Replica",
+              "nativeQueryRef": "Replica1"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Always On database states"
+                    }
+                  },
+                  "Property": "Database"
+                }
+              },
+              "queryRef": "Always On database states.Database",
+              "nativeQueryRef": "Database"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Always On database states"
+                    }
+                  },
+                  "Property": "Is local"
+                }
+              },
+              "queryRef": "Always On database states.Is local",
+              "nativeQueryRef": "Local",
+              "displayName": "Local"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Always On database states"
+                    }
+                  },
+                  "Property": "Is primary replica"
+                }
+              },
+              "queryRef": "Always On database states.Is primary replica",
+              "nativeQueryRef": "Primary replica",
+              "displayName": "Primary replica"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Always On database states"
+                    }
+                  },
+                  "Property": "Synchronization state"
+                }
+              },
+              "queryRef": "Always On database states.Synchronization state",
+              "nativeQueryRef": "Synchronization state"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Always On database states"
+                    }
+                  },
+                  "Property": "Is commit participant"
+                }
+              },
+              "queryRef": "Always On database states.Is commit participant",
+              "nativeQueryRef": "Commit participant",
+              "displayName": "Commit participant"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Always On database states"
+                    }
+                  },
+                  "Property": "Synchronization health"
+                }
+              },
+              "queryRef": "Always On database states.Synchronization health",
+              "nativeQueryRef": "Synchronization health"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Always On database states"
+                    }
+                  },
+                  "Property": "Database state"
+                }
+              },
+              "queryRef": "Always On database states.Database state",
+              "nativeQueryRef": "Database state"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Always On database states"
+                    }
+                  },
+                  "Property": "Is suspended"
+                }
+              },
+              "queryRef": "Always On database states.Is suspended",
+              "nativeQueryRef": "Suspended",
+              "displayName": "Suspended"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Always On database states"
+                    }
+                  },
+                  "Property": "Suspend reason"
+                }
+              },
+              "queryRef": "Always On database states.Suspend reason",
+              "nativeQueryRef": "Suspend reason"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Always On database states"
+                    }
+                  },
+                  "Property": "Min. timestamp"
+                }
+              },
+              "queryRef": "Always On database states.Min. timestamp",
+              "nativeQueryRef": "Min. time",
+              "displayName": "Min. time"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Always On database states"
+                    }
+                  },
+                  "Property": "Max. timestamp"
+                }
+              },
+              "queryRef": "Always On database states.Max. timestamp",
+              "nativeQueryRef": "Max. time",
+              "displayName": "Max. time"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Always On group-replica"
+                  }
+                },
+                "Property": "Group"
+              }
+            },
+            "direction": "Ascending"
+          },
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Always On group-replica"
+                  }
+                },
+                "Property": "Replica"
+              }
+            },
+            "direction": "Ascending"
+          },
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Always On database states"
+                  }
+                },
+                "Property": "Database"
+              }
+            },
+            "direction": "Ascending"
+          }
+        ]
+      }
+    },
+    "objects": {
+      "total": [
+        {
+          "properties": {
+            "totals": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "columnFormatting": [
+        {
+          "properties": {
+            "alignment": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Center'"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Always On database states.Is local"
+          }
+        },
+        {
+          "properties": {
+            "alignment": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Center'"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Always On database states.Is primary replica"
+          }
+        },
+        {
+          "properties": {
+            "alignment": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Center'"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Always On database states.Is commit participant"
+          }
+        },
+        {
+          "properties": {
+            "alignment": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Center'"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Always On database states.Is suspended"
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Always On database states'"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "visualTooltip": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            },
+            "section": {
+              "expr": {
+                "Literal": {
+                  "Value": "'___AUTO___'"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "visualHeader": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

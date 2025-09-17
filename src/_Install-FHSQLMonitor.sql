@@ -44,7 +44,7 @@ BEGIN
 	SET @myUserName = SUSER_NAME();
 	SET @nowUTC = SYSUTCDATETIME();
 	SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
-	SET @version = '2.9.1';
+	SET @version = '2.11.0';
 END;
 
 --
@@ -511,15 +511,15 @@ ELSE BEGIN
 
 			SET @productStartPos = 1;
 			SET @productEndPos = CHARINDEX(''.'', CAST(@productVersion AS nvarchar(128)) COLLATE DATABASE_DEFAULT, @productStartPos);
-			SET @productVersion1 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+			SET @productVersion1 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartPos));
 
 			SET @productStartPos = @productEndPos + 1;
 			SET @productEndPos = CHARINDEX(''.'', CAST(@productVersion AS nvarchar(128)) COLLATE DATABASE_DEFAULT, @productStartPos);
-			SET @productVersion2 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+			SET @productVersion2 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartPos));
 
 			SET @productStartPos = @productEndPos + 1;
 			SET @productEndPos = CHARINDEX(''.'', CAST(@productVersion AS nvarchar(128)) COLLATE DATABASE_DEFAULT, @productStartPos);
-			SET @productVersion3 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+			SET @productVersion3 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartPos));
 
 			IF (CAST(@edition AS nvarchar(128)) COLLATE DATABASE_DEFAULT = ''SQL Azure'')
 				OR (SUBSTRING(CAST(@edition AS nvarchar(128)) COLLATE DATABASE_DEFAULT, 1, CHARINDEX('' '', CAST(@edition AS nvarchar(128)) COLLATE DATABASE_DEFAULT)) = ''Developer'')
@@ -683,9 +683,28 @@ ELSE BEGIN
 						,OutputColumn4 nvarchar(128) NULL
 						,OutputColumn5 nvarchar(128) NULL
 						,OutputColumn6 nvarchar(128) NULL
+						,CreateAutoIndex bit NULL
 						,CONSTRAINT PK_fhsmDimensions PRIMARY KEY(Id)' + @tableCompressionStmt + '
 						,CONSTRAINT UQ_fhsmDimensions_SrcTable_DimensionName UNIQUE(SrcTable, DimensionName)' + @tableCompressionStmt + '
 					);
+				END;
+			';
+			EXEC(@stmt);
+		END;
+
+		--
+		-- Adding column CreateAutoIndex to table dbo.fhsmDimensions if it not already exists
+		--
+		BEGIN
+			SET @stmt = '
+				USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
+
+				IF NOT EXISTS (SELECT * FROM sys.columns AS c WHERE (c.object_id = OBJECT_ID(''dbo.fhsmDimensions'')) AND (c.name = ''CreateAutoIndex''))
+				BEGIN
+					RAISERROR(''Adding column [CreateAutoIndex] to table dbo.fhsmDimensions'', 0, 1) WITH NOWAIT;
+
+					ALTER TABLE dbo.fhsmDimensions
+						ADD CreateAutoIndex bit NULL;
 				END;
 			';
 			EXEC(@stmt);
@@ -1258,13 +1277,13 @@ ELSE BEGIN
 					SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 					SET @productStartPos = 1;
 					SET @productEndPos = CHARINDEX(''.'', @productVersion, @productStartPos);
-					SET @productVersion1 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+					SET @productVersion1 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartPos));
 					SET @productStartPos = @productEndPos + 1;
 					SET @productEndPos = CHARINDEX(''.'', @productVersion, @productStartPos);
-					SET @productVersion2 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+					SET @productVersion2 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartPos));
 					SET @productStartPos = @productEndPos + 1;
 					SET @productEndPos = CHARINDEX(''.'', @productVersion, @productStartPos);
-					SET @productVersion3 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+					SET @productVersion3 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartPos));
 				END;
 
 				IF OBJECT_ID(''dbo.fhsmFNGenerateKey'', ''IF'') IS NULL
@@ -2887,7 +2906,7 @@ ELSE BEGIN
 			SET @stmt += '
 							ELSE IF (@Type = ''''uninstall'''')
 							BEGIN
-								IF (@task = ''''all'''')
+								IF (@Task = ''''all'''')
 								BEGIN
 									DECLARE oCur CURSOR LOCAL READ_ONLY FAST_FORWARD FOR
 									SELECT o.name
@@ -3918,13 +3937,13 @@ ELSE BEGIN
 							SET @productVersion = CAST(SERVERPROPERTY(''''ProductVersion'''') AS nvarchar);
 							SET @productStartPos = 1;
 							SET @productEndPos = CHARINDEX(''''.'''', @productVersion, @productStartPos);
-							SET @productVersion1 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+							SET @productVersion1 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartPos));
 							SET @productStartPos = @productEndPos + 1;
 							SET @productEndPos = CHARINDEX(''''.'''', @productVersion, @productStartPos);
-							SET @productVersion2 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+							SET @productVersion2 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartPos));
 							SET @productStartPos = @productEndPos + 1;
 							SET @productEndPos = CHARINDEX(''''.'''', @productVersion, @productStartPos);
-							SET @productVersion3 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartpos));
+							SET @productVersion3 = dbo.fhsmFNTryParseAsInt(SUBSTRING(@productVersion, @productStartPos, @productEndPos - @productStartPos));
 
 							SET @pbiSchema = dbo.fhsmFNGetConfiguration(''''PBISchema'''');
 			';
@@ -3954,13 +3973,17 @@ ELSE BEGIN
 							--
 							BEGIN
 								DECLARE dCur CURSOR LOCAL READ_ONLY FAST_FORWARD FOR
-								SELECT DISTINCT d.SrcTable, d.SrcColumn1, d.SrcColumn2, d.SrcColumn3, d.SrcColumn4, d.SrcColumn5, d.SrcColumn6
+								SELECT DISTINCT
+									d.SrcTable
+									,d.SrcColumn1, NULLIF(d.SrcColumn2, '''''''') AS SrcColumn2, NULLIF(d.SrcColumn3, '''''''') AS SrcColumn3
+									,NULLIF(d.SrcColumn4, '''''''') AS SrcColumn4, NULLIF(d.SrcColumn5, '''''''') AS SrcColumn5, NULLIF(d.SrcColumn6, '''''''') AS SrcColumn6
 								FROM dbo.fhsmDimensions AS d
 								INNER JOIN (
 									SELECT DISTINCT d.DimensionName
 									FROM dbo.fhsmDimensions AS d
 								) AS modifiedSrcTables ON (modifiedSrcTables.DimensionName = d.DimensionName)
-								ORDER BY d.SrcTable, d.SrcColumn6 DESC, d.SrcColumn5 DESC, d.SrcColumn4 DESC, d.SrcColumn3 DESC, d.SrcColumn2 DESC, d.SrcColumn1 DESC;
+								WHERE (COALESCE(d.CreateAutoIndex, 1) = 1)
+								ORDER BY d.SrcTable, SrcColumn6 DESC, SrcColumn5 DESC, SrcColumn4 DESC, SrcColumn3 DESC, SrcColumn2 DESC, d.SrcColumn1 DESC;
 
 								OPEN dCur;
 
@@ -4488,11 +4511,11 @@ ELSE BEGIN
 										SELECT
 											DISTINCT
 											'''' + @srcColumn1 + '''' COLLATE DATABASE_DEFAULT AS '''' + QUOTENAME(@outputColumn1)
-												+ COALESCE('''', '''' + @srcColumn2 + '''' COLLATE DATABASE_DEFAULT AS '''' + QUOTENAME(@outputColumn2), '''''''')
-												+ COALESCE('''', '''' + @srcColumn3 + '''' COLLATE DATABASE_DEFAULT AS '''' + QUOTENAME(@outputColumn3), '''''''')
-												+ COALESCE('''', '''' + @srcColumn4 + '''' COLLATE DATABASE_DEFAULT AS '''' + QUOTENAME(@outputColumn4), '''''''')
-												+ COALESCE('''', '''' + @srcColumn5 + '''' COLLATE DATABASE_DEFAULT AS '''' + QUOTENAME(@outputColumn5), '''''''')
-												+ COALESCE('''', '''' + @srcColumn6 + '''' COLLATE DATABASE_DEFAULT AS '''' + QUOTENAME(@outputColumn6), '''''''') + ''''
+												+ COALESCE('''', '''' + CASE @srcColumn2 WHEN '''''''' THEN '''''''''''''''''''''''' ELSE @srcColumn2 END + '''' COLLATE DATABASE_DEFAULT AS '''' + QUOTENAME(@outputColumn2), '''''''')
+												+ COALESCE('''', '''' + CASE @srcColumn3 WHEN '''''''' THEN '''''''''''''''''''''''' ELSE @srcColumn3 END + '''' COLLATE DATABASE_DEFAULT AS '''' + QUOTENAME(@outputColumn3), '''''''')
+												+ COALESCE('''', '''' + CASE @srcColumn4 WHEN '''''''' THEN '''''''''''''''''''''''' ELSE @srcColumn4 END + '''' COLLATE DATABASE_DEFAULT AS '''' + QUOTENAME(@outputColumn4), '''''''')
+												+ COALESCE('''', '''' + CASE @srcColumn5 WHEN '''''''' THEN '''''''''''''''''''''''' ELSE @srcColumn5 END + '''' COLLATE DATABASE_DEFAULT AS '''' + QUOTENAME(@outputColumn5), '''''''')
+												+ COALESCE('''', '''' + CASE @srcColumn6 WHEN '''''''' THEN '''''''''''''''''''''''' ELSE @srcColumn6 END + '''' COLLATE DATABASE_DEFAULT AS '''' + QUOTENAME(@outputColumn6), '''''''') + ''''
 										FROM '''' + @srcTable + '''' AS '''' + @srcAlias + ''''
 										'''' + COALESCE(@srcWhere, '''''''') + ''''
 									'''';
@@ -4803,12 +4826,17 @@ ELSE BEGIN
 						AS
 						SELECT
 							r.Enabled
+							,CASE r.Enabled
+								WHEN 0 THEN ''''No''''
+								WHEN 1 THEN ''''Yes''''
+							END AS EnabledTxt
 							,r.TableName AS [Table]
-							,r.TimeColumn AS [Time column]
-							,r.IsUtc AS [Is UTC]
+							,r.Filter
+							,r.TimeColumn
+							,r.IsUtc AS [IsUTC]
 							,r.Days
-							,r.LastStartedUTC AS [Last started UTC]
-							,r.LastExecutedUTC AS [Last executed UTC]
+							,r.LastStartedUTC
+							,r.LastExecutedUTC
 						FROM dbo.fhsmRetentions AS r;
 					'';
 					EXEC(@stmt);
@@ -4876,15 +4904,53 @@ ELSE BEGIN
 						AS
 						SELECT
 							s.Enabled
+							,CASE s.Enabled
+								WHEN 0 THEN ''''No''''
+								WHEN 1 THEN ''''Yes''''
+							END AS EnabledTxt
 							,s.Name
 							,s.Task
 							,s.Parameter
-							,s.ExecutionDelaySec AS [Execution delay in sec.]
-							,s.FromTime AS [From time]
-							,s.ToTime AS [To time]
-							,s.Monday, s.Tuesday, s.Wednesday, s.Thursday, s.Friday, s.Saturday, s.Sunday
-							,s.LastStartedUTC AS [Last started UTC]
-							,s.LastExecutedUTC AS [Last executed UTC]
+							,s.ExecutionDelaySec
+							,s.FromTime
+							,s.ToTime
+							,s.Monday
+							,CASE s.Monday
+								WHEN 0 THEN ''''No''''
+								WHEN 1 THEN ''''Yes''''
+							END AS MondayTxt
+							,s.Tuesday
+							,CASE s.Tuesday
+								WHEN 0 THEN ''''No''''
+								WHEN 1 THEN ''''Yes''''
+							END AS TuesdayTxt
+							,s.Wednesday
+							,CASE s.Wednesday
+								WHEN 0 THEN ''''No''''
+								WHEN 1 THEN ''''Yes''''
+							END AS WednesdayTxt
+							,s.Thursday
+							,CASE s.Thursday
+								WHEN 0 THEN ''''No''''
+								WHEN 1 THEN ''''Yes''''
+							END AS ThursdayTxt
+							,s.Friday
+							,CASE s.Friday
+								WHEN 0 THEN ''''No''''
+								WHEN 1 THEN ''''Yes''''
+							END AS FridayTxt
+							,s.Saturday
+							,CASE s.Saturday
+								WHEN 0 THEN ''''No''''
+								WHEN 1 THEN ''''Yes''''
+							END AS SaturdayTxt
+							,s.Sunday
+							,CASE s.Sunday
+								WHEN 0 THEN ''''No''''
+								WHEN 1 THEN ''''Yes''''
+							END AS SundayTxt
+							,s.LastStartedUTC
+							,s.LastExecutedUTC
 							,s.LastErrorMessage
 						FROM dbo.fhsmSchedules AS s
 						WHERE (s.DeploymentStatus = 0);

@@ -1,0 +1,135 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "name": "caea532caa00edb38a28",
+  "position": {
+    "x": 10,
+    "y": 807,
+    "z": 3000,
+    "height": 212,
+    "width": 620,
+    "tabOrder": 1000
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Resource governor resource pool affinity"
+                    }
+                  },
+                  "Property": "Pool name"
+                }
+              },
+              "queryRef": "Resource governor resource pool affinity.PoolName",
+              "nativeQueryRef": "Name",
+              "displayName": "Name"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Resource governor resource pool affinity"
+                    }
+                  },
+                  "Property": "Processor group"
+                }
+              },
+              "queryRef": "Resource governor resource pool affinity.ProcessorGroup",
+              "nativeQueryRef": "Processor group"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Resource governor resource pool affinity"
+                    }
+                  },
+                  "Property": "Scheduler mask"
+                }
+              },
+              "queryRef": "Resource governor resource pool affinity.SchedulerMask",
+              "nativeQueryRef": "Scheduler mask"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Resource governor resource pool affinity"
+                    }
+                  },
+                  "Property": "Timestamp"
+                }
+              },
+              "queryRef": "Resource governor resource pool affinity.Timestamp",
+              "nativeQueryRef": "Timestamp"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Resource governor resource pool affinity"
+                  }
+                },
+                "Property": "Pool name"
+              }
+            },
+            "direction": "Ascending"
+          }
+        ]
+      }
+    },
+    "objects": {
+      "total": [
+        {
+          "properties": {
+            "totals": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Resource pool affinity'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

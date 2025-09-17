@@ -1,0 +1,687 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/bookmark/1.4.0/schema.json",
+  "displayName": "Filter panel closed - Database configuration",
+  "name": "0975a692dececb162e3a",
+  "options": {
+    "applyOnlyToTargetVisuals": true,
+    "targetVisualNames": [
+      "1a3dadf666e0ea51ab6d",
+      "8008f532c6ca8ca5d128",
+      "3d3169bc058ae3ddc7b7",
+      "504da3102c76b04d27a3",
+      "5dfb61e3a9738e062188",
+      "8ec95823cce6412ba40c",
+      "91a7b3b3c038a4010edb",
+      "986291be37446971c8ce",
+      "cb61acae301b540ce064",
+      "3a9f9ce58534d1e3dc09",
+      "d6c187800306ed6d3e7b"
+    ],
+    "suppressData": true
+  },
+  "explorationState": {
+    "version": "1.3",
+    "activeSection": "4d6e8634902b0aa177da",
+    "sections": {
+      "4d6e8634902b0aa177da": {
+        "visualContainers": {
+          "18e4d385460d6c547296": {
+            "filters": {
+              "byExpr": [
+                {
+                  "name": "11f090e5900073410307",
+                  "type": "Advanced",
+                  "expression": {
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "_Measures"
+                        }
+                      },
+                      "Property": "Info last refresh"
+                    }
+                  },
+                  "howCreated": 0
+                }
+              ]
+            },
+            "singleVisual": {
+              "visualType": "card",
+              "objects": {}
+            }
+          },
+          "19b595d1abe09674c809": {
+            "filters": {
+              "byExpr": [
+                {
+                  "name": "27e6e6d40e4728618e26",
+                  "type": "Advanced",
+                  "expression": {
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "_Measures"
+                        }
+                      },
+                      "Property": "Info text"
+                    }
+                  },
+                  "howCreated": 0
+                }
+              ]
+            },
+            "singleVisual": {
+              "visualType": "card",
+              "objects": {}
+            }
+          },
+          "3a9f9ce58534d1e3dc09": {
+            "filters": {
+              "byExpr": [
+                {
+                  "name": "4acef5b01890b0766bc2",
+                  "type": "Advanced",
+                  "expression": {
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "_Measures"
+                        }
+                      },
+                      "Property": "Open filter button tooltip - Database configuration"
+                    }
+                  },
+                  "howCreated": 0
+                }
+              ]
+            },
+            "singleVisual": {
+              "visualType": "card",
+              "objects": {}
+            }
+          },
+          "3d3169bc058ae3ddc7b7": {
+            "singleVisual": {
+              "visualType": "shape",
+              "objects": {}
+            }
+          },
+          "3f112000000076b8150a": {
+            "singleVisual": {
+              "visualType": "actionButton",
+              "objects": {}
+            }
+          },
+          "504da3102c76b04d27a3": {
+            "singleVisual": {
+              "visualType": "actionButton",
+              "objects": {}
+            }
+          },
+          "5675442e1300180dbd89": {
+            "singleVisual": {
+              "visualType": "actionButton",
+              "objects": {}
+            }
+          },
+          "5dfb61e3a9738e062188": {
+            "singleVisual": {
+              "visualType": "shape",
+              "objects": {}
+            }
+          },
+          "66567678ebc205752190": {
+            "filters": {
+              "byExpr": [
+                {
+                  "name": "0e7cd4b406da07c8ba2d",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Database"
+                        }
+                      },
+                      "Property": "Database"
+                    }
+                  },
+                  "howCreated": 0
+                }
+              ]
+            },
+            "singleVisual": {
+              "visualType": "textSlicer",
+              "objects": {}
+            }
+          },
+          "6d45ab902593e0c92a07": {
+            "filters": {
+              "byExpr": [
+                {
+                  "name": "cef79a5f6009b89dba12",
+                  "type": "Advanced",
+                  "filter": {
+                    "Version": 2,
+                    "From": [
+                      {
+                        "Name": "_",
+                        "Entity": "_Measures",
+                        "Type": 0
+                      }
+                    ],
+                    "Where": [
+                      {
+                        "Condition": {
+                          "Not": {
+                            "Expression": {
+                              "Comparison": {
+                                "ComparisonKind": 0,
+                                "Left": {
+                                  "Measure": {
+                                    "Expression": {
+                                      "SourceRef": {
+                                        "Source": "_"
+                                      }
+                                    },
+                                    "Property": "VLF - Database configuration"
+                                  }
+                                },
+                                "Right": {
+                                  "Literal": {
+                                    "Value": "null"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  "expression": {
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "_Measures"
+                        }
+                      },
+                      "Property": "VLF - Database configuration"
+                    }
+                  },
+                  "howCreated": 1
+                },
+                {
+                  "name": "e1ad7ec51030de2d9b87",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Database"
+                        }
+                      },
+                      "Property": "Database"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "9677231ed46590e0dc48",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Database state"
+                        }
+                      },
+                      "Property": "Collation"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "3d5557db7a0c4b66eda7",
+                  "type": "Advanced",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Database state"
+                        }
+                      },
+                      "Property": "Comp. level"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "3f8007251b36a7528930",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Database state"
+                        }
+                      },
+                      "Property": "Recovery model"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "60e9d4667e99d225eb11",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Database state"
+                        }
+                      },
+                      "Property": "RCSI"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "942c744a1eb6ea705b01",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Database state"
+                        }
+                      },
+                      "Property": "Page verify"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "a9097412605035be0077",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Database state"
+                        }
+                      },
+                      "Property": "Auto close"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "4a2a9fe590a780080d87",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Database state"
+                        }
+                      },
+                      "Property": "Auto shrink"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "25dbf2bfc68004d9046e",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Database state"
+                        }
+                      },
+                      "Property": "Auto update stats. async."
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "cd859db4267ddce1dd3b",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Database state"
+                        }
+                      },
+                      "Property": "Mixed page allocation"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "a4f0d8600e9cb6e8e9ee",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Database state"
+                        }
+                      },
+                      "Property": "Delayed durability"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "e8222aabba3572703618",
+                  "type": "Advanced",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Database state"
+                        }
+                      },
+                      "Property": "Target recovery time in sec."
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "a544e1c579cc54acbb67",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Database state"
+                        }
+                      },
+                      "Property": "Min. timestamp"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "5f0460f1d209513ae0a7",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Database state"
+                        }
+                      },
+                      "Property": "Max. timestamp"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "6dfe4360a5d9c62a0d98",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Database state"
+                        }
+                      },
+                      "Property": "Encrypted"
+                    }
+                  },
+                  "howCreated": 0
+                }
+              ]
+            },
+            "singleVisual": {
+              "visualType": "tableEx",
+              "objects": {},
+              "orderBy": [
+                {
+                  "Direction": 1,
+                  "Expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Database"
+                        }
+                      },
+                      "Property": "Database"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "70279ac25b005b97a79e": {
+            "filters": {
+              "byExpr": [
+                {
+                  "name": "c1672916039390009ab5",
+                  "type": "Advanced",
+                  "expression": {
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "_Measures"
+                        }
+                      },
+                      "Property": "Data range - Database configuration"
+                    }
+                  },
+                  "howCreated": 0
+                }
+              ]
+            },
+            "singleVisual": {
+              "visualType": "card",
+              "objects": {}
+            }
+          },
+          "8ec95823cce6412ba40c": {
+            "filters": {
+              "byExpr": [
+                {
+                  "name": "a1581d17d98cb4adeea0",
+                  "type": "Advanced",
+                  "filter": {
+                    "Version": 2,
+                    "From": [
+                      {
+                        "Name": "_",
+                        "Entity": "_Measures",
+                        "Type": 0
+                      }
+                    ],
+                    "Where": [
+                      {
+                        "Condition": {
+                          "Not": {
+                            "Expression": {
+                              "Comparison": {
+                                "ComparisonKind": 0,
+                                "Left": {
+                                  "Measure": {
+                                    "Expression": {
+                                      "SourceRef": {
+                                        "Source": "_"
+                                      }
+                                    },
+                                    "Property": "VLF Filter - Database configuration"
+                                  }
+                                },
+                                "Right": {
+                                  "Literal": {
+                                    "Value": "null"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  "expression": {
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "_Measures"
+                        }
+                      },
+                      "Property": "VLF Filter - Database configuration"
+                    }
+                  },
+                  "howCreated": 1
+                },
+                {
+                  "name": "b7378b547d532ba5c0e9",
+                  "type": "Categorical",
+                  "expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Database"
+                        }
+                      },
+                      "Property": "Database"
+                    }
+                  },
+                  "howCreated": 0
+                }
+              ]
+            },
+            "singleVisual": {
+              "visualType": "slicer",
+              "objects": {
+                "merge": {
+                  "data": [
+                    {
+                      "properties": {
+                        "mode": {
+                          "expr": {
+                            "Literal": {
+                              "Value": "'Dropdown'"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "activeProjections": {
+                "Values": [
+                  {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "Database"
+                        }
+                      },
+                      "Property": "Database"
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "91a7b3b3c038a4010edb": {
+            "filters": {
+              "byExpr": [
+                {
+                  "name": "a9049c12e0510601d5a5",
+                  "type": "Advanced",
+                  "expression": {
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "_Measures"
+                        }
+                      },
+                      "Property": "Show filters Headers - Database configuration"
+                    }
+                  },
+                  "howCreated": 0
+                },
+                {
+                  "name": "a173f89672c6e102b044",
+                  "type": "Advanced",
+                  "expression": {
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "_Measures"
+                        }
+                      },
+                      "Property": "Show filters - Database configuration"
+                    }
+                  },
+                  "howCreated": 0
+                }
+              ]
+            },
+            "singleVisual": {
+              "visualType": "tableEx",
+              "objects": {}
+            }
+          },
+          "986291be37446971c8ce": {
+            "singleVisual": {
+              "visualType": "shape",
+              "objects": {}
+            }
+          },
+          "cb61acae301b540ce064": {
+            "singleVisual": {
+              "visualType": "actionButton",
+              "objects": {}
+            }
+          },
+          "cbc4ae35a25e5778e446": {
+            "singleVisual": {
+              "visualType": "textbox",
+              "objects": {}
+            }
+          },
+          "d6c187800306ed6d3e7b": {
+            "singleVisual": {
+              "visualType": "actionButton",
+              "objects": {}
+            }
+          }
+        },
+        "visualContainerGroups": {
+          "1a3dadf666e0ea51ab6d": {
+            "isHidden": true
+          },
+          "8008f532c6ca8ca5d128": {
+            "isHidden": false
+          }
+        }
+      }
+    },
+    "objects": {
+      "merge": {
+        "outspacePane": [
+          {
+            "properties": {
+              "expanded": {
+                "expr": {
+                  "Literal": {
+                    "Value": "false"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

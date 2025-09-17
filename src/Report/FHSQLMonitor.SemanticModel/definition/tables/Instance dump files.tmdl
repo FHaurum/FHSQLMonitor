@@ -42,6 +42,20 @@ table 'Instance dump files'
 
 		annotation SummarizationSetBy = User
 
+	column Date
+		dataType: dateTime
+		isHidden
+		formatString: Long Date
+		lineageTag: 38d6ae49-c44b-463c-9fbd-5045ee60c9c8
+		summarizeBy: none
+		sourceColumn: Date
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
 	partition 'Instance dump files' = m
 		mode: import
 		queryGroup: Facts

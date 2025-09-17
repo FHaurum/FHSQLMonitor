@@ -1,0 +1,279 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "name": "1733bcf7bf5a37f2420a",
+  "position": {
+    "x": 10,
+    "y": 110,
+    "z": 2000,
+    "height": 800,
+    "width": 1900,
+    "tabOrder": 7000
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Deadlock"
+                    }
+                  },
+                  "Property": "SPID"
+                }
+              },
+              "queryRef": "Max(Deadlock.SPID)",
+              "nativeQueryRef": "SPID1",
+              "displayName": "SPID"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Deadlock"
+                    }
+                  },
+                  "Property": "Inputbuf statement"
+                }
+              },
+              "queryRef": "Min(Deadlock.Inputbuf statement)",
+              "nativeQueryRef": "Inputbuf statement1",
+              "displayName": "Inputbuf statement"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Deadlock"
+                    }
+                  },
+                  "Property": "Frame statement"
+                }
+              },
+              "queryRef": "Min(Deadlock.Frame statement)",
+              "nativeQueryRef": "Frame statement1",
+              "displayName": "Frame statement"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Deadlock"
+                    }
+                  },
+                  "Property": "Timestamp (UTC)"
+                }
+              },
+              "queryRef": "Min(Deadlock.Timestamp (UTC))",
+              "nativeQueryRef": "Timestamp (UTC)1",
+              "displayName": "Timestamp (UTC)"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Blocks and deadlocks"
+                    }
+                  },
+                  "Property": "Client application"
+                }
+              },
+              "queryRef": "Min(Blocks and deadlocks.Client application)",
+              "nativeQueryRef": "Client application1",
+              "displayName": "Client application"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Blocks and deadlocks"
+                    }
+                  },
+                  "Property": "Host name"
+                }
+              },
+              "queryRef": "Min(Blocks and deadlocks.Host name)",
+              "nativeQueryRef": "Host name1",
+              "displayName": "Host name"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Blocks and deadlocks"
+                    }
+                  },
+                  "Property": "Login name"
+                }
+              },
+              "queryRef": "Min(Blocks and deadlocks.Login name)",
+              "nativeQueryRef": "Login name1",
+              "displayName": "Login name"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Database"
+                    }
+                  },
+                  "Property": "Database"
+                }
+              },
+              "queryRef": "Min(Database.Database)",
+              "nativeQueryRef": "Database1",
+              "displayName": "Database"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Deadlock"
+                    }
+                  },
+                  "Property": "Sort order"
+                }
+              },
+              "queryRef": "Deadlock.Sort order",
+              "nativeQueryRef": "Sort order"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Deadlock"
+                  }
+                },
+                "Property": "Sort order"
+              }
+            },
+            "direction": "Descending"
+          }
+        ]
+      }
+    },
+    "objects": {
+      "values": [
+        {
+          "properties": {}
+        }
+      ],
+      "total": [
+        {
+          "properties": {
+            "totals": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "columnHeaders": [
+        {
+          "properties": {
+            "autoSizeColumnWidth": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "columnWidth": [
+        {
+          "properties": {},
+          "selector": {
+            "metadata": "Deadlock.Sort order"
+          }
+        },
+        {
+          "properties": {},
+          "selector": {
+            "metadata": "Max(Deadlock.SPID)"
+          }
+        },
+        {
+          "properties": {},
+          "selector": {
+            "metadata": "Min(Deadlock.Inputbuf statement)"
+          }
+        },
+        {
+          "properties": {},
+          "selector": {
+            "metadata": "Min(Deadlock.Frame statement)"
+          }
+        },
+        {
+          "properties": {},
+          "selector": {
+            "metadata": "Min(Deadlock.Timestamp (UTC))"
+          }
+        },
+        {
+          "properties": {},
+          "selector": {
+            "metadata": "Min(Blocks and deadlocks.Client application)"
+          }
+        },
+        {
+          "properties": {},
+          "selector": {
+            "metadata": "Min(Blocks and deadlocks.Host name)"
+          }
+        },
+        {
+          "properties": {},
+          "selector": {
+            "metadata": "Min(Blocks and deadlocks.Login name)"
+          }
+        },
+        {
+          "properties": {},
+          "selector": {
+            "metadata": "Min(Database.Database)"
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Deadlock details'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

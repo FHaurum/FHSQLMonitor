@@ -1,0 +1,71 @@
+table 'VLF size'
+	lineageTag: 60288d16-f608-4549-8e5e-702b98958aab
+
+	column VLFCount
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: c315d15e-9b9f-4f89-b812-9caaa226aba8
+		summarizeBy: none
+		sourceColumn: VLFCount
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	column Date
+		dataType: dateTime
+		isHidden
+		formatString: Long Date
+		lineageTag: e4e901ff-3668-48b9-9417-7a32626da6d9
+		summarizeBy: none
+		sourceColumn: Date
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column DatabaseFileKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 1a3ad225-f834-4aef-b994-c7282f24c8af
+		summarizeBy: none
+		sourceColumn: DatabaseFileKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'VLF size' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Capacity")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db     = dbList{[Name = #"Database name"]}[Data], 
+				  table  = db{[Schema = #"Schema name", Item = "VLF size"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  selectColumns = Table.SelectColumns(
+				    datasetToUse, 
+				    {
+				      "VLFCount", 
+				      "Date", 
+				      "DatabaseFileKey"
+				    }
+				  )
+				in
+				  selectColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

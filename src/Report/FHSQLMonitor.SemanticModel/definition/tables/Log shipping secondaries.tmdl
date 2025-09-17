@@ -1,0 +1,110 @@
+table 'Log shipping secondaries'
+	lineageTag: 813f7704-0ee7-4277-97e2-a78a23829b23
+
+	column 'Time since previous copy'
+		dataType: int64
+		formatString: #,0
+		lineageTag: c162635c-2e26-49eb-873f-756220115ac4
+		summarizeBy: none
+		sourceColumn: Time since previous copy
+
+		annotation SummarizationSetBy = User
+
+	column Date
+		dataType: dateTime
+		isHidden
+		formatString: Long Date
+		lineageTag: d17fc0ad-3a51-431d-99f3-3c52f9c5e9fa
+		summarizeBy: none
+		sourceColumn: Date
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column TimeKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 01e1ccb6-db78-4c66-8877-718285f7779b
+		summarizeBy: none
+		sourceColumn: TimeKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column DatabaseKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: abe03700-8943-4608-9c88-563c5e3ac0e7
+		summarizeBy: none
+		sourceColumn: DatabaseKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column ServerKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 7bf88aaf-998c-4b32-9c86-32abec3c31c2
+		summarizeBy: none
+		sourceColumn: ServerKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Primary database-server'
+		dataType: string
+		lineageTag: 812f20f9-e510-4896-a0ff-2b13c7705853
+		summarizeBy: none
+		sourceColumn: Primary database-server
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Log shipping secondaries' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Log shipping")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db     = dbList{[Name = #"Database name"]}[Data], 
+				  table  = db{[Schema = #"Schema name", Item = "Log shipping secondaries"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  selectColumns = Table.SelectColumns(
+				    datasetToUse, 
+				    {
+				      "PrimaryDatabaseServer", 
+				      "TimeSincePreviousCopy", 
+				      "Date", 
+				      "TimeKey", 
+				      "DatabaseKey", 
+				      "ServerKey"
+				    }
+				  ), 
+				  renameColumns = Table.RenameColumns(
+				    selectColumns, 
+				    {
+				      {"PrimaryDatabaseServer", "Primary database-server"}, 
+				      {"TimeSincePreviousCopy", "Time since previous copy"}
+				    }
+				  )
+				in
+				  renameColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+
