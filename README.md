@@ -3,6 +3,10 @@ You can try the [live demo](https://tinyurl.com/yc6tc7c2), and then continue to 
 
 Have fun :-)
 <p>
+<b>October 24, 2025: Version 2.11.1</b> with:</br>
+<li>Installation procedure updated.</li>
+</p>
+<p>
 <b>September 17, 2025: Version 2.11.0</b> with:</br>
 <li>Added the "Log shipping" service and the reports "Log shipping configuration" and "Log shipping status".</li>
 <li>The report "Always On performance" was previously named "Always On traffic" and now also shows Average synchronization lag.</li>

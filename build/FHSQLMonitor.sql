@@ -1,24 +1,24 @@
 USE master;
 
 --
--- FHSQLMonitor v2.11.0 - 2025.09.15 08.17.57
+-- FHSQLMonitor v2.11.1 - 2025.09.26 13.45.08
 --
 
 BEGIN
 	--
 	-- Installation parameters - They are used both during a fresh installation and during an update
 	--
-	DECLARE @createSQLAgentJob    bit           = 1;
 	DECLARE @fhSQLMonitorDatabase nvarchar(128) = 'FHSQLMonitor';
 	DECLARE @pbiSchema            nvarchar(128) = 'FHSM';
+	DECLARE @olaDatabase          nvarchar(128) = NULL;
 
 	--
 	-- Service parameters - They are only used during a fresh installation and not during an update
 	--   When updating the already configured values in the tables dbo.fhsmSchedules and dbo.fhsmRetentions remains unchanged
 	--
-	DECLARE @olaDatabase                    nvarchar(128) = NULL;
-	DECLARE @blocksAndDeadlocksFilePath     nvarchar(260) = NULL;
-	DECLARE @fhsqlAgentJobName              nvarchar(128) = 'FHSQLMonitor in ' + @fhSQLMonitorDatabase;
+	DECLARE @createSQLAgentJob          bit           = 1;
+	DECLARE @blocksAndDeadlocksFilePath nvarchar(260) = NULL;
+	DECLARE @fhsqlAgentJobName          nvarchar(128) = 'FHSQLMonitor in ' + @fhSQLMonitorDatabase;
 
 	DECLARE @enableAgentJobs                bit = 1;
 	DECLARE @enableAgentJobsPerformance     bit = 1;
@@ -34,7 +34,6 @@ BEGIN
 	DECLARE @enableIndexPhysical            bit = 1;
 	DECLARE @enableIndexUsage               bit = 1;
 	DECLARE @enableInstanceState            bit = 1;
-	DECLARE @enableLogShipping              bit = 1;
 	DECLARE @enableMissingIndexes           bit = 1;
 	DECLARE @enablePerformanceStatistics    bit = 1;
 	DECLARE @enablePlanCacheUsage           bit = 1;
@@ -43,6 +42,8 @@ BEGIN
 	DECLARE @enableTriggers                 bit = 1;
 	DECLARE @enableWaitStatistics           bit = 1;
 	DECLARE @enableWhoIsActive              bit = 1;
+
+	DECLARE @enableLogShipping              bit = 0;
 	DECLARE @enableIndexRebuild             bit = 0;
 	DECLARE @enableIndexReorganize          bit = 0;
 	DECLARE @enableUpdateAllStatistics      bit = 0;
@@ -84,7 +85,7 @@ END;
 SET @serverInfo = @@SERVERNAME;
 
 RAISERROR('', 0, 1) WITH NOWAIT;
-SET @installationMsg = CASE @installUpgradeFlag WHEN 1 THEN 'Install version v2.11.0' + ' of' ELSE 'Upgrade' END + ' FHSQLMonitor in database ' + @fhSQLMonitorDatabase + ' on ' + @serverInfo + ' ' + CASE @installUpgradeFlag WHEN 1 THEN '' ELSE 'from ' + @currentVersion + ' to v2.11.0' END;
+SET @installationMsg = CASE @installUpgradeFlag WHEN 1 THEN 'Install version v2.11.1' + ' of' ELSE 'Upgrade' END + ' FHSQLMonitor in database ' + @fhSQLMonitorDatabase + ' on ' + @serverInfo + ' ' + CASE @installUpgradeFlag WHEN 1 THEN '' ELSE 'from ' + @currentVersion + ' to v2.11.1' END;
 RAISERROR(@installationMsg, 0, 1) WITH NOWAIT;
 
 --
@@ -177,7 +178,7 @@ BEGIN
 END;
 
 --
--- File part:_Install-FHSQLMonitor.sql modified: 2025.09.15 08.16.35
+-- File part:_Install-FHSQLMonitor.sql modified: 2025.09.26 13.42.24
 --
 SET @stmt = '
 SET NOCOUNT ON;
@@ -226,7 +227,7 @@ BEGIN
 	SET @myUserName = SUSER_NAME();
 	SET @nowUTC = SYSUTCDATETIME();
 	SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
-	SET @version = ''2.11.0'';
+	SET @version = ''2.11.1'';
 END;
 
 --
@@ -5352,7 +5353,7 @@ SET @stmt = REPLACE(@stmt, 'SET @createSQLAgentJob = 1;',                       
 SET @stmt = REPLACE(@stmt, 'SET @fhSQLMonitorDatabase = ''FHSQLMonitor'';',              'SET @fhSQLMonitorDatabase = ''' + @fhSQLMonitorDatabase + ''';');
 SET @stmt = REPLACE(@stmt, 'SET @fhsqlAgentJobName = ''FHSQLMonitor in FHSQLMonitor'';', 'SET @fhsqlAgentJobName = ''' + @fhsqlAgentJobName + ''';');
 SET @stmt = REPLACE(@stmt, 'SET @pbiSchema = ''FHSM'';',                                 'SET @pbiSchema = ''' + @pbiSchema + ''';');
-SET @stmt = REPLACE(@stmt, 'SET @buildTimeStr = ''YYYY.MM.DD HH.MM.SS'';',               'SET @buildTimeStr = ''2025.09.15 08.17.57'';');
+SET @stmt = REPLACE(@stmt, 'SET @buildTimeStr = ''YYYY.MM.DD HH.MM.SS'';',               'SET @buildTimeStr = ''2025.09.26 13.45.08'';');
 EXEC(@stmt);
 
 --
@@ -47474,5 +47475,5 @@ BEGIN
 END;
 
 RAISERROR('', 0, 1) WITH NOWAIT;
-SET @installationMsg = 'FHSQLMonitor in database ' + @fhSQLMonitorDatabase + ' on ' + @serverInfo + ' has been ' + CASE @installUpgradeFlag WHEN 1 THEN 'installed with' ELSE 'upgraded to' END + ' v2.11.0';
+SET @installationMsg = 'FHSQLMonitor in database ' + @fhSQLMonitorDatabase + ' on ' + @serverInfo + ' has been ' + CASE @installUpgradeFlag WHEN 1 THEN 'installed with' ELSE 'upgraded to' END + ' v2.11.1';
 RAISERROR(@installationMsg, 0, 1) WITH NOWAIT;
