@@ -1,7 +1,7 @@
 USE master;
 
 --
--- FHSQLMonitor v2.11.1 - 2025.09.26 13.45.08
+-- FHSQLMonitor v2.11.1.1 - 2026.02.16 10:50:20
 --
 
 BEGIN
@@ -85,7 +85,7 @@ END;
 SET @serverInfo = @@SERVERNAME;
 
 RAISERROR('', 0, 1) WITH NOWAIT;
-SET @installationMsg = CASE @installUpgradeFlag WHEN 1 THEN 'Install version v2.11.1' + ' of' ELSE 'Upgrade' END + ' FHSQLMonitor in database ' + @fhSQLMonitorDatabase + ' on ' + @serverInfo + ' ' + CASE @installUpgradeFlag WHEN 1 THEN '' ELSE 'from ' + @currentVersion + ' to v2.11.1' END;
+SET @installationMsg = CASE @installUpgradeFlag WHEN 1 THEN 'Install version v2.11.1.1' + ' of' ELSE 'Upgrade' END + ' FHSQLMonitor in database ' + @fhSQLMonitorDatabase + ' on ' + @serverInfo + ' ' + CASE @installUpgradeFlag WHEN 1 THEN '' ELSE 'from ' + @currentVersion + ' to v2.11.1.1' END;
 RAISERROR(@installationMsg, 0, 1) WITH NOWAIT;
 
 --
@@ -227,7 +227,7 @@ BEGIN
 	SET @myUserName = SUSER_NAME();
 	SET @nowUTC = SYSUTCDATETIME();
 	SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
-	SET @version = ''2.11.1'';
+	SET @version = ''2.11.1.1'';
 END;
 
 --
@@ -35019,7 +35019,7 @@ ELSE BEGIN
 					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(b.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
 					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(b.DatabaseName, b.SchemaName, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS SchemaKey
 					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(b.DatabaseName, b.SchemaName, b.ObjectName, DEFAULT, DEFAULT, DEFAULT) AS k) AS ObjectKey
-					,(SELECT k.[Key] FROM FHSQLMonitor.dbo.fhsmFNGenerateKey(b.DatabaseName, CONVERT(nvarchar(18), b.QueryHash, 1), DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS MissingIndexStatementKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(b.DatabaseName, CONVERT(nvarchar(18), b.QueryHash, 1), DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS MissingIndexStatementKey
 				FROM (
 			'';
 			SET @stmt += ''
@@ -35211,7 +35211,7 @@ ELSE BEGIN
 						WHEN LEN(mis.Statement) > '' + CAST(@maxStatementLength AS nvarchar) + '' THEN LEFT(mis.Statement, '' + CAST(@maxStatementLength AS nvarchar) + '') + CHAR(10) + ''''...Statement truncated''''
 						ELSE mis.Statement
 					END AS Statement
-					,(SELECT k.[Key] FROM FHSQLMonitor.dbo.fhsmFNGenerateKey(mis.DatabaseName, CONVERT(nvarchar(18), mis.QueryHash, 1), DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS MissingIndexStatementKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(mis.DatabaseName, CONVERT(nvarchar(18), mis.QueryHash, 1), DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS MissingIndexStatementKey
 				FROM dbo.fhsmMissingIndexStatement AS mis;
 				'';
 			EXEC(@stmt);
@@ -47475,5 +47475,5 @@ BEGIN
 END;
 
 RAISERROR('', 0, 1) WITH NOWAIT;
-SET @installationMsg = 'FHSQLMonitor in database ' + @fhSQLMonitorDatabase + ' on ' + @serverInfo + ' has been ' + CASE @installUpgradeFlag WHEN 1 THEN 'installed with' ELSE 'upgraded to' END + ' v2.11.1';
+SET @installationMsg = 'FHSQLMonitor in database ' + @fhSQLMonitorDatabase + ' on ' + @serverInfo + ' has been ' + CASE @installUpgradeFlag WHEN 1 THEN 'installed with' ELSE 'upgraded to' END + ' v2.11.1.1';
 RAISERROR(@installationMsg, 0, 1) WITH NOWAIT;

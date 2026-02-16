@@ -3,6 +3,10 @@ You can try the [live demo](https://tinyurl.com/yc6tc7c2), and then continue to 
 
 Have fun :-)
 <p>
+<b>February 16, 2026: Version 2.11.1.1</b> with:</br>
+<li>Removal of hardcoded database reference in "Missing indexes" service.</li>
+</p>
+<p>
 <b>October 24, 2025: Version 2.11.1</b> with:</br>
 <li>Installation procedure updated.</li>
 </p>
