@@ -5,8 +5,10 @@ SET NOCOUNT ON;
 --
 BEGIN
 	DECLARE @enableBlocksAndDeadlocks bit;
+	DECLARE @ignoreAutoIndex bit;
 
 	SET @enableBlocksAndDeadlocks = 0;
+	SET @ignoreAutoIndex = 0;
 END;
 
 --
@@ -84,7 +86,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.11.0';
+		SET @version = '2.12.0';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -1239,7 +1241,12 @@ ELSE BEGIN
 						);
 						DECLARE @filePath nvarchar(260);
 						DECLARE @filePathEvent nvarchar(260);
+						DECLARE @jobName nvarchar(128);
 						DECLARE @jobStatus int;
+						DECLARE @jobStatuses TABLE(
+							JobName nvarchar(128),
+							JobStatus int
+						);
 						DECLARE @message nvarchar(max);
 						DECLARE @parameterChanges TABLE(
 							Action nvarchar(10),
@@ -1263,7 +1270,7 @@ ELSE BEGIN
 						SET @version = ''' + @version + ''';
 				';
 				SET @stmt += '
-						IF (@Type = ''Configuration'')
+						IF (@Type = ''configuration'')
 						BEGIN
 							IF (@Command = ''set'') AND (@Key = ''BlockedProcessThreshold'')
 							BEGIN
@@ -1369,7 +1376,7 @@ ELSE BEGIN
 						END
 				';
 				SET @stmt += '
-						ELSE IF (@Type = ''Parameter'')
+						ELSE IF (@Type = ''parameter'')
 						BEGIN
 							IF (@Command = ''set'')
 							BEGIN
@@ -1385,9 +1392,41 @@ ELSE BEGIN
 									RAISERROR(@message, 0, 1) WITH NOWAIT;
 									RETURN -11;
 								END;
+				';
+				SET @stmt += '
+								--
+								-- Disable all agent jobs
+								--
+								BEGIN
+									DECLARE jCur CURSOR LOCAL READ_ONLY FAST_FORWARD FOR
+									SELECT c.Value AS JobName
+									FROM dbo.fhsmConfigurations AS c
+									WHERE (c.[Key] LIKE ''AgentJobName[01]'')
+									ORDER BY c.[Key];
 
-								EXEC dbo.fhsmSPAgentJobControl @command = ''Disable'', @jobStatus = @jobStatus OUTPUT;
+									OPEN jCur;
 
+									WHILE (1 = 1)
+									BEGIN
+										FETCH NEXT FROM jCur
+										INTO @jobName;
+
+										IF (@@FETCH_STATUS <> 0)
+										BEGIN
+											BREAK;
+										END;
+
+										EXEC dbo.fhsmSPAgentJobControl @jobName = @jobName, @command = ''Disable'', @jobStatus = @jobStatus OUTPUT;
+
+										INSERT INTO @jobStatuses(JobName, JobStatus)
+										SELECT @jobName, @jobStatus;
+									END;
+
+									CLOSE jCur;
+									DEALLOCATE jCur;
+								END;
+				';
+				SET @stmt += '
 								--
 								-- Register configuration changes
 								--
@@ -1467,7 +1506,8 @@ ELSE BEGIN
 										INNER JOIN sys.server_event_session_fields AS sesf ON (sesf.event_session_id = ses.event_session_id)
 										WHERE (ses.name = @sessionName) AND (sesf.name = ''FILENAME'')
 									);
-
+				';
+				SET @stmt += '
 									IF (@runningFilePath <> @filePathEvent) OR (@runningFilePath IS NULL)
 									BEGIN
 										IF EXISTS(
@@ -1516,10 +1556,37 @@ ELSE BEGIN
 										EXEC(@stmt);
 									END;
 								END;
-
-								IF (@jobStatus = 1)
+				';
+				SET @stmt += '
+								--
+								-- Enable all agent jobs that was enable when starting
+								--
 								BEGIN
-									EXEC dbo.fhsmSPAgentJobControl @command = ''Enable'', @jobStatus = @jobStatus OUTPUT;
+									DECLARE jCur CURSOR LOCAL READ_ONLY FAST_FORWARD FOR
+									SELECT js.JobName, js.JobStatus
+									FROM @jobStatuses AS js
+									ORDER BY js.JobName;
+
+									OPEN jCur;
+
+									WHILE (1 = 1)
+									BEGIN
+										FETCH NEXT FROM jCur
+										INTO @jobName, @jobStatus;
+
+										IF (@@FETCH_STATUS <> 0)
+										BEGIN
+											BREAK;
+										END;
+
+										IF (@jobStatus = 1)
+										BEGIN
+											EXEC dbo.fhsmSPAgentJobControl @jobName = @jobName, @command = ''Enable'', @jobStatus = @jobStatus OUTPUT;
+										END;
+									END;
+
+									CLOSE jCur;
+									DEALLOCATE jCur;
 								END;
 							END
 							ELSE BEGIN
@@ -1530,7 +1597,7 @@ ELSE BEGIN
 						END
 				';
 				SET @stmt += '
-						ELSE IF (@Type = ''Uninstall'')
+						ELSE IF (@Type = ''uninstall'')
 						BEGIN
 							--
 							-- Initialize variables

@@ -1,0 +1,115 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.4.0/schema.json",
+  "name": "3fd8c6c2439e5ce8268a",
+  "position": {
+    "x": 930,
+    "y": 80,
+    "z": 2000,
+    "height": 160,
+    "width": 500,
+    "tabOrder": 11000
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Show filters Headers - Agent jobs configuration"
+                }
+              },
+              "queryRef": "_Measures.Show filters Headers - Agent jobs configuration",
+              "nativeQueryRef": "Filters",
+              "displayName": "Filters"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Show filters - Agent jobs configuration"
+                }
+              },
+              "queryRef": "_Measures.Show filters - Agent jobs configuration",
+              "nativeQueryRef": " ",
+              "displayName": " "
+            }
+          ]
+        }
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Info Table'"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "visualHeader": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  },
+  "parentGroupName": "83ec00860ec67446bb80",
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "ed9b528a5e30156e37d2",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "_Measures"
+              }
+            },
+            "Property": "Show filters Headers - Agent jobs configuration"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "42d977f1434c3bdbc200",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "_Measures"
+              }
+            },
+            "Property": "Show filters - Agent jobs configuration"
+          }
+        },
+        "type": "Advanced"
+      }
+    ]
+  }
+}

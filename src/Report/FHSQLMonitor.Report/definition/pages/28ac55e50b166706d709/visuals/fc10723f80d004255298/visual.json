@@ -1,13 +1,13 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.4.0/schema.json",
   "name": "fc10723f80d004255298",
   "position": {
-    "x": 1770,
-    "y": 725,
-    "z": 1000,
+    "x": 0,
+    "y": 0,
+    "z": 0,
     "height": 60,
     "width": 140,
-    "tabOrder": 125
+    "tabOrder": 0
   },
   "visual": {
     "visualType": "card",
@@ -115,5 +115,24 @@
       ]
     },
     "drillFilterOtherVisuals": true
+  },
+  "parentGroupName": "86715a1e286c12522e8c",
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "8ec60c903109b507d02b",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "_Measures"
+              }
+            },
+            "Property": "Damaged backups # - Backup status"
+          }
+        },
+        "type": "Advanced"
+      }
+    ]
   }
 }

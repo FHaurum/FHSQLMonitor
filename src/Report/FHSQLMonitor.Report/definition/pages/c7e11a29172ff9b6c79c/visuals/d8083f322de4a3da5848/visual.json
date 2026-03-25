@@ -1,5 +1,5 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.3.0/schema.json",
   "name": "d8083f322de4a3da5848",
   "position": {
     "x": 10,
@@ -52,6 +52,20 @@
                       "Entity": "Always On read only routing"
                     }
                   },
+                  "Property": "Routing priority"
+                }
+              },
+              "queryRef": "Always On read only routing.Routing priority",
+              "nativeQueryRef": "Routing priority"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Always On read only routing"
+                    }
+                  },
                   "Property": "Replica replica"
                 }
               },
@@ -71,20 +85,6 @@
               },
               "queryRef": "Always On read only routing.Read only routing URL",
               "nativeQueryRef": "Read only routing URL"
-            },
-            {
-              "field": {
-                "Column": {
-                  "Expression": {
-                    "SourceRef": {
-                      "Entity": "Always On read only routing"
-                    }
-                  },
-                  "Property": "Routing priority"
-                }
-              },
-              "queryRef": "Always On read only routing.Routing priority",
-              "nativeQueryRef": "Routing priority"
             },
             {
               "field": {
@@ -170,7 +170,7 @@
                     "Entity": "Always On read only routing"
                   }
                 },
-                "Property": "Replica replica"
+                "Property": "Routing priority"
               }
             },
             "direction": "Ascending"

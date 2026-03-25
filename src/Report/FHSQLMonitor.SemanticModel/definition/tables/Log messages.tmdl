@@ -1,0 +1,92 @@
+table 'Log messages'
+	lineageTag: dc9d53e5-00e1-4e98-bf8c-23d40f1f016c
+
+	column Id
+		dataType: int64
+		formatString: 0
+		lineageTag: 5a3908c5-4d1d-4773-907d-4ae800ec5485
+		summarizeBy: none
+		sourceColumn: Id
+
+		annotation SummarizationSetBy = User
+
+	column Timestamp
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: 5f4343b9-08c7-488b-b793-b9d23341229d
+		summarizeBy: none
+		sourceColumn: Timestamp
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	column 'Message id'
+		dataType: int64
+		formatString: 0
+		lineageTag: 750833ea-bfe2-45aa-98e6-116d0284ced0
+		summarizeBy: none
+		sourceColumn: Message id
+
+		annotation SummarizationSetBy = User
+
+	column 'Process info.'
+		dataType: string
+		lineageTag: 11608fb2-296b-45e3-b8e3-b92c115bb09c
+		summarizeBy: none
+		sourceColumn: Process info.
+
+		annotation SummarizationSetBy = Automatic
+
+	column Text
+		dataType: string
+		lineageTag: 6341da08-840a-4f3c-bd97-ff28842d84f9
+		summarizeBy: none
+		sourceColumn: Text
+
+		annotation SummarizationSetBy = Automatic
+
+	column Date
+		dataType: dateTime
+		isHidden
+		formatString: Long Date
+		lineageTag: 9dd5fa63-3566-4377-844e-84ac0f2a735a
+		summarizeBy: none
+		sourceColumn: Date
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	partition 'Log messages' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Instance status")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db     = dbList{[Name = #"Database name"]}[Data], 
+				  table  = db{[Schema = #"Schema name", Item = "Log messages"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  renamedColumns = Table.RenameColumns(
+				    datasetToUse, 
+				    {
+				      {"LogDate", "Timestamp"}, 
+				      {"MessageId", "Message id"}, 
+				      {"ProcessInfo", "Process info."}
+				    }
+				  )
+				in
+				  renamedColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

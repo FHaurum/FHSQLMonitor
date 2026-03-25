@@ -29091,7 +29091,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Is disabled - Triggers"
+			          "ConceptualProperty": "Is disabled flag - Triggers"
 			        }
 			      },
 			      "State": "Generated",
@@ -30669,7 +30669,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Is MS shipped - Triggers"
+			          "ConceptualProperty": "Is MS shipped flag - Triggers"
 			        }
 			      },
 			      "State": "Generated",
@@ -30691,7 +30691,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Is not for replication - Triggers"
+			          "ConceptualProperty": "Is not for replication flag - Triggers"
 			        }
 			      },
 			      "State": "Generated",
@@ -61291,6 +61291,213 @@ cultureInfo en-US
 			        },
 			        {
 			          "Secondary database": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "agent_jobs__not_scheduled.job_enabled": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Agent jobs - not scheduled",
+			          "ConceptualProperty": "Job enabled"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Job ena.": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "database_state.database_owner": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Database state",
+			          "ConceptualProperty": "Database owner"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Owner": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.show_filters_headers__agent_jobs_configuration": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Show filters Headers - Agent jobs configuration"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Filters": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.show_filters__agent_jobs_configuration": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Show filters - Agent jobs configuration"
+			        }
+			      },
+			      "State": "Generated"
+			    },
+			    "database_file.physical_file_end": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Database file",
+			          "ConceptualProperty": "Physical file end"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Physical file": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.latest_file_usage___database_size": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Latest data file usage % - Database size"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Usage %": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.latest_data_max_size_mb__database_size": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Latest data max size MB - Database size"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Max. MB": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.latest_data_current_size_mb__database_size": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Latest data current size MB - Database size"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Size MB": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.latest_data_file_usage__flag__database_size": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Latest data file usage % flag - Database size"
+			        }
+			      },
+			      "State": "Generated"
+			    },
+			    "trace_flags_history.trace_flag_text": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Trace flags history",
+			          "ConceptualProperty": "Trace flag text"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Trace flag": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.memory_grants_pending__performance_statistics": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Memory grants pending - Performance statistics"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Memory grants pending": {
 			            "State": "Suggested",
 			            "Source": {
 			              "Type": "External",

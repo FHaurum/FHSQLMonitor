@@ -5,8 +5,10 @@ SET NOCOUNT ON;
 --
 BEGIN
 	DECLARE @enableAgentJobs bit;
+	DECLARE @ignoreAutoIndex bit;
 
 	SET @enableAgentJobs = 0;
+	SET @ignoreAutoIndex = 0;
 END;
 
 --
@@ -66,7 +68,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.11.0';
+		SET @version = '2.12.0';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -188,68 +190,286 @@ ELSE BEGIN
 		-- Create fact view @pbiSchema.[Agent jobs - grid]
 		--
 		BEGIN
-			SET @stmt = '
-				IF OBJECT_ID(''' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Agent jobs - grid') + ''', ''V'') IS NULL
-				BEGIN
-					EXEC(''CREATE VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Agent jobs - grid') + ' AS SELECT ''''dummy'''' AS Txt'');
-				END;
-			';
-			EXEC(@stmt);
+			BEGIN
+				SET @stmt = '
+					IF OBJECT_ID(''' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Agent jobs - grid') + ''', ''V'') IS NULL
+					BEGIN
+						EXEC(''CREATE VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Agent jobs - grid') + ' AS SELECT ''''dummy'''' AS Txt'');
+					END;
+				';
+				EXEC(@stmt);
 
-			SET @stmt = '
-				ALTER VIEW  ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Agent jobs - grid') + '
-				AS
-				WITH
-				L0   AS (SELECT 1 AS c UNION ALL SELECT 1),
-				L1   AS (SELECT 1 AS c FROM L0 AS A CROSS JOIN L0 AS B),
-				L2   AS (SELECT 1 AS c FROM L1 AS A CROSS JOIN L1 AS B),
-				L3   AS (SELECT 1 AS c FROM L2 AS A CROSS JOIN L2 AS B),
-				Nums AS (
+				SET @stmt = '
+					ALTER VIEW  ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Agent jobs - grid') + '
+					AS
+					WITH
+					L0   AS (SELECT 1 AS c UNION ALL SELECT 1),
+					L1   AS (SELECT 1 AS c FROM L0 AS A CROSS JOIN L0 AS B),
+					L2   AS (SELECT 1 AS c FROM L1 AS A CROSS JOIN L1 AS B),
+					L3   AS (SELECT 1 AS c FROM L2 AS A CROSS JOIN L2 AS B),
+					Nums AS (
+						SELECT
+							ROW_NUMBER() OVER(ORDER BY (SELECT NULL)) - 1 AS n
+						FROM L3
+					)
 					SELECT
-						ROW_NUMBER() OVER(ORDER BY (SELECT NULL)) - 1 AS n
-					FROM L3
-				)
-				SELECT
-					p.JobName
-					,p.JobEnabled
-					,CASE p.JobEnabled
-						WHEN 0 THEN ''No''
-						WHEN 1 THEN ''Yes''
-						ELSE ''N.A.''
-					END AS JobEnabledTxt
-					,p.ScheduleId
-					,p.ScheduleEnabled
-					,CASE p.ScheduleEnabled
-						WHEN 0 THEN ''No''
-						WHEN 1 THEN ''Yes''
-						ELSE ''N.A.''
-					END AS ScheduleEnabledTxt
-					,p.[0],  p.[1],  p.[2],  p.[3],  p.[4],  p.[5],  p.[6],  p.[7],  p.[8],  p.[9]
-					,p.[10], p.[11], p.[12], p.[13], p.[14], p.[15], p.[16], p.[17], p.[18], p.[19]
-					,p.[20], p.[21], p.[22], p.[23]
-					,p.WhenDesc
-					,p.WhenDetailsDesc
-					,p.ActiveDesc
-					,p.Timestamp
-				FROM (
-			';
-			SET @stmt += '
+						p.JobName
+						,p.JobEnabled
+						,CASE p.JobEnabled
+							WHEN 0 THEN ''No''
+							WHEN 1 THEN ''Yes''
+							ELSE ''N.A.''
+						END AS JobEnabledTxt
+						,p.ScheduleId
+						,p.ScheduleEnabled
+						,CASE p.ScheduleEnabled
+							WHEN 0 THEN ''No''
+							WHEN 1 THEN ''Yes''
+							ELSE ''N.A.''
+						END AS ScheduleEnabledTxt
+						,p.[0],  p.[1],  p.[2],  p.[3],  p.[4],  p.[5],  p.[6],  p.[7],  p.[8],  p.[9]
+						,p.[10], p.[11], p.[12], p.[13], p.[14], p.[15], p.[16], p.[17], p.[18], p.[19]
+						,p.[20], p.[21], p.[22], p.[23]
+						,p.WhenDesc
+						,p.WhenDetailsDesc
+						,p.ActiveDesc
+						,p.Timestamp
+						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(p.JobName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS AgentJobKey
+					FROM (
+				';
+				SET @stmt += '
+						SELECT
+							a.JobName,
+							n.n AS HourSlot,
+							a.JobEnabled,
+							a.ScheduleId,
+							a.ScheduleEnabled,
+							CASE a.FreqType
+								WHEN   1 THEN ''Once on '' + CAST(a.ActiveStartDate AS nvarchar) + '':'' + CAST(a.ActiveStartTime AS nvarchar)
+								WHEN   4 THEN ''Every '' + CASE WHEN a.FreqInterval = 1 THEN ''day'' ELSE CAST(a.FreqInterval AS nvarchar) + '' days'' END
+								WHEN   8 THEN ''Every '' + CASE WHEN a.FreqRecurrenceFactor = 1 THEN ''week'' ELSE CAST(a.FreqRecurrenceFactor AS nvarchar) + '' weeks'' END
+							END
+							AS WhenDesc,
+							CASE
+								WHEN (a.FreqSubdayType = 0)          THEN ''''
+								WHEN (a.FreqSubdayType = 1)          THEN ''At '' + CAST(a.ActiveStartTime AS nvarchar)
+								WHEN (a.FreqSubdayType IN (2, 4, 8)) THEN ''Every '' + CAST(a.FreqSubdayInterval AS nvarchar) + '' ''
+									+ CASE a.FreqSubdayType
+										WHEN 2 THEN ''second''
+										WHEN 4 THEN ''minute''
+										WHEN 8 THEN ''hour''
+									END
+									+ CASE WHEN a.FreqSubdayInterval > 1 THEN ''s'' ELSE '''' END
+									+ '' between '' + CAST(a.ActiveStartTime AS nvarchar) + '' and '' + CAST(a.ActiveEndTime AS nvarchar)
+							END
+							AS WhenDetailsDesc,
+							CASE
+								WHEN (a.FreqType IN (4, 8, 16, 32))
+								THEN
+									CASE
+										WHEN (a.ActiveEndDate = CAST(''9999-12-31'' AS date)) THEN ''Starting on '' + CAST(a.ActiveStartDate AS nvarchar)
+										ELSE ''Between '' + CAST(a.ActiveStartDate AS nvarchar) + '' and '' + CAST(a.ActiveEndDate AS nvarchar)
+									END
+								ELSE ''''
+							END
+							AS ActiveDesc,
+							CASE a.FreqType
+								WHEN 8 THEN
+									SUBSTRING(
+										(
+											CASE WHEN (a.FreqInterval &  2) =  2 THEN CHAR(10) + ''Mon'' ELSE '''' END +
+											CASE WHEN (a.FreqInterval &  4) =  4 THEN CHAR(10) + ''Tue'' ELSE '''' END +
+											CASE WHEN (a.FreqInterval &  8) =  8 THEN CHAR(10) + ''Wed'' ELSE '''' END +
+											CASE WHEN (a.FreqInterval & 16) = 16 THEN CHAR(10) + ''Thu'' ELSE '''' END +
+											CASE WHEN (a.FreqInterval & 32) = 32 THEN CHAR(10) + ''Fri'' ELSE '''' END +
+											CASE WHEN (a.FreqInterval & 64) = 64 THEN CHAR(10) + ''Sat'' ELSE '''' END +
+											CASE WHEN (a.FreqInterval &  1) =  1 THEN CHAR(10) + ''Sun'' ELSE '''' END
+										)
+										,2
+										,128
+									)
+								ELSE ''X''
+							END
+							AS DayDesc,
+							a.Timestamp
+						FROM (
+				';
+				SET @stmt += '
+							SELECT
+								aj.JobName
+								,CAST(aj.JobEnabled AS bit)				AS JobEnabled
+								,aj.ScheduleId
+								,CAST(aj.ScheduleEnabled AS bit)		AS ScheduleEnabled
+								,aj.FreqType
+								,aj.FreqInterval
+								,aj.FreqSubdayType
+								,aj.FreqSubdayInterval
+								,aj.FreqRecurrenceFactor
+								,CONVERT(
+									date,
+										CAST(aj.ActiveStartDate / 10000 AS nvarchar)
+										+ ''-'' + CAST((aj.ActiveStartDate / 100) % 100 AS nvarchar)
+										+ ''-'' + CAST((aj.ActiveStartDate % 100) AS nvarchar),
+									102
+								)										AS ActiveStartDate
+								,CONVERT(
+									date,
+										CAST(aj.ActiveEndDate / 10000 AS nvarchar)
+										+ ''-'' + CAST((aj.ActiveEndDate / 100) % 100 AS nvarchar)
+										+ ''-'' + CAST((aj.ActiveEndDate % 100) AS nvarchar),
+									102
+								)										AS ActiveEndDate
+								,CONVERT(
+									time(0),
+										CAST(aj.ActiveStartTime / 10000 AS nvarchar)
+										+ '':'' + CAST((aj.ActiveStartTime / 100) % 100 AS nvarchar)
+										+ '':'' + CAST((aj.ActiveStartTime % 100) AS nvarchar),
+									108
+								)										AS ActiveStartTime
+								,CONVERT(
+									time(0),
+										CAST(aj.ActiveEndTime / 10000 AS nvarchar)
+										+ '':'' + CAST((aj.ActiveEndTime / 100) % 100 AS nvarchar)
+										+ '':'' + CAST((aj.ActiveEndTime % 100) AS nvarchar),
+									108
+								)										AS ActiveEndTime
+								,aj.Timestamp
+							FROM dbo.fhsmAgentJobs AS aj
+							WHERE (aj.TimestampUTC = (
+								SELECT TOP (1) aj2.TimestampUTC
+								FROM dbo.fhsmAgentJobs AS aj2
+								ORDER BY aj2.TimestampUTC DESC
+							))
+						) AS a
+						CROSS JOIN Nums AS n
+						WHERE (1 = 1)
+							AND (a.FreqType IN (4, 8))
+							AND (CAST(GETDATE() AS date) <= a.ActiveEndDate)
+							AND (n.n <= 23)
+							AND (
+								(
+									(a.FreqSubdayType = 1)			-- At the specified time
+									AND (n.n = DATEPART(HOUR, a.ActiveStartTime))
+								)
+								OR (
+									(a.FreqSubdayType IN (2, 4))	-- Seconds and minutes
+									AND (n.n BETWEEN DATEPART(HOUR, a.ActiveStartTime) AND DATEPART(HOUR, a.ActiveEndTime))
+								)
+								OR (
+									(a.FreqSubdayType = 8)	-- Hours
+									AND (n.n BETWEEN DATEPART(HOUR, a.ActiveStartTime) AND DATEPART(HOUR, a.ActiveEndTime))
+									AND (((n.n - DATEPART(HOUR, a.ActiveStartTime)) % NULLIF(a.FreqSubdayInterval, 0)) = 0)
+								)
+							)
+					) AS b
+					PIVOT (
+						MAX(b.DayDesc)
+						FOR b.HourSlot IN (
+							  [0],  [1],  [2],  [3],  [4],  [5],  [6],  [7],  [8],  [9]
+							,[10], [11], [12], [13], [14], [15], [16], [17], [18], [19]
+							,[20], [21], [22], [23]
+						)
+					) AS p
+				';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Register extended properties on fact view @pbiSchema.[Agent jobs - grid]
+			--
+			BEGIN
+				SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Agent jobs - grid');
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+			END;
+		END;
+
+		--
+		-- Create fact view @pbiSchema.[Agent jobs - list]
+		--
+		BEGIN
+			BEGIN
+				SET @stmt = '
+					IF OBJECT_ID(''' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Agent jobs - list') + ''', ''V'') IS NULL
+					BEGIN
+						EXEC(''CREATE VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Agent jobs - list') + ' AS SELECT ''''dummy'''' AS Txt'');
+					END;
+				';
+				EXEC(@stmt);
+
+				SET @stmt = '
+					ALTER VIEW  ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Agent jobs - list') + '
+					AS
 					SELECT
-						a.JobName,
-						n.n AS HourSlot,
-						a.JobEnabled,
-						a.ScheduleId,
-						a.ScheduleEnabled,
-						CASE a.FreqType
+						a.JobName
+						,a.JobEnabled
+						,CASE a.JobEnabled
+							WHEN 0 THEN ''No''
+							WHEN 1 THEN ''Yes''
+							ELSE ''N.A.''
+						END AS JobEnabledTxt
+						,a.ScheduleEnabled
+						,CASE a.ScheduleEnabled
+							WHEN 0 THEN ''No''
+							WHEN 1 THEN ''Yes''
+							ELSE ''N.A.''
+						END AS ScheduleEnabledTxt
+						,CASE a.FreqType
 							WHEN   1 THEN ''Once on '' + CAST(a.ActiveStartDate AS nvarchar) + '':'' + CAST(a.ActiveStartTime AS nvarchar)
 							WHEN   4 THEN ''Every '' + CASE WHEN a.FreqInterval = 1 THEN ''day'' ELSE CAST(a.FreqInterval AS nvarchar) + '' days'' END
 							WHEN   8 THEN ''Every '' + CASE WHEN a.FreqRecurrenceFactor = 1 THEN ''week'' ELSE CAST(a.FreqRecurrenceFactor AS nvarchar) + '' weeks'' END
+								+ '' on ''
+								+ SUBSTRING(
+									(
+										CASE WHEN (a.FreqInterval &  2) =  2 THEN '', Monday''    ELSE '''' END +
+										CASE WHEN (a.FreqInterval &  4) =  4 THEN '', Tuesday''   ELSE '''' END +
+										CASE WHEN (a.FreqInterval &  8) =  8 THEN '', Wednesday'' ELSE '''' END +
+										CASE WHEN (a.FreqInterval & 16) = 16 THEN '', Thursday''  ELSE '''' END +
+										CASE WHEN (a.FreqInterval & 32) = 32 THEN '', Friday''    ELSE '''' END +
+										CASE WHEN (a.FreqInterval & 64) = 64 THEN '', Saturday''  ELSE '''' END +
+										CASE WHEN (a.FreqInterval &  1) =  1 THEN '', Sunday''    ELSE '''' END
+									)
+									,3
+									,128
+								)
+							WHEN  16 THEN ''Every '' + CASE WHEN a.FreqRecurrenceFactor = 1 THEN ''month'' ELSE CAST(a.FreqRecurrenceFactor AS nvarchar) + '' months'' END
+								+ '' on day '' + CAST(a.FreqInterval AS nvarchar) + '' of that month''
+							WHEN  32 THEN ''Every ''
+								+ CASE a.FreqRelativeInterval
+									WHEN  1 THEN ''first''
+									WHEN  2 THEN ''second''
+									WHEN  4 THEN ''third''
+									WHEN  8 THEN ''fourth''
+									WHEN 16 THEN ''last''
+								END
+								+ '' ''
+								+ CASE a.FreqInterval
+									WHEN  1 THEN ''Sunday''
+									WHEN  2 THEN ''Monday''
+									WHEN  3 THEN ''Tuesday''
+									WHEN  4 THEN ''Wednesday''
+									WHEN  5 THEN ''Thursday''
+									WHEN  6 THEN ''Friday''
+									WHEN  7 THEN ''Saturday''
+									WHEN  8 THEN ''Day''
+									WHEN  9 THEN ''Weekday''
+									WHEN 10 THEN ''Weekend day''
+								END
+								+ '' of every '' + CASE WHEN a.FreqRecurrenceFactor = 1 THEN ''month'' ELSE CAST(a.FreqRecurrenceFactor AS nvarchar) + '' months'' END
+
+							WHEN  64 THEN ''When SQL Server Agent starts''
+							WHEN 128 THEN ''Whenever the CPUs become idle''
 						END
-						AS WhenDesc,
-						CASE
+						+ CASE
 							WHEN (a.FreqSubdayType = 0)          THEN ''''
-							WHEN (a.FreqSubdayType = 1)          THEN ''At '' + CAST(a.ActiveStartTime AS nvarchar)
-							WHEN (a.FreqSubdayType IN (2, 4, 8)) THEN ''Every '' + CAST(a.FreqSubdayInterval AS nvarchar) + '' ''
+							WHEN (a.FreqSubdayType = 1)          THEN '' at '' + CAST(a.ActiveStartTime AS nvarchar)
+							WHEN (a.FreqSubdayType IN (2, 4, 8)) THEN '' every '' + CAST(a.FreqSubdayInterval AS nvarchar) + '' ''
 								+ CASE a.FreqSubdayType
 									WHEN 2 THEN ''second''
 									WHEN 4 THEN ''minute''
@@ -258,49 +478,31 @@ ELSE BEGIN
 								+ CASE WHEN a.FreqSubdayInterval > 1 THEN ''s'' ELSE '''' END
 								+ '' between '' + CAST(a.ActiveStartTime AS nvarchar) + '' and '' + CAST(a.ActiveEndTime AS nvarchar)
 						END
-						AS WhenDetailsDesc,
-						CASE
-							WHEN (a.FreqType IN (4, 8, 16, 32))
-							THEN
-								CASE
-									WHEN (a.ActiveEndDate = CAST(''9999-12-31'' AS date)) THEN ''Starting on '' + CAST(a.ActiveStartDate AS nvarchar)
-									ELSE ''Between '' + CAST(a.ActiveStartDate AS nvarchar) + '' and '' + CAST(a.ActiveEndDate AS nvarchar)
+						+ CASE
+							WHEN (a.FreqType IN (4, 8, 16, 32)) THEN ''. Schedule will be used ''
+								+ CASE
+									WHEN (a.ActiveEndDate = CAST(''9999-12-31'' AS date)) THEN ''starting on '' + CAST(a.ActiveStartDate AS nvarchar)
+									ELSE ''between '' + CAST(a.ActiveStartDate AS nvarchar) + '' and '' + CAST(a.ActiveEndDate AS nvarchar)
 								END
 							ELSE ''''
 						END
-						AS ActiveDesc,
-						CASE a.FreqType
-							WHEN 8 THEN
-								SUBSTRING(
-									(
-										CASE WHEN (a.FreqInterval &  2) =  2 THEN CHAR(10) + ''Mon'' ELSE '''' END +
-										CASE WHEN (a.FreqInterval &  4) =  4 THEN CHAR(10) + ''Tue'' ELSE '''' END +
-										CASE WHEN (a.FreqInterval &  8) =  8 THEN CHAR(10) + ''Wed'' ELSE '''' END +
-										CASE WHEN (a.FreqInterval & 16) = 16 THEN CHAR(10) + ''Thu'' ELSE '''' END +
-										CASE WHEN (a.FreqInterval & 32) = 32 THEN CHAR(10) + ''Fri'' ELSE '''' END +
-										CASE WHEN (a.FreqInterval & 64) = 64 THEN CHAR(10) + ''Sat'' ELSE '''' END +
-										CASE WHEN (a.FreqInterval &  1) =  1 THEN CHAR(10) + ''Sun'' ELSE '''' END
-									)
-									,2
-									,128
-								)
-							ELSE ''X''
-						END
-						AS DayDesc,
-						a.Timestamp
+						AS TotalDesc
+						,a.Timestamp
+						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(a.JobName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS AgentJobKey
 					FROM (
-			';
-			SET @stmt += '
+				';
+				SET @stmt += '
 						SELECT
 							aj.JobName
 							,CAST(aj.JobEnabled AS bit)				AS JobEnabled
-							,aj.ScheduleId
 							,CAST(aj.ScheduleEnabled AS bit)		AS ScheduleEnabled
 							,aj.FreqType
 							,aj.FreqInterval
 							,aj.FreqSubdayType
 							,aj.FreqSubdayInterval
+							,aj.FreqRelativeInterval
 							,aj.FreqRecurrenceFactor
+
 							,CONVERT(
 								date,
 									CAST(aj.ActiveStartDate / 10000 AS nvarchar)
@@ -337,221 +539,87 @@ ELSE BEGIN
 							ORDER BY aj2.TimestampUTC DESC
 						))
 					) AS a
-					CROSS JOIN Nums AS n
 					WHERE (1 = 1)
-						AND (a.FreqType IN (4, 8))
+						AND (a.FreqType NOT IN (4, 8))
 						AND (CAST(GETDATE() AS date) <= a.ActiveEndDate)
-						AND (n.n <= 23)
-						AND (
-							(
-								(a.FreqSubdayType = 1)			-- At the specified time
-								AND (n.n = DATEPART(HOUR, a.ActiveStartTime))
-							)
-							OR (
-								(a.FreqSubdayType IN (2, 4))	-- Seconds and minutes
-								AND (n.n BETWEEN DATEPART(HOUR, a.ActiveStartTime) AND DATEPART(HOUR, a.ActiveEndTime))
-							)
-							OR (
-								(a.FreqSubdayType = 8)	-- Hours
-								AND (n.n BETWEEN DATEPART(HOUR, a.ActiveStartTime) AND DATEPART(HOUR, a.ActiveEndTime))
-								AND (((n.n - DATEPART(HOUR, a.ActiveStartTime)) % NULLIF(a.FreqSubdayInterval, 0)) = 0)
-							)
-						)
-				) AS b
-				PIVOT (
-					MAX(b.DayDesc)
-					FOR b.HourSlot IN (
-						  [0],  [1],  [2],  [3],  [4],  [5],  [6],  [7],  [8],  [9]
-						,[10], [11], [12], [13], [14], [15], [16], [17], [18], [19]
-						,[20], [21], [22], [23]
-					)
-				) AS p
-			';
-			EXEC(@stmt);
+				';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Register extended properties on fact view @pbiSchema.[Agent jobs - list]
+			--
+			BEGIN
+				SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Agent jobs - list');
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+			END;
 		END;
 
 		--
-		-- Register extended properties on fact view @pbiSchema.[Agent jobs - grid]
+		-- Create fact view @pbiSchema.[Agent jobs - not scheduled]
 		--
 		BEGIN
-			SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Agent jobs - grid');
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
+			BEGIN
+				SET @stmt = '
+					IF OBJECT_ID(''' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Agent jobs - not scheduled') + ''', ''V'') IS NULL
+					BEGIN
+						EXEC(''CREATE VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Agent jobs - not scheduled') + ' AS SELECT ''''dummy'''' AS Txt'');
+					END;
+				';
+				EXEC(@stmt);
 
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
-		END;
-
-		--
-		-- Create fact view @pbiSchema.[Agent jobs - list]
-		--
-		BEGIN
-			SET @stmt = '
-				IF OBJECT_ID(''' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Agent jobs - list') + ''', ''V'') IS NULL
-				BEGIN
-					EXEC(''CREATE VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Agent jobs - list') + ' AS SELECT ''''dummy'''' AS Txt'');
-				END;
-			';
-			EXEC(@stmt);
-
-			SET @stmt = '
-				ALTER VIEW  ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Agent jobs - list') + '
-				AS
-				SELECT
-					a.JobName,
-					a.JobEnabled,
-					CASE a.JobEnabled
-						WHEN 0 THEN ''No''
-						WHEN 1 THEN ''Yes''
-						ELSE ''N.A.''
-					END AS JobEnabledTxt,
-					a.ScheduleEnabled,
-					CASE a.ScheduleEnabled
-						WHEN 0 THEN ''No''
-						WHEN 1 THEN ''Yes''
-						ELSE ''N.A.''
-					END AS ScheduleEnabledTxt,
-					CASE a.FreqType
-						WHEN   1 THEN ''Once on '' + CAST(a.ActiveStartDate AS nvarchar) + '':'' + CAST(a.ActiveStartTime AS nvarchar)
-						WHEN   4 THEN ''Every '' + CASE WHEN a.FreqInterval = 1 THEN ''day'' ELSE CAST(a.FreqInterval AS nvarchar) + '' days'' END
-						WHEN   8 THEN ''Every '' + CASE WHEN a.FreqRecurrenceFactor = 1 THEN ''week'' ELSE CAST(a.FreqRecurrenceFactor AS nvarchar) + '' weeks'' END
-							+ '' on ''
-							+ SUBSTRING(
-								(
-									CASE WHEN (a.FreqInterval &  2) =  2 THEN '', Monday''    ELSE '''' END +
-									CASE WHEN (a.FreqInterval &  4) =  4 THEN '', Tuesday''   ELSE '''' END +
-									CASE WHEN (a.FreqInterval &  8) =  8 THEN '', Wednesday'' ELSE '''' END +
-									CASE WHEN (a.FreqInterval & 16) = 16 THEN '', Thursday''  ELSE '''' END +
-									CASE WHEN (a.FreqInterval & 32) = 32 THEN '', Friday''    ELSE '''' END +
-									CASE WHEN (a.FreqInterval & 64) = 64 THEN '', Saturday''  ELSE '''' END +
-									CASE WHEN (a.FreqInterval &  1) =  1 THEN '', Sunday''    ELSE '''' END
-								)
-								,3
-								,128
-							)
-						WHEN  16 THEN ''Every '' + CASE WHEN a.FreqRecurrenceFactor = 1 THEN ''month'' ELSE CAST(a.FreqRecurrenceFactor AS nvarchar) + '' months'' END
-							+ '' on day '' + CAST(a.FreqInterval AS nvarchar) + '' of that month''
-						WHEN  32 THEN ''Every ''
-							+ CASE a.FreqRelativeInterval
-								WHEN  1 THEN ''first''
-								WHEN  2 THEN ''second''
-								WHEN  4 THEN ''third''
-								WHEN  8 THEN ''fourth''
-								WHEN 16 THEN ''last''
-							END
-							+ '' ''
-							+ CASE a.FreqInterval
-								WHEN  1 THEN ''Sunday''
-								WHEN  2 THEN ''Monday''
-								WHEN  3 THEN ''Tuesday''
-								WHEN  4 THEN ''Wednesday''
-								WHEN  5 THEN ''Thursday''
-								WHEN  6 THEN ''Friday''
-								WHEN  7 THEN ''Saturday''
-								WHEN  8 THEN ''Day''
-								WHEN  9 THEN ''Weekday''
-								WHEN 10 THEN ''Weekend day''
-							END
-							+ '' of every '' + CASE WHEN a.FreqRecurrenceFactor = 1 THEN ''month'' ELSE CAST(a.FreqRecurrenceFactor AS nvarchar) + '' months'' END
-
-						WHEN  64 THEN ''When SQL Server Agent starts''
-						WHEN 128 THEN ''Whenever the CPUs become idle''
-					END
-					+ CASE
-						WHEN (a.FreqSubdayType = 0)          THEN ''''
-						WHEN (a.FreqSubdayType = 1)          THEN '' at '' + CAST(a.ActiveStartTime AS nvarchar)
-						WHEN (a.FreqSubdayType IN (2, 4, 8)) THEN '' every '' + CAST(a.FreqSubdayInterval AS nvarchar) + '' ''
-							+ CASE a.FreqSubdayType
-								WHEN 2 THEN ''second''
-								WHEN 4 THEN ''minute''
-								WHEN 8 THEN ''hour''
-							END
-							+ CASE WHEN a.FreqSubdayInterval > 1 THEN ''s'' ELSE '''' END
-							+ '' between '' + CAST(a.ActiveStartTime AS nvarchar) + '' and '' + CAST(a.ActiveEndTime AS nvarchar)
-					END
-					+ CASE
-						WHEN (a.FreqType IN (4, 8, 16, 32)) THEN ''. Schedule will be used ''
-							+ CASE
-								WHEN (a.ActiveEndDate = CAST(''9999-12-31'' AS date)) THEN ''starting on '' + CAST(a.ActiveStartDate AS nvarchar)
-								ELSE ''between '' + CAST(a.ActiveStartDate AS nvarchar) + '' and '' + CAST(a.ActiveEndDate AS nvarchar)
-							END
-						ELSE ''''
-					END
-					AS TotalDesc,
-					a.Timestamp
-				FROM (
-			';
-			SET @stmt += '
+				SET @stmt = '
+					ALTER VIEW  ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Agent jobs - not scheduled') + '
+					AS
 					SELECT
-						aj.JobName
-						,CAST(aj.JobEnabled AS bit)				AS JobEnabled
-						,CAST(aj.ScheduleEnabled AS bit)		AS ScheduleEnabled
-						,aj.FreqType
-						,aj.FreqInterval
-						,aj.FreqSubdayType
-						,aj.FreqSubdayInterval
-						,aj.FreqRelativeInterval
-						,aj.FreqRecurrenceFactor
+						a.JobName
+						,a.JobEnabled
+						,CASE a.JobEnabled
+							WHEN 0 THEN ''No''
+							WHEN 1 THEN ''Yes''
+							ELSE ''N.A.''
+						END AS JobEnabledTxt
+						,a.Timestamp
+						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(a.JobName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS AgentJobKey
+					FROM (
+						SELECT
+							aj.JobName
+							,CAST(aj.JobEnabled AS bit) AS JobEnabled
+							,aj.ScheduleId
+							,aj.Timestamp
+						FROM dbo.fhsmAgentJobs AS aj
+						WHERE (aj.TimestampUTC = (
+							SELECT TOP (1) aj2.TimestampUTC
+							FROM dbo.fhsmAgentJobs AS aj2
+							ORDER BY aj2.TimestampUTC DESC
+						))
+					) AS a
+					WHERE (a.ScheduleId IS NULL);
+				';
+				EXEC(@stmt);
+			END;
 
-						,CONVERT(
-							date,
-								CAST(aj.ActiveStartDate / 10000 AS nvarchar)
-								+ ''-'' + CAST((aj.ActiveStartDate / 100) % 100 AS nvarchar)
-								+ ''-'' + CAST((aj.ActiveStartDate % 100) AS nvarchar),
-							102
-						)										AS ActiveStartDate
-						,CONVERT(
-							date,
-								CAST(aj.ActiveEndDate / 10000 AS nvarchar)
-								+ ''-'' + CAST((aj.ActiveEndDate / 100) % 100 AS nvarchar)
-								+ ''-'' + CAST((aj.ActiveEndDate % 100) AS nvarchar),
-							102
-						)										AS ActiveEndDate
-						,CONVERT(
-							time(0),
-								CAST(aj.ActiveStartTime / 10000 AS nvarchar)
-								+ '':'' + CAST((aj.ActiveStartTime / 100) % 100 AS nvarchar)
-								+ '':'' + CAST((aj.ActiveStartTime % 100) AS nvarchar),
-							108
-						)										AS ActiveStartTime
-						,CONVERT(
-							time(0),
-								CAST(aj.ActiveEndTime / 10000 AS nvarchar)
-								+ '':'' + CAST((aj.ActiveEndTime / 100) % 100 AS nvarchar)
-								+ '':'' + CAST((aj.ActiveEndTime % 100) AS nvarchar),
-							108
-						)										AS ActiveEndTime
-						,aj.Timestamp
-					FROM dbo.fhsmAgentJobs AS aj
-					WHERE (aj.TimestampUTC = (
-						SELECT TOP (1) aj2.TimestampUTC
-						FROM dbo.fhsmAgentJobs AS aj2
-						ORDER BY aj2.TimestampUTC DESC
-					))
-				) AS a
-				WHERE (1 = 1)
-					AND (a.FreqType NOT IN (4, 8))
-					AND (CAST(GETDATE() AS date) <= a.ActiveEndDate)
-			';
-			EXEC(@stmt);
-		END;
+			--
+			-- Register extended properties on fact view @pbiSchema.[Agent jobs - not scheduled]
+			--
+			BEGIN
+				SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Agent jobs - not scheduled');
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
 
-		--
-		-- Register extended properties on fact view @pbiSchema.[Agent jobs - list]
-		--
-		BEGIN
-			SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Agent jobs - list');
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+			END;
 		END;
 	END;
 
@@ -711,11 +779,62 @@ ELSE BEGIN
 	--
 	-- Register dimensions
 	--
+	BEGIN
+		WITH
+		dimensions(
+			DimensionName, DimensionKey
+			,SrcTable, SrcAlias, SrcWhere, SrcDateColumn
+			,SrcColumn1, SrcColumn2, SrcColumn3, SrcColumn4, SrcColumn5
+			,OutputColumn1, OutputColumn2, OutputColumn3, OutputColumn4, OutputColumn5
+		) AS (
+			SELECT
+				'Agent job' AS DimensionName
+				,'AgentJobKey' AS DimensionKey
+				,'dbo.fhsmAgentJobs' AS SrcTable
+				,'src' AS SrcAlias
+				,NULL AS SrcWhere
+				,'src.[Timestamp]' AS SrcDateColumn
+				,'src.[JobName]', NULL, NULL, NULL, NULL
+				,'Job name', NULL, NULL, NULL, NULL
+		)
+		MERGE dbo.fhsmDimensions AS tgt
+		USING dimensions AS src ON (src.DimensionName = tgt.DimensionName) AND (src.SrcTable = tgt.SrcTable)
+		WHEN MATCHED
+			THEN UPDATE SET
+				tgt.DimensionKey = src.DimensionKey
+				,tgt.SrcTable = src.SrcTable
+				,tgt.SrcAlias = src.SrcAlias
+				,tgt.SrcWhere = src.SrcWhere
+				,tgt.SrcDateColumn = src.SrcDateColumn
+				,tgt.SrcColumn1 = src.SrcColumn1
+				,tgt.SrcColumn2 = src.SrcColumn2
+				,tgt.SrcColumn3 = src.SrcColumn3
+				,tgt.SrcColumn4 = src.SrcColumn4
+				,tgt.SrcColumn5 = src.SrcColumn5
+				,tgt.OutputColumn1 = src.OutputColumn1
+				,tgt.OutputColumn2 = src.OutputColumn2
+				,tgt.OutputColumn3 = src.OutputColumn3
+				,tgt.OutputColumn4 = src.OutputColumn4
+				,tgt.OutputColumn5 = src.OutputColumn5
+		WHEN NOT MATCHED BY TARGET
+			THEN INSERT(
+				DimensionName, DimensionKey
+				,SrcTable, SrcAlias, SrcWhere, SrcDateColumn
+				,SrcColumn1, SrcColumn2, SrcColumn3, SrcColumn4, SrcColumn5
+				,OutputColumn1, OutputColumn2, OutputColumn3, OutputColumn4, OutputColumn5
+			)
+			VALUES(
+				src.DimensionName, src.DimensionKey
+				,src.SrcTable, src.SrcAlias, src.SrcWhere, src.SrcDateColumn
+				,src.SrcColumn1, src.SrcColumn2, src.SrcColumn3, src.SrcColumn4, src.SrcColumn5
+				,src.OutputColumn1, src.OutputColumn2, src.OutputColumn3, src.OutputColumn4, src.OutputColumn5
+			);
+	END;
 
 	--
 	-- Update dimensions based upon the fact tables
 	--
 	BEGIN
-		EXEC dbo.fhsmSPUpdateDimensions @table = 'dbo.fhsmAgentJobs';
+		EXEC dbo.fhsmSPUpdateDimensions @table = 'dbo.fhsmAgentJobs', @ignoreAutoIndex = @ignoreAutoIndex;
 	END;
 END;

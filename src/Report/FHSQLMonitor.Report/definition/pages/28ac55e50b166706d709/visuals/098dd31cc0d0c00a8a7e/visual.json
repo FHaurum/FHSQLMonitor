@@ -1,13 +1,13 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.4.0/schema.json",
   "name": "098dd31cc0d0c00a8a7e",
   "position": {
     "x": 10,
     "y": 565,
-    "z": 6000,
+    "z": 4000,
     "height": 455,
     "width": 1740,
-    "tabOrder": 2250
+    "tabOrder": 4000
   },
   "visual": {
     "visualType": "tableEx",
@@ -341,8 +341,13 @@
           "properties": {
             "text": {
               "expr": {
-                "Literal": {
-                  "Value": "'Backups'"
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Title - Backups - Backup status"
                 }
               }
             }
@@ -351,5 +356,202 @@
       ]
     },
     "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "18bbd077586975164435",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Database"
+              }
+            },
+            "Property": "Database"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "117f2ae35c7bac641459",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Junk dimensions"
+              }
+            },
+            "Property": "Name"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "5c3893c228e718439d57",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Backup status"
+              }
+            },
+            "Property": "BackupStartDate"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "8c5f9ab2512b077ad616",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Backup status"
+              }
+            },
+            "Property": "BackupFinishDate"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "7154d9b9946162046a4e",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Backup status"
+              }
+            },
+            "Property": "Duration"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "d8be8d0422182e709827",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Backup status"
+              }
+            },
+            "Property": "BackupSize"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "58aa222ebced00238130",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Backup status"
+              }
+            },
+            "Property": "CompressedBackupSize"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "eb2ce58c300d69ab5bb1",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "_Measures"
+              }
+            },
+            "Property": "Compressed ratio - Backup status"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "f59f308b1801ad1ced37",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Backup status"
+              }
+            },
+            "Property": "Copy only"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "5a0ad26e39812dd7e119",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Backup status"
+              }
+            },
+            "Property": "Damaged"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "ef7f111992aa8b898b18",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "_Measures"
+              }
+            },
+            "Property": "VLF - Backups - Backup status"
+          }
+        },
+        "type": "Advanced",
+        "filter": {
+          "Version": 2,
+          "From": [
+            {
+              "Name": "_",
+              "Entity": "_Measures",
+              "Type": 0
+            }
+          ],
+          "Where": [
+            {
+              "Condition": {
+                "Not": {
+                  "Expression": {
+                    "Comparison": {
+                      "ComparisonKind": 0,
+                      "Left": {
+                        "Measure": {
+                          "Expression": {
+                            "SourceRef": {
+                              "Source": "_"
+                            }
+                          },
+                          "Property": "VLF - Backups - Backup status"
+                        }
+                      },
+                      "Right": {
+                        "Literal": {
+                          "Value": "null"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "howCreated": "User"
+      }
+    ]
   }
 }

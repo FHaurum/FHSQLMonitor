@@ -1,5 +1,5 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.6.0/schema.json",
   "name": "d3d2ae1bdb6d5164a667",
   "position": {
     "x": 300,
@@ -51,6 +51,19 @@
         {
           "properties": {}
         }
+      ],
+      "inputTextBox": [
+        {
+          "properties": {
+            "placeholder": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Enter Prg.-Host-Login'"
+                }
+              }
+            }
+          }
+        }
       ]
     },
     "visualContainerObjects": {
@@ -60,7 +73,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Programs-hosts-logins Text Slicer'"
+                  "Value": "'Programs-hosts-logins Input Slicer'"
                 }
               }
             }

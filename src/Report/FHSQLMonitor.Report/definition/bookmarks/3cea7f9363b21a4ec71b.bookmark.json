@@ -55,7 +55,7 @@
                                         "Source": "_"
                                       }
                                     },
-                                    "Property": "VLF - Backup status"
+                                    "Property": "VLF - Latest backup status - Backup status"
                                   }
                                 },
                                 "Right": {
@@ -77,7 +77,7 @@
                           "Entity": "_Measures"
                         }
                       },
-                      "Property": "VLF - Backup status"
+                      "Property": "VLF - Latest backup status - Backup status"
                     }
                   },
                   "howCreated": 1
@@ -583,46 +583,6 @@
             "singleVisual": {
               "visualType": "actionButton",
               "objects": {}
-            }
-          },
-          "bcd8770400a0530adb92": {
-            "filters": {
-              "byExpr": [
-                {
-                  "name": "d88d8c64250590b80a2c",
-                  "type": "Advanced",
-                  "expression": {
-                    "Measure": {
-                      "Expression": {
-                        "SourceRef": {
-                          "Entity": "_Measures"
-                        }
-                      },
-                      "Property": "Backups # - Backup status"
-                    }
-                  },
-                  "howCreated": 0
-                }
-              ]
-            },
-            "singleVisual": {
-              "visualType": "card",
-              "objects": {},
-              "orderBy": [
-                {
-                  "Direction": 2,
-                  "Expression": {
-                    "Measure": {
-                      "Expression": {
-                        "SourceRef": {
-                          "Entity": "_Measures"
-                        }
-                      },
-                      "Property": "Backups # - Backup status"
-                    }
-                  }
-                }
-              ]
             }
           },
           "be8d3694eabd938b0dcd": {

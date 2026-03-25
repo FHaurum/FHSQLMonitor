@@ -3,6 +3,21 @@ You can try the [live demo](https://tinyurl.com/yc6tc7c2), and then continue to 
 
 Have fun :-)
 <p>
+<b>March 25, 2026: Version 2.12.0</b> with:</br>
+<li>The tool is now using 2 agent jobs, to enable the services LogShipping and WhoIsActive to execute at the configured schedules, even if the tool is executing other services that takes longer time.</li>
+<li>Added the stored procedure dbo.fhsmSPControl to enable users with an interface to easily set or change configurations, parameters, schedules and retensions.</li>
+<li>Updated reports to use "human" words as e.g. Yes/No and not technical True/False.</li>
+<li>General review and update of reports to e.g. use button slicer on pages like Backup and Index configuration</li>
+<li>Updated AgentJobsPerformance service to handled failed jobs where step 1 was set to be ignored by filter.</li>
+<li>Updated Capacity service to also collect growth and max size for database files.</li>
+<li>Updated Capacity service to also collect VLF statistics for for pre SQL2016.0.5026 versions.</li>
+<li>Updated DatabaseState service to also collect DatabaseOwner and IsTrustWorthy.</li>
+<li>Updated InstanceState service to be able to collect configured error messageds like 833 (I/O requests taking longer than 15 sec.), and 3197/3198 (I/O frozen/resumed).</li>
+<li>Updated Triggers service to also collect information about triggers on instance level.</li>
+<li>Fixed issues resulting in errors when installed on case-senstive instance or database.</li>
+<li>Fixed issues resulting in errors when installed on installation using non 'us-english' language.</li>
+</p>
+<p>
 <b>February 16, 2026: Version 2.11.1.1</b> with:</br>
 <li>Removal of hardcoded database reference in "Missing indexes" service.</li>
 </p>

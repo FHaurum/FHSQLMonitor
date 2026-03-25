@@ -1,0 +1,126 @@
+table LogNonDebugInfo
+	lineageTag: 5614929c-1f94-4127-887b-04c601f9a641
+
+	column Id
+		dataType: int64
+		formatString: #,0
+		lineageTag: 52808c34-7176-4590-b2e0-343b3246f198
+		summarizeBy: none
+		sourceColumn: Id
+
+		annotation SummarizationSetBy = User
+
+	column Name
+		dataType: string
+		lineageTag: 8cafd1d2-4322-48ba-b326-2dc5f3a2f05d
+		summarizeBy: none
+		sourceColumn: Name
+
+		annotation SummarizationSetBy = Automatic
+
+	column Task
+		dataType: string
+		lineageTag: b569cd26-c648-430f-b89a-d3f4c08eb2b9
+		summarizeBy: none
+		sourceColumn: Task
+
+		annotation SummarizationSetBy = Automatic
+
+	column Type
+		dataType: string
+		lineageTag: 45940ab1-185e-4723-af01-8dc223423115
+		summarizeBy: none
+		sourceColumn: Type
+
+		annotation SummarizationSetBy = Automatic
+
+	column Message
+		dataType: string
+		lineageTag: c728a9c6-dfda-48d9-a8af-b5c5891f042d
+		summarizeBy: none
+		sourceColumn: Message
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Timestamp UTC'
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: d56d816a-ffe9-45ee-be57-048c8ad6d915
+		summarizeBy: none
+		sourceColumn: Timestamp UTC
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	column Timestamp
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: a1ca310a-84a5-41f9-93d2-89a9ce2b2735
+		summarizeBy: none
+		sourceColumn: Timestamp
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	column Date
+		dataType: dateTime
+		isHidden
+		formatString: Long Date
+		lineageTag: 12f465ee-870f-418e-a184-71ea123b0772
+		summarizeBy: none
+		sourceColumn: Date
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column TimeKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: a60aea17-8ba0-431c-82a8-6f76e63fc52a
+		summarizeBy: none
+		sourceColumn: TimeKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column TaskNameVersionKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: a7161ace-ae9e-49c3-b0cd-f5ee865fc124
+		summarizeBy: none
+		sourceColumn: TaskNameVersionKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition LogNonDebugInfo = m
+		mode: import
+		queryGroup: Framework
+		source = ```
+				let
+				  dbList = Sql.Databases(#"Server name"), 
+				  db     = dbList{[Name = #"Database name"]}[Data], 
+				  table  = db{[Schema = #"Schema name", Item = "LogNonDebugInfo"]}[Data], 
+				  renameColumns = Table.RenameColumns(
+				    table, 
+				    {
+				      {"TimestampUTC", "Timestamp UTC"}
+				    }
+				  )
+				in
+				  renameColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

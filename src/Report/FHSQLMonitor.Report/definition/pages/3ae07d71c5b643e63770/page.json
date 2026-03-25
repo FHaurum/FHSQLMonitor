@@ -14,7 +14,7 @@
               "name": {
                 "expr": {
                   "Literal": {
-                    "Value": "'Background.png'"
+                    "Value": "'Background-FrontPage.svg'"
                   }
                 }
               },
@@ -23,7 +23,7 @@
                   "ResourcePackageItem": {
                     "PackageName": "RegisteredResources",
                     "PackageType": 1,
-                    "ItemName": "Background.png"
+                    "ItemName": "Background-FrontPage47826618397815934.svg"
                   }
                 }
               },

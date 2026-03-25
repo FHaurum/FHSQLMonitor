@@ -1,5 +1,5 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.6.0/schema.json",
   "name": "7e175693946e59f25054",
   "position": {
     "x": 10,
@@ -19,13 +19,13 @@
                 "Column": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "Log"
+                      "Entity": "LogNonDebugInfo"
                     }
                   },
                   "Property": "Timestamp"
                 }
               },
-              "queryRef": "Log.Timestamp",
+              "queryRef": "LogNonDebugInfo.Timestamp",
               "nativeQueryRef": "Timestamp"
             },
             {
@@ -61,13 +61,13 @@
                 "Column": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "Log"
+                      "Entity": "LogNonDebugInfo"
                     }
                   },
                   "Property": "Type"
                 }
               },
-              "queryRef": "Log.Type",
+              "queryRef": "LogNonDebugInfo.Type",
               "nativeQueryRef": "Type"
             },
             {
@@ -75,13 +75,13 @@
                 "Column": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "Log"
+                      "Entity": "LogNonDebugInfo"
                     }
                   },
                   "Property": "Message"
                 }
               },
-              "queryRef": "Log.Message",
+              "queryRef": "LogNonDebugInfo.Message",
               "nativeQueryRef": "Message"
             },
             {
@@ -103,13 +103,13 @@
                 "Column": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "Log"
+                      "Entity": "LogNonDebugInfo"
                     }
                   },
                   "Property": "Id"
                 }
               },
-              "queryRef": "Log.Id",
+              "queryRef": "LogNonDebugInfo.Id",
               "nativeQueryRef": "Id"
             }
           ]
@@ -122,7 +122,7 @@
               "Column": {
                 "Expression": {
                   "SourceRef": {
-                    "Entity": "Log"
+                    "Entity": "LogNonDebugInfo"
                   }
                 },
                 "Property": "Id"
@@ -153,13 +153,13 @@
             "value": {
               "expr": {
                 "Literal": {
-                  "Value": "1133.2830170638777D"
+                  "Value": "1075.0471184419612D"
                 }
               }
             }
           },
           "selector": {
-            "metadata": "Log.Message"
+            "metadata": "LogNonDebugInfo.Message"
           }
         }
       ]
@@ -195,84 +195,6 @@
   },
   "filterConfig": {
     "filters": [
-      {
-        "name": "c0f44c611ee04503031a",
-        "field": {
-          "Column": {
-            "Expression": {
-              "SourceRef": {
-                "Entity": "Log"
-              }
-            },
-            "Property": "Type"
-          }
-        },
-        "type": "Advanced",
-        "filter": {
-          "Version": 2,
-          "From": [
-            {
-              "Name": "l",
-              "Entity": "Log",
-              "Type": 0
-            }
-          ],
-          "Where": [
-            {
-              "Condition": {
-                "And": {
-                  "Left": {
-                    "Not": {
-                      "Expression": {
-                        "Contains": {
-                          "Left": {
-                            "Column": {
-                              "Expression": {
-                                "SourceRef": {
-                                  "Source": "l"
-                                }
-                              },
-                              "Property": "Type"
-                            }
-                          },
-                          "Right": {
-                            "Literal": {
-                              "Value": "'info'"
-                            }
-                          }
-                        }
-                      }
-                    }
-                  },
-                  "Right": {
-                    "Not": {
-                      "Expression": {
-                        "Contains": {
-                          "Left": {
-                            "Column": {
-                              "Expression": {
-                                "SourceRef": {
-                                  "Source": "l"
-                                }
-                              },
-                              "Property": "Type"
-                            }
-                          },
-                          "Right": {
-                            "Literal": {
-                              "Value": "'debug'"
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          ]
-        }
-      },
       {
         "name": "b892ea2fe669212af35c",
         "field": {
@@ -321,6 +243,104 @@
           ]
         },
         "howCreated": "User"
+      },
+      {
+        "name": "983ff1a8c0927c6ebee1",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Task name version"
+              }
+            },
+            "Property": "Task"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "21c2e60e4251589d4b16",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Task name version"
+              }
+            },
+            "Property": "Version"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "b3d5d4bf05808718d25b",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Task name version"
+              }
+            },
+            "Property": "Name"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "551e71d001050840965b",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "LogNonDebugInfo"
+              }
+            },
+            "Property": "Timestamp"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "b5be549337b3bbd05b89",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "LogNonDebugInfo"
+              }
+            },
+            "Property": "Type"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "4ca4f785308bec85bc0a",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "LogNonDebugInfo"
+              }
+            },
+            "Property": "Message"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "0d8f0a6b4c750aa3bd04",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "LogNonDebugInfo"
+              }
+            },
+            "Property": "Id"
+          }
+        },
+        "type": "Advanced"
       }
     ]
   }

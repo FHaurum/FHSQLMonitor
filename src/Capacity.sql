@@ -5,8 +5,10 @@ SET NOCOUNT ON;
 --
 BEGIN
 	DECLARE @enableCapacity bit;
+	DECLARE @ignoreAutoIndex bit;
 
 	SET @enableCapacity = 0;
+	SET @ignoreAutoIndex = 0;
 END;
 
 --
@@ -66,7 +68,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.11.0';
+		SET @version = '2.12.0';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -87,18 +89,6 @@ ELSE BEGIN
 	BEGIN
 		RAISERROR('!!!', 0, 1) WITH NOWAIT;
 		RAISERROR('!!! Can not install the Disk size part on SQL version SQL2008', 0, 1) WITH NOWAIT;
-		RAISERROR('!!!', 0, 1) WITH NOWAIT;
-	END;
-
-	--
-	-- Check if SQL is lower than 2016 SP2
-	--
-	IF
-		(@productVersion1 < 13)
-		OR ((@productVersion1 = 13) AND (@productVersion2 = 0) AND (@productVersion3 < 5026))
-	BEGIN
-		RAISERROR('!!!', 0, 1) WITH NOWAIT;
-		RAISERROR('!!! Can not install the VLF part on SQL versions lower than SQL2016 SP2', 0, 1) WITH NOWAIT;
 		RAISERROR('!!!', 0, 1) WITH NOWAIT;
 	END;
 
@@ -224,6 +214,9 @@ ELSE BEGIN
 						,FileGroupType char(2) NULL
 						,CurrentSize int NOT NULL
 						,UsedSize int NULL
+						,MaxSize int NULL
+						,Growth int NULL
+						,IsPercentGrowth bit NULL
 						,TimestampUTC datetime NOT NULL
 						,Timestamp datetime NOT NULL
 						,CONSTRAINT PK_fhsmDatabaseSize PRIMARY KEY(Id)' + @tableCompressionStmt + '
@@ -298,6 +291,48 @@ ELSE BEGIN
 				SET @stmt = '
 					ALTER TABLE dbo.fhsmDatabaseSize
 						ADD FileGroupType char(2) NULL;
+				';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Adding column MaxSize to table dbo.fhsmDatabaseSize if it not already exists
+			--
+			IF NOT EXISTS (SELECT * FROM sys.columns AS c WHERE (c.object_id = OBJECT_ID('dbo.fhsmDatabaseSize')) AND (c.name = 'MaxSize'))
+			BEGIN
+				RAISERROR('Adding column [MaxSize] to table dbo.fhsmDatabaseSize', 0, 1) WITH NOWAIT;
+
+				SET @stmt = '
+					ALTER TABLE dbo.fhsmDatabaseSize
+						ADD MaxSize int NULL;
+				';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Adding column Growth to table dbo.fhsmDatabaseSize if it not already exists
+			--
+			IF NOT EXISTS (SELECT * FROM sys.columns AS c WHERE (c.object_id = OBJECT_ID('dbo.fhsmDatabaseSize')) AND (c.name = 'Growth'))
+			BEGIN
+				RAISERROR('Adding column [Growth] to table dbo.fhsmDatabaseSize', 0, 1) WITH NOWAIT;
+
+				SET @stmt = '
+					ALTER TABLE dbo.fhsmDatabaseSize
+						ADD Growth int NULL;
+				';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Adding column IsPercentGrowth to table dbo.fhsmDatabaseSize if it not already exists
+			--
+			IF NOT EXISTS (SELECT * FROM sys.columns AS c WHERE (c.object_id = OBJECT_ID('dbo.fhsmDatabaseSize')) AND (c.name = 'IsPercentGrowth'))
+			BEGIN
+				RAISERROR('Adding column [IsPercentGrowth] to table dbo.fhsmDatabaseSize', 0, 1) WITH NOWAIT;
+
+				SET @stmt = '
+					ALTER TABLE dbo.fhsmDatabaseSize
+						ADD IsPercentGrowth bit NULL;
 				';
 				EXEC(@stmt);
 			END;
@@ -723,6 +758,9 @@ ELSE BEGIN
 					SELECT
 						ds.CurrentSize
 						,ds.UsedSize
+						,ds.MaxSize
+						,ds.Growth
+						,ds.IsPercentGrowth
 						,CAST(ds.Timestamp AS date) AS Date
 						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ds.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
 						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ds.DatabaseName, ds.LogicalName, ds.PhysicalName,
@@ -1466,6 +1504,9 @@ ELSE BEGIN
 											,a.FileGroupType
 											,a.CurrentSize
 											,a.UsedSize
+											,a.MaxSize
+											,a.Growth
+											,a.IsPercentGrowth
 											,@nowUTC, @now
 										FROM (
 											SELECT
@@ -1491,8 +1532,11 @@ ELSE BEGIN
 				SET @stmt += '
 												,fg.name					AS FilegroupName
 												,fg.type					AS FileGroupType
-												,CAST((df.size / 128.0) AS int) AS CurrentSize
-												,CAST((CAST(FILEPROPERTY(df.name, ''''SpaceUsed'''') AS int) / 128.0) AS int) AS UsedSize
+												,CAST((df.size / 128.0) AS int)													AS CurrentSize
+												,CAST((CAST(FILEPROPERTY(df.name, ''''SpaceUsed'''') AS int) / 128.0) AS int)	AS UsedSize
+												,CAST((df.max_size / 128.0) AS int)												AS MaxSize
+												,CAST((df.growth / 128.0) AS int)												AS Growth
+												,df.is_percent_growth															AS IsPercentGrowth
 											FROM sys.database_files AS df WITH (NOLOCK)
 				';
 				IF NOT ((@productVersion1 = 10) AND (@productVersion2 = 0))
@@ -1507,7 +1551,10 @@ ELSE BEGIN
 										) AS a;
 									'';
 									BEGIN TRY
-										INSERT INTO dbo.fhsmDatabaseSize(DatabaseName, LogicalName, PhysicalName, Type, VolumeMountPoint, LogicalVolumeName, FilegroupName, FileGroupType, CurrentSize, UsedSize, TimestampUTC, Timestamp)
+										INSERT INTO dbo.fhsmDatabaseSize(
+											DatabaseName, LogicalName, PhysicalName, Type, VolumeMountPoint, LogicalVolumeName, FilegroupName, FileGroupType
+											,CurrentSize, UsedSize, MaxSize, Growth, IsPercentGrowth
+											,TimestampUTC, Timestamp)
 										EXEC sp_executesql
 											@stmt
 											,N''@now datetime, @nowUTC datetime''
@@ -1939,7 +1986,7 @@ ELSE BEGIN
 							WHERE (o.type = ''''U'''')
 							ORDER BY sch.name, o.name;
 
-							OPEN OCur;
+							OPEN oCur;
 
 							WHILE (1 = 1)
 							BEGIN
@@ -2003,8 +2050,8 @@ ELSE BEGIN
 								END;
 							END;
 
-							CLOSE OCur;
-							DEALLOCATE OCur;
+							CLOSE oCur;
+							DEALLOCATE oCur;
 
 							SELECT *
 							FROM @spaceUsed AS su
@@ -2217,54 +2264,188 @@ ELSE BEGIN
 		-- Create stored procedure dbo.fhsmSPVLFSize
 		--
 		BEGIN
-			SET @stmt = '
-				IF OBJECT_ID(''dbo.fhsmSPVLFSize'', ''P'') IS NULL
-				BEGIN
-					EXEC(''CREATE PROC dbo.fhsmSPVLFSize AS SELECT ''''dummy'''' AS Txt'');
-				END;
-			';
-			EXEC(@stmt);
-
-			SET @stmt = '
-				ALTER PROC dbo.fhsmSPVLFSize
-				AS
-				BEGIN
-					SET NOCOUNT ON;
-
-					DECLARE @now datetime;
-					DECLARE @nowUTC datetime;
-
-					--
-					-- Collect data
-					--
+			BEGIN
+				SET @stmt = '
+					IF OBJECT_ID(''dbo.fhsmSPVLFSize'', ''P'') IS NULL
 					BEGIN
-						SELECT
-							@now = SYSDATETIME()
-							,@nowUTC = SYSUTCDATETIME();
-
-						--
-						-- Get VLF statistics
-						--
-						IF EXISTS(SELECT * FROM master.sys.system_objects AS so WHERE (so.name = ''dm_db_log_info''))
-						BEGIN
-							INSERT INTO dbo.fhsmVLFSize(DatabaseName, VLFCount, ActiveVLF, VLFSizeMB, ActiveVLFSizeMB, TimestampUTC, Timestamp)
-							SELECT
-								d.name AS DatabaseName
-								,COUNT(d.database_id) AS VLFCount
-								,SUM(CAST(ddli.vlf_active AS int)) AS ActiveVLF
-								,SUM(ddli.vlf_size_mb) AS VLFSizeMB
-								,SUM(ddli.vlf_active * ddli.vlf_size_mb) AS ActiveVLFSizeMB
-								,@nowUTC, @now
-							FROM sys.databases AS d
-							CROSS APPLY sys.dm_db_log_info(d.database_id) AS ddli
-							GROUP BY d.name;
-						END;
+						EXEC(''CREATE PROC dbo.fhsmSPVLFSize AS SELECT ''''dummy'''' AS Txt'');
 					END;
+				';
+				EXEC(@stmt);
 
-					RETURN 0;
+				SET @stmt = '
+					ALTER PROC dbo.fhsmSPVLFSize (
+						@name nvarchar(128),
+						@parameter nvarchar(max)
+					)
+					AS
+					BEGIN
+						SET NOCOUNT ON;
+
+						DECLARE @database nvarchar(128);
+						DECLARE @databases nvarchar(max);
+						DECLARE @errorMsg nvarchar(max);
+						DECLARE @message nvarchar(max);
+						DECLARE @now datetime;
+						DECLARE @nowUTC datetime;
+						DECLARE @parameterTable TABLE([Key] nvarchar(128) NOT NULL, Value nvarchar(128) NULL);
+						DECLARE @replicaId uniqueidentifier;
+						DECLARE @stmt nvarchar(max);
+						DECLARE @thisTask nvarchar(128);
+						DECLARE @version nvarchar(128);
+
+						SET @thisTask = OBJECT_NAME(@@PROCID);
+						SET @version = ''' + @version + ''';
+
+						--
+						-- Get the parameter for the command
+						--
+						BEGIN
+							INSERT INTO @parameterTable([Key], Value)
+							SELECT
+								(SELECT s.Txt FROM dbo.fhsmFNSplitString(p.Txt, ''='') AS s WHERE (s.Part = 1)) AS [Key]
+								,(SELECT s.Txt FROM dbo.fhsmFNSplitString(p.Txt, ''='') AS s WHERE (s.Part = 2)) AS Value
+							FROM dbo.fhsmFNSplitString(@parameter, '';'') AS p;
+
+							SET @databases = (SELECT pt.Value FROM @parameterTable AS pt WHERE (pt.[Key] = ''@Databases''));
+
+							--
+							-- Trim @databases if Ola Hallengren style has been chosen
+							--
+							BEGIN
+								SET @databases = LTRIM(RTRIM(@databases));
+								WHILE (LEFT(@databases, 1) = '''''''') AND (LEFT(@databases, 1) = '''''''')
+								BEGIN
+									SET @databases = SUBSTRING(@databases, 2, LEN(@databases) - 2);
+								END;
+							END;
+						END;
+				';
+				SET @stmt += '
+						--
+						-- Get the list of databases to process
+						--
+						BEGIN
+							SELECT d.DatabaseName, d.[Order]
+							INTO #dbList
+							FROM dbo.fhsmFNParseDatabasesStr(@databases) AS d;
+						END;
+
+						--
+						-- Collect data
+						--
+						BEGIN
+							SELECT
+								@now = SYSDATETIME()
+								,@nowUTC = SYSUTCDATETIME();
+
+							--
+							-- Get VLF statistics
+							--
+				';
+				IF
+					(@productVersion1 < 13)
+					OR ((@productVersion1 = 13) AND (@productVersion2 = 0) AND (@productVersion3 < 5026))
+				BEGIN
+					SET @stmt += '
+							DECLARE dCur CURSOR LOCAL READ_ONLY FAST_FORWARD FOR
+							SELECT dl.DatabaseName, ' + CASE WHEN (@productVersion1 <= 10) THEN 'NULL' ELSE 'd.replica_id' END + ' AS replica_id
+							FROM #dbList AS dl
+							INNER JOIN sys.databases AS d ON (d.name COLLATE DATABASE_DEFAULT = dl.DatabaseName)
+							ORDER BY dl.[Order];
+
+							OPEN dCur;
+					';
+					SET @stmt += '
+							WHILE (1 = 1)
+							BEGIN
+								FETCH NEXT FROM dCur
+								INTO @database, @replicaId;
+
+								IF (@@FETCH_STATUS <> 0)
+								BEGIN
+									BREAK;
+								END;
+
+								SET @stmt = ''
+									USE '' + QUOTENAME(@database) + '';
+
+									DECLARE @dbccLoginfo TABLE(
+					';
+				IF
+					(@productVersion1 >= 11)
+				BEGIN
+					SET @stmt += '
+										RecoveryUnitId int,
+					';
+				END
+					SET @stmt += '
+										FileId tinyint,
+										FileSize bigint,
+										StartOffset bigint,
+										FSeqNo int,
+										Status tinyint,
+										Parity tinyint,
+										CreateLSN numeric(25,0)
+									);
+
+									INSERT INTO @dbccLoginfo
+									EXEC(''''DBCC LOGINFO'''');
+
+									INSERT INTO '' + QUOTENAME(DB_NAME()) + ''.dbo.fhsmVLFSize(DatabaseName, VLFCount, ActiveVLF, VLFSizeMB, ActiveVLFSizeMB, TimestampUTC, Timestamp)
+									SELECT
+										DB_NAME() AS DatabaseName
+										,COUNT(*) AS VLFCount
+										,SUM(CASE WHEN (dl.Status = 2) THEN 1 ELSE 0 END) AS ActiveVLF
+										,SUM(dl.FileSize) / 1024.0 / 1024.0 AS VLFSizeMB
+										,SUM(CASE WHEN (dl.Status = 2) THEN dl.FileSize ELSE 0 END) / 1024.0 / 1024.0 AS ActiveVLFSizeMB
+										,@nowUTC, @now
+									FROM @dbccLoginfo AS dl;
+								'';
+								BEGIN TRY
+									EXEC sp_executesql
+										@stmt
+										,N''@now datetime, @nowUTC datetime''
+										,@now = @now, @nowUTC = @nowUTC;
+								END TRY
+								BEGIN CATCH
+									SET @errorMsg = ERROR_MESSAGE();
+
+									SET @message = ''Database '''''' + @database + '''''' failed due to - '' + @errorMsg;
+									EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''Warning'', @message = @message;
+								END CATCH;
+							END;
+
+							CLOSE dCur;
+							DEALLOCATE dCur;
+					';
+				END
+				ELSE BEGIN
+					SET @stmt += '
+							IF EXISTS(SELECT * FROM master.sys.system_objects AS so WHERE (so.name = ''dm_db_log_info''))
+							BEGIN
+								INSERT INTO dbo.fhsmVLFSize(DatabaseName, VLFCount, ActiveVLF, VLFSizeMB, ActiveVLFSizeMB, TimestampUTC, Timestamp)
+								SELECT
+									d.name AS DatabaseName
+									,COUNT(d.database_id) AS VLFCount
+									,SUM(CAST(ddli.vlf_active AS int)) AS ActiveVLF
+									,SUM(ddli.vlf_size_mb) AS VLFSizeMB
+									,SUM(ddli.vlf_active * ddli.vlf_size_mb) AS ActiveVLFSizeMB
+									,@nowUTC, @now
+								FROM sys.databases AS d
+								CROSS APPLY sys.dm_db_log_info(d.database_id) AS ddli
+								GROUP BY d.name;
+							END;
+					';
 				END;
-			';
-			EXEC(@stmt);
+				SET @stmt += '
+						END;
+
+						RETURN 0;
+					END;
+				';
+				EXEC(@stmt);
+			END;
 
 			--
 			-- Register extended properties on the stored procedure dbo.fhsmSPVLFSize
@@ -2527,7 +2708,7 @@ ELSE BEGIN
 								,@processingTimestamp = SYSDATETIME();
 							EXEC dbo.fhsmSPProcessing @name = @name, @task = @thisTask, @version = NULL, @type = 6, @timestampUTC = @processingTimestampUTC, @timestamp = @processingTimestamp, @id = @processingId OUTPUT;
 
-							EXEC dbo.fhsmSPVLFSize;
+							EXEC dbo.fhsmSPVLFSize @name = @name, @parameter = @parameter;
 
 							--
 							-- Update Processing record from before execution with @version, @processingTimestampUTC and @processingTimestamp
@@ -2608,7 +2789,7 @@ ELSE BEGIN
 					SET @version = ''' + @version + ''';
 			';
 			SET @stmt += '
-					IF (@Type = ''Parameter'')
+					IF (@Type = ''parameter'')
 					BEGIN
 						IF (@Command = ''set'')
 						BEGIN
@@ -2678,7 +2859,7 @@ ELSE BEGIN
 					END
 			';
 			SET @stmt += '
-					ELSE IF (@Type = ''Uninstall'')
+					ELSE IF (@Type = ''uninstall'')
 					BEGIN
 						--
 						-- Place holder
@@ -3110,10 +3291,10 @@ ELSE BEGIN
 	-- Update dimensions based upon the fact tables
 	--
 	BEGIN
-		EXEC dbo.fhsmSPUpdateDimensions @table = 'dbo.fhsmAllocationUnits';
-		EXEC dbo.fhsmSPUpdateDimensions @table = 'dbo.fhsmDatabaseSize';
-		EXEC dbo.fhsmSPUpdateDimensions @table = 'dbo.fhsmDiskSize';
-		EXEC dbo.fhsmSPUpdateDimensions @table = 'dbo.fhsmPartitionedIndexes';
-		EXEC dbo.fhsmSPUpdateDimensions @table = 'dbo.fhsmTableSize';
+		EXEC dbo.fhsmSPUpdateDimensions @table = 'dbo.fhsmAllocationUnits', @ignoreAutoIndex = @ignoreAutoIndex;
+		EXEC dbo.fhsmSPUpdateDimensions @table = 'dbo.fhsmDatabaseSize', @ignoreAutoIndex = @ignoreAutoIndex;
+		EXEC dbo.fhsmSPUpdateDimensions @table = 'dbo.fhsmDiskSize', @ignoreAutoIndex = @ignoreAutoIndex;
+		EXEC dbo.fhsmSPUpdateDimensions @table = 'dbo.fhsmPartitionedIndexes', @ignoreAutoIndex = @ignoreAutoIndex;
+		EXEC dbo.fhsmSPUpdateDimensions @table = 'dbo.fhsmTableSize', @ignoreAutoIndex = @ignoreAutoIndex;
 	END;
 END;

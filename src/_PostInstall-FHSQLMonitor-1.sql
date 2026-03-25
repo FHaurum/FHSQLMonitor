@@ -117,11 +117,4 @@ ELSE BEGIN
 				,src.OutputColumn1, src.OutputColumn2, src.OutputColumn3, src.OutputColumn4
 			);
 	END;
-
-	--
-	-- Update dimensions based upon the fact table dbo.fhsmLog
-	--
-	BEGIN
-		EXEC dbo.fhsmSPUpdateDimensions @table = 'dbo.fhsmLog';
-	END;
 END;

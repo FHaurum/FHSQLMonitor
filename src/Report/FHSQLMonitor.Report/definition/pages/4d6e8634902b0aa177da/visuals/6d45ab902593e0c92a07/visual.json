@@ -1,5 +1,5 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.4.0/schema.json",
   "name": "6d45ab902593e0c92a07",
   "position": {
     "x": 10,
@@ -28,6 +28,21 @@
               "queryRef": "Database.Database - Drill-through for Configuration history",
               "nativeQueryRef": "Database",
               "displayName": "Database"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Database state"
+                    }
+                  },
+                  "Property": "Database owner"
+                }
+              },
+              "queryRef": "Database state.Database owner",
+              "nativeQueryRef": "Owner",
+              "displayName": "Owner"
             },
             {
               "field": {
@@ -142,6 +157,20 @@
               },
               "queryRef": "Database state.Page verify",
               "nativeQueryRef": "Page verify"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Database state"
+                    }
+                  },
+                  "Property": "Trustworthy"
+                }
+              },
+              "queryRef": "Database state.Trustworthy",
+              "nativeQueryRef": "Trustworthy"
             },
             {
               "field": {
@@ -1094,6 +1123,165 @@
             ],
             "metadata": "Database state.State"
           }
+        },
+        {
+          "properties": {
+            "backColor": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Conditional": {
+                      "Cases": [
+                        {
+                          "Condition": {
+                            "Comparison": {
+                              "ComparisonKind": 0,
+                              "Left": {
+                                "Measure": {
+                                  "Expression": {
+                                    "SourceRef": {
+                                      "Entity": "_Measures"
+                                    }
+                                  },
+                                  "Property": "Trustworthy flag - Database configuration"
+                                }
+                              },
+                              "Right": {
+                                "Literal": {
+                                  "Value": "1D"
+                                }
+                              }
+                            }
+                          },
+                          "Value": {
+                            "Literal": {
+                              "Value": "'#fae99f'"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "selector": {
+            "data": [
+              {
+                "dataViewWildcard": {
+                  "matchingOption": 1
+                }
+              }
+            ],
+            "metadata": "Database state.Trustworthy"
+          }
+        },
+        {
+          "properties": {
+            "backColor": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Conditional": {
+                      "Cases": [
+                        {
+                          "Condition": {
+                            "Comparison": {
+                              "ComparisonKind": 0,
+                              "Left": {
+                                "Measure": {
+                                  "Expression": {
+                                    "SourceRef": {
+                                      "Entity": "_Measures"
+                                    }
+                                  },
+                                  "Property": "Parameterization forced flag - Database configuration"
+                                }
+                              },
+                              "Right": {
+                                "Literal": {
+                                  "Value": "1D"
+                                }
+                              }
+                            }
+                          },
+                          "Value": {
+                            "Literal": {
+                              "Value": "'#fae99f'"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "selector": {
+            "data": [
+              {
+                "dataViewWildcard": {
+                  "matchingOption": 1
+                }
+              }
+            ],
+            "metadata": "Database state.Param. forced"
+          }
+        },
+        {
+          "properties": {
+            "backColor": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Conditional": {
+                      "Cases": [
+                        {
+                          "Condition": {
+                            "Comparison": {
+                              "ComparisonKind": 0,
+                              "Left": {
+                                "Measure": {
+                                  "Expression": {
+                                    "SourceRef": {
+                                      "Entity": "_Measures"
+                                    }
+                                  },
+                                  "Property": "Mixed page allocation flag - Database configuration"
+                                }
+                              },
+                              "Right": {
+                                "Literal": {
+                                  "Value": "1D"
+                                }
+                              }
+                            }
+                          },
+                          "Value": {
+                            "Literal": {
+                              "Value": "'#fae99f'"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "selector": {
+            "data": [
+              {
+                "dataViewWildcard": {
+                  "matchingOption": 1
+                }
+              }
+            ],
+            "metadata": "Database state.Mixed page allocation"
+          }
         }
       ],
       "total": [
@@ -1213,6 +1401,314 @@
           ]
         },
         "howCreated": "User"
+      },
+      {
+        "name": "be9916e1d237d617c93f",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Database"
+              }
+            },
+            "Property": "Database - Drill-through for Configuration history"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "005ad235e0a32ba54070",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Database state"
+              }
+            },
+            "Property": "State"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "ac76661e270711e31ef2",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Database state"
+              }
+            },
+            "Property": "Standby"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "188fe6d18a7a7ba77449",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Database state"
+              }
+            },
+            "Property": "Read only"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "511deec6f83a1df517eb",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Database state"
+              }
+            },
+            "Property": "Collation"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "76989cf4e1614e8eae5d",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Database state"
+              }
+            },
+            "Property": "Comp. level"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "feaa792491cd1c40a252",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Database state"
+              }
+            },
+            "Property": "Recovery model"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "a2b89b7fd0f71c564c91",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Database state"
+              }
+            },
+            "Property": "RCSI"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "4cbea3757c618a0709e5",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Database state"
+              }
+            },
+            "Property": "Page verify"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "4cbcac31d6a1909320e6",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Database state"
+              }
+            },
+            "Property": "Always On group"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "311237e59c1299c3b095",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Database state"
+              }
+            },
+            "Property": "Auto close"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "0907c10d09986a4bc681",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Database state"
+              }
+            },
+            "Property": "Auto shrink"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "56786de7c608bf1364f4",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Database state"
+              }
+            },
+            "Property": "Auto update stats. async."
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "a199ab02b0ed814089de",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Database state"
+              }
+            },
+            "Property": "Param. forced"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "b1cb639bb1d4e5010af5",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Database state"
+              }
+            },
+            "Property": "Encrypted"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "3d80f9618a51a9563b77",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Database state"
+              }
+            },
+            "Property": "Mixed page allocation"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "0cedf13b6e2e4d94806c",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Database state"
+              }
+            },
+            "Property": "Delayed durability"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "51655d956a0e38d8cd30",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Database state"
+              }
+            },
+            "Property": "Target recovery time in sec."
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "81feabddd6096525368d",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Database state"
+              }
+            },
+            "Property": "Min. timestamp"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "c94e8d03a5338577088d",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Database state"
+              }
+            },
+            "Property": "Max. timestamp"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "e6970b09737a7592ccaf",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Database state"
+              }
+            },
+            "Property": "Database owner"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "3fc6cdf6c9db5f4c2860",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Database state"
+              }
+            },
+            "Property": "Trustworthy"
+          }
+        },
+        "type": "Categorical"
       }
     ]
   }

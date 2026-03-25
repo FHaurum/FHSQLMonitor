@@ -1,13 +1,13 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.4.0/schema.json",
   "name": "dd283bc3590787be64a8",
   "position": {
     "x": 10,
     "y": 60,
-    "z": 3781,
+    "z": 5000,
     "height": 60,
     "width": 540,
-    "tabOrder": 2500
+    "tabOrder": 3000
   },
   "visualGroup": {
     "displayName": "Object info panel",

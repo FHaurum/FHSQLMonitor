@@ -1,13 +1,13 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.6.0/schema.json",
   "name": "8f5c5ff467260b972bd3",
   "position": {
     "x": 60,
     "y": 10,
-    "z": 9000,
+    "z": 7000,
     "height": 40,
     "width": 220,
-    "tabOrder": 4000
+    "tabOrder": 8000
   },
   "visual": {
     "visualType": "textSlicer",
@@ -60,7 +60,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Database Text Slicer'"
+                  "Value": "'Database Input Slicer'"
                 }
               }
             }
@@ -69,5 +69,23 @@
       ]
     },
     "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "222c60beec20ab0580b5",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Database"
+              }
+            },
+            "Property": "Database"
+          }
+        },
+        "type": "Categorical"
+      }
+    ]
   }
 }

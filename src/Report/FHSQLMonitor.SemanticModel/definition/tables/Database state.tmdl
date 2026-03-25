@@ -95,6 +95,8 @@ table 'Database state'
 
 		changedProperty = IsHidden
 
+		changedProperty = DataType
+
 		annotation SummarizationSetBy = User
 
 	column 'Always On group'
@@ -269,6 +271,58 @@ table 'Database state'
 
 		annotation SummarizationSetBy = Automatic
 
+	column 'Database owner'
+		dataType: string
+		lineageTag: 515fc539-9a32-44ba-b971-4fa16ffdd7fd
+		summarizeBy: none
+		sourceColumn: Database owner
+
+		annotation SummarizationSetBy = Automatic
+
+	column IsTrustworthyOn
+		dataType: boolean
+		isHidden
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 4a9d845e-f37b-4137-9604-3a788db3e10e
+		summarizeBy: none
+		sourceColumn: IsTrustworthyOn
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column Trustworthy
+		dataType: string
+		lineageTag: 6959a82c-a59d-4997-8268-43462b9435f1
+		summarizeBy: none
+		sourceColumn: Trustworthy
+
+		annotation SummarizationSetBy = Automatic
+
+	column IsParameterizationForced
+		dataType: boolean
+		isHidden
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: d3866609-775c-428b-8509-1c4d93c2a2e0
+		summarizeBy: none
+		sourceColumn: IsParameterizationForced
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column IsMixedPageAllocationOn
+		dataType: boolean
+		isHidden
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 6e6a7ddf-748a-4fcc-af9d-72a2085fdaa1
+		summarizeBy: none
+		sourceColumn: IsMixedPageAllocationOn
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
 	partition 'Database state' = m
 		mode: import
 		queryGroup: Facts
@@ -289,6 +343,7 @@ table 'Database state'
 				      "AlwaysOnGroupName", 
 				      "CollationName", 
 				      "CompatibilityLevel", 
+				      "DatabaseOwner", 
 				      "DelayedDurability", 
 				      "IsAutoCloseOn", 
 				      "IsAutoCloseOnTxt", 
@@ -300,13 +355,17 @@ table 'Database state'
 				      "IsEncryptedTxt", 
 				      "IsInStandby", 
 				      "IsInStandbyTxt", 
+				      "IsMixedPageAllocationOn", 
 				      "IsMixedPageAllocationOnTxt", 
 				      "IsOnAlwaysOnPrimary", 
+				      "IsParameterizationForced", 
 				      "IsParameterizationForcedTxt", 
 				      "IsReadCommittedSnapshotOn", 
 				      "IsReadCommittedSnapshotOnTxt", 
 				      "IsReadOnly", 
 				      "IsReadOnlyTxt", 
+				      "IsTrustworthyOn", 
+				      "IsTrustworthyOnTxt", 
 				      "MaxTimestamp", 
 				      "MinTimestamp", 
 				      "PageVerifyOption", 
@@ -322,6 +381,7 @@ table 'Database state'
 				      {"AlwaysOnGroupName", "Always On group"}, 
 				      {"CollationName", "Collation"}, 
 				      {"CompatibilityLevel", "Comp. level"}, 
+				      {"DatabaseOwner", "Database owner"}, 
 				      {"DelayedDurability", "Delayed durability"}, 
 				      {"IsAutoCloseOnTxt", "Auto close"}, 
 				      {"IsAutoShrinkOnTxt", "Auto shrink"}, 
@@ -332,6 +392,7 @@ table 'Database state'
 				      {"IsParameterizationForcedTxt", "Param. forced"}, 
 				      {"IsReadCommittedSnapshotOnTxt", "RCSI"}, 
 				      {"IsReadOnlyTxt", "Read only" }, 
+				      {"IsTrustworthyOnTxt", "Trustworthy" }, 
 				      {"MaxTimestamp", "Max. timestamp"}, 
 				      {"MinTimestamp", "Min. timestamp"}, 
 				      {"PageVerifyOption", "Page verify"}, 

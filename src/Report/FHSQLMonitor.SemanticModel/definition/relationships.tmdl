@@ -215,14 +215,6 @@ relationship 02b5f20d-8c8d-8949-499a-b91cc4ba16c1
 	fromColumn: Database.DatabaseKey
 	toColumn: 'Database state'.DatabaseKey
 
-relationship b2c78fdb-4da1-7203-bfde-f490e4c84225
-	fromColumn: 'Agent jobs - grid'.Job
-	toColumn: 'Agent jobs - jobs'.Job
-
-relationship ba2d5542-45e2-06d6-7672-92f3822013fc
-	fromColumn: 'Agent jobs - list'.Job
-	toColumn: 'Agent jobs - jobs'.Job
-
 relationship 371c9240-c6ec-a1ab-de3a-fae334c60865
 	fromColumn: 'Database state history'.DatabaseKey
 	toColumn: Database.DatabaseKey
@@ -608,4 +600,40 @@ relationship 800f0f08-dfba-7a91-e076-33247f709af5
 relationship 44da3ad5-4834-4ccf-04de-c16bb7f4cffc
 	fromColumn: 'VLF size'.DatabaseFileKey
 	toColumn: 'Database file'.DatabaseFileKey
+
+relationship ed0383d6-ad19-fb57-ebb1-2a2a53fa25c0
+	fromColumn: 'Agent jobs - grid'.AgentJobKey
+	toColumn: 'Agent job'.AgentJobKey
+
+relationship e9d71096-9609-127e-9365-195beed1c800
+	fromColumn: 'Agent jobs - list'.AgentJobKey
+	toColumn: 'Agent job'.AgentJobKey
+
+relationship e2cec54e-b45c-8e97-a046-c741c5873e5c
+	fromColumn: 'Agent jobs - not scheduled'.AgentJobKey
+	toColumn: 'Agent job'.AgentJobKey
+
+relationship c69ea837-0727-883f-8f7d-d194cecd55eb
+	fromColumn: LogNonDebugInfo.Date
+	toColumn: Date.Date
+
+relationship 9a16f5ef-86be-cc9f-25c3-1d2bb8e797ac
+	fromColumn: LogNonDebugInfo.TimeKey
+	toColumn: Time.TimeKey
+
+relationship 304e3070-9a04-6986-4507-cf60db56a37d
+	fromColumn: LogNonDebugInfo.TaskNameVersionKey
+	toColumn: 'Task name version'.TaskNameVersionKey
+
+relationship 1353519f-0e12-b035-d244-750e173b01b7
+	fromColumn: 'Memory grants pending'.Date
+	toColumn: Date.Date
+
+relationship d3f68303-f8fc-a8c0-71ee-4c39f5ee7a1a
+	fromColumn: 'Memory grants pending'.TimeKey
+	toColumn: Time.TimeKey
+
+relationship 200a03cf-af53-22fa-c758-b03ccae91f47
+	fromColumn: 'Log messages'.Date
+	toColumn: Date.Date
 

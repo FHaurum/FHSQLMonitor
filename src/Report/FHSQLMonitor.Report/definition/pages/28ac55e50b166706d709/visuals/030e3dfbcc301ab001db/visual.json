@@ -1,13 +1,13 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.4.0/schema.json",
   "name": "030e3dfbcc301ab001db",
   "position": {
     "x": 10,
     "y": 80,
-    "z": 7000,
+    "z": 5000,
     "height": 455,
     "width": 1740,
-    "tabOrder": 2500
+    "tabOrder": 5000
   },
   "visual": {
     "visualType": "tableEx",
@@ -395,7 +395,7 @@
                 "Entity": "_Measures"
               }
             },
-            "Property": "VLF - Backup status"
+            "Property": "VLF - Latest backup status - Backup status"
           }
         },
         "type": "Advanced",
@@ -422,7 +422,7 @@
                               "Source": "_"
                             }
                           },
-                          "Property": "VLF - Backup status"
+                          "Property": "VLF - Latest backup status - Backup status"
                         }
                       },
                       "Right": {
@@ -438,6 +438,76 @@
           ]
         },
         "howCreated": "User"
+      },
+      {
+        "name": "66979f9033de0b0a0218",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Database"
+              }
+            },
+            "Property": "Database"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "a76fa9a932e12be66410",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Backup age"
+              }
+            },
+            "Property": "LatestFullBackupStartDate"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "c552e79d00320e3a4d0e",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Backup age"
+              }
+            },
+            "Property": "LatestDiffBackupStartDate"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "6522b7bb0c3e05570a83",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Backup age"
+              }
+            },
+            "Property": "LatestLogBackupStartDate"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "d64f8d4a0398ace7874b",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Backup age"
+              }
+            },
+            "Property": "RecoveryModel"
+          }
+        },
+        "type": "Categorical"
       }
     ]
   }

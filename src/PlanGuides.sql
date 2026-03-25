@@ -5,8 +5,10 @@ SET NOCOUNT ON;
 --
 BEGIN
 	DECLARE @enablePlanGuides bit;
+	DECLARE @ignoreAutoIndex bit;
 
 	SET @enablePlanGuides = 0;
+	SET @ignoreAutoIndex = 0;
 END;
 
 --
@@ -66,7 +68,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.11.0';
+		SET @version = '2.12.0';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -229,11 +231,13 @@ ELSE BEGIN
 					,pg.Message
 					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(pg.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
 				FROM dbo.fhsmPlanGuides AS pg
-				WHERE (pg.TimestampUTC = (
-					SELECT TOP (1) pg2.TimestampUTC
-					FROM dbo.fhsmPlanGuides AS pg2
-					ORDER BY pg2.TimestampUTC DESC
-				))
+				WHERE
+					(pg.TimestampUTC = (
+						SELECT TOP (1) pg2.TimestampUTC
+						FROM dbo.fhsmPlanGuides AS pg2
+						ORDER BY pg2.TimestampUTC DESC
+					))
+					AND (pg.DatabaseName <> ''<HeartBeat>'')
 			';
 			EXEC(@stmt);
 		END;
@@ -443,6 +447,36 @@ ELSE BEGIN
 
 						CLOSE dCur;
 						DEALLOCATE dCur;
+
+						INSERT INTO dbo.fhsmPlanGuides(
+							DatabaseName
+							,PlanGuideId, Name
+							,CreateDate, ModifyDate
+							,IsDisabled, QueryText, ScopeTypeDesc
+							,ScopedSchema, ScopedObject
+							,ScopeBatch, Parameters, Hints
+							,MsgNum, Severity, State, Message
+							,TimestampUTC, Timestamp
+						)
+						SELECT
+							''<HeartBeat>'' AS DatabaseName
+							,-1 AS PlanGuideId
+							,''<HeartBeat>'' AS Name
+							,CAST(''1900-01-01'' AS datetime) AS CreateDate
+							,CAST(''1900-01-01'' AS datetime) AS ModifyDate
+							,0 AS IsDisabled
+							,NULL AS QueryText
+							,NULL AS ScopeTypeDesc
+							,NULL AS ScopedSchema
+							,NULL AS ScopedObject
+							,NULL AS ScopeBatch
+							,NULL AS Parameters
+							,NULL AS Hints
+							,-1 AS MsgNum
+							,0 AS Severity
+							,-1 AS State
+							,NULL AS Message
+							,@nowUTC, @now;
 					END;
 
 					RETURN 0;
@@ -507,7 +541,7 @@ ELSE BEGIN
 					SET @version = ''' + @version + ''';
 			';
 			SET @stmt += '
-					IF (@Type = ''Parameter'')
+					IF (@Type = ''parameter'')
 					BEGIN
 						IF (@Command = ''set'')
 						BEGIN
@@ -577,7 +611,7 @@ ELSE BEGIN
 					END
 			';
 			SET @stmt += '
-					ELSE IF (@Type = ''Uninstall'')
+					ELSE IF (@Type = ''uninstall'')
 					BEGIN
 						--
 						-- Place holder
@@ -676,7 +710,7 @@ ELSE BEGIN
 				,'DatabaseKey' AS DimensionKey
 				,'dbo.fhsmPlanGuides' AS SrcTable
 				,'src' AS SrcAlias
-				,NULL AS SrcWhere
+				,'WHERE (src.DatabaseName <> ''<HeartBeat>'')' AS SrcWhere
 				,'src.[Timestamp]' AS SrcDateColumn
 				,'src.[DatabaseName]', NULL, NULL, NULL
 				,'Database', NULL, NULL, NULL
@@ -717,6 +751,6 @@ ELSE BEGIN
 	-- Update dimensions based upon the fact tables
 	--
 	BEGIN
-		EXEC dbo.fhsmSPUpdateDimensions @table = 'dbo.fhsmPlanGuides';
+		EXEC dbo.fhsmSPUpdateDimensions @table = 'dbo.fhsmPlanGuides', @ignoreAutoIndex = @ignoreAutoIndex;
 	END;
 END;

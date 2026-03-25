@@ -109,6 +109,54 @@ table 'Index configuration'
 
 		annotation SummarizationSetBy = Automatic
 
+	column IsUnique
+		dataType: boolean
+		isHidden
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: ce5afcf1-1d05-4d78-8747-fb266d5ba9f9
+		summarizeBy: none
+		sourceColumn: IsUnique
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column IsDisabled
+		dataType: boolean
+		isHidden
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 2e930ae9-774f-44dc-8b39-ecdede22bc86
+		summarizeBy: none
+		sourceColumn: IsDisabled
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column IsHypothetical
+		dataType: boolean
+		isHidden
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 31b9fbc4-1288-4e7c-9914-4dd53cf13c74
+		summarizeBy: none
+		sourceColumn: IsHypothetical
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column IsPrimaryKey
+		dataType: boolean
+		isHidden
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 4a9bce16-0ab5-422e-b408-f9a850ace0eb
+		summarizeBy: none
+		sourceColumn: IsPrimaryKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
 	partition 'Index configuration' = m
 		mode: import
 		queryGroup: Facts
@@ -135,20 +183,24 @@ table 'Index configuration'
 				  emptyDataset = Table.FirstN(table, 0), 
 				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
 				  selectColumns = Table.SelectColumns(
-				    datasetToUse,
+				    datasetToUse, 
 				    {
-				      "FilterDefinition", 
-				      "HasFilterTxt", 
-				      "IncludedColumns", 
-				      "IndexColumns", 
-				      "IndexTypeDesc", 
-				      "IsDisabledTxt", 
-				      "IsHypotheticalTxt", 
-				      "IsPrimaryKeyTxt", 
-				      "IsUniqueTxt", 
-				      "TableIsHeap", 
-				      "IndexKey", 
-				      "ObjectKey"
+							"FilterDefinition", 
+							"HasFilterTxt", 
+							"IncludedColumns", 
+							"IndexColumns", 
+							"IndexTypeDesc", 
+							"IsDisabled", 
+							"IsDisabledTxt", 
+							"IsHypothetical", 
+							"IsHypotheticalTxt", 
+							"IsPrimaryKey", 
+							"IsPrimaryKeyTxt", 
+							"IsUnique", 
+							"IsUniqueTxt", 
+							"TableIsHeap", 
+							"IndexKey", 
+							"ObjectKey"
 				    }
 				  ), 
 				  renamedColumns = Table.RenameColumns(

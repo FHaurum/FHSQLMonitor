@@ -5,8 +5,10 @@ SET NOCOUNT ON;
 --
 BEGIN
 	DECLARE @enableIndexPhysical bit;
+	DECLARE @ignoreAutoIndex bit;
 
 	SET @enableIndexPhysical = 0;
+	SET @ignoreAutoIndex = 0;
 END;
 
 --
@@ -66,7 +68,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.11.0';
+		SET @version = '2.12.0';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -870,7 +872,7 @@ ELSE BEGIN
 					SET @version = ''' + @version + ''';
 			';
 			SET @stmt += '
-					IF (@Type = ''Parameter'')
+					IF (@Type = ''parameter'')
 					BEGIN
 						IF (@Command = ''set'')
 						BEGIN
@@ -940,7 +942,7 @@ ELSE BEGIN
 					END
 			';
 			SET @stmt += '
-					ELSE IF (@Type = ''Uninstall'')
+					ELSE IF (@Type = ''uninstall'')
 					BEGIN
 						--
 						-- Place holder
@@ -1144,6 +1146,6 @@ ELSE BEGIN
 	-- Update dimensions based upon the fact tables
 	--
 	BEGIN
-		EXEC dbo.fhsmSPUpdateDimensions @table = 'dbo.fhsmIndexPhysical';
+		EXEC dbo.fhsmSPUpdateDimensions @table = 'dbo.fhsmIndexPhysical', @ignoreAutoIndex = @ignoreAutoIndex;
 	END;
 END;

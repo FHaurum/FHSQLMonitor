@@ -1,5 +1,5 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/bookmark/1.4.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/bookmark/2.0.0/schema.json",
   "displayName": "Filter panel closed - Instance status",
   "name": "0e4d30e00aa2a010bbe5",
   "options": {
@@ -144,7 +144,7 @@
                           "Entity": "Error logs"
                         }
                       },
-                      "Property": "SetId"
+                      "Property": "Set id"
                     }
                   },
                   "howCreated": 0

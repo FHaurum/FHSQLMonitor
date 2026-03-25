@@ -5,8 +5,10 @@ SET NOCOUNT ON;
 --
 BEGIN
 	DECLARE @enableAgentJobsPerformance bit;
+	DECLARE @ignoreAutoIndex bit;
 
 	SET @enableAgentJobsPerformance = 0;
+	SET @ignoreAutoIndex = 0;
 END;
 
 --
@@ -66,7 +68,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.11.0';
+		SET @version = '2.12.0';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -516,6 +518,79 @@ ELSE BEGIN
 		END;
 
 		--
+		-- Create table dbo.fhsmAgentJobsWatermark and indexes if they not already exists
+		--
+		BEGIN
+			IF OBJECT_ID('dbo.fhsmAgentJobsWatermark', 'U') IS NULL
+			BEGIN
+				RAISERROR('Creating table dbo.fhsmAgentJobsWatermark', 0, 1) WITH NOWAIT;
+
+				SET @stmt = '
+					CREATE TABLE dbo.fhsmAgentJobsWatermark(
+						Id bigint identity(1,1) NOT NULL
+						,Name nvarchar(128) NOT NULL
+						,StartDateTime datetime NOT NULL
+						,TimestampUTC datetime NOT NULL
+						,Timestamp datetime NOT NULL
+						,CONSTRAINT PK_fhsmAgentJobsWatermark PRIMARY KEY(Id)' + @tableCompressionStmt + '
+						,CONSTRAINT UQ_fhsmAgentJobsWatermark_Name UNIQUE(Name)' + @tableCompressionStmt + '
+					);
+				';
+				EXEC(@stmt);
+
+				RAISERROR('Populating table dbo.fhsmAgentJobsWatermark with data from dbo.fhsmAgentJobsPerformanceLatest', 0, 1) WITH NOWAIT;
+
+				SET @stmt = '
+					INSERT INTO dbo.fhsmAgentJobsWatermark(Name, StartDateTime, TimestampUTC, Timestamp)
+					SELECT
+						jpl.Name,
+						MAX(jpl.StartDateTime) AS StartDateTime,
+						MAX(jpl.TimestampUTC) AS TimestampUTC,
+						MAX(jpl.Timestamp) AS Timestamp
+					FROM dbo.fhsmAgentJobsPerformanceLatest AS jpl
+					GROUP BY jpl.Name
+					ORDER BY jpl.Name;
+				';
+				EXEC(@stmt);
+			END;
+
+			IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmAgentJobsWatermark')) AND (i.name = 'NC_fhsmAgentJobsWatermark_TimestampUTC'))
+			BEGIN
+				RAISERROR('Adding index [NC_fhsmAgentJobsWatermark_TimestampUTC] to table dbo.fhsmAgentJobsWatermark', 0, 1) WITH NOWAIT;
+
+				SET @stmt = '
+					CREATE NONCLUSTERED INDEX NC_fhsmAgentJobsWatermark_TimestampUTC ON dbo.fhsmAgentJobsWatermark(TimestampUTC)' + @tableCompressionStmt + ';
+				';
+				EXEC(@stmt);
+			END;
+
+			IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmAgentJobsWatermark')) AND (i.name = 'NC_fhsmAgentJobsWatermark_Timestamp'))
+			BEGIN
+				RAISERROR('Adding index [NC_fhsmAgentJobsWatermark_Timestamp] to table dbo.fhsmAgentJobsWatermark', 0, 1) WITH NOWAIT;
+
+				SET @stmt = '
+					CREATE NONCLUSTERED INDEX NC_fhsmAgentJobsWatermark_Timestamp ON dbo.fhsmAgentJobsWatermark(Timestamp)' + @tableCompressionStmt + ';
+				';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Register extended properties on the table dbo.fhsmAgentJobsWatermark
+			--
+			BEGIN
+				SET @objectName = 'dbo.fhsmAgentJobsWatermark';
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+			END;
+		END;
+
+		--
 		-- Add indexes to msdb.dbo.sysjobhistory if they if they not already exists
 		--
 		BEGIN
@@ -788,8 +863,8 @@ ELSE BEGIN
 					DECLARE @productVersion1 int;
 					DECLARE @productVersion2 int;
 					DECLARE @productVersion3 int;
-					DECLARE @startDateTime datetime;
-					DECLARE @startDateTimeTxt nvarchar(32);
+					DECLARE @startRunDate int;
+					DECLARE @startRunTime int;
 					DECLARE @stmt nvarchar(max);
 					DECLARE @thisTask nvarchar(128);
 					DECLARE @whereStmt nvarchar(max);
@@ -833,17 +908,68 @@ ELSE BEGIN
 					END;
 			';
 			SET @stmt += '
+					IF (OBJECT_ID(''tempdb..#jobsWatermark'') IS NOT NULL) DROP TABLE #jobsWatermark;
+
+					CREATE TABLE #jobsWatermark(
+						Name nvarchar(128) NOT NULL
+						,StartDateTime datetime NOT NULL
+						,PRIMARY KEY(Name)
+					);
+			';
+			SET @stmt += '
+					--
+					-- Set global variables
+					--
+					BEGIN
+						SELECT
+							@now = SYSDATETIME()
+							,@nowUTC = SYSUTCDATETIME();
+					END;
+			';
+			SET @stmt += '
+					--
+					-- Get new watermark
+					--
+					BEGIN
+						INSERT INTO #jobsWatermark
+						SELECT
+							a.name AS Name
+							,ajt.StartDateTime
+						FROM (
+							SELECT
+								sj.name
+								,sjh.run_date
+								,sjh.run_time
+								,ROW_NUMBER() OVER(PARTITION BY sjh.job_id ORDER BY sjh.instance_id DESC) AS _Rnk_
+							FROM msdb.dbo.sysjobs AS sj
+							INNER JOIN msdb.dbo.sysjobhistory AS sjh ON (sjh.job_id =  sj.job_id)
+							WHERE (1 = 1)
+								AND (sjh.step_id = 0)
+						) AS a
+						CROSS APPLY dbo.fhsmFNAgentJobTime(a.run_date, a.run_time, NULL) AS ajt
+						WHERE (a._Rnk_ = 1);
+					END;
+			';
+			SET @stmt += '
 					--
 					-- Create where condition to load latest and newest per job
 					--
 					BEGIN
 						DECLARE jCur CURSOR LOCAL READ_ONLY FAST_FORWARD FOR
 						SELECT
-							jpl.Name AS JobName,
-							MAX(jpl.StartDateTime) AS StartDateTime
-						FROM dbo.fhsmAgentJobsPerformanceLatest AS jpl
-						GROUP BY jpl.Name
-						ORDER BY jpl.Name;
+							jw.Name AS JobName,
+							(
+								DATEPART(YEAR, jw.StartDateTime) * 10000
+								+ DATEPART(MONTH, jw.StartDateTime) * 100
+								+ DATEPART(DAY, jw.StartDateTime)
+							) AS StartRunDate,
+							(
+								DATEPART(HOUR, jw.StartDateTime) * 10000
+								+ DATEPART(MINUTE, jw.StartDateTime) * 100
+								+ DATEPART(SECOND, jw.StartDateTime)
+							) AS StartRunTime
+						FROM dbo.fhsmAgentJobsWatermark AS jw
+						ORDER BY jw.Name;
 
 						OPEN jCur;
 
@@ -853,20 +979,18 @@ ELSE BEGIN
 						WHILE (1 = 1)
 						BEGIN
 							FETCH NEXT FROM jCur
-							INTO @jobName, @startDateTime;
+							INTO @jobName, @startRunDate, @startRunTime;
 
 							IF (@@FETCH_STATUS <> 0)
 							BEGIN
 								BREAK;
 							END;
 
-							SET @startDateTimeTxt = CONVERT(nvarchar, @startDateTime, 126);
-
 							IF (@whereStmt1 <> '''')
 							BEGIN
 								SET @whereStmt1 += ''OR '';
 							END;
-							SET @whereStmt1 += ''((sj.name = '''''' + @jobName + '''''') AND (ajt.StartDateTime >= '''''' + @startDateTimeTxt + ''''''))'' + CHAR(13);;
+							SET @whereStmt1 += ''((sj.name = '''''' + @jobName + '''''') AND (((sj.run_date = '' + CAST(@startRunDate AS nvarchar) + '') AND (sj.run_time >= '' + CAST(@startRunTime AS nvarchar) + '')) OR (sj.run_date > '' + CAST(@startRunDate AS nvarchar) + '')))'' + CHAR(13);;
 
 							IF (@whereStmt2 <> '''')
 							BEGIN
@@ -899,11 +1023,25 @@ ELSE BEGIN
 					BEGIN
 						DECLARE jCur CURSOR LOCAL READ_ONLY FAST_FORWARD FOR
 						SELECT
-							jple.Name AS JobName,
-							MAX(jple.StartDateTime) AS StartDateTime
-						FROM dbo.fhsmAgentJobsPerformanceLatestError AS jple
-						GROUP BY jple.Name
-						ORDER BY jple.Name;
+							jw.JobName,
+							(
+								DATEPART(YEAR, jw.StartDateTime) * 10000
+								+ DATEPART(MONTH, jw.StartDateTime) * 100
+								+ DATEPART(DAY, jw.StartDateTime)
+							) AS StartRunDate,
+							(
+								DATEPART(HOUR, jw.StartDateTime) * 10000
+								+ DATEPART(MINUTE, jw.StartDateTime) * 100
+								+ DATEPART(SECOND, jw.StartDateTime)
+							) AS StartRunTime
+						FROM (
+							SELECT
+								jple.Name AS JobName,
+								MAX(jple.StartDateTime) AS StartDateTime
+							FROM dbo.fhsmAgentJobsPerformanceLatestError AS jple
+							GROUP BY jple.Name
+						) AS jw
+						ORDER BY jw.JobName;
 
 						OPEN jCur;
 
@@ -913,20 +1051,18 @@ ELSE BEGIN
 						WHILE (1 = 1)
 						BEGIN
 							FETCH NEXT FROM jCur
-							INTO @jobName, @startDateTime;
+							INTO @jobName, @startRunDate, @startRunTime;
 
 							IF (@@FETCH_STATUS <> 0)
 							BEGIN
 								BREAK;
 							END;
 
-							SET @startDateTimeTxt = CONVERT(nvarchar, @startDateTime, 126);
-
 							IF (@whereStmtError1 <> '''')
 							BEGIN
 								SET @whereStmtError1 += ''OR '';
 							END;
-							SET @whereStmtError1 += ''((sj.name = '''''' + @jobName + '''''') AND (ajt.StartDateTime > '''''' + @startDateTimeTxt + ''''''))'' + CHAR(13);;
+							SET @whereStmtError1 += ''((sj.name = '''''' + @jobName + '''''') AND (((sjh.run_date = '' + CAST(@startRunDate AS nvarchar) + '') AND (sjh.run_time > '' + CAST(@startRunTime AS nvarchar) + '')) OR (sjh.run_date > '' + CAST(@startRunDate AS nvarchar) + '')))'' + CHAR(13);;
 
 							IF (@whereStmtError2 <> '''')
 							BEGIN
@@ -957,10 +1093,6 @@ ELSE BEGIN
 					-- Collect data
 					--
 					BEGIN
-						SELECT
-							@now = SYSDATETIME()
-							,@nowUTC = SYSUTCDATETIME();
-
 						--
 						-- Collect data into temp table
 						--
@@ -1017,11 +1149,15 @@ ELSE BEGIN
 									,jrn.run_time
 									,jrn.run_duration
 									,jrn.run_status
-									,COALESCE(prevJRN.instance_id, 0) AS PrevInstanceId
+									,COALESCE(prevJRN.instance_id, 0)          AS PrevInstanceId
+									,COALESCE(nextJRN.instance_id, 2147483647) AS NextInstanceId
 								FROM jrn
 								LEFT OUTER JOIN jrn AS prevJRN ON
 									(prevJRN.job_id = jrn.job_id)
 									AND (prevJRN.JobRunNumber = jrn.JobRunNumber - 1)
+								LEFT OUTER JOIN jrn AS nextJRN ON
+									(nextJRN.job_id = jrn.job_id)
+									AND (nextJRN.JobRunNumber = jrn.JobRunNumber + 1)
 							'';
 						END
 						ELSE BEGIN
@@ -1036,7 +1172,8 @@ ELSE BEGIN
 									,jrn.run_time
 									,jrn.run_duration
 									,jrn.run_status
-									,LAG(jrn.instance_id, 1, 0) OVER(PARTITION BY jrn.job_id ORDER BY jrn.JobRunNumber) AS PrevInstanceId
+									,LAG(jrn.instance_id, 1, 0)           OVER(PARTITION BY jrn.job_id ORDER BY jrn.JobRunNumber) AS PrevInstanceId
+									,LEAD(jrn.instance_id, 1, 2147483647) OVER(PARTITION BY jrn.job_id ORDER BY jrn.JobRunNumber) AS NextInstanceId
 								FROM (
 									SELECT
 										sj.name
@@ -1060,6 +1197,15 @@ ELSE BEGIN
 							) AS sj
 							CROSS APPLY dbo.fhsmFNAgentJobTime(sj.run_date, sj.run_time, sj.run_duration) AS ajt
 							WHERE (1 = 1)
+								AND EXISTS (
+									SELECT *
+									FROM msdb.dbo.sysjobhistory AS sjh
+									WHERE (sjh.job_id =  sj.job_id)
+										AND (sjh.instance_id > sj.PrevInstanceId)
+										AND (sjh.instance_id < sj.NextInstanceId)
+										AND (sjh.step_id <> 0)
+										'' + @parameterStmt + ''
+								)
 								'' + @whereStmt + '';
 						'';
 						EXEC sp_executesql
@@ -1127,9 +1273,8 @@ ELSE BEGIN
 							CROSS APPLY (
 								SELECT TOP 1 job.run_duration
 								FROM msdb.dbo.sysjobhistory AS job
-								CROSS APPLY dbo.fhsmFNAgentJobTime(job.run_date, job.run_time, job.run_duration) AS ajtParent
-								WHERE (job.job_id = sj.job_id) AND (job.step_id = 0) AND (ajtParent.StartDateTime <= ajt.StartDateTime)
-								ORDER BY ajtParent.StartDateTime DESC
+								WHERE (job.job_id = sj.job_id) AND (job.step_id = 0) AND (((job.run_date = sjh.run_date) AND (job.run_time <= sjh.run_time)) OR (job.run_date < sjh.run_date))
+								ORDER BY job.run_date DESC, job.run_time DESC
 							) AS job
 							WHERE (1 = 1)
 								AND (sjh.run_status NOT IN (1, 4))	-- Ignore 1:Succeeded and 4:In progress
@@ -1147,7 +1292,7 @@ ELSE BEGIN
 			SET @stmt += '
 					--
 					-- Check if the newest record (Rnk = 1) in dbo.fhsmAgentJobsPerformanceLatest exists in dbo.fhsmAgentJobsPerformanceDelta
-					-- If not we are running to slow, or the SQL Server agent must have its Histiry settings changed
+					-- If not we are running to slow, or the SQL Server agent must have its History settings changed
 					-- We will only record one per hour bucket
 					--
 					BEGIN
@@ -1271,6 +1416,34 @@ ELSE BEGIN
 					END;
 			';
 			SET @stmt += '
+					--
+					-- Load latest watermark into table
+					--
+					BEGIN
+						MERGE dbo.fhsmAgentJobsWatermark AS tgt
+						USING (
+							SELECT
+								jw.Name,
+								jw.StartDateTime,
+								@nowUTC AS TimestampUTC,
+								@now AS Timestamp
+							FROM #jobsWatermark AS jw
+						) AS src
+						ON (src.Name COLLATE DATABASE_DEFAULT = tgt.Name)
+						WHEN MATCHED
+							THEN
+							UPDATE
+							SET
+								tgt.StartDateTime = src.StartDateTime,
+								tgt.TimestampUTC = src.TimestampUTC,
+								tgt.Timestamp = src.Timestamp
+						WHEN NOT MATCHED
+							THEN
+							INSERT(Name, StartDateTime, TimestampUTC, Timestamp)
+							VALUES(src.Name, src.StartDateTime, src.TimestampUTC, src.Timestamp);
+					END;
+			';
+			SET @stmt += '
 					RETURN 0;
 				END;
 			';
@@ -1333,7 +1506,7 @@ ELSE BEGIN
 					SET @version = ''' + @version + ''';
 			';
 			SET @stmt += '
-					IF (@Type = ''Parameter'')
+					IF (@Type = ''parameter'')
 					BEGIN
 						IF (@Command = ''set'')
 						BEGIN
@@ -1403,7 +1576,7 @@ ELSE BEGIN
 					END
 			';
 			SET @stmt += '
-					ELSE IF (@Type = ''Uninstall'')
+					ELSE IF (@Type = ''uninstall'')
 					BEGIN
 						--
 						-- Place holder
@@ -1556,6 +1729,6 @@ ELSE BEGIN
 	-- Update dimensions based upon the fact tables
 	--
 	BEGIN
-		EXEC dbo.fhsmSPUpdateDimensions @table = 'dbo.fhsmAgentJobsPerformance';
+		EXEC dbo.fhsmSPUpdateDimensions @table = 'dbo.fhsmAgentJobsPerformance', @ignoreAutoIndex = @ignoreAutoIndex;
 	END;
 END;

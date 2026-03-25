@@ -1,0 +1,84 @@
+table 'Memory grants pending'
+	lineageTag: 50083208-6c54-49d7-91c6-1ffc76e6a340
+
+	column CounterValue
+		dataType: double
+		isHidden
+		lineageTag: 0b45e5d8-4321-4f6f-8064-45706740499d
+		summarizeBy: none
+		sourceColumn: CounterValue
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column Timestamp
+		dataType: dateTime
+		formatString: dd-mmm-yyyy hh:nn:ss
+		lineageTag: 1fa2df55-d7fe-45d3-b385-6e6cf79bc5f3
+		summarizeBy: none
+		sourceColumn: Timestamp
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isCustom":true}
+
+	column Date
+		dataType: dateTime
+		isHidden
+		formatString: Long Date
+		lineageTag: 4b8fbf1a-e76b-45e9-a625-e237e15ef1d5
+		summarizeBy: none
+		sourceColumn: Date
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column TimeKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: b9c9a955-c263-46d6-b937-f714c9e98da8
+		summarizeBy: none
+		sourceColumn: TimeKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Memory grants pending' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Performance statistics")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db     = dbList{[Name = #"Database name"]}[Data], 
+				  table  = db{[Schema = #"Schema name", Item = "Memory grants pending"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  selectColumns = Table.SelectColumns(
+				    datasetToUse, 
+				    {
+				      "CounterValue", 
+				      "Timestamp", 
+				      "Date", 
+				      "TimeKey"
+				    }
+				  )
+				in
+				  selectColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

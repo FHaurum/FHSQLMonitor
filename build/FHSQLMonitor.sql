@@ -1,24 +1,27 @@
 USE master;
 
+SET NOCOUNT ON;
+
 --
--- FHSQLMonitor v2.11.1.1 - 2026.02.16 10:50:20
+-- FHSQLMonitor v2.12.0 - 2026.03.22 08.58.37
 --
 
 BEGIN
 	--
 	-- Installation parameters - They are used both during a fresh installation and during an update
 	--
-	DECLARE @fhSQLMonitorDatabase nvarchar(128) = 'FHSQLMonitor';
-	DECLARE @pbiSchema            nvarchar(128) = 'FHSM';
-	DECLARE @olaDatabase          nvarchar(128) = NULL;
+	DECLARE @fhSQLMonitorDatabase           nvarchar(128) = 'FHSQLMonitor';
+	DECLARE @pbiSchema                      nvarchar(128) = 'FHSM';
+	DECLARE @olaDatabase                    nvarchar(128) = NULL;
 
 	--
 	-- Service parameters - They are only used during a fresh installation and not during an update
 	--   When updating the already configured values in the tables dbo.fhsmSchedules and dbo.fhsmRetentions remains unchanged
 	--
-	DECLARE @createSQLAgentJob          bit           = 1;
-	DECLARE @blocksAndDeadlocksFilePath nvarchar(260) = NULL;
-	DECLARE @fhsqlAgentJobName          nvarchar(128) = 'FHSQLMonitor in ' + @fhSQLMonitorDatabase;
+	DECLARE @createSQLAgentJobs             bit           = 1;
+	DECLARE @blocksAndDeadlocksFilePath     nvarchar(260) = NULL;
+	DECLARE @fhsqlAgentJobNameType0         nvarchar(128) = 'FHSQLMonitor type 0 in ' + @fhSQLMonitorDatabase;
+	DECLARE @fhsqlAgentJobNameType1         nvarchar(128) = 'FHSQLMonitor type 1 in ' + @fhSQLMonitorDatabase;
 
 	DECLARE @enableAgentJobs                bit = 1;
 	DECLARE @enableAgentJobsPerformance     bit = 1;
@@ -63,6 +66,10 @@ DECLARE @installationNow datetime;
 DECLARE @installationNowStr nvarchar(max);
 DECLARE @installationWaitCnt int;
 DECLARE @installUpgradeFlag int;
+DECLARE @jobDisabledFlag bit;
+DECLARE @jobName nvarchar(128);
+DECLARE @jobStatus int;
+DECLARE @jobs TABLE(JobName nvarchar(128), JobStatus int);
 DECLARE @serverInfo nvarchar(max);
 DECLARE @stmt nvarchar(max);
 
@@ -75,110 +82,268 @@ ELSE BEGIN
 
 	SET @stmt = 'SET @currentVersion = ' + QUOTENAME(@fhSQLMonitorDatabase) + '.dbo.fhsmFNGetConfiguration(''Version'');';
 	EXEC sp_executesql @stmt, N'@currentVersion nvarchar(128) OUTPUT', @currentVersion = @currentVersion OUTPUT;
-	SET @currentVersion = COALESCE(@currentVersion, 'N.A.');
+	SET @currentVersion = COALESCE('v' + @currentVersion, 'N.A.');
+	SET @stmt = '
+		USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
 
-	SET @stmt = 'SET @currentAgentJobName = ' + QUOTENAME(@fhSQLMonitorDatabase) + '.dbo.fhsmFNGetConfiguration(''AgentJobName'');';
-	EXEC sp_executesql @stmt, N'@currentAgentJobName nvarchar(128) OUTPUT', @currentAgentJobName = @currentAgentJobName OUTPUT;
-	SET @fhsqlAgentJobName = COALESCE(@currentAgentJobName, @fhsqlAgentJobName);
+		IF NOT EXISTS(SELECT * FROM dbo.fhsmConfigurations AS c WHERE (c.[Key] LIKE ''AgentJobName%''))
+		BEGIN
+			INSERT INTO dbo.fhsmConfigurations([Key], Value)
+			VALUES(''AgentJobName'', ''FHSQLMonitor in FHSQLMonitor'');
+		END;
+	';
+	EXEC(@stmt);
+	SET @stmt = '
+		USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
+
+		SELECT c.Value
+		FROM dbo.fhsmConfigurations AS c
+		WHERE (c.[Key] = ''AgentJobName'') OR (c.[Key] LIKE ''AgentJobName[01]'')
+		ORDER BY c.[Key];
+	';
+	INSERT INTO @jobs(JobName)
+	EXEC(@stmt);
 END;
 
 SET @serverInfo = @@SERVERNAME;
 
 RAISERROR('', 0, 1) WITH NOWAIT;
-SET @installationMsg = CASE @installUpgradeFlag WHEN 1 THEN 'Install version v2.11.1.1' + ' of' ELSE 'Upgrade' END + ' FHSQLMonitor in database ' + @fhSQLMonitorDatabase + ' on ' + @serverInfo + ' ' + CASE @installUpgradeFlag WHEN 1 THEN '' ELSE 'from ' + @currentVersion + ' to v2.11.1.1' END;
+SET @installationMsg = CASE @installUpgradeFlag WHEN 1 THEN 'Install version v2.12.0' + ' of' ELSE 'Upgrade' END + ' FHSQLMonitor in database ' + @fhSQLMonitorDatabase + ' on ' + @serverInfo + ' ' + CASE @installUpgradeFlag WHEN 1 THEN '' ELSE 'from ' + @currentVersion + ' to v2.12.0' END;
 RAISERROR(@installationMsg, 0, 1) WITH NOWAIT;
 
 --
--- Get job enabled status
+-- Get job enabled status and disable if executing
 --
 BEGIN
-	SET @installationJobStatus =
-		COALESCE(
-			(
-				SELECT sj.enabled
-				FROM msdb.dbo.sysjobs AS sj
-				WHERE (sj.name = @fhsqlAgentJobName)
-			),
-			-1
-		);
+	SET @jobDisabledFlag = 0;
 
-	IF (@installationJobStatus IN (0, 1))
+	DECLARE jCur CURSOR LOCAL READ_ONLY FAST_FORWARD FOR
+	SELECT j.JobName
+	FROM @jobs AS j
+	ORDER BY j.JobName;
+
+	OPEN jCur;
+
+	WHILE (1 = 1)
 	BEGIN
-       RAISERROR('', 0, 1) WITH NOWAIT;
-		SET @installationMsg = 'Agent job ' + QUOTENAME(@fhsqlAgentJobName) + ' is ' + CASE @installationJobStatus WHEN 1 THEN 'enabled' WHEN 0 THEN 'disabled' END;
-		RAISERROR(@installationMsg, 0, 1) WITH NOWAIT;
-	END;
-END;
+		FETCH NEXT FROM jCur
+		INTO @jobName;
 
---
--- Disable job if enabled
---
-IF (@installationJobStatus = 1)
-BEGIN
-   RAISERROR('', 0, 1) WITH NOWAIT;
-	SET @installationMsg = 'Disabling job ' + QUOTENAME(@fhsqlAgentJobName);
-	RAISERROR(@installationMsg, 0, 1) WITH NOWAIT;
-
-	EXEC msdb.dbo.sp_update_job
-		@job_name = @fhsqlAgentJobName,
-		@enabled = 0;
-
-	WAITFOR DELAY '00:00:10';
-END;
-
---
--- Wait until job has stopped executing
---
-BEGIN
-	SET @installationWaitCnt = 0;
-
-	SET @installationJobExecuting = 'Running';
-
-	WHILE (@installationJobExecuting = 'Running')
-	BEGIN
-		SET @installationJobExecuting = (
-			SELECT
-				TOP 1
-				CASE
-					WHEN ja.job_id IS NOT NULL AND ja.stop_execution_date IS NULL THEN 'Running'
-					WHEN jh.run_status = 0 THEN 'Failed'
-					WHEN jh.run_status = 1 THEN 'Succeeded'
-					WHEN jh.run_status = 2 THEN 'Retry'
-					WHEN jh.run_status = 3 THEN 'Cancelled'
-				END AS JobLastOutcome
-			FROM msdb.dbo.sysjobs AS j
-			LEFT JOIN msdb.dbo.sysjobactivity AS ja ON
-				(ja.job_id = j.job_id)
-				AND (ja.run_requested_date IS NOT NULL)
-				AND (ja.start_execution_date IS NOT NULL)
-			LEFT JOIN msdb.dbo.sysjobsteps AS js ON
-				(js.job_id = ja.job_id)
-				AND (js.step_id = ja.last_executed_step_id)
-			LEFT JOIN msdb.dbo.sysjobhistory AS jh ON
-				(jh.job_id = j.job_id)
-				AND (jh.instance_id = ja.job_history_id)
-			WHERE j.name = @fhsqlAgentJobName
-			ORDER BY ja.start_execution_date DESC
-		);
-
-		IF (@installationJobExecuting = 'Running')
+		IF (@@FETCH_STATUS <> 0)
 		BEGIN
-			SET @installationWaitCnt = @installationWaitCnt + 1;
+			BREAK;
+		END;
 
-			SET @installationNow = GETDATE();
-			SET @installationNowStr = CONVERT(nvarchar, @installationNow, 126);
-			SET @installationNowStr = REPLACE(LEFT(@installationNowStr, LEN(@installationNowStr) - 4), 'T', ' ');
+		SET @installationJobStatus =
+			COALESCE(
+				(
+					SELECT sj.enabled
+					FROM msdb.dbo.sysjobs AS sj
+					WHERE (sj.name = @jobName)
+				),
+				-1
+			);
 
-			SET @installationMsg = '  Waiting for job ' + QUOTENAME(@fhsqlAgentJobName) + ' to stop executing - #:' + CAST(@installationWaitCnt AS nvarchar) + ' - ' + @installationNowStr;
+		UPDATE j
+		SET j.JobStatus = @installationJobStatus
+		FROM @jobs AS j
+		WHERE (j.JobName = @jobName);
+
+		IF (@installationJobStatus IN (0, 1))
+		BEGIN
+			RAISERROR('', 0, 1) WITH NOWAIT;
+			SET @installationMsg = 'Agent job ' + QUOTENAME(@jobName) + ' is ' + CASE @installationJobStatus WHEN 1 THEN 'enabled' WHEN 0 THEN 'disabled' END;
+			RAISERROR(@installationMsg, 0, 1) WITH NOWAIT;
+		END;
+
+		--
+		-- Disable job if enabled
+		--
+		IF (@installationJobStatus = 1)
+		BEGIN
+			SET @jobDisabledFlag = 1;
+
+			SET @installationMsg = 'Disabling job ' + QUOTENAME(@jobName);
 			RAISERROR(@installationMsg, 0, 1) WITH NOWAIT;
 
-			WAITFOR DELAY '00:00:05';
+			EXEC msdb.dbo.sp_update_job
+				@job_name = @jobName,
+				@enabled = 0;
 		END;
+	END;
+
+	CLOSE jCur;
+	DEALLOCATE jCur;
+
+	IF (@jobDisabledFlag = 1)
+	BEGIN
+		WAITFOR DELAY '00:00:10';
 	END;
 END;
 
 --
--- File part:_Install-FHSQLMonitor.sql modified: 2025.09.26 13.42.24
+-- Wait until jobs has stopped executing
+--
+BEGIN
+	DECLARE jCur CURSOR LOCAL READ_ONLY FAST_FORWARD FOR
+	SELECT j.JobName
+	FROM @jobs AS j
+	ORDER BY j.JobName;
+
+	OPEN jCur;
+
+	WHILE (1 = 1)
+	BEGIN
+		FETCH NEXT FROM jCur
+		INTO @jobName;
+
+		IF (@@FETCH_STATUS <> 0)
+		BEGIN
+			BREAK;
+		END;
+
+		SET @installationWaitCnt = 0;
+
+		SET @installationJobExecuting = 'Running';
+
+		WHILE (@installationJobExecuting = 'Running')
+		BEGIN
+			SET @installationJobExecuting = (
+				SELECT
+					TOP 1
+					CASE
+						WHEN ja.job_id IS NOT NULL AND ja.stop_execution_date IS NULL THEN 'Running'
+						WHEN jh.run_status = 0 THEN 'Failed'
+						WHEN jh.run_status = 1 THEN 'Succeeded'
+						WHEN jh.run_status = 2 THEN 'Retry'
+						WHEN jh.run_status = 3 THEN 'Cancelled'
+					END AS JobLastOutcome
+				FROM msdb.dbo.sysjobs AS j
+				LEFT JOIN msdb.dbo.sysjobactivity AS ja ON
+					(ja.job_id = j.job_id)
+					AND (ja.run_requested_date IS NOT NULL)
+					AND (ja.start_execution_date IS NOT NULL)
+				LEFT JOIN msdb.dbo.sysjobsteps AS js ON
+					(js.job_id = ja.job_id)
+					AND (js.step_id = ja.last_executed_step_id)
+				LEFT JOIN msdb.dbo.sysjobhistory AS jh ON
+					(jh.job_id = j.job_id)
+					AND (jh.instance_id = ja.job_history_id)
+				WHERE j.name = @jobName
+				ORDER BY ja.start_execution_date DESC
+			);
+
+			IF (@installationJobExecuting = 'Running')
+			BEGIN
+				SET @installationWaitCnt = @installationWaitCnt + 1;
+
+				SET @installationNow = GETDATE();
+				SET @installationNowStr = CONVERT(nvarchar, @installationNow, 126);
+				SET @installationNowStr = REPLACE(LEFT(@installationNowStr, LEN(@installationNowStr) - 4), 'T', ' ');
+
+				SET @installationMsg = '  Waiting for job ' + QUOTENAME(@jobName) + ' to stop executing - #:' + CAST(@installationWaitCnt AS nvarchar) + ' - ' + @installationNowStr;
+				RAISERROR(@installationMsg, 0, 1) WITH NOWAIT;
+
+				WAITFOR DELAY '00:00:05';
+			END;
+		END;
+	END;
+
+	CLOSE jCur;
+	DEALLOCATE jCur;
+END;
+
+--
+-- Rename key for AgentJobName, and the job and schedules names when upgrading from versions before 2.12
+--
+IF (@installUpgradeFlag = 2)
+BEGIN
+	SET @stmt = '
+		USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
+
+		SET @jobName = NULL;
+
+		IF EXISTS (
+			SELECT *
+			FROM dbo.fhsmConfigurations AS c
+			WHERE (c.[Key] = ''AgentJobName'')
+		)
+		BEGIN
+			UPDATE c
+			SET c.[Key] = ''AgentJobName0''
+			FROM dbo.fhsmConfigurations AS c
+			WHERE (c.[Key] = ''AgentJobName'');
+
+			SET @jobName = (
+				SELECT c.Value
+				FROM dbo.fhsmConfigurations AS c
+				WHERE (c.[Key] = ''AgentJobName0'')
+			);
+
+			IF EXISTS(
+				SELECT *
+				FROM msdb.dbo.sysjobs AS sj
+				WHERE (sj.name = @jobName)
+			)
+			BEGIN
+				EXEC msdb.dbo.sp_update_job @job_name = @jobName, @new_name = @new_name;
+
+				UPDATE c
+				SET c.Value = @new_name
+				FROM dbo.fhsmConfigurations AS c
+				WHERE (c.[Key] = ''AgentJobName0'');
+			END;
+
+			IF EXISTS(
+				SELECT *
+				FROM msdb.dbo.sysschedules AS ss
+				WHERE (ss.name = @jobName)
+			)
+			BEGIN
+				EXEC msdb.dbo.sp_update_schedule @name = @jobName, @new_name = @new_name;
+
+				IF EXISTS(
+					SELECT *
+					FROM msdb.dbo.sysschedules AS ss
+					WHERE (ss.name = @new_name)
+						AND (ss.freq_type = 4)
+						AND (ss.freq_interval = 1)
+						AND (ss.freq_subday_type = 2)
+						AND (ss.freq_subday_interval = 30)
+						AND (ss.freq_relative_interval = 0)
+						AND (ss.freq_recurrence_factor = 0)
+				)
+				BEGIN
+					EXEC msdb.dbo.sp_update_schedule
+						@name = @new_name
+						,@freq_subday_interval = 60;
+				END;
+			END;
+		END;
+	';
+	EXEC sp_executesql
+		@stmt,
+		N'@jobName sysname OUTPUT, @new_name sysname',
+		@jobName = @jobName OUTPUT,
+		@new_name = @fhsqlAgentJobNameType0;
+
+	IF (@jobName IS NOT NULL)
+	BEGIN
+		UPDATE j
+		SET j.JobName = @fhsqlAgentJobNameType0
+		FROM @jobs AS j
+		WHERE (j.JobName = @jobName);
+
+		INSERT INTO @jobs(JobName, JobStatus)
+		SELECT @fhsqlAgentJobNameType1, j.JobStatus
+		FROM @jobs AS j
+		WHERE (j.JobName = @fhsqlAgentJobNameType0)
+			AND NOT EXISTS (SELECT * FROM @jobs AS j WHERE (j.JobName = @fhsqlAgentJobNameType1));
+	END;
+END;
+
+--
+-- File part:_Install-FHSQLMonitor.sql modified: 2026.03.19 09.27.46
 --
 SET @stmt = '
 SET NOCOUNT ON;
@@ -187,17 +352,19 @@ SET NOCOUNT ON;
 -- Default installations parameters
 --
 BEGIN
-	DECLARE @createSQLAgentJob bit;
-	DECLARE @fhsqlAgentJobName nvarchar(128);
+	DECLARE @createSQLAgentJobs bit;
+	DECLARE @fhsqlAgentJobNameType0 nvarchar(128);
+	DECLARE @fhsqlAgentJobNameType1 nvarchar(128);
 	DECLARE @fhSQLMonitorDatabase nvarchar(128);
 	DECLARE @pbiSchema nvarchar(128);
 	DECLARE @buildTimeStr nvarchar(128);
 
-	SET @createSQLAgentJob = 1;
-	SET @fhsqlAgentJobName = ''FHSQLMonitor in FHSQLMonitor'';
+	SET @createSQLAgentJobs = 1;
+	SET @fhsqlAgentJobNameType0 = ''FHSQLMonitor type 0 in FHSQLMonitor'';
+	SET @fhsqlAgentJobNameType1 = ''FHSQLMonitor type 1 in FHSQLMonitor'';
 	SET @fhSQLMonitorDatabase = ''FHSQLMonitor'';
 	SET @pbiSchema = ''FHSM'';
-	SET @buildTimeStr = ''YYYY.MM.DD HH.MM.SS'';
+	SET @buildTimeStr = ''YYYY-MM-DD HH:MM:SS'';
 END;
 
 --
@@ -216,6 +383,9 @@ END;
 -- Declare variables
 --
 BEGIN
+	DECLARE @agentJobKey nvarchar(128);
+	DECLARE @agentJobName nvarchar(128);
+	DECLARE @agentType int;
 	DECLARE @myUserName nvarchar(128);
 	DECLARE @nowUTC datetime;
 	DECLARE @nowUTCStr nvarchar(128);
@@ -227,7 +397,7 @@ BEGIN
 	SET @myUserName = SUSER_NAME();
 	SET @nowUTC = SYSUTCDATETIME();
 	SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
-	SET @version = ''2.11.1.1'';
+	SET @version = ''2.12.0'';
 END;
 
 --
@@ -820,7 +990,36 @@ ELSE BEGIN
 			cfg([Key], Value) AS(
 				SELECT
 					''''BuildTime''''
-					,'''''' + CAST(@buildTimeStr AS nvarchar) + ''''''
+					/*
+						2026-02-07 10:39:35
+						1234 67 90123 56 89
+					*/
+					,'''''' +
+						SUBSTRING(@buildTimeStr,  1, 4) + ''-'' +	-- YYYY
+						SUBSTRING(@buildTimeStr,  6, 2) + ''-'' +	-- MM
+						SUBSTRING(@buildTimeStr,  9, 5) + '':'' +	-- DD HH
+						SUBSTRING(@buildTimeStr, 15, 2) + '':'' +	-- MM
+						SUBSTRING(@buildTimeStr, 18, 2) +		-- SS
+					''''''
+			)
+			MERGE dbo.fhsmConfigurations AS tgt
+			USING cfg AS src ON (src.[Key] = tgt.[Key])
+			WHEN MATCHED
+				THEN UPDATE
+					SET tgt.Value = src.Value
+			WHEN NOT MATCHED BY TARGET
+				THEN INSERT([Key], Value)
+				VALUES(src.[Key], src.Value);
+
+			WITH
+			cfg([Key], Value) AS(
+				SELECT
+					''''InstallTime''''
+					/*
+						2026-02-07 10:39:35
+						1234567890123456789
+					*/
+					,LEFT(CONVERT(nvarchar, GETDATE(), 121), 19)
 			)
 			MERGE dbo.fhsmConfigurations AS tgt
 			USING cfg AS src ON (src.[Key] = tgt.[Key])
@@ -1251,6 +1450,7 @@ ELSE BEGIN
 
 					CREATE TABLE dbo.fhsmSchedules(
 						Id int identity(1,1) NOT NULL
+						,Type int NOT NULL CONSTRAINT DEF_fhsmSchedules_Type DEFAULT 0
 						,Enabled bit NOT NULL
 						,DeploymentStatus int NOT NULL CONSTRAINT DEF_fhsmSchedules_DeploymentStatus DEFAULT 0
 						,Name nvarchar(128) NOT NULL
@@ -1312,6 +1512,46 @@ ELSE BEGIN
 					RAISERROR(''''Renaming column [Parameters] on table dbo.fhsmSchedules to [Parameter]'''', 0, 1) WITH NOWAIT;
 
 					EXEC sp_rename ''''dbo.fhsmSchedules.Parameters'''', ''''Parameter'''', ''''COLUMN'''';
+				END;
+			'';
+			EXEC(@stmt);
+		END;
+
+		--
+		-- Adding column Type to table dbo.fhsmSchedules if it not already exists
+		--
+		BEGIN
+			SET @stmt = ''
+				USE '' + QUOTENAME(@fhSQLMonitorDatabase) + '';
+
+				DECLARE @stmt nvarchar(max);
+
+				IF NOT EXISTS (SELECT * FROM sys.columns AS c WHERE (c.object_id = OBJECT_ID(''''dbo.fhsmSchedules'''')) AND (c.name = ''''Type''''))
+				BEGIN
+					RAISERROR(''''Adding column [Type] to table dbo.fhsmSchedules'''', 0, 1) WITH NOWAIT;
+
+					SET @stmt = ''''
+						ALTER TABLE dbo.fhsmSchedules
+							ADD Type int NOT NULL CONSTRAINT DEF_fhsmSchedules_Type DEFAULT 0;
+					'''';
+					EXEC(@stmt);
+
+					--
+					-- Update tasks that by default should be configured as Type = 1
+					--
+					SET @stmt = ''''
+						UPDATE s
+						SET s.Type = 1
+						FROM dbo.fhsmSchedules AS s
+						WHERE (s.Task IN (''''''''fhsmSPLogShipping'''''''', ''''''''fhsmSPWhoIsActive''''''''))
+							AND (s.Type <> 1);
+					'''';
+					EXEC(@stmt);
+				END;
+
+				IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''''dbo.fhsmSchedules'''')) AND (i.name = ''''NC_fhsmSchedules_DeploymentStatus_Type''''))
+				BEGIN
+					CREATE NONCLUSTERED INDEX NC_fhsmSchedules_DeploymentStatus_Type ON dbo.fhsmSchedules(DeploymentStatus, Type)'' + @tableCompressionStmt + '';
 				END;
 			'';
 			EXEC(@stmt);
@@ -1930,16 +2170,17 @@ ELSE BEGIN
 									WHERE (ep.class = 1) AND (ep.name = ''''''''FHSMVersion'''''''')
 										AND ([Schema].name = ''''''''dbo'''''''')
 										AND (Object.name IN (
-											 ''''''''fhsmConfigurations'''''''',       ''''''''fhsmDimensions'''''''',             ''''''''fhsmLog'''''''',                ''''''''fhsmProcessing'''''''',             ''''''''fhsmRetentions''''''''
-											,''''''''fhsmSchedules'''''''',            ''''''''fhsmSPAgentJobControl'''''''',      ''''''''fhsmSPCleanup'''''''',          ''''''''fhsmSPControl'''''''',              ''''''''fhsmSPControlCleanup''''''''
-											,''''''''fhsmSPExtendedProperties'''''''', ''''''''fhsmSPLog'''''''',                  ''''''''fhsmSPProcessing'''''''',       ''''''''fhsmSPSchedules'''''''',            ''''''''fhsmSPUpdateDimensions''''''''
-											,''''''''fhsmFNAgentJobTime'''''''',       ''''''''fhsmFNGenerateKey'''''''',          ''''''''fhsmFNGetConfiguration'''''''', ''''''''fhsmFNGetExecutionDelaySec'''''''', ''''''''fhsmFNGetTaskParameter''''''''
-											,''''''''fhsmFNParseDatabasesStr'''''''',  ''''''''fhsmFNParseDimensionColumn'''''''', ''''''''fhsmFNSplitString'''''''',      ''''''''fhsmFNTryParseAsInt''''''''
+											 ''''''''fhsmConfigurations'''''''',     ''''''''fhsmDimensions'''''''',             ''''''''fhsmLog'''''''',                ''''''''fhsmProcessing'''''''',             ''''''''fhsmRetentions''''''''
+											,''''''''fhsmSchedules'''''''',          ''''''''fhsmSPAgentJobControl'''''''',      ''''''''fhsmSPCleanup'''''''',          ''''''''fhsmSPControl'''''''',              ''''''''fhsmSPControlCleanup''''''''
+											,''''''''fhsmSPControlSchedules'''''''', ''''''''fhsmSPExtendedProperties'''''''',   ''''''''fhsmSPLog'''''''',              ''''''''fhsmSPProcessing'''''''',           ''''''''fhsmSPSchedules''''''''
+											,''''''''fhsmSPUpdateDimensions''''''''
+											,''''''''fhsmFNAgentJobTime'''''''',     ''''''''fhsmFNGenerateKey'''''''',          ''''''''fhsmFNGetConfiguration'''''''', ''''''''fhsmFNGetExecutionDelaySec'''''''', ''''''''fhsmFNGetTaskParameter''''''''
+											,''''''''fhsmFNParseDatabasesStr'''''''',''''''''fhsmFNParseDimensionColumn'''''''', ''''''''fhsmFNSplitString'''''''',      ''''''''fhsmFNTryParseAsInt''''''''
 										))
 								) AS a
 							);
 
-							SET @retVal = CASE WHEN (@checkCount <> 24) THEN 0 ELSE 1 END;
+							SET @retVal = CASE WHEN (@checkCount <> 25) THEN 0 ELSE 1 END;
 
 							RETURN @retVal;
 						END;
@@ -2298,6 +2539,7 @@ ELSE BEGIN
 
 					SET @stmt = ''''
 						ALTER PROC dbo.fhsmSPAgentJobControl(
+							@jobName nvarchar(128),
 							@command nvarchar(8),
 							@jobStatus int OUTPUT
 						)
@@ -2307,13 +2549,10 @@ ELSE BEGIN
 			'';
 			SET @stmt += ''
 							DECLARE @jobExecuting nvarchar(16);
-							DECLARE @jobName nvarchar(128);
 							DECLARE @message nvarchar(max);
 							DECLARE @now datetime;
 							DECLARE @nowStr nvarchar(max);
 							DECLARE @waitCnt int;
-
-							SET @jobName = dbo.fhsmFNGetConfiguration(''''''''AgentJobName'''''''');
 
 							--
 							-- Get job enabled status
@@ -2464,6 +2703,438 @@ ELSE BEGIN
 	END;
 
 	--
+	-- Create or alter stored procedure dbo.fhsmSPViews
+	--
+	BEGIN
+		BEGIN
+			SET @stmt = ''
+				USE '' + QUOTENAME(@fhSQLMonitorDatabase) + '';
+
+				DECLARE @stmt nvarchar(max);
+
+				IF OBJECT_ID(''''dbo.fhsmSPViews'''', ''''P'''') IS NULL
+				BEGIN
+					RAISERROR(''''Creating stub stored procedure dbo.fhsmSPViews'''', 0, 1) WITH NOWAIT;
+
+					EXEC(''''CREATE PROC dbo.fhsmSPViews AS SELECT ''''''''dummy'''''''' AS Txt'''');
+				END;
+
+				--
+				-- Alter dbo.fhsmSPViews
+				--
+				BEGIN
+					RAISERROR(''''Alter stored procedure dbo.fhsmSPViews'''', 0, 1) WITH NOWAIT;
+
+					SET @stmt = ''''
+						ALTER PROC dbo.fhsmSPViews(
+							@view nvarchar(128),
+							@version sql_variant,
+							@nowUTC datetime
+						)
+						AS
+						BEGIN
+							SET NOCOUNT ON;
+
+							DECLARE @days int;
+							DECLARE @defaultViewLogDays int;
+							DECLARE @defaultViewLogNonDebugInfoDays int;
+							DECLARE @defaultViewLogNonDebugInfoRows int;
+							DECLARE @defaultViewLogRows int;
+							DECLARE @message nvarchar(max);
+							DECLARE @myUserName nvarchar(128);
+							DECLARE @noOfRows int;
+							DECLARE @nowUTCStr nvarchar(128);
+							DECLARE @objectName nvarchar(128);
+							DECLARE @pbiSchema nvarchar(128);
+							DECLARE @stmt nvarchar(max);
+
+							SET @myUserName = SUSER_NAME();
+
+							SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
+
+							SET @defaultViewLogDays = 1;
+							SET @defaultViewLogRows = 10000;
+							SET @defaultViewLogNonDebugInfoDays = 7;
+							SET @defaultViewLogNonDebugInfoRows = 1000;
+
+							SET @pbiSchema = (
+								SELECT c.Value
+								FROM dbo.fhsmConfigurations AS c
+								WHERE (c.[Key] = ''''''''PBISchema'''''''')
+							);
+							IF (@pbiSchema IS NULL)
+							BEGIN
+								RAISERROR(''''''''The configuration key ''''''''''''''''PBISchema'''''''''''''''' could not be found'''''''', 0, 1) WITH NOWAIT;
+								RETURN -1;
+							END;
+			'';
+			SET @stmt += ''
+							IF (@view = ''''''''Log'''''''')
+							BEGIN
+								SET @days = (
+									SELECT c.Value
+									FROM dbo.fhsmConfigurations AS c
+									WHERE (c.[Key] = ''''''''View.Log.Days'''''''')
+								);
+								IF (@days IS NULL)
+								BEGIN
+									INSERT INTO dbo.fhsmConfigurations([Key], Value)
+									VALUES(''''''''View.Log.Days'''''''', @defaultViewLogDays);
+
+									SET @days = @defaultViewLogDays;
+								END;
+								SET @days = ABS(@days) * -1;
+
+								SET @noOfRows = (
+									SELECT c.Value
+									FROM dbo.fhsmConfigurations AS c
+									WHERE (c.[Key] = ''''''''View.Log.Rows'''''''')
+								);
+								IF (@noOfRows IS NULL)
+								BEGIN
+									INSERT INTO dbo.fhsmConfigurations([Key], Value)
+									VALUES(''''''''View.Log.Rows'''''''', @defaultViewLogRows);
+
+									SET @noOfRows = @defaultViewLogRows;
+								END;
+								SET @noOfRows = ABS(@noOfRows);
+			'';
+			SET @stmt += ''
+								--
+								-- Create view @pbiSchema.[Log]
+								--
+								BEGIN
+									BEGIN
+										SET @stmt = ''''''''
+											IF OBJECT_ID('''''''''''''''''''''''' + QUOTENAME(@pbiSchema) + ''''''''.'''''''' + QUOTENAME(''''''''Log'''''''') + '''''''''''''''''''''''', ''''''''''''''''V'''''''''''''''') IS NULL
+											BEGIN
+												RAISERROR(''''''''''''''''Creating stub view '''''''' + QUOTENAME(@pbiSchema) + ''''''''.'''''''' + QUOTENAME(''''''''Log'''''''') + '''''''''''''''''''''''', 0, 1) WITH NOWAIT;
+
+												EXEC(''''''''''''''''CREATE VIEW '''''''' + QUOTENAME(@pbiSchema) + ''''''''.'''''''' + QUOTENAME(''''''''Log'''''''') + '''''''' AS SELECT ''''''''''''''''''''''''''''''''dummy'''''''''''''''''''''''''''''''' AS Txt'''''''''''''''');
+											END;
+										'''''''';
+										EXEC(@stmt);
+
+										SET @message = ''''''''Alter view '''''''' + QUOTENAME(@pbiSchema) + ''''''''.'''''''' + QUOTENAME(''''''''Log'''''''') + '''''''''''''''';
+										RAISERROR(@message, 0, 1) WITH NOWAIT;
+
+										SET @stmt = ''''''''
+											ALTER VIEW '''''''' + QUOTENAME(@pbiSchema) + ''''''''.[Log]
+											AS
+											SELECT
+												'''''''' + ''''''''TOP ('''''''' + CAST(@noOfRows AS nvarchar) + '''''''')'''''''' + ''''''''
+												l.Id
+												,l.Name
+												,l.Task
+												,l.Type
+												,l.Message
+												,l.TimestampUTC, l.Timestamp
+												,CAST(l.Timestamp AS date) AS Date
+												,(DATEPART(HOUR, l.Timestamp) * 60 * 60) + (DATEPART(MINUTE, l.Timestamp) * 60) + (DATEPART(SECOND, l.Timestamp)) AS TimeKey
+												,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(l.Task, l.Name, l.Version, DEFAULT, DEFAULT, DEFAULT) AS k) AS TaskNameVersionKey
+											FROM dbo.fhsmLog AS l
+											WHERE (1 = 1)
+												AND (l.TimestampUTC > DATEADD(DAY, '''''''' + CAST(@days AS nvarchar) + '''''''', (SELECT MAX(lMax.TimestampUTC) FROM dbo.fhsmLog AS lMax)))
+											ORDER BY l.TimestampUTC DESC;
+										'''''''';
+										EXEC(@stmt);
+									END;
+			'';
+			SET @stmt += ''
+									--
+									-- Register extended properties on fact view @pbiSchema.[Log]
+									--
+									BEGIN
+										SET @objectName = QUOTENAME(@pbiSchema) + ''''''''.'''''''' + QUOTENAME(''''''''Log'''''''');
+
+										SET @stmt = ''''''''
+											DECLARE @objName nvarchar(128);
+											DECLARE @schName nvarchar(128);
+
+											SET @objName = PARSENAME(@objectName, 1);
+											SET @schName = PARSENAME(@objectName, 2);
+
+											EXEC dbo.fhsmSPExtendedProperties @objectType = ''''''''''''''''View'''''''''''''''', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''''''''''''''''FHSMVersion'''''''''''''''', @propertyValue = @version;
+											EXEC dbo.fhsmSPExtendedProperties @objectType = ''''''''''''''''View'''''''''''''''', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''''''''''''''''FHSMCreated'''''''''''''''', @propertyValue = @nowUTCStr;
+											EXEC dbo.fhsmSPExtendedProperties @objectType = ''''''''''''''''View'''''''''''''''', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''''''''''''''''FHSMCreatedBy'''''''''''''''', @propertyValue = @myUserName;
+											EXEC dbo.fhsmSPExtendedProperties @objectType = ''''''''''''''''View'''''''''''''''', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''''''''''''''''FHSMModified'''''''''''''''', @propertyValue = @nowUTCStr;
+											EXEC dbo.fhsmSPExtendedProperties @objectType = ''''''''''''''''View'''''''''''''''', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''''''''''''''''FHSMModifiedBy'''''''''''''''', @propertyValue = @myUserName;
+										'''''''';
+										EXEC sp_executesql
+											@stmt
+											,N''''''''@objectName nvarchar(128), @version sql_variant, @nowUTCStr sql_variant, @myUserName sql_variant''''''''
+											,@objectName = @objectName
+											,@version = @version
+											,@nowUTCStr = @nowUTCStr
+											,@myUserName = @myUserName;
+									END;
+								END;
+							END
+			'';
+			SET @stmt += ''
+							ELSE IF (@view = ''''''''LogNonDebugInfo'''''''')
+							BEGIN
+								SET @days = (
+									SELECT c.Value
+									FROM dbo.fhsmConfigurations AS c
+									WHERE (c.[Key] = ''''''''View.LogNonDebugInfo.Days'''''''')
+								);
+								IF (@days IS NULL)
+								BEGIN
+									INSERT INTO dbo.fhsmConfigurations([Key], Value)
+									VALUES(''''''''View.LogNonDebugInfo.Days'''''''', @defaultViewLogNonDebugInfoDays);
+
+									SET @days = @defaultViewLogNonDebugInfoDays;
+								END;
+								SET @days = ABS(@days) * -1;
+
+								SET @noOfRows = (
+									SELECT c.Value
+									FROM dbo.fhsmConfigurations AS c
+									WHERE (c.[Key] = ''''''''View.LogNonDebugInfo.Rows'''''''')
+								);
+								IF (@noOfRows IS NULL)
+								BEGIN
+									INSERT INTO dbo.fhsmConfigurations([Key], Value)
+									VALUES(''''''''View.LogNonDebugInfo.Rows'''''''', @defaultViewLogNonDebugInfoRows);
+
+									SET @noOfRows = @defaultViewLogNonDebugInfoRows;
+								END;
+								SET @noOfRows = ABS(@noOfRows);
+			'';
+			SET @stmt += ''
+								--
+								-- Create view @pbiSchema.[LogNonDebugInfo]
+								--
+								BEGIN
+									BEGIN
+										SET @stmt = ''''''''
+											IF OBJECT_ID('''''''''''''''''''''''' + QUOTENAME(@pbiSchema) + ''''''''.'''''''' + QUOTENAME(''''''''LogNonDebugInfo'''''''') + '''''''''''''''''''''''', ''''''''''''''''V'''''''''''''''') IS NULL
+											BEGIN
+												RAISERROR(''''''''''''''''Creating stub view '''''''' + QUOTENAME(@pbiSchema) + ''''''''.'''''''' + QUOTENAME(''''''''LogNonDebugInfo'''''''') + '''''''''''''''''''''''', 0, 1) WITH NOWAIT;
+
+												EXEC(''''''''''''''''CREATE VIEW '''''''' + QUOTENAME(@pbiSchema) + ''''''''.'''''''' + QUOTENAME(''''''''LogNonDebugInfo'''''''') + '''''''' AS SELECT ''''''''''''''''''''''''''''''''dummy'''''''''''''''''''''''''''''''' AS Txt'''''''''''''''');
+											END;
+										'''''''';
+										EXEC(@stmt);
+
+										SET @message = ''''''''Alter view '''''''' + QUOTENAME(@pbiSchema) + ''''''''.'''''''' + QUOTENAME(''''''''LogNonDebugInfo'''''''') + '''''''''''''''';
+										RAISERROR(@message, 0, 1) WITH NOWAIT;
+
+										SET @stmt = ''''''''
+											ALTER VIEW '''''''' + QUOTENAME(@pbiSchema) + ''''''''.[LogNonDebugInfo]
+											AS
+											SELECT
+												'''''''' + ''''''''TOP ('''''''' + CAST(@noOfRows AS nvarchar) + '''''''')'''''''' + ''''''''
+												l.Id
+												,l.Name
+												,l.Task
+												,l.Type
+												,l.Message
+												,l.TimestampUTC, l.Timestamp
+												,CAST(l.Timestamp AS date) AS Date
+												,(DATEPART(HOUR, l.Timestamp) * 60 * 60) + (DATEPART(MINUTE, l.Timestamp) * 60) + (DATEPART(SECOND, l.Timestamp)) AS TimeKey
+												,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(l.Task, l.Name, l.Version, DEFAULT, DEFAULT, DEFAULT) AS k) AS TaskNameVersionKey
+											FROM dbo.fhsmLog AS l
+											WHERE (1 = 1)
+												AND (l.TimestampUTC > DATEADD(DAY, '''''''' + CAST(@days AS nvarchar) + '''''''', (SELECT MAX(lMax.TimestampUTC) FROM dbo.fhsmLog AS lMax)))
+												AND (l.Type NOT IN (''''''''''''''''Debug'''''''''''''''', ''''''''''''''''Info''''''''''''''''))
+											ORDER BY l.TimestampUTC DESC;
+										'''''''';
+										EXEC(@stmt);
+									END;
+			'';
+			SET @stmt += ''
+									--
+									-- Register extended properties on fact view @pbiSchema.[LogNonDebugInfo]
+									--
+									BEGIN
+										SET @objectName = QUOTENAME(@pbiSchema) + ''''''''.'''''''' + QUOTENAME(''''''''LogNonDebugInfo'''''''');
+
+										SET @stmt = ''''''''
+											DECLARE @objName nvarchar(128);
+											DECLARE @schName nvarchar(128);
+
+											SET @objName = PARSENAME(@objectName, 1);
+											SET @schName = PARSENAME(@objectName, 2);
+
+											EXEC dbo.fhsmSPExtendedProperties @objectType = ''''''''''''''''View'''''''''''''''', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''''''''''''''''FHSMVersion'''''''''''''''', @propertyValue = @version;
+											EXEC dbo.fhsmSPExtendedProperties @objectType = ''''''''''''''''View'''''''''''''''', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''''''''''''''''FHSMCreated'''''''''''''''', @propertyValue = @nowUTCStr;
+											EXEC dbo.fhsmSPExtendedProperties @objectType = ''''''''''''''''View'''''''''''''''', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''''''''''''''''FHSMCreatedBy'''''''''''''''', @propertyValue = @myUserName;
+											EXEC dbo.fhsmSPExtendedProperties @objectType = ''''''''''''''''View'''''''''''''''', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''''''''''''''''FHSMModified'''''''''''''''', @propertyValue = @nowUTCStr;
+											EXEC dbo.fhsmSPExtendedProperties @objectType = ''''''''''''''''View'''''''''''''''', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''''''''''''''''FHSMModifiedBy'''''''''''''''', @propertyValue = @myUserName;
+										'''''''';
+										EXEC sp_executesql
+											@stmt
+											,N''''''''@objectName nvarchar(128), @version sql_variant, @nowUTCStr sql_variant, @myUserName sql_variant''''''''
+											,@objectName = @objectName
+											,@version = @version
+											,@nowUTCStr = @nowUTCStr
+											,@myUserName = @myUserName;
+									END;
+								END;
+							END
+			'';
+			SET @stmt += ''
+							ELSE BEGIN
+								SET @message = ''''''''Invalid @View:'''''''''''''''''''''''' + @view + '''''''''''''''''''''''''''''''';
+								RAISERROR(@message, 0, 1) WITH NOWAIT;
+								RETURN -1;
+							END;
+						END;
+					'''';
+					EXEC(@stmt);
+				END;
+			'';
+			EXEC(@stmt);
+		END;
+
+		--
+		-- Register extended properties on the stored procedure dbo.fhsmSPViews
+		--
+		BEGIN
+			SET @objectName = ''dbo.fhsmSPViews'';
+
+			SET @stmt = ''
+				USE '' + QUOTENAME(@fhSQLMonitorDatabase) + '';
+			
+				DECLARE @objName nvarchar(128);
+				DECLARE @schName nvarchar(128);
+
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''''Procedure'''', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''''FHSMVersion'''', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''''Procedure'''', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''''FHSMCreated'''', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''''Procedure'''', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''''FHSMCreatedBy'''', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''''Procedure'''', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''''FHSMModified'''', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''''Procedure'''', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''''FHSMModifiedBy'''', @propertyValue = @myUserName;
+			'';
+			EXEC sp_executesql
+				@stmt
+				,N''@objectName nvarchar(128), @version sql_variant, @nowUTCStr sql_variant, @myUserName sql_variant''
+				,@objectName = @objectName
+				,@version = @version
+				,@nowUTCStr = @nowUTCStr
+				,@myUserName = @myUserName;
+		END;
+	END;
+
+	--
+	-- Create or alter stored procedure dbo.fhsmSPLog
+	--
+	BEGIN
+		BEGIN
+			SET @stmt = ''
+				USE '' + QUOTENAME(@fhSQLMonitorDatabase) + '';
+
+				DECLARE @stmt nvarchar(max);
+
+				IF OBJECT_ID(''''dbo.fhsmSPLog'''', ''''P'''') IS NULL
+				BEGIN
+					RAISERROR(''''Creating stub stored procedure dbo.fhsmSPLog'''', 0, 1) WITH NOWAIT;
+
+					EXEC(''''CREATE PROC dbo.fhsmSPLog AS SELECT ''''''''dummy'''''''' AS Txt'''');
+				END;
+
+				--
+				-- Alter dbo.fhsmSPLog
+				--
+				BEGIN
+					RAISERROR(''''Alter stored procedure dbo.fhsmSPLog'''', 0, 1) WITH NOWAIT;
+
+					SET @stmt = ''''
+						ALTER PROC dbo.fhsmSPLog(
+							@name nvarchar(128)
+							,@version nvarchar(128) = NULL
+							,@task nvarchar(128)
+							,@type nvarchar(16)
+							,@message nvarchar(max)
+							,@id int = NULL OUTPUT
+						)
+						AS
+						BEGIN
+							SET NOCOUNT ON;
+
+							DECLARE @logFilter nvarchar(max);
+							DECLARE @printMessage nvarchar(max);
+
+							SET @printMessage = @name + '''''''': '''''''' + COALESCE(@version, ''''''''N.A.'''''''') + '''''''': '''''''' + @task + '''''''': '''''''' + @type + '''''''': '''''''' + @message;
+							PRINT @printMessage;
+
+							IF (@id IS NULL)
+							BEGIN
+								SET @logFilter = (
+									SELECT c.Value
+									FROM dbo.fhsmConfigurations AS c
+									WHERE (c.[Key] = ''''''''LogFilter'''''''')
+								);
+
+								IF EXISTS(
+									SELECT 1
+									WHERE (@message LIKE @logFilter)
+								)
+								BEGIN
+									SET @id = 0;
+									SET @printMessage = ''''''''Ignored by log filter: '''''''' + @printMessage;
+									PRINT @printMessage;
+								END
+								ELSE BEGIN
+									INSERT INTO dbo.fhsmLog(Name, Version, Task, Type, Message)
+									VALUES (@name, @version, @task, @type, @message);
+
+									SET @id = SCOPE_IDENTITY();
+								END;
+							END
+							ELSE BEGIN
+								UPDATE l
+								SET
+									l.Version = @version
+								FROM dbo.fhsmLog AS l
+								WHERE (l.Id = @id);
+							END;
+
+							RETURN @id;
+						END;
+					'''';
+					EXEC(@stmt);
+				END;
+			'';
+			EXEC(@stmt);
+		END;
+
+		--
+		-- Register extended properties on the stored procedure dbo.fhsmSPLog
+		--
+		BEGIN
+			SET @objectName = ''dbo.fhsmSPLog'';
+
+			SET @stmt = ''
+				USE '' + QUOTENAME(@fhSQLMonitorDatabase) + '';
+			
+				DECLARE @objName nvarchar(128);
+				DECLARE @schName nvarchar(128);
+
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''''Procedure'''', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''''FHSMVersion'''', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''''Procedure'''', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''''FHSMCreated'''', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''''Procedure'''', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''''FHSMCreatedBy'''', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''''Procedure'''', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''''FHSMModified'''', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''''Procedure'''', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''''FHSMModifiedBy'''', @propertyValue = @myUserName;
+			'';
+			EXEC sp_executesql
+				@stmt
+				,N''@objectName nvarchar(128), @version sql_variant, @nowUTCStr sql_variant, @myUserName sql_variant''
+				,@objectName = @objectName
+				,@version = @version
+				,@nowUTCStr = @nowUTCStr
+				,@myUserName = @myUserName;
+		END;
+	END;
+
+	--
 	-- Create or alter stored procedure dbo.fhsmSPControl
 	--
 	BEGIN
@@ -2502,6 +3173,7 @@ ELSE BEGIN
 							@NewValue nvarchar(128) = '''''''''''''''',
 							@Parameter nvarchar(max) = '''''''''''''''',
 							@Saturday bit = NULL,
+							@ScheduleType int = NULL,
 							@Sequence tinyint = NULL,
 							@Sunday bit = NULL,
 							@TableName nvarchar(128) = '''''''''''''''',
@@ -2512,13 +3184,15 @@ ELSE BEGIN
 							@Tuesday bit = NULL,
 							@Type nvarchar(16),
 							@Value nvarchar(128) = '''''''''''''''',
-							@Wednesday bit = NULL
+							@Wednesday bit = NULL,
+							@Wildcard bit = 1
 						)
 						AS
 						BEGIN
 							SET NOCOUNT ON;
 
 							DECLARE @message nvarchar(max);
+							DECLARE @nowUTC datetime;
 							DECLARE @retentionChanges TABLE(
 								Action nvarchar(10),
 								DeletedDays int,
@@ -2528,6 +3202,7 @@ ELSE BEGIN
 							);
 							DECLARE @scheduleChanges TABLE(
 								Action nvarchar(10),
+								DeletedType bit,
 								DeletedEnabled bit,
 								DeletedExecutionDelaySec int,
 								DeletedFromTime time(0),
@@ -2539,6 +3214,7 @@ ELSE BEGIN
 								DeletedFriday bit,
 								DeletedSaturday bit,
 								DeletedSunday bit,
+								InsertedType bit,
 								InsertedEnabled bit,
 								InsertedExecutionDelaySec int,
 								InsertedFromTime time(0),
@@ -2560,6 +3236,8 @@ ELSE BEGIN
 			SET @stmt += ''
 							SET @thisTask = OBJECT_NAME(@@PROCID);
 							SET @version = '''''''''' + @version + '''''''''';
+
+							SET @nowUTC = SYSDATETIME();
 
 							SET @Command    = LTRIM(RTRIM(@Command));
 							SET @Filter     = LTRIM(RTRIM(@Filter));
@@ -2603,15 +3281,26 @@ ELSE BEGIN
 										c.Value
 									FROM dbo.fhsmConfigurations AS c
 									WHERE (1 = 1)
-										AND ((c.[Key]   LIKE ''''''''%'''''''' + @Key   + ''''''''%'''''''') OR (@Key = ''''''''''''''''))
-										AND ((c.[Value] LIKE ''''''''%'''''''' + @Value + ''''''''%'''''''') OR (@Value = ''''''''''''''''))
+										AND (
+											(
+												    (@Wildcard = 0)
+												AND ((c.[Key]   = @Key)   OR (@Key = ''''''''''''''''))
+												AND ((c.[Value] = @Value) OR (@Value = ''''''''''''''''))
+											)
+											OR
+											(
+												    (@Wildcard = 1)
+												AND ((c.[Key]   LIKE ''''''''%'''''''' + @Key   + ''''''''%'''''''') OR (@Key = ''''''''''''''''))
+												AND ((c.[Value] LIKE ''''''''%'''''''' + @Value + ''''''''%'''''''') OR (@Value = ''''''''''''''''))
+											)
+										)
 									ORDER BY c.[Key];
 								END
 			'';
 			SET @stmt += ''
 								ELSE IF (@Command = ''''''''rename'''''''')
 								BEGIN
-									IF (@Key = ''''''''AgentJobName'''''''')
+									IF (@Key LIKE ''''''''AgentJobName[01]'''''''')
 									BEGIN
 										IF (@NewValue = '''''''''''''''')
 										BEGIN
@@ -2663,7 +3352,7 @@ ELSE BEGIN
 											WITH
 											cfg([Key], Value) AS(
 												SELECT
-													''''''''AgentJobName''''''''
+													@Key
 													,@NewValue
 											)
 											MERGE dbo.fhsmConfigurations AS tgt
@@ -2710,7 +3399,7 @@ ELSE BEGIN
 										END;
 									END
 									ELSE BEGIN
-										SET @message = ''''''''Set is not allowed for Configuration @Key:'''''''''''''''''''''''' + COALESCE(@Key, ''''''''<NULL>'''''''') + '''''''''''''''''''''''''''''''';
+										SET @message = ''''''''Rename is not allowed for Configuration @Key:'''''''''''''''''''''''' + COALESCE(@Key, ''''''''<NULL>'''''''') + '''''''''''''''''''''''''''''''';
 										RAISERROR(@message, 0, 1) WITH NOWAIT;
 										RETURN -15;
 									END;
@@ -2719,7 +3408,9 @@ ELSE BEGIN
 			SET @stmt += ''
 								ELSE IF (@Command = ''''''''set'''''''')
 								BEGIN
-									IF (@Key = ''''''''AgentJobName'''''''')
+			'';
+			SET @stmt += ''
+									IF (@Key LIKE ''''''''AgentJobName[01]'''''''')
 									BEGIN
 										IF NOT EXISTS (
 											SELECT *
@@ -2735,7 +3426,7 @@ ELSE BEGIN
 										WITH
 										cfg([Key], Value) AS(
 											SELECT
-												''''''''AgentJobName''''''''
+												@Key
 												,@Value
 										)
 										MERGE dbo.fhsmConfigurations AS tgt
@@ -2750,6 +3441,240 @@ ELSE BEGIN
 										SET @message = ''''''''Registered agent job name to '''''''''''''''''''''''' + @Value + '''''''''''''''''''''''''''''''';
 										EXEC dbo.fhsmSPLog @name = @thisTask, @version = @version, @task = @thisTask, @type = ''''''''Info'''''''', @message = @message;
 									END
+			'';
+			SET @stmt += ''
+									ELSE IF (@Key IN (''''''''View.ErrorLogs.Days'''''''', ''''''''View.ErrorLogs.Rows'''''''', ''''''''View.LogMessages.Days'''''''', ''''''''View.LogMessages.Rows''''''''))
+									BEGIN
+										IF (@Value IS NOT NULL) AND (dbo.fhsmFNTryParseAsInt(@Value) IS NULL)
+										BEGIN
+											SET @message = ''''''''Invalid  @Value:'''''''''''''''''''''''' + COALESCE(@Value, ''''''''<NULL>'''''''') + '''''''''''''''''''''''''''''''';
+											RAISERROR(@message, 0, 1) WITH NOWAIT;
+											RETURN -17;
+										END;
+
+										WITH
+										cfg([Key], Value) AS(
+											SELECT
+												@Key
+												,@Value
+										)
+										MERGE dbo.fhsmConfigurations AS tgt
+										USING cfg AS src ON (src.[Key] = tgt.[Key])
+										WHEN MATCHED AND (src.Value IS NOT NULL)
+											THEN UPDATE
+												SET tgt.Value = src.Value
+										WHEN MATCHED AND (src.Value IS NULL)
+											THEN DELETE
+										WHEN NOT MATCHED BY TARGET AND (src.Value IS NOT NULL)
+											THEN INSERT([Key], Value)
+											VALUES(src.[Key], src.Value);
+
+										IF (@Value IS NULL)
+										BEGIN
+											SET @message = ''''''''Configuration key:'''''''' + @Key + '''''''' removed'''''''';
+										END
+										ELSE BEGIN
+											SET @message = ''''''''Configuration key:'''''''' + @Key + '''''''' set to '''''''''''''''''''''''' + @Value + '''''''''''''''''''''''''''''''';
+										END;
+										EXEC dbo.fhsmSPLog @name = @thisTask, @version = @version, @task = @thisTask, @type = ''''''''Info'''''''', @message = @message;
+
+										IF (@Key IN (''''''''View.ErrorLogs.Days'''''''', ''''''''View.ErrorLogs.Rows''''''''))
+										BEGIN
+											EXEC dbo.fhsmSPViewsInstanceState @view = ''''''''ErrorLogs'''''''', @version = @version, @nowUTC = @nowUTC;
+										END
+										ELSE IF (@Key IN (''''''''View.LogMessages.Days'''''''', ''''''''View.LogMessages.Rows''''''''))
+										BEGIN
+											EXEC dbo.fhsmSPViewsInstanceState @view = ''''''''LogMessages'''''''', @version = @version, @nowUTC = @nowUTC;
+										END;
+									END
+			'';
+			SET @stmt += ''
+									ELSE IF (@Key IN (''''''''View.Log.Days'''''''', ''''''''View.Log.Rows''''''''))
+									BEGIN
+										IF (@Value IS NOT NULL) AND (dbo.fhsmFNTryParseAsInt(@Value) IS NULL)
+										BEGIN
+											SET @message = ''''''''Invalid  @Value:'''''''''''''''''''''''' + COALESCE(@Value, ''''''''<NULL>'''''''') + '''''''''''''''''''''''''''''''';
+											RAISERROR(@message, 0, 1) WITH NOWAIT;
+											RETURN -18;
+										END;
+
+										WITH
+										cfg([Key], Value) AS(
+											SELECT
+												@Key
+												,@Value
+										)
+										MERGE dbo.fhsmConfigurations AS tgt
+										USING cfg AS src ON (src.[Key] = tgt.[Key])
+										WHEN MATCHED AND (src.Value IS NOT NULL)
+											THEN UPDATE
+												SET tgt.Value = src.Value
+										WHEN MATCHED AND (src.Value IS NULL)
+											THEN DELETE
+										WHEN NOT MATCHED BY TARGET AND (src.Value IS NOT NULL)
+											THEN INSERT([Key], Value)
+											VALUES(src.[Key], src.Value);
+
+										IF (@Value IS NULL)
+										BEGIN
+											SET @message = ''''''''Configuration key:'''''''' + @Key + '''''''' removed'''''''';
+										END
+										ELSE BEGIN
+											SET @message = ''''''''Configuration key:'''''''' + @Key + '''''''' set to '''''''''''''''''''''''' + @Value + '''''''''''''''''''''''''''''''';
+										END;
+										EXEC dbo.fhsmSPLog @name = @thisTask, @version = @version, @task = @thisTask, @type = ''''''''Info'''''''', @message = @message;
+
+										EXEC dbo.fhsmSPViews @view = ''''''''Log'''''''', @version = @version, @nowUTC = @nowUTC;
+									END
+			'';
+			SET @stmt += ''
+									ELSE IF (@Key IN (''''''''View.LogNonDebugInfo.Days'''''''', ''''''''View.LogNonDebugInfo.Rows''''''''))
+									BEGIN
+										IF (@Value IS NOT NULL) AND (dbo.fhsmFNTryParseAsInt(@Value) IS NULL)
+										BEGIN
+											SET @message = ''''''''Invalid  @Value:'''''''''''''''''''''''' + COALESCE(@Value, ''''''''<NULL>'''''''') + '''''''''''''''''''''''''''''''';
+											RAISERROR(@message, 0, 1) WITH NOWAIT;
+											RETURN -19;
+										END;
+
+										WITH
+										cfg([Key], Value) AS(
+											SELECT
+												@Key
+												,@Value
+										)
+										MERGE dbo.fhsmConfigurations AS tgt
+										USING cfg AS src ON (src.[Key] = tgt.[Key])
+										WHEN MATCHED AND (src.Value IS NOT NULL)
+											THEN UPDATE
+												SET tgt.Value = src.Value
+										WHEN MATCHED AND (src.Value IS NULL)
+											THEN DELETE
+										WHEN NOT MATCHED BY TARGET AND (src.Value IS NOT NULL)
+											THEN INSERT([Key], Value)
+											VALUES(src.[Key], src.Value);
+
+										IF (@Value IS NULL)
+										BEGIN
+											SET @message = ''''''''Configuration key:'''''''' + @Key + '''''''' removed'''''''';
+										END
+										ELSE BEGIN
+											SET @message = ''''''''Configuration key:'''''''' + @Key + '''''''' set to '''''''''''''''''''''''' + @Value + '''''''''''''''''''''''''''''''';
+										END;
+										EXEC dbo.fhsmSPLog @name = @thisTask, @version = @version, @task = @thisTask, @type = ''''''''Info'''''''', @message = @message;
+
+										EXEC dbo.fhsmSPViews @view = ''''''''LogNonDebugInfo'''''''', @version = @version, @nowUTC = @nowUTC;
+									END
+			'';
+			SET @stmt += ''
+									ELSE IF (@Key IN (''''''''View.MemoryGrantsPending.Rows''''''''))
+									BEGIN
+										IF (@Value IS NOT NULL) AND (dbo.fhsmFNTryParseAsInt(@Value) IS NULL)
+										BEGIN
+											SET @message = ''''''''Invalid  @Value:'''''''''''''''''''''''' + COALESCE(@Value, ''''''''<NULL>'''''''') + '''''''''''''''''''''''''''''''';
+											RAISERROR(@message, 0, 1) WITH NOWAIT;
+											RETURN -20;
+										END;
+
+										WITH
+										cfg([Key], Value) AS(
+											SELECT
+												@Key
+												,@Value
+										)
+										MERGE dbo.fhsmConfigurations AS tgt
+										USING cfg AS src ON (src.[Key] = tgt.[Key])
+										WHEN MATCHED AND (src.Value IS NOT NULL)
+											THEN UPDATE
+												SET tgt.Value = src.Value
+										WHEN MATCHED AND (src.Value IS NULL)
+											THEN DELETE
+										WHEN NOT MATCHED BY TARGET AND (src.Value IS NOT NULL)
+											THEN INSERT([Key], Value)
+											VALUES(src.[Key], src.Value);
+
+										IF (@Value IS NULL)
+										BEGIN
+											SET @message = ''''''''Configuration key:'''''''' + @Key + '''''''' removed'''''''';
+										END
+										ELSE BEGIN
+											SET @message = ''''''''Configuration key:'''''''' + @Key + '''''''' set to '''''''''''''''''''''''' + @Value + '''''''''''''''''''''''''''''''';
+										END;
+										EXEC dbo.fhsmSPLog @name = @thisTask, @version = @version, @task = @thisTask, @type = ''''''''Info'''''''', @message = @message;
+
+										EXEC dbo.fhsmSPViewsPerformanceStatistics @view = ''''''''MemoryGrantsPending'''''''', @version = @version, @nowUTC = @nowUTC;
+									END
+			'';
+			SET @stmt += ''
+									ELSE IF (@Key IN (''''''''View.WhoIsActive.Hours'''''''', ''''''''View.WhoIsActive.Rows''''''''))
+									BEGIN
+										IF (@Value IS NOT NULL) AND (dbo.fhsmFNTryParseAsInt(@Value) IS NULL)
+										BEGIN
+											SET @message = ''''''''Invalid  @Value:'''''''''''''''''''''''' + COALESCE(@Value, ''''''''<NULL>'''''''') + '''''''''''''''''''''''''''''''';
+											RAISERROR(@message, 0, 1) WITH NOWAIT;
+											RETURN -21;
+										END;
+
+										WITH
+										cfg([Key], Value) AS(
+											SELECT
+												@Key
+												,@Value
+										)
+										MERGE dbo.fhsmConfigurations AS tgt
+										USING cfg AS src ON (src.[Key] = tgt.[Key])
+										WHEN MATCHED AND (src.Value IS NOT NULL)
+											THEN UPDATE
+												SET tgt.Value = src.Value
+										WHEN MATCHED AND (src.Value IS NULL)
+											THEN DELETE
+										WHEN NOT MATCHED BY TARGET AND (src.Value IS NOT NULL)
+											THEN INSERT([Key], Value)
+											VALUES(src.[Key], src.Value);
+
+										IF (@Value IS NULL)
+										BEGIN
+											SET @message = ''''''''Configuration key:'''''''' + @Key + '''''''' removed'''''''';
+										END
+										ELSE BEGIN
+											SET @message = ''''''''Configuration key:'''''''' + @Key + '''''''' set to '''''''''''''''''''''''' + @Value + '''''''''''''''''''''''''''''''';
+										END;
+										EXEC dbo.fhsmSPLog @name = @thisTask, @version = @version, @task = @thisTask, @type = ''''''''Info'''''''', @message = @message;
+
+										EXEC dbo.fhsmSPViewsWhoIsActive @view = ''''''''WhoIsActive'''''''', @version = @version, @nowUTC = @nowUTC;
+									END
+			'';
+			SET @stmt += ''
+									ELSE IF (@Key = ''''''''LogFilter'''''''')
+									BEGIN
+										WITH
+										cfg([Key], Value) AS(
+											SELECT
+												@Key
+												,@Value
+										)
+										MERGE dbo.fhsmConfigurations AS tgt
+										USING cfg AS src ON (src.[Key] = tgt.[Key])
+										WHEN MATCHED AND (src.Value IS NOT NULL)
+											THEN UPDATE
+												SET tgt.Value = src.Value
+										WHEN MATCHED AND (src.Value IS NULL)
+											THEN DELETE
+										WHEN NOT MATCHED BY TARGET AND (src.Value IS NOT NULL)
+											THEN INSERT([Key], Value)
+											VALUES(src.[Key], src.Value);
+
+										IF (@Value IS NULL)
+										BEGIN
+											SET @message = ''''''''Log filter removed'''''''';
+										END
+										ELSE BEGIN
+											SET @message = ''''''''Log filter set to '''''''''''''''''''''''' + @Value + '''''''''''''''''''''''''''''''';
+										END;
+										EXEC dbo.fhsmSPLog @name = @thisTask, @version = @version, @task = @thisTask, @type = ''''''''Info'''''''', @message = @message;
+									END
+			'';
+			SET @stmt += ''
 									ELSE IF (@Key = ''''''''BlockedProcessThreshold'''''''')
 									BEGIN
 										EXEC dbo.fhsmSPControlBlocksAndDeadlocks @Type = @Type, @Command = @Command, @Key = @Key, @Value = @Value;
@@ -2757,12 +3682,12 @@ ELSE BEGIN
 									ELSE BEGIN
 										SET @message = ''''''''Set is not allowed for Configuration @Key:'''''''''''''''''''''''' + COALESCE(@Key, ''''''''<NULL>'''''''') + '''''''''''''''''''''''''''''''';
 										RAISERROR(@message, 0, 1) WITH NOWAIT;
-										RETURN -17;
+										RETURN -28;
 									END;
 								END
 								ELSE BEGIN
 									RAISERROR(''''''''Internal error - @Command not processed'''''''', 0, 1) WITH NOWAIT;
-									RETURN -19;
+									RETURN -29;
 								END;
 							END
 			'';
@@ -2777,9 +3702,21 @@ ELSE BEGIN
 										s.Parameter
 									FROM dbo.fhsmSchedules AS s
 									WHERE (1 = 1)
-										AND ((s.Name      LIKE ''''''''%'''''''' + @Name      + ''''''''%'''''''') OR (@Name = ''''''''''''''''))
-										AND ((s.Parameter LIKE ''''''''%'''''''' + @Parameter + ''''''''%'''''''') OR (@Parameter = ''''''''''''''''))
-										AND ((s.Task      LIKE ''''''''%'''''''' + @Task      + ''''''''%'''''''') OR (@Task = ''''''''''''''''))
+										AND (
+											(
+												    (@Wildcard = 0)
+												AND ((s.Name      = @Name)      OR (@Name = ''''''''''''''''))
+												AND ((s.Parameter = @Parameter) OR (@Parameter = ''''''''''''''''))
+												AND ((s.Task      = @Task)      OR (@Task = ''''''''''''''''))
+											)
+											OR
+											(
+												    (@Wildcard = 1)
+												AND ((s.Name      LIKE ''''''''%'''''''' + @Name      + ''''''''%'''''''') OR (@Name = ''''''''''''''''))
+												AND ((s.Parameter LIKE ''''''''%'''''''' + @Parameter + ''''''''%'''''''') OR (@Parameter = ''''''''''''''''))
+												AND ((s.Task      LIKE ''''''''%'''''''' + @Task      + ''''''''%'''''''') OR (@Task = ''''''''''''''''))
+											)
+										)
 									ORDER BY s.Task, s.Name;
 								END
 								ELSE IF (@Command = ''''''''set'''''''')
@@ -2792,7 +3729,7 @@ ELSE BEGIN
 									BEGIN
 										SET @message = ''''''''Invalid @Task:'''''''''''''''''''''''' + COALESCE(NULLIF(@Task, ''''''''''''''''), ''''''''<NULL>'''''''') + '''''''''''''''''''''''' and @Name:'''''''''''''''''''''''' + COALESCE(NULLIF(@Name, ''''''''''''''''), ''''''''<NULL>'''''''') + '''''''''''''''''''''''''''''''';
 										RAISERROR(@message, 0, 1) WITH NOWAIT;
-										RETURN -21;
+										RETURN -31;
 									END;
 
 									IF (CHARINDEX(''''''''fhsmSP'''''''', @Task) = 1)
@@ -2808,18 +3745,18 @@ ELSE BEGIN
 										ELSE BEGIN
 											SET @message = ''''''''Control procedure does not exists for @Task:'''''''''''''''''''''''' + COALESCE(NULLIF(@Task, ''''''''''''''''), ''''''''<NULL>'''''''') + '''''''''''''''''''''''''''''''';
 											RAISERROR(@message, 0, 1) WITH NOWAIT;
-											RETURN -22;
+											RETURN -32;
 										END;
 									END
 									ELSE BEGIN
 										SET @message = ''''''''Task name is not correct configured @Task:'''''''''''''''''''''''' + COALESCE(NULLIF(@Task, ''''''''''''''''), ''''''''<NULL>'''''''') + '''''''''''''''''''''''''''''''';
 										RAISERROR(@message, 0, 1) WITH NOWAIT;
-										RETURN -28;
+										RETURN -38;
 									END;
 								END
 								ELSE BEGIN
 									RAISERROR(''''''''Internal error - @Command not processed'''''''', 0, 1) WITH NOWAIT;
-									RETURN -29;
+									RETURN -39;
 								END;
 							END
 			'';
@@ -2838,9 +3775,21 @@ ELSE BEGIN
 										r.Filter
 									FROM dbo.fhsmRetentions AS r
 									WHERE (1 = 1)
-										AND ((r.Filter     LIKE ''''''''%'''''''' + @Filter     + ''''''''%'''''''') OR (@Filter = ''''''''''''''''))
-										AND ((r.TableName  LIKE ''''''''%'''''''' + @TableName  + ''''''''%'''''''') OR (@TableName = ''''''''''''''''))
-										AND ((r.TimeColumn LIKE ''''''''%'''''''' + @TimeColumn + ''''''''%'''''''') OR (@TimeColumn = ''''''''''''''''))
+										AND (
+											(
+												    (@Wildcard = 0)
+												AND ((r.Filter     = @Filter)     OR (@Filter = ''''''''''''''''))
+												AND ((r.TableName  = @TableName)  OR (r.TableName  = ''''''''dbo.'''''''' + @TableName)  OR (@TableName = ''''''''''''''''))
+												AND ((r.TimeColumn = @TimeColumn) OR (@TimeColumn = ''''''''''''''''))
+											)
+											OR
+											(
+												    (@Wildcard = 1)
+												AND ((r.Filter     LIKE ''''''''%'''''''' + @Filter     + ''''''''%'''''''') OR (@Filter = ''''''''''''''''))
+												AND ((r.TableName  LIKE ''''''''%'''''''' + @TableName  + ''''''''%'''''''') OR (@TableName = ''''''''''''''''))
+												AND ((r.TimeColumn LIKE ''''''''%'''''''' + @TimeColumn + ''''''''%'''''''') OR (@TimeColumn = ''''''''''''''''))
+											)
+										)
 										AND ((r.Days    <= @Days)     OR (@Days     IS NULL))
 										AND ((r.Enabled  = @Enabled)  OR (@Enabled  IS NULL))
 										AND ((r.IsUtc    = @IsUtc)    OR (@IsUtc    IS NULL))
@@ -2852,12 +3801,12 @@ ELSE BEGIN
 									IF NOT EXISTS (
 										SELECT *
 										FROM dbo.fhsmRetentions AS r
-										WHERE (r.TableName = @TableName) AND (r.Sequence = @Sequence)
+										WHERE ((r.TableName = @TableName) OR (r.TableName = ''''''''dbo.'''''''' + @TableName)) AND (r.Sequence = @Sequence)
 									)
 									BEGIN
 										SET @message = ''''''''Invalid @TableName:'''''''''''''''''''''''' + COALESCE(NULLIF(@TableName, ''''''''''''''''), ''''''''<NULL>'''''''') + '''''''''''''''''''''''' and @Sequence:'''''''''''''''''''''''' + COALESCE(CAST(@Sequence AS nvarchar), ''''''''<NULL>'''''''') + '''''''''''''''''''''''''''''''';
 										RAISERROR(@message, 0, 1) WITH NOWAIT;
-										RETURN -31;
+										RETURN -41;
 									END;
 
 									--
@@ -2871,7 +3820,7 @@ ELSE BEGIN
 												COALESCE(@Days,    r.Days)    AS Days,
 												COALESCE(@Enabled, r.Enabled) AS Enabled
 											FROM dbo.fhsmRetentions AS r
-											WHERE (r.TableName = @TableName) AND (r.Sequence = @Sequence)
+											WHERE ((r.TableName = @TableName) OR (r.TableName = ''''''''dbo.'''''''' + @TableName)) AND (r.Sequence = @Sequence)
 										)
 										MERGE dbo.fhsmRetentions AS tgt
 										USING conf AS src ON (src.Id = tgt.Id)
@@ -2909,7 +3858,7 @@ ELSE BEGIN
 								END
 								ELSE BEGIN
 									RAISERROR(''''''''Internal error - @Command not processed'''''''', 0, 1) WITH NOWAIT;
-									RETURN -39;
+									RETURN -49;
 								END;
 							END
 			'';
@@ -2919,6 +3868,7 @@ ELSE BEGIN
 								IF (@Command = ''''''''list'''''''')
 								BEGIN
 									SELECT
+										s.Type AS ScheduleType,
 										s.Task,
 										s.Name,
 										s.Enabled,
@@ -2934,8 +3884,21 @@ ELSE BEGIN
 										s.Sunday
 									FROM dbo.fhsmSchedules AS s
 									WHERE (1 = 1)
-										AND ((s.Name LIKE ''''''''%'''''''' + @Name + ''''''''%'''''''') OR (@Name = ''''''''''''''''))
-										AND ((s.Task LIKE ''''''''%'''''''' + @Task + ''''''''%'''''''') OR (@Task = ''''''''''''''''))
+										AND (s.Task <> ''''''''fhsmSPSchedules'''''''')
+										AND ((s.Type = @ScheduleType) OR (@ScheduleType IS NULL))
+										AND (
+											(
+												    (@Wildcard = 0)
+												AND ((s.Name = @Name) OR (@Name = ''''''''''''''''))
+												AND ((s.Task = @Task) OR (@Task = ''''''''''''''''))
+											)
+											OR
+											(
+												    (@Wildcard = 1)
+												AND ((s.Name LIKE ''''''''%'''''''' + @Name + ''''''''%'''''''') OR (@Name = ''''''''''''''''))
+												AND ((s.Task LIKE ''''''''%'''''''' + @Task + ''''''''%'''''''') OR (@Task = ''''''''''''''''))
+											)
+										)
 										AND ((s.Enabled            = @Enabled)           OR (@Enabled           IS NULL))
 										AND ((s.ExecutionDelaySec <= @ExecutionDelaySec) OR (@ExecutionDelaySec IS NULL))
 										AND ((CONVERT(nvarchar, s.FromTime, 24) >= @FromTime) OR (@FromTime = ''''''''''''''''))
@@ -2947,7 +3910,7 @@ ELSE BEGIN
 										AND ((s.Friday    = @Friday)    OR (@Friday    IS NULL))
 										AND ((s.Saturday  = @Saturday)  OR (@Saturday  IS NULL))
 										AND ((s.Sunday    = @Sunday)    OR (@Sunday    IS NULL))
-									ORDER BY s.Task, s.Name;
+									ORDER BY s.Type, s.Task, s.Name;
 								END
 			'';
 			SET @stmt += ''
@@ -2961,7 +3924,14 @@ ELSE BEGIN
 									BEGIN
 										SET @message = ''''''''Invalid @Task:'''''''''''''''''''''''' + COALESCE(NULLIF(@Task, ''''''''''''''''), ''''''''<NULL>'''''''') + '''''''''''''''''''''''' and @Name:'''''''''''''''''''''''' + COALESCE(NULLIF(@Name, ''''''''''''''''), ''''''''<NULL>'''''''') + '''''''''''''''''''''''''''''''';
 										RAISERROR(@message, 0, 1) WITH NOWAIT;
-										RETURN -41;
+										RETURN -51;
+									END;
+
+									IF (@Task = ''''''''fhsmSPSchedules'''''''')
+									BEGIN
+										SET @message = ''''''''Not allowed to change schedule for fhsmSPSchedules'''''''';
+										RAISERROR(@message, 0, 1) WITH NOWAIT;
+										RETURN -52;
 									END;
 			'';
 			SET @stmt += ''
@@ -2970,9 +3940,10 @@ ELSE BEGIN
 									--
 									BEGIN
 										WITH
-										conf(Id, Enabled, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday) AS(
+										conf(Id, Type, Enabled, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday) AS(
 											SELECT
 												s.Id,
+												COALESCE(@ScheduleType,               s.Type)              AS Type,
 												COALESCE(@Enabled,                    s.Enabled)           AS Enabled,
 												COALESCE(@ExecutionDelaySec,          s.ExecutionDelaySec) AS ExecutionDelaySec,
 												COALESCE(NULLIF(@FromTime, ''''''''''''''''), s.FromTime)          AS FromTime,
@@ -2991,7 +3962,8 @@ ELSE BEGIN
 										USING conf AS src ON (src.Id = tgt.Id)
 										-- Not testing for NULL as a NULL parameter is not allowed
 										WHEN MATCHED AND (
-											(tgt.Enabled              <> src.Enabled)
+											   (tgt.Type              <> src.Type)
+											OR (tgt.Enabled           <> src.Enabled)
 											OR (tgt.ExecutionDelaySec <> src.ExecutionDelaySec)
 											OR (tgt.FromTime          <> src.FromTime)
 											OR (tgt.ToTime            <> src.ToTime)
@@ -3005,6 +3977,7 @@ ELSE BEGIN
 										)
 											THEN UPDATE
 												SET
+													tgt.Type              = src.Type,
 													tgt.Enabled           = src.Enabled,
 													tgt.ExecutionDelaySec = src.ExecutionDelaySec,
 													tgt.FromTime          = src.FromTime,
@@ -3020,6 +3993,7 @@ ELSE BEGIN
 			SET @stmt += ''
 										OUTPUT
 											$action,
+											deleted.Type,
 											deleted.Enabled,
 											deleted.ExecutionDelaySec,
 											deleted.FromTime,
@@ -3031,6 +4005,7 @@ ELSE BEGIN
 											deleted.Friday,
 											deleted.Saturday,
 											deleted.Sunday,
+											inserted.Type,
 											inserted.Enabled,
 											inserted.ExecutionDelaySec,
 											inserted.FromTime,
@@ -3048,6 +4023,7 @@ ELSE BEGIN
 										BEGIN
 											SET @message = (
 												SELECT ''''''''Schedule for @Task:'''''''''''''''''''''''' + @Task + '''''''''''''''''''''''' - @Name:'''''''''''''''''''''''' + @Name + '''''''''''''''''''''''' is ''''
+													+ ''''@Type:''''''''''''''''''''''''              + CAST(src.InsertedType AS nvarchar)           + '''''''''''''''''''''''', ''''
 													+ ''''@Enabled:''''''''''''''''''''''''           + CAST(src.InsertedEnabled AS nvarchar)           + '''''''''''''''''''''''', ''''
 													+ ''''@ExecutionDelaySec:'''''''''''''''''''''''' + CAST(src.InsertedExecutionDelaySec AS nvarchar) + '''''''''''''''''''''''', ''''
 													+ ''''@FromTime:''''''''''''''''''''''''          + CAST(src.InsertedFromTime AS nvarchar)          + '''''''''''''''''''''''', ''''
@@ -3060,6 +4036,7 @@ ELSE BEGIN
 													+ ''''@Saturday:''''''''''''''''''''''''          + CAST(src.InsertedSaturday AS nvarchar)          + '''''''''''''''''''''''', ''''
 													+ ''''@Sunday:''''''''''''''''''''''''            + CAST(src.InsertedSunday AS nvarchar)            + '''''''''''''''''''''''', ''''
 													+ ''''- changed from ''''
+													+ ''''@Type:''''''''''''''''''''''''              + CAST(src.DeletedType AS nvarchar)               + '''''''''''''''''''''''', ''''
 													+ ''''@Enabled:''''''''''''''''''''''''           + CAST(src.DeletedEnabled AS nvarchar)            + '''''''''''''''''''''''', ''''
 													+ ''''@ExecutionDelaySec:'''''''''''''''''''''''' + CAST(src.DeletedExecutionDelaySec AS nvarchar)  + '''''''''''''''''''''''', ''''
 													+ ''''@FromTime:''''''''''''''''''''''''          + CAST(src.DeletedFromTime AS nvarchar)           + '''''''''''''''''''''''', ''''
@@ -3082,7 +4059,7 @@ ELSE BEGIN
 								END
 								ELSE BEGIN
 									RAISERROR(''''''''Internal error - @Command not processed'''''''', 0, 1) WITH NOWAIT;
-									RETURN -49;
+									RETURN -59;
 								END;
 							END
 			'';
@@ -3133,7 +4110,7 @@ ELSE BEGIN
 									BEGIN
 										SET @message = ''''''''Invalid @Task:'''''''''''''''''''''''' + COALESCE(NULLIF(@Task, ''''''''''''''''), ''''''''<NULL>'''''''') + '''''''''''''''''''''''''''''''';
 										RAISERROR(@message, 0, 1) WITH NOWAIT;
-										RETURN -51;
+										RETURN -61;
 									END;
 
 									SET @spControl = ''''''''dbo.fhsmSPControl'''''''' + SUBSTRING(@Task, LEN(''''''''fhsmSP'''''''') + 1, LEN(@Task));
@@ -3147,13 +4124,13 @@ ELSE BEGIN
 									ELSE BEGIN
 										SET @message = ''''''''Control procedure does not exists for @Task:'''''''''''''''''''''''' + COALESCE(NULLIF(@Task, ''''''''''''''''), ''''''''<NULL>'''''''') + '''''''''''''''''''''''''''''''';
 										RAISERROR(@message, 0, 1) WITH NOWAIT;
-										RETURN -52;
+										RETURN -62;
 									END;
 								END
 								ELSE BEGIN
 									SET @message = ''''''''Invalid task - @Task:'''''''''''''''''''''''' + COALESCE(NULLIF(@Task, ''''''''''''''''), ''''''''<NULL>'''''''') + '''''''''''''''''''''''''''''''';
 									RAISERROR(@message, 0, 1) WITH NOWAIT;
-									RETURN -59;
+									RETURN -69;
 								END;
 							END
 			'';
@@ -3255,7 +4232,7 @@ ELSE BEGIN
 							SET @version = '''''''''' + @version + '''''''''';
 			'';
 			SET @stmt += ''
-							IF (@Type = ''''''''Parameter'''''''')
+							IF (@Type = ''''''''parameter'''''''')
 							BEGIN
 								IF (@Command = ''''''''set'''''''')
 								BEGIN
@@ -3325,7 +4302,7 @@ ELSE BEGIN
 							END
 			'';
 			SET @stmt += ''
-							ELSE IF (@Type = ''''''''Uninstall'''''''')
+							ELSE IF (@Type = ''''''''uninstall'''''''')
 							BEGIN
 								--
 								-- Place holder
@@ -3354,102 +4331,6 @@ ELSE BEGIN
 		--
 		BEGIN
 			SET @objectName = ''dbo.fhsmSPControlCleanup'';
-
-			SET @stmt = ''
-				USE '' + QUOTENAME(@fhSQLMonitorDatabase) + '';
-			
-				DECLARE @objName nvarchar(128);
-				DECLARE @schName nvarchar(128);
-
-				SET @objName = PARSENAME(@objectName, 1);
-				SET @schName = PARSENAME(@objectName, 2);
-
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''''Procedure'''', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''''FHSMVersion'''', @propertyValue = @version;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''''Procedure'''', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''''FHSMCreated'''', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''''Procedure'''', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''''FHSMCreatedBy'''', @propertyValue = @myUserName;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''''Procedure'''', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''''FHSMModified'''', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''''Procedure'''', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''''FHSMModifiedBy'''', @propertyValue = @myUserName;
-			'';
-			EXEC sp_executesql
-				@stmt
-				,N''@objectName nvarchar(128), @version sql_variant, @nowUTCStr sql_variant, @myUserName sql_variant''
-				,@objectName = @objectName
-				,@version = @version
-				,@nowUTCStr = @nowUTCStr
-				,@myUserName = @myUserName;
-		END;
-	END;
-
-	--
-	-- Create or alter stored procedure dbo.fhsmSPLog
-	--
-	BEGIN
-		BEGIN
-			SET @stmt = ''
-				USE '' + QUOTENAME(@fhSQLMonitorDatabase) + '';
-
-				DECLARE @stmt nvarchar(max);
-
-				IF OBJECT_ID(''''dbo.fhsmSPLog'''', ''''P'''') IS NULL
-				BEGIN
-					RAISERROR(''''Creating stub stored procedure dbo.fhsmSPLog'''', 0, 1) WITH NOWAIT;
-
-					EXEC(''''CREATE PROC dbo.fhsmSPLog AS SELECT ''''''''dummy'''''''' AS Txt'''');
-				END;
-
-				--
-				-- Alter dbo.fhsmSPLog
-				--
-				BEGIN
-					RAISERROR(''''Alter stored procedure dbo.fhsmSPLog'''', 0, 1) WITH NOWAIT;
-
-					SET @stmt = ''''
-						ALTER PROC dbo.fhsmSPLog(
-							@name nvarchar(128)
-							,@version nvarchar(128) = NULL
-							,@task nvarchar(128)
-							,@type nvarchar(16)
-							,@message nvarchar(max)
-							,@id int = NULL OUTPUT
-						)
-						AS
-						BEGIN
-							SET NOCOUNT ON;
-
-							DECLARE @printMessage nvarchar(max);
-
-							SET @printMessage = @name + '''''''': '''''''' + COALESCE(@version, ''''''''N.A.'''''''') + '''''''': '''''''' + @task + '''''''': '''''''' + @type + '''''''': '''''''' + @message;
-							PRINT @printMessage;
-
-							IF (@id IS NULL)
-							BEGIN
-								INSERT INTO dbo.fhsmLog(Name, Version, Task, Type, Message)
-								VALUES (@name, @version, @task, @type, @message);
-
-								SET @id = SCOPE_IDENTITY();
-							END
-							ELSE BEGIN
-								UPDATE l
-								SET
-									l.Version = @version
-								FROM dbo.fhsmLog AS l
-								WHERE (l.Id = @id);
-							END;
-
-							RETURN @id;
-						END;
-					'''';
-					EXEC(@stmt);
-				END;
-			'';
-			EXEC(@stmt);
-		END;
-
-		--
-		-- Register extended properties on the stored procedure dbo.fhsmSPLog
-		--
-		BEGIN
-			SET @objectName = ''dbo.fhsmSPLog'';
 
 			SET @stmt = ''
 				USE '' + QUOTENAME(@fhSQLMonitorDatabase) + '';
@@ -3845,12 +4726,18 @@ ELSE BEGIN
 
 					SET @stmt = ''''
 						ALTER PROC dbo.fhsmSPSchedules (
+							@type int = 0,
 							@test bit = 0
 						)
 						AS
 						BEGIN
 							SET NOCOUNT ON;
 
+							DECLARE @actualSampleCnt int;
+							DECLARE @averageProcessingDuration int;
+							DECLARE @DEFAULT_SAMPLE_CNT int;
+							DECLARE @DEFAULT_THRESHOLD_FACTOR int;
+							DECLARE @dbId int;
 							DECLARE @enabled bit;
 							DECLARE @errorMsg nvarchar(max);
 							DECLARE @executionDelaySec int;
@@ -3862,31 +4749,71 @@ ELSE BEGIN
 							DECLARE @message nvarchar(max);
 							DECLARE @monday bit, @tuesday bit, @wednesday bit, @thursday bit, @friday bit, @saturday bit, @sunday bit;
 							DECLARE @name nvarchar(128);
-							DECLARE @now datetime;
-							DECLARE @nowUTC datetime;
 							DECLARE @parameter nvarchar(max);
+							DECLARE @parameterTable TABLE([Key] nvarchar(128) NOT NULL, Value nvarchar(128) NULL);
+							DECLARE @processingDuration int;
 							DECLARE @processingEnded datetime;
 							DECLARE @processingEndedUTC datetime;
+							DECLARE @processingStarted datetime;
+							DECLARE @processingStartedTime time(0);
+							DECLARE @processingStartedUTC datetime;
 							DECLARE @processingId int;
+							DECLARE @processingThreshold int;
+							DECLARE @sampleCnt int;
 							DECLARE @stmt nvarchar(max);
 							DECLARE @task nvarchar(128);
 							DECLARE @thisTask nvarchar(128);
-							DECLARE @timeNow time(0);
+							DECLARE @thresholdFactor int;
 							DECLARE @toTime time(0);
+							DECLARE @valueStr nvarchar(128);
 							DECLARE @version nvarchar(128);
 
 							SET @thisTask = OBJECT_NAME(@@PROCID);
+							SET @name = ''''''''Schedules'''''''';
+
+							SET @dbId = DB_ID();
+
+							SET @DEFAULT_SAMPLE_CNT = 10;
+							SET @DEFAULT_THRESHOLD_FACTOR = 50;
+			'';
+			SET @stmt += ''
+							--
+							-- Get the parameter for the command
+							--
+							BEGIN
+								SET @parameter = dbo.fhsmFNGetTaskParameter(@thisTask, @name);
+
+								INSERT INTO @parameterTable([Key], Value)
+								SELECT
+									(SELECT s.Txt FROM dbo.fhsmFNSplitString(p.Txt, ''''''''='''''''') AS s WHERE (s.Part = 1)) AS [Key]
+									,(SELECT s.Txt FROM dbo.fhsmFNSplitString(p.Txt, ''''''''='''''''') AS s WHERE (s.Part = 2)) AS Value
+								FROM dbo.fhsmFNSplitString(@parameter, '''''''';'''''''') AS p;
+
+								SET @valueStr = (SELECT pt.Value FROM @parameterTable AS pt WHERE (pt.[Key] = ''''''''@SampleCnt''''''''));
+								SET @sampleCnt = dbo.fhsmFNTryParseAsInt(@valueStr);
+								IF (@sampleCnt <= 0) OR (@sampleCnt IS NULL)
+								BEGIN
+									SET @sampleCnt = @DEFAULT_SAMPLE_CNT;
+								END;
+
+								SET @valueStr = (SELECT pt.Value FROM @parameterTable AS pt WHERE (pt.[Key] = ''''''''@ThresholdFactor''''''''));
+								SET @thresholdFactor = dbo.fhsmFNTryParseAsInt(@valueStr);
+								IF (@thresholdFactor <= 0) OR (@thresholdFactor IS NULL)
+								BEGIN
+									SET @thresholdFactor = @DEFAULT_THRESHOLD_FACTOR;
+								END;
+							END;
 
 							DECLARE sCur CURSOR LOCAL READ_ONLY FAST_FORWARD FOR
 							SELECT s.Enabled, s.Id, s.Name, s.Task, s.Parameter, s.ExecutionDelaySec, s.FromTime, s.ToTime, s.Monday, s.Tuesday, s.Wednesday, s.Thursday, s.Friday, s.Saturday, s.Sunday, s.LastStartedUTC, s.LastExecutedUTC
 							FROM dbo.fhsmSchedules AS s
-							WHERE (s.DeploymentStatus = 0)
+							WHERE (s.DeploymentStatus = 0) AND (s.Type = @type)
+								AND (s.Task <> ''''''''fhsmSPSchedules'''''''')
 							ORDER BY s.Task, s.Name;
 
 							OPEN sCur;
 			'';
 			SET @stmt += ''
-
 							WHILE (1 = 1)
 							BEGIN
 								FETCH NEXT FROM sCur
@@ -3904,20 +4831,20 @@ ELSE BEGIN
 
 								-- Update time for every loop
 								SELECT
-									@now = SYSDATETIME()
-									,@nowUTC = SYSUTCDATETIME();
-								SET @timeNow = CAST(@now AS time(0));
+									@processingStarted = SYSDATETIME()
+									,@processingStartedUTC = SYSUTCDATETIME();
+								SET @processingStartedTime = CAST(@processingStarted AS time(0));
 
 								IF	(@test = 1)
 									OR (
 										(@enabled = 1)
-										AND (@timeNow >= @fromTime) AND (@timeNow <= @toTime)
+										AND (@processingStartedTime >= @fromTime) AND (@processingStartedTime <= @toTime)
 										AND (
 											(@lastStartedUTC IS NULL)
-											OR (DATEADD(SECOND, ABS(@executionDelaySec), DATEADD(MILLISECOND, -DATEPART(MILLISECOND, @lastStartedUTC), @lastStartedUTC)) < @nowUTC)
+											OR (DATEADD(SECOND, ABS(@executionDelaySec), DATEADD(MILLISECOND, -DATEPART(MILLISECOND, @lastStartedUTC), @lastStartedUTC)) < @processingStartedUTC)
 										)
 										AND ((
-											CASE DATEPART(WEEKDAY, @now)
+											CASE DATEPART(WEEKDAY, @processingStarted)
 												WHEN 1 THEN @sunday
 												WHEN 2 THEN @monday
 												WHEN 3 THEN @tuesday
@@ -3933,7 +4860,7 @@ ELSE BEGIN
 			SET @stmt += ''
 									BEGIN TRY;
 										UPDATE s
-										SET s.LastStartedUTC = @nowUTC
+										SET s.LastStartedUTC = @processingStartedUTC
 										FROM dbo.fhsmSchedules AS s
 										WHERE (s.Id = @id);
 
@@ -3941,13 +4868,13 @@ ELSE BEGIN
 										-- Insert Processing record and remember the @id in the variable @processingId
 										--
 										SET @processingId = NULL;
-										EXEC dbo.fhsmSPProcessing @name = @name, @task = @task, @version = NULL, @type = 0, @timestampUTC = @nowUTC, @timestamp = @now, @id = @processingId OUTPUT;
+										EXEC dbo.fhsmSPProcessing @name = @name, @task = @task, @version = NULL, @type = 0, @timestampUTC = @processingStartedUTC, @timestamp = @processingStarted, @id = @processingId OUTPUT;
 
 										--
 										-- Insert Debug message and remember the @id in the variable @logId
 										--
 										SET @logId = NULL;
-										SET @message = @thisTask + CASE WHEN (@test = 1) THEN '''''''' TEST'''''''' ELSE '''''''''''''''' END + '''''''' executing '''''''' + @task + '''''''' - '''''''' + @name + COALESCE('''''''' - '''''''' + @parameter, '''''''''''''''');
+										SET @message = @thisTask + CASE WHEN (@test = 1) THEN '''''''' TEST'''''''' ELSE '''''''''''''''' END + '''''''' type '''''''' + CAST(@type AS nvarchar) + '''''''' executing '''''''' + @task + '''''''' - '''''''' + @name + COALESCE('''''''' - '''''''' + @parameter, '''''''''''''''');
 										EXEC dbo.fhsmSPLog @name = @name, @version = NULL, @task = @task, @type = ''''''''Debug'''''''', @message = @message, @id = @logId OUTPUT;
 
 										SET @stmt = ''''''''EXEC '''''''' + @task + '''''''' @name = @name, @version = @version OUTPUT;'''''''';
@@ -3974,14 +4901,83 @@ ELSE BEGIN
 										--
 										-- Update Debug log from before execution with @version
 										--
-										SET @message = @thisTask + CASE WHEN (@test = 1) THEN '''''''' TEST'''''''' ELSE '''''''''''''''' END + '''''''' executing '''''''' + @task + '''''''' - '''''''' + @name + COALESCE('''''''' - '''''''' + @parameter, '''''''''''''''');
+										SET @message = @thisTask + CASE WHEN (@test = 1) THEN '''''''' TEST'''''''' ELSE '''''''''''''''' END + '''''''' type '''''''' + CAST(@type AS nvarchar) + '''''''' executing '''''''' + @task + '''''''' - '''''''' + @name + COALESCE('''''''' - '''''''' + @parameter, '''''''''''''''');
 										EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @task, @type = ''''''''Debug'''''''', @message = @message, @id = @logId OUTPUT;
 
 										--
 										-- Insert Info message
 										--
-										SET @message = @thisTask + CASE WHEN (@test = 1) THEN '''''''' TEST'''''''' ELSE '''''''''''''''' END + '''''''' executed '''''''' + @task + '''''''' - '''''''' + @name + COALESCE('''''''' - '''''''' + @parameter, '''''''''''''''');
+										SET @message = @thisTask + CASE WHEN (@test = 1) THEN '''''''' TEST'''''''' ELSE '''''''''''''''' END + '''''''' type '''''''' + CAST(@type AS nvarchar) + '''''''' executed '''''''' + @task + '''''''' - '''''''' + @name + COALESCE('''''''' - '''''''' + @parameter, '''''''''''''''');
 										EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @task, @type = ''''''''Info'''''''', @message = @message;
+			'';
+			SET @stmt += ''
+										--
+										-- Check processing time
+										--
+										BEGIN
+											SELECT
+												@processingStartedUTC = p.StartedTimestampUTC
+												,@processingEndedUTC = p.EndedTimestampUTC
+											FROM dbo.fhsmProcessing AS p
+											WHERE (p.Id = @processingId);
+
+											SET @processingDuration = DATEDIFF(MILLISECOND, @processingStartedUTC, @processingEndedUTC);
+
+											SELECT
+												@actualSampleCnt = COUNT(*),
+												@averageProcessingDuration = AVG(DATEDIFF(MILLISECOND, a.StartedTimestampUTC, a.EndedTimestampUTC))
+											FROM (
+												SELECT TOP (@sampleCnt) p.StartedTimestampUTC, p.EndedTimestampUTC
+												FROM dbo.fhsmProcessing AS p
+												WHERE (p.Task = @task) AND (p.Name = @name) AND (p.EndedTimestampUTC < @processingEndedUTC)
+												ORDER BY p.EndedTimestampUTC DESC
+											) AS a;
+			'';
+			SET @stmt += ''
+											IF (@actualSampleCnt > 0)
+											BEGIN
+												SET @processingThreshold = @averageProcessingDuration * @thresholdFactor;
+
+												IF (@processingDuration <= @processingThreshold)
+												BEGIN
+													--
+													-- Insert Debug message
+													--
+													SET @message =
+														@thisTask + CASE WHEN (@test = 1) THEN '''''''' TEST'''''''' ELSE '''''''''''''''' END + '''''''' type '''''''' + CAST(@type AS nvarchar) +
+														'''''''' processing duration '''''''' + CAST(@processingDuration AS nvarchar) + '''''''' mSec.'''''''' +
+														'''''''' did not execeed threshold'''''''' +
+														'''''''' @actualSampleCnt:'''''''' + CAST(@actualSampleCnt AS nvarchar) + '''''''','''''''' +
+														'''''''' @averageProcessingDuration:'''''''' + CAST(@averageProcessingDuration AS nvarchar) + '''''''','''''''' +
+														'''''''' @thresholdFactor:'''''''' + CAST(@thresholdFactor AS nvarchar) + '''''''','''''''' +
+														'''''''' @processingThreshold:'''''''' + CAST(@processingThreshold AS nvarchar) + '''''''','''''''' +
+														'''''''' by '''''''' + @task + '''''''' - '''''''' + @name + COALESCE('''''''' - '''''''' + @parameter, '''''''''''''''');
+													EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @task, @type = ''''''''Debug'''''''', @message = @message;
+												END
+												ELSE BEGIN
+													--
+													-- Insert Info message
+													--
+													SET @message =
+														''''''''Plan cache clearned '''''''' +
+														@thisTask + CASE WHEN (@test = 1) THEN '''''''' TEST'''''''' ELSE '''''''''''''''' END + '''''''' type '''''''' + CAST(@type AS nvarchar) +
+														'''''''' processing duration '''''''' + CAST(@processingDuration AS nvarchar) + '''''''' mSec.'''''''' +
+														'''''''' execeeded threshold'''''''' +
+														'''''''' @actualSampleCnt:'''''''' + CAST(@actualSampleCnt AS nvarchar) + '''''''','''''''' +
+														'''''''' @averageProcessingDuration:'''''''' + CAST(@averageProcessingDuration AS nvarchar) + '''''''','''''''' +
+														'''''''' @thresholdFactor:'''''''' + CAST(@thresholdFactor AS nvarchar) + '''''''','''''''' +
+														'''''''' @processingThreshold:'''''''' + CAST(@processingThreshold AS nvarchar) + '''''''','''''''' +
+														'''''''' by '''''''' + @task + '''''''' - '''''''' + @name + COALESCE('''''''' - '''''''' + @parameter, '''''''''''''''');
+													EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @task, @type = ''''''''Warning'''''''', @message = @message;
+
+													SET @stmt = ''''''''DBCC FLUSHPROCINDB (@dbId);'''''''';
+													EXEC sp_executesql
+														@stmt,
+														N''''''''@dbId int'''''''',
+														@dbId = @dbId
+												END;
+											END;
+										END;
 									END TRY
 									BEGIN CATCH
 										SET @errorMsg = ERROR_MESSAGE();
@@ -3993,7 +4989,7 @@ ELSE BEGIN
 										FROM dbo.fhsmSchedules AS s
 										WHERE (s.Id = @id);
 
-										SET @message = @thisTask + '''''''' executing '''''''' + @task + '''''''' - '''''''' + @name + '''''''' failed due to - '''''''' + @errorMsg;
+										SET @message = @thisTask + CASE WHEN (@test = 1) THEN '''''''' TEST'''''''' ELSE '''''''''''''''' END + '''''''' type '''''''' + CAST(@type AS nvarchar) + '''''''' executing '''''''' + @task + '''''''' - '''''''' + @name + '''''''' failed due to - '''''''' + @errorMsg;
 										EXEC dbo.fhsmSPLog @name = @name, @task = @task, @type = ''''''''Error'''''''', @message = @message;
 									END CATCH;
 								END;
@@ -4016,6 +5012,270 @@ ELSE BEGIN
 		--
 		BEGIN
 			SET @objectName = ''dbo.fhsmSPSchedules'';
+
+			SET @stmt = ''
+				USE '' + QUOTENAME(@fhSQLMonitorDatabase) + '';
+			
+				DECLARE @objName nvarchar(128);
+				DECLARE @schName nvarchar(128);
+
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''''Procedure'''', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''''FHSMVersion'''', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''''Procedure'''', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''''FHSMCreated'''', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''''Procedure'''', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''''FHSMCreatedBy'''', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''''Procedure'''', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''''FHSMModified'''', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''''Procedure'''', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''''FHSMModifiedBy'''', @propertyValue = @myUserName;
+			'';
+			EXEC sp_executesql
+				@stmt
+				,N''@objectName nvarchar(128), @version sql_variant, @nowUTCStr sql_variant, @myUserName sql_variant''
+				,@objectName = @objectName
+				,@version = @version
+				,@nowUTCStr = @nowUTCStr
+				,@myUserName = @myUserName;
+		END;
+
+		--
+		-- Register schedules
+		--
+		BEGIN
+			SET @stmt = ''
+				USE '' + QUOTENAME(@fhSQLMonitorDatabase) + '';
+
+				WITH
+				schedules(Enabled, DeploymentStatus, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameter) AS(
+					SELECT
+						0													AS Enabled
+						,0													AS DeploymentStatus
+						,''''Schedules''''										AS Name
+						,PARSENAME(''''dbo.fhsmSPSchedules'''', 1)				AS Task
+						,0													AS ExecutionDelaySec
+						,CAST(''''1900-1-1T00:00:00.0000'''' AS datetime2(0))	AS FromTime
+						,CAST(''''1900-1-1T23:59:59.0000'''' AS datetime2(0))	AS ToTime
+						,1, 1, 1, 1, 1, 1, 1								-- Monday..Sunday
+						,''''@SampleCnt = 10 ; @ThresholdFactor = 50''''		AS Parameter
+				)
+				MERGE dbo.fhsmSchedules AS tgt
+				USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
+				WHEN NOT MATCHED BY TARGET
+					THEN INSERT(Enabled, DeploymentStatus, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameter)
+					VALUES(src.Enabled, src.DeploymentStatus, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameter);
+			'';
+			EXEC(@stmt);
+		END;
+	END;
+
+	--
+	-- Create stored procedure dbo.fhsmSPControlSchedules
+	--
+	BEGIN
+		SET @stmt = ''
+			USE '' + QUOTENAME(@fhSQLMonitorDatabase) + '';
+
+			DECLARE @stmt nvarchar(max);
+			
+			SET @stmt = ''''
+				IF OBJECT_ID(''''''''dbo.fhsmSPControlSchedules'''''''', ''''''''P'''''''') IS NULL
+				BEGIN
+					RAISERROR(''''''''Creating stub stored procedure dbo.fhsmSPControlSchedules'''''''', 0, 1) WITH NOWAIT;
+
+					EXEC(''''''''CREATE PROC dbo.fhsmSPControlSchedules AS SELECT ''''''''''''''''dummy'''''''''''''''' AS Txt'''''''');
+				END;
+			'''';
+			EXEC(@stmt);
+		''
+		SET @stmt += ''
+			--
+			-- Alter dbo.fhsmSPControlSchedules
+			--
+			BEGIN
+				RAISERROR(''''Alter stored procedure dbo.fhsmSPControlSchedules'''', 0, 1) WITH NOWAIT;
+
+				SET @stmt = ''''
+					ALTER PROC dbo.fhsmSPControlSchedules (
+						@Type nvarchar(16)
+						,@Command nvarchar(16)
+						,@Name nvarchar(128) = NULL
+						,@Parameter nvarchar(max) = NULL
+						,@Task nvarchar(128) = NULL
+					)
+					AS
+					BEGIN
+						SET NOCOUNT ON;
+
+						DECLARE @message nvarchar(max);
+						DECLARE @parameterChanges TABLE(
+							Action nvarchar(10),
+							DeletedTask nvarchar(128),
+							DeletedName nvarchar(128),
+							DeletedParameter nvarchar(max),
+							InsertedTask nvarchar(128),
+							InsertedName nvarchar(128),
+							InsertedParameter nvarchar(max)
+						);
+						DECLARE @parameterTable TABLE([Key] nvarchar(128) NOT NULL, Value nvarchar(128) NULL);
+						DECLARE @thisTask nvarchar(128);
+						DECLARE @testStr nvarchar(128);
+						DECLARE @testValue int;
+						DECLARE @version nvarchar(128);
+
+						SET @thisTask = OBJECT_NAME(@@PROCID);
+						SET @version = '''''''''' + @version + '''''''''';
+				'''';
+				SET @stmt += ''''
+						IF (@Type = ''''''''parameter'''''''')
+						BEGIN
+							IF (@Command = ''''''''set'''''''')
+							BEGIN
+								SET @Parameter = NULLIF(@Parameter, '''''''''''''''');
+
+								IF NOT EXISTS (
+									SELECT *
+									FROM dbo.fhsmSchedules AS s
+									WHERE (s.Task = @Task) AND (s.Name = @Name) AND (s.DeploymentStatus <> -1)
+								)
+								BEGIN
+									SET @message = ''''''''Invalid @Task:'''''''''''''''''''''''' + COALESCE(NULLIF(@Task, ''''''''''''''''), ''''''''<NULL>'''''''') + '''''''''''''''''''''''' and @Name:'''''''''''''''''''''''' + COALESCE(NULLIF(@Name, ''''''''''''''''), ''''''''<NULL>'''''''') + '''''''''''''''''''''''''''''''';
+									RAISERROR(@message, 0, 1) WITH NOWAIT;
+									RETURN -11;
+								END;
+		''
+		SET @stmt += ''
+				'''';
+				SET @stmt += ''''
+								--
+								-- Verify that parameter keys are known and that values are postivive numbers
+								--
+								BEGIN
+									INSERT INTO @parameterTable([Key], Value)
+									SELECT
+										(SELECT s.Txt FROM dbo.fhsmFNSplitString(p.Txt, ''''''''='''''''') AS s WHERE (s.Part = 1)) AS [Key]
+										,(SELECT s.Txt FROM dbo.fhsmFNSplitString(p.Txt, ''''''''='''''''') AS s WHERE (s.Part = 2)) AS Value
+									FROM dbo.fhsmFNSplitString(@Parameter, '''''''';'''''''') AS p;
+
+									IF EXISTS (
+										SELECT *
+										FROM @parameterTable AS pt
+										WHERE (pt.[Key] NOT IN (''''''''@SampleCnt'''''''', ''''''''@ThresholdFactor''''''''))
+									)
+									BEGIN
+										SET @message = ''''''''Invalid parameter keys specified for @Task:'''''''''''''''''''''''' + COALESCE(NULLIF(@Task, ''''''''''''''''), ''''''''<NULL>'''''''') + '''''''''''''''''''''''' and @Name:'''''''''''''''''''''''' + COALESCE(NULLIF(@Name, ''''''''''''''''), ''''''''<NULL>'''''''') + '''''''''''''''''''''''''''''''';
+										RAISERROR(@message, 0, 1) WITH NOWAIT;
+										RETURN -12;
+									END;
+
+									IF EXISTS (SELECT * FROM @parameterTable AS pt WHERE (pt.[Key] = ''''''''@SampleCnt''''''''))
+									BEGIN
+										SET @testStr = (SELECT pt.Value FROM @parameterTable AS pt WHERE (pt.[Key] = ''''''''@SampleCnt''''''''));
+										SET @testValue = dbo.fhsmFNTryParseAsInt(@testStr);
+
+										IF (@testValue < 1) OR (@testValue IS NULL)
+										BEGIN
+											SET @message = ''''''''Invalid value for parameter @SampleCnt specified for @Task:'''''''''''''''''''''''' + COALESCE(NULLIF(@Task, ''''''''''''''''), ''''''''<NULL>'''''''') + '''''''''''''''''''''''' and @Name:'''''''''''''''''''''''' + COALESCE(NULLIF(@Name, ''''''''''''''''), ''''''''<NULL>'''''''') + '''''''''''''''''''''''''''''''';
+											RAISERROR(@message, 0, 1) WITH NOWAIT;
+											RETURN -13;
+										END;
+									END;
+		''
+		SET @stmt += ''
+									IF EXISTS (SELECT * FROM @parameterTable AS pt WHERE (pt.[Key] = ''''''''@ThresholdFactor''''''''))
+									BEGIN
+										SET @testStr = (SELECT pt.Value FROM @parameterTable AS pt WHERE (pt.[Key] = ''''''''@ThresholdFactor''''''''));
+										SET @testValue = dbo.fhsmFNTryParseAsInt(@testStr);
+
+										IF (@testValue < 1) OR (@testValue IS NULL)
+										BEGIN
+											SET @message = ''''''''Invalid value for parameter @ThresholdFactor specified for @Task:'''''''''''''''''''''''' + COALESCE(NULLIF(@Task, ''''''''''''''''), ''''''''<NULL>'''''''') + '''''''''''''''''''''''' and @Name:'''''''''''''''''''''''' + COALESCE(NULLIF(@Name, ''''''''''''''''), ''''''''<NULL>'''''''') + '''''''''''''''''''''''''''''''';
+											RAISERROR(@message, 0, 1) WITH NOWAIT;
+											RETURN -13;
+										END;
+									END;
+								END;
+				'''';
+				SET @stmt += ''''
+								--
+								-- Register configuration changes
+								--
+								BEGIN
+									WITH
+									conf(Task, Name, Parameter) AS(
+										SELECT
+											@Task AS Task
+											,@Name AS Name
+											,@Parameter AS Parameter
+									)
+									MERGE dbo.fhsmSchedules AS tgt
+									USING conf AS src ON (src.[Task] = tgt.[Task] COLLATE SQL_Latin1_General_CP1_CI_AS) AND (src.[Name] = tgt.[Name] COLLATE SQL_Latin1_General_CP1_CI_AS)
+									-- Not testing for NULL as a NULL parameter is not allowed
+									WHEN MATCHED AND (tgt.Parameter <> src.Parameter)
+										THEN UPDATE
+											SET tgt.Parameter = src.Parameter
+									WHEN NOT MATCHED BY TARGET
+										THEN INSERT(Task, Name, Parameter)
+										VALUES(src.Task, src.Name, src.Parameter)
+									OUTPUT
+										$action,
+										deleted.Task,
+										deleted.Name,
+										deleted.Parameter,
+										inserted.Task,
+										inserted.Name,
+										inserted.Parameter
+									INTO @parameterChanges;
+
+									IF (@@ROWCOUNT <> 0)
+									BEGIN
+										SET @message = (
+											SELECT ''''''''Parameter is '''''''''''''''''''''''' + COALESCE(src.InsertedParameter, ''''''''<NULL>'''''''') + '''''''''''''''''''''''' - changed from '''''''''''''''''''''''' + COALESCE(src.DeletedParameter, ''''''''<NULL>'''''''') + ''''''''''''''''''''''''''''''''
+											FROM @parameterChanges AS src
+										);
+										IF (@message IS NOT NULL)
+										BEGIN
+											EXEC dbo.fhsmSPLog @name = @Name, @version = @version, @task = @thisTask, @type = ''''''''Info'''''''', @message = @message;
+										END;
+									END;
+								END;
+				'''';
+				SET @stmt += ''''
+							END
+							ELSE BEGIN
+								SET @message = ''''''''Illegal Combination of @Type:'''''''''''''''''''''''' + COALESCE(@Type, ''''''''<NULL>'''''''') + '''''''''''''''''''''''' and @Command:'''''''''''''''''''''''' + COALESCE(@Command, ''''''''<NULL>'''''''') + '''''''''''''''''''''''''''''''';
+								RAISERROR(@message, 0, 1) WITH NOWAIT;
+								RETURN -19;
+							END;
+						END
+				'''';
+				SET @stmt += ''''
+						ELSE IF (@Type = ''''''''uninstall'''''''')
+						BEGIN
+							--
+							-- Place holder
+							--
+							SET @Type = @Type;
+						END
+				'''';
+				SET @stmt += ''''
+						ELSE BEGIN
+							SET @message = ''''''''Illegal @Type:'''''''''''''''''''''''' + COALESCE(@Type, ''''''''<NULL>'''''''') + '''''''''''''''''''''''''''''''';
+							RAISERROR(@message, 0, 1) WITH NOWAIT;
+							RETURN -999;
+						END;
+
+						RETURN 0;
+					END;
+				'''';
+				EXEC(@stmt);
+			END;
+		'';
+		EXEC(@stmt);
+
+		--
+		-- Register extended properties on the stored procedure dbo.fhsmSPControlSchedules
+		--
+		BEGIN
+			SET @objectName = ''dbo.fhsmSPControlSchedules'';
 
 			SET @stmt = ''
 				USE '' + QUOTENAME(@fhSQLMonitorDatabase) + '';
@@ -4068,6 +5328,7 @@ ELSE BEGIN
 					SET @stmt = ''''
 						ALTER PROC dbo.fhsmSPUpdateDimensions(
 							@table nvarchar(128) = NULL
+							,@ignoreAutoIndex bit = NULL
 						)
 						AS
 						BEGIN
@@ -4152,8 +5413,9 @@ ELSE BEGIN
 			'';
 			SET @stmt += ''
 							--
-							-- Create indexes based upon dbo.fhsmDimensions
+							-- Create auto indexes based upon dbo.fhsmDimensions
 							--
+							IF (COALESCE(@ignoreAutoIndex, 0) = 0)
 							BEGIN
 								DECLARE dCur CURSOR LOCAL READ_ONLY FAST_FORWARD FOR
 								SELECT DISTINCT
@@ -4552,7 +5814,7 @@ ELSE BEGIN
 							END;
 
 							--
-							-- Create dynamic dimension based upon dbo.fhsmDimensions
+							-- Create dynamic dimension views based upon dbo.fhsmDimensions
 							--
 							BEGIN
 								DECLARE dCur CURSOR LOCAL READ_ONLY FAST_FORWARD FOR
@@ -4827,84 +6089,32 @@ ELSE BEGIN
 		-- Create view @pbiSchema.[Log]
 		--
 		BEGIN
-			BEGIN
-				SET @stmt = ''
-					USE '' + QUOTENAME(@fhSQLMonitorDatabase) + '';
-			
-					IF OBJECT_ID('''''' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Log'') + '''''', ''''V'''') IS NULL
-					BEGIN
-						RAISERROR(''''Creating stub view '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Log'') + '''''', 0, 1) WITH NOWAIT;
+			SET @stmt = ''
+				USE '' + QUOTENAME(@fhSQLMonitorDatabase) + '';
 
-						EXEC(''''CREATE VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Log'') + '' AS SELECT ''''''''dummy'''''''' AS Txt'''');
-					END;
-				'';
-				EXEC(@stmt);
+				EXEC dbo.fhsmSPViews @view = ''''Log'''', @version = @version, @nowUTC = @nowUTC;
+			'';
+			EXEC sp_executesql
+				@stmt
+				,N''@version sql_variant, @nowUTC datetime''
+				,@version = @version
+				,@nowUTC = @nowUTC;
+		END;
 
-				SET @stmt = ''
-					USE '' + QUOTENAME(@fhSQLMonitorDatabase) + '';
+		--
+		-- Create view @pbiSchema.[LogNonDebugInfo]
+		--
+		BEGIN
+			SET @stmt = ''
+				USE '' + QUOTENAME(@fhSQLMonitorDatabase) + '';
 
-					DECLARE @stmt nvarchar(max);
-
-					RAISERROR(''''Alter view '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Log'') + '''''', 0, 1) WITH NOWAIT;
-
-					SET @stmt = ''''
-						ALTER VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Log'') + ''
-						AS
-						SELECT
-							l.Id
-							,l.Name
-							,l.Task
-							,l.Type
-							,l.Message
-							,l.TimestampUTC, l.Timestamp
-							,CAST(l.Timestamp AS date) AS Date
-							,(DATEPART(HOUR, l.Timestamp) * 60 * 60) + (DATEPART(MINUTE, l.Timestamp) * 60) + (DATEPART(SECOND, l.Timestamp)) AS TimeKey
-							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(l.Task, l.Name, l.Version, DEFAULT, DEFAULT, DEFAULT) AS k) AS TaskNameVersionKey
-						FROM dbo.fhsmLog AS l
-						WHERE (1 = 1)
-							AND (l.TimestampUTC > DATEADD(DAY, -1, (SELECT MAX(lMax.TimestampUTC) FROM dbo.fhsmLog AS lMax)))
-							AND (
-								(l.Type <> ''''''''Debug'''''''')
-								OR (
-									(l.Type = ''''''''Debug'''''''')
-									AND (l.Version IS NOT NULL)
-								)
-							);
-					'''';
-					EXEC(@stmt);
-				'';
-				EXEC(@stmt);
-			END;
-
-			--
-			-- Register extended properties on fact view @pbiSchema.[Log]
-			--
-			BEGIN
-				SET @objectName = QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Log'');
-
-				SET @stmt = ''
-					USE '' + QUOTENAME(@fhSQLMonitorDatabase) + '';
-
-					DECLARE @objName nvarchar(128);
-					DECLARE @schName nvarchar(128);
-
-					SET @objName = PARSENAME(@objectName, 1);
-					SET @schName = PARSENAME(@objectName, 2);
-
-					EXEC dbo.fhsmSPExtendedProperties @objectType = ''''View'''', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''''FHSMVersion'''', @propertyValue = @version;
-					EXEC dbo.fhsmSPExtendedProperties @objectType = ''''View'''', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''''FHSMCreated'''', @propertyValue = @nowUTCStr;
-					EXEC dbo.fhsmSPExtendedProperties @objectType = ''''View'''', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''''FHSMCreatedBy'''', @propertyValue = @myUserName;
-					EXEC dbo.fhsmSPExtendedProperties @objectType = ''''View'''', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''''FHSMModified'''', @propertyValue = @nowUTCStr;
-					EXEC dbo.fhsmSPExtendedProperties @objectType = ''''View'''', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''''FHSMModifiedBy'''', @propertyValue = @myUserName;
-				'';
-				EXEC sp_executesql
-					@stmt
-					,N''@objectName nvarchar(128), @version sql_variant, @nowUTCStr sql_variant, @myUserName sql_variant''
-					,@objectName = @objectName
-					,@version = @version
-					,@nowUTCStr = @nowUTCStr
-					,@myUserName = @myUserName;
-			END;
+				EXEC dbo.fhsmSPViews @view = ''''LogNonDebugInfo'''', @version = @version, @nowUTC = @nowUTC;
+			'';
+			EXEC sp_executesql
+				@stmt
+				,N''@version sql_variant, @nowUTC datetime''
+				,@version = @version
+				,@nowUTC = @nowUTC;
 		END;
 
 		--
@@ -5086,7 +6296,8 @@ ELSE BEGIN
 						ALTER VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Schedules'') + ''
 						AS
 						SELECT
-							s.Enabled
+							s.Type
+							,s.Enabled
 							,CASE s.Enabled
 								WHEN 0 THEN ''''''''No''''''''
 								WHEN 1 THEN ''''''''Yes''''''''
@@ -5253,114 +6464,254 @@ ELSE BEGIN
 	END;
 
 	--
-	-- Create SQL agent job if it not already exists
-	--
-	IF (@createSQLAgentJob = 1)
-		AND NOT EXISTS (
-			SELECT *
-			FROM msdb.dbo.sysjobs AS sj
-			WHERE (sj.name = @fhsqlAgentJobName)
-		)
-	BEGIN
-		SET @stmt = ''
-			RAISERROR(''''Creating SQL agent job '' + @fhSQLMonitorDatabase + '''''', 0, 1) WITH NOWAIT;
-
-			EXEC msdb.dbo.sp_add_job
-				@job_name = N'''''' + @fhsqlAgentJobName + ''''''
-				,@enabled = 0
-				,@notify_level_eventlog = 0
-				,@notify_level_email = 2
-				,@notify_level_page = 2
-				,@delete_level = 0;
-
-			EXEC msdb.dbo.sp_add_jobserver
-				@job_name=N'''''' + @fhsqlAgentJobName + ''''''
-				,@server_name = N'''''' + @@SERVERNAME + '''''';
-
-			EXEC msdb.dbo.sp_add_jobstep
-				@job_name = N'''''' + @fhsqlAgentJobName + ''''''
-				,@step_name = N''''Run FHSQLMonitor''''
-				,@step_id = 1
-				,@cmdexec_success_code = 0
-				,@on_success_action = 1
-				,@on_fail_action = 2
-				,@retry_attempts = 0
-				,@retry_interval = 0
-				,@os_run_priority = 0
-				,@subsystem = N''''TSQL''''
-				,@command = N''''EXEC dbo.fhsmSPSchedules;''''
-				,@database_name = N'''''' + @fhSQLMonitorDatabase + ''''''
-				,@flags = 0;
-
-			EXEC msdb.dbo.sp_update_job
-				@job_name = N'''''' + @fhsqlAgentJobName + ''''''
-				,@enabled = 0
-				,@start_step_id = 1
-				,@notify_level_eventlog = 0
-				,@notify_level_email = 2
-				,@notify_level_page = 2
-				,@delete_level = 0
-				,@description = N''''''''
-				,@notify_email_operator_name = N''''''''
-				,@notify_page_operator_name = N'''''''';
-
-			EXEC msdb.dbo.sp_add_jobschedule
-				@job_name = N'''''' + @fhsqlAgentJobName + ''''''
-				,@name = N'''''' + @fhsqlAgentJobName + ''''''
-				,@enabled = 1
-				,@freq_type = 4
-				,@freq_interval = 1
-				,@freq_subday_type = 2	-- seconds
-				,@freq_subday_interval = 30
-				,@freq_relative_interval = 0
-				,@freq_recurrence_factor = 1
-				,@active_start_date = 20200910
-				,@active_end_date = 99991231
-				,@active_start_time = 0
-				,@active_end_time = 235959;
-		'';
-		EXEC(@stmt);
-	END;
-
-	--
-	-- Register the agent job name in dbo.fhsmConfigurations
+	-- Create SQL agent job for schedules type 0 (default) executing every 60 seconds if it not already exists
 	--
 	BEGIN
+		SET @agentType = 0;
+		SET @agentJobKey = ''AgentJobName'' + CAST(@agentType AS nvarchar);
+		SET @agentJobName = @fhsqlAgentJobNameType0;
 		SET @stmt = ''
 			USE '' + QUOTENAME(@fhSQLMonitorDatabase) + '';
 
-			WITH
-			cfg([Key], Value) AS(
-				SELECT
-					''''AgentJobName''''
-					,'''''' + @fhsqlAgentJobName + ''''''
-			)
-			MERGE dbo.fhsmConfigurations AS tgt
-			USING cfg AS src ON (src.[Key] = tgt.[Key])
-			WHEN MATCHED
-				THEN UPDATE
-					SET tgt.Value = src.Value
-			WHEN NOT MATCHED BY TARGET
-				THEN INSERT([Key], Value)
-				VALUES(src.[Key], src.Value);
+			SELECT @agentJobName = COALESCE(c.Value, @agentJobName)
+			FROM dbo.fhsmConfigurations AS c
+			WHERE (c.[Key] = @agentJobKey);
 		'';
-		EXEC(@stmt);
+		EXEC sp_executesql
+			@stmt
+			,N''@agentJobKey nvarchar(128), @agentJobName nvarchar(128) OUTPUT''
+			,@agentJobKey = @agentJobKey
+			,@agentJobName = @agentJobName OUTPUT;
+
+		IF (@createSQLAgentJobs = 1)
+			AND NOT EXISTS (
+				SELECT *
+				FROM msdb.dbo.sysjobs AS sj
+				WHERE (sj.name = @agentJobName)
+			)
+		BEGIN
+			SET @stmt = ''
+				RAISERROR(''''Creating SQL agent job '''''''''' + @agentJobName + '''''''''' for '' + @fhSQLMonitorDatabase + '''''', 0, 1) WITH NOWAIT;
+
+				EXEC msdb.dbo.sp_add_job
+					@job_name = N'''''' + @agentJobName + ''''''
+					,@enabled = 0
+					,@notify_level_eventlog = 0
+					,@notify_level_email = 2
+					,@notify_level_page = 2
+					,@delete_level = 0;
+
+				EXEC msdb.dbo.sp_add_jobserver
+					@job_name=N'''''' + @agentJobName + ''''''
+					,@server_name = N'''''' + @@SERVERNAME + '''''';
+
+				EXEC msdb.dbo.sp_add_jobstep
+					@job_name = N'''''' + @agentJobName + ''''''
+					,@step_name = N''''Run FHSQLMonitor type '' + CAST(@agentType AS nvarchar) + ''''''
+					,@step_id = 1
+					,@cmdexec_success_code = 0
+					,@on_success_action = 1
+					,@on_fail_action = 2
+					,@retry_attempts = 0
+					,@retry_interval = 0
+					,@os_run_priority = 0
+					,@subsystem = N''''TSQL''''
+					,@command = N''''EXEC dbo.fhsmSPSchedules @type = '' + CAST(@agentType AS nvarchar) + '';''''
+					,@database_name = N'''''' + @fhSQLMonitorDatabase + ''''''
+					,@flags = 0;
+
+				EXEC msdb.dbo.sp_update_job
+					@job_name = N'''''' + @agentJobName + ''''''
+					,@enabled = 0
+					,@start_step_id = 1
+					,@notify_level_eventlog = 0
+					,@notify_level_email = 2
+					,@notify_level_page = 2
+					,@delete_level = 0
+					,@description = N''''''''
+					,@notify_email_operator_name = N''''''''
+					,@notify_page_operator_name = N'''''''';
+
+				EXEC msdb.dbo.sp_add_jobschedule
+					@job_name = N'''''' + @agentJobName + ''''''
+					,@name = N'''''' + @agentJobName + ''''''
+					,@enabled = 1
+					,@freq_type = 4
+					,@freq_interval = 1
+					,@freq_subday_type = 2	-- seconds
+					,@freq_subday_interval = 60
+					,@freq_relative_interval = 0
+					,@freq_recurrence_factor = 1
+					,@active_start_date = 20200910
+					,@active_end_date = 99991231
+					,@active_start_time = 0
+					,@active_end_time = 235959;
+			'';
+			EXEC(@stmt);
+		END;
+
+		--
+		-- Register the agent job name in dbo.fhsmConfigurations
+		--
+		BEGIN
+			SET @stmt = ''
+				USE '' + QUOTENAME(@fhSQLMonitorDatabase) + '';
+
+				WITH
+				cfg([Key], Value) AS(
+					SELECT
+						@agentJobKey
+						,@agentJobName
+				)
+				MERGE dbo.fhsmConfigurations AS tgt
+				USING cfg AS src ON (src.[Key] = tgt.[Key])
+				WHEN MATCHED
+					THEN UPDATE
+						SET tgt.Value = src.Value
+				WHEN NOT MATCHED BY TARGET
+					THEN INSERT([Key], Value)
+					VALUES(src.[Key], src.Value);
+			'';
+			EXEC sp_executesql
+				@stmt
+				,N''@agentJobKey nvarchar(128), @agentJobName nvarchar(128)''
+				,@agentJobKey = @agentJobKey
+				,@agentJobName = @agentJobName;
+		END;
+	END;
+
+	--
+	-- Create SQL agent job for schedules type 1 executing every 30 seconds if it not already exists
+	--
+	BEGIN
+		SET @agentType = 1;
+		SET @agentJobKey = ''AgentJobName'' + CAST(@agentType AS nvarchar);
+		SET @agentJobName = @fhsqlAgentJobNameType1;
+		SET @stmt = ''
+			USE '' + QUOTENAME(@fhSQLMonitorDatabase) + '';
+
+			SELECT @agentJobName = COALESCE(c.Value, @agentJobName)
+			FROM dbo.fhsmConfigurations AS c
+			WHERE (c.[Key] = @agentJobKey);
+		'';
+		EXEC sp_executesql
+			@stmt
+			,N''@agentJobKey nvarchar(128), @agentJobName nvarchar(128) OUTPUT''
+			,@agentJobKey = @agentJobKey
+			,@agentJobName = @agentJobName OUTPUT;
+
+		IF (@createSQLAgentJobs = 1)
+			AND NOT EXISTS (
+				SELECT *
+				FROM msdb.dbo.sysjobs AS sj
+				WHERE (sj.name = @agentJobName)
+			)
+		BEGIN
+			SET @stmt = ''
+				RAISERROR(''''Creating SQL agent job '''''''''' + @agentJobName + '''''''''' for '' + @fhSQLMonitorDatabase + '''''', 0, 1) WITH NOWAIT;
+
+				EXEC msdb.dbo.sp_add_job
+					@job_name = N'''''' + @agentJobName + ''''''
+					,@enabled = 0
+					,@notify_level_eventlog = 0
+					,@notify_level_email = 2
+					,@notify_level_page = 2
+					,@delete_level = 0;
+
+				EXEC msdb.dbo.sp_add_jobserver
+					@job_name=N'''''' + @agentJobName + ''''''
+					,@server_name = N'''''' + @@SERVERNAME + '''''';
+
+				EXEC msdb.dbo.sp_add_jobstep
+					@job_name = N'''''' + @agentJobName + ''''''
+					,@step_name = N''''Run FHSQLMonitor type '' + CAST(@agentType AS nvarchar) + ''''''
+					,@step_id = 1
+					,@cmdexec_success_code = 0
+					,@on_success_action = 1
+					,@on_fail_action = 2
+					,@retry_attempts = 0
+					,@retry_interval = 0
+					,@os_run_priority = 0
+					,@subsystem = N''''TSQL''''
+					,@command = N''''EXEC dbo.fhsmSPSchedules @type = '' + CAST(@agentType AS nvarchar) + '';''''
+					,@database_name = N'''''' + @fhSQLMonitorDatabase + ''''''
+					,@flags = 0;
+
+				EXEC msdb.dbo.sp_update_job
+					@job_name = N'''''' + @agentJobName + ''''''
+					,@enabled = 0
+					,@start_step_id = 1
+					,@notify_level_eventlog = 0
+					,@notify_level_email = 2
+					,@notify_level_page = 2
+					,@delete_level = 0
+					,@description = N''''''''
+					,@notify_email_operator_name = N''''''''
+					,@notify_page_operator_name = N'''''''';
+
+				EXEC msdb.dbo.sp_add_jobschedule
+					@job_name = N'''''' + @agentJobName + ''''''
+					,@name = N'''''' + @agentJobName + ''''''
+					,@enabled = 1
+					,@freq_type = 4
+					,@freq_interval = 1
+					,@freq_subday_type = 2	-- seconds
+					,@freq_subday_interval = 30
+					,@freq_relative_interval = 0
+					,@freq_recurrence_factor = 1
+					,@active_start_date = 20200910
+					,@active_end_date = 99991231
+					,@active_start_time = 0
+					,@active_end_time = 235959;
+			'';
+			EXEC(@stmt);
+		END;
+
+		--
+		-- Register the agent job name in dbo.fhsmConfigurations
+		--
+		BEGIN
+			SET @stmt = ''
+				USE '' + QUOTENAME(@fhSQLMonitorDatabase) + '';
+
+				WITH
+				cfg([Key], Value) AS(
+					SELECT
+						@agentJobKey
+						,@agentJobName
+				)
+				MERGE dbo.fhsmConfigurations AS tgt
+				USING cfg AS src ON (src.[Key] = tgt.[Key])
+				WHEN MATCHED
+					THEN UPDATE
+						SET tgt.Value = src.Value
+				WHEN NOT MATCHED BY TARGET
+					THEN INSERT([Key], Value)
+					VALUES(src.[Key], src.Value);
+			'';
+			EXEC sp_executesql
+				@stmt
+				,N''@agentJobKey nvarchar(128), @agentJobName nvarchar(128)''
+				,@agentJobKey = @agentJobKey
+				,@agentJobName = @agentJobName;
+		END;
 	END;
 END;
 
 ';
-SET @stmt = REPLACE(@stmt, 'SET @createSQLAgentJob = 1;',                                'SET @createSQLAgentJob = ' + CAST(@createSQLAgentJob AS nvarchar) + ';');
+SET @stmt = REPLACE(@stmt, 'SET @createSQLAgentJobs = 1;',                               'SET @createSQLAgentJobs = ' + CAST(@createSQLAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @fhSQLMonitorDatabase = ''FHSQLMonitor'';',              'SET @fhSQLMonitorDatabase = ''' + @fhSQLMonitorDatabase + ''';');
-SET @stmt = REPLACE(@stmt, 'SET @fhsqlAgentJobName = ''FHSQLMonitor in FHSQLMonitor'';', 'SET @fhsqlAgentJobName = ''' + @fhsqlAgentJobName + ''';');
+SET @stmt = REPLACE(@stmt, 'SET @fhsqlAgentJobNameType0 = ''FHSQLMonitor type 0 in FHSQLMonitor'';', 'SET @fhsqlAgentJobNameType0 = ''' + @fhsqlAgentJobNameType0 + ''';');
+SET @stmt = REPLACE(@stmt, 'SET @fhsqlAgentJobNameType1 = ''FHSQLMonitor type 1 in FHSQLMonitor'';', 'SET @fhsqlAgentJobNameType1 = ''' + @fhsqlAgentJobNameType1 + ''';');
 SET @stmt = REPLACE(@stmt, 'SET @pbiSchema = ''FHSM'';',                                 'SET @pbiSchema = ''' + @pbiSchema + ''';');
-SET @stmt = REPLACE(@stmt, 'SET @buildTimeStr = ''YYYY.MM.DD HH.MM.SS'';',               'SET @buildTimeStr = ''2025.09.26 13.45.08'';');
+SET @stmt = REPLACE(@stmt, 'SET @buildTimeStr = ''YYYY-MM-DD HH:MM:SS'';',               'SET @buildTimeStr = ''2026.03.22 08.58.37'';');
 EXEC(@stmt);
 
 --
 -- File part:IndexOptimize-001-OlaHallengren-CommandLog.sql modified: 2025.09.14 09.33.02
 --
 SET @stmt = '
-USE [' + @fhSQLMonitorDatabase + '];
+USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
 SET NOCOUNT ON;
 
 --
@@ -5471,6 +6822,8 @@ END;
 SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
+SET @stmt = REPLACE(@stmt, 'SET @ignoreAutoIndex = 0;',                'SET @ignoreAutoIndex = 1;');
+
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
@@ -5504,7 +6857,7 @@ EXEC(@stmt);
 -- File part:IndexOptimize-002-OlaHallengren-CommandExecute.sql modified: 2025.06.16 09.11.46
 --
 SET @stmt = '
-USE [' + @fhSQLMonitorDatabase + '];
+USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
 SET NOCOUNT ON;
 
 --
@@ -5836,6 +7189,8 @@ END;
 SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
+SET @stmt = REPLACE(@stmt, 'SET @ignoreAutoIndex = 0;',                'SET @ignoreAutoIndex = 1;');
+
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
@@ -5869,7 +7224,7 @@ EXEC(@stmt);
 -- File part:IndexOptimize-003-OlaHallengren-IndexOptimize.sql modified: 2025.06.16 09.14.58
 --
 SET @stmt = '
-USE [' + @fhSQLMonitorDatabase + '];
+USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
 SET NOCOUNT ON;
 
 --
@@ -8400,6 +9755,8 @@ END;
 SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
+SET @stmt = REPLACE(@stmt, 'SET @ignoreAutoIndex = 0;',                'SET @ignoreAutoIndex = 1;');
+
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
@@ -8430,10 +9787,10 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @ena
 EXEC(@stmt);
 
 --
--- File part:IndexOptimize-004.sql modified: 2025.09.14 09.36.45
+-- File part:IndexOptimize-004.sql modified: 2026.02.07 20.28.30
 --
 SET @stmt = '
-USE [' + @fhSQLMonitorDatabase + '];
+USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
 SET NOCOUNT ON;
 
 --
@@ -8444,11 +9801,13 @@ BEGIN
 	DECLARE @enableIndexReorganize bit;
 	DECLARE @enableUpdateAllStatistics bit;
 	DECLARE @enableUpdateModifiedStatistics bit;
+	DECLARE @ignoreAutoIndex bit;
 
 	SET @enableIndexRebuild = 0;
 	SET @enableIndexReorganize = 0;
 	SET @enableUpdateAllStatistics = 0;
 	SET @enableUpdateModifiedStatistics = 0;
+	SET @ignoreAutoIndex = 0;
 END;
 
 --
@@ -8581,7 +9940,7 @@ BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.11.0'';
+		SET @version = ''2.12.0'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -8893,7 +10252,7 @@ BEGIN
 					SET @version = '''''' + @version + '''''';
 			'';
 			SET @stmt += ''
-					IF (@Type = ''''Parameter'''')
+					IF (@Type = ''''parameter'''')
 					BEGIN
 						IF (@Command = ''''set'''')
 						BEGIN
@@ -8963,7 +10322,7 @@ BEGIN
 					END
 			'';
 			SET @stmt += ''
-					ELSE IF (@Type = ''''Uninstall'''')
+					ELSE IF (@Type = ''''uninstall'''')
 					BEGIN
 						--
 						-- Place holder
@@ -9181,13 +10540,15 @@ BEGIN
 	--
 	BEGIN
 		SET @stmt = COALESCE(QUOTENAME(@olaDatabase) + ''.'', '''') + ''dbo.CommandLog'';
-		EXEC dbo.fhsmSPUpdateDimensions @table = @stmt;
+		EXEC dbo.fhsmSPUpdateDimensions @table = @stmt, @ignoreAutoIndex = @ignoreAutoIndex;
 	END;
 END;
 
 ';
 SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
+
+SET @stmt = REPLACE(@stmt, 'SET @ignoreAutoIndex = 0;',                'SET @ignoreAutoIndex = 1;');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
@@ -9219,10 +10580,10 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @ena
 EXEC(@stmt);
 
 --
--- File part:DatabaseState.sql modified: 2025.09.14 09.33.00
+-- File part:DatabaseState.sql modified: 2026.02.28 23.00.30
 --
 SET @stmt = '
-USE [' + @fhSQLMonitorDatabase + '];
+USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
 SET NOCOUNT ON;
 
 --
@@ -9230,8 +10591,10 @@ SET NOCOUNT ON;
 --
 BEGIN
 	DECLARE @enableDatabaseState bit;
+	DECLARE @ignoreAutoIndex bit;
 
 	SET @enableDatabaseState = 0;
+	SET @ignoreAutoIndex = 0;
 END;
 
 --
@@ -9291,7 +10654,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.11.0'';
+		SET @version = ''2.12.0'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -9526,14 +10889,14 @@ ELSE BEGIN
 							WHEN ''''1'''' THEN ''''Yes''''
 						END																AS IsSuspendedTxt
 						,dbo.fhsmFNConvertToDisplayTxt(pvt.suspend_reason_desc)			AS SuspendReason
-						,(SELECT MIN(aoState.Timestamp) FROM dbo.fhsmAlwaysOnState AS aoState WHERE (aoState.GroupA = pvt.GroupA) AND (aoState.GroupB = pvt.GroupB) AND (aoState.GroupC = pvt.GroupC) AND (aoState.Query = 6) AND (aoState.ValidTo = ''''9999-12-31 23:59:59.000'''')) AS MinTimestamp
-						,(SELECT MAX(aoState.Timestamp) FROM dbo.fhsmAlwaysOnState AS aoState WHERE (aoState.GroupA = pvt.GroupA) AND (aoState.GroupB = pvt.GroupB) AND (aoState.GroupC = pvt.GroupC) AND (aoState.Query = 6) AND (aoState.ValidTo = ''''9999-12-31 23:59:59.000'''')) AS MaxTimestamp
+						,(SELECT MIN(aoState.Timestamp) FROM dbo.fhsmAlwaysOnState AS aoState WHERE (aoState.GroupA = pvt.GroupA) AND (aoState.GroupB = pvt.GroupB) AND (aoState.GroupC = pvt.GroupC) AND (aoState.Query = 6) AND (aoState.ValidTo = ''''9999-12-31T23:59:59'''')) AS MinTimestamp
+						,(SELECT MAX(aoState.Timestamp) FROM dbo.fhsmAlwaysOnState AS aoState WHERE (aoState.GroupA = pvt.GroupA) AND (aoState.GroupB = pvt.GroupB) AND (aoState.GroupC = pvt.GroupC) AND (aoState.Query = 6) AND (aoState.ValidTo = ''''9999-12-31T23:59:59'''')) AS MaxTimestamp
 						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(pvt.GroupA, DEFAULT,    DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS AlwaysOnGroupKey
 						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(pvt.GroupA, pvt.GroupB, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS AlwaysOnGroupReplicaKey
 					FROM (
 						SELECT aoState.GroupA, aoState.GroupB, aoState.GroupC, aoState.[Key], aoState.Value AS _Value_
 						FROM dbo.fhsmAlwaysOnState AS aoState
-						WHERE (aoState.Query = 6) AND (aoState.ValidTo = ''''9999-12-31 23:59:59.000'''')
+						WHERE (aoState.Query = 6) AND (aoState.ValidTo = ''''9999-12-31T23:59:59'''')
 					) AS p
 					PIVOT (
 						MAX(_Value_)
@@ -9582,14 +10945,14 @@ ELSE BEGIN
 						,dbo.fhsmFNConvertToDisplayTxt(pvt.primary_recovery_health_desc)	AS PrimaryRecoveryHealth
 						,dbo.fhsmFNConvertToDisplayTxt(pvt.secondary_recovery_health_desc)	AS SecondaryRecoveryHealth
 						,dbo.fhsmFNConvertToDisplayTxt(pvt.synchronization_health_desc)		AS SynchronizationHealth
-						,(SELECT MIN(aoState.Timestamp) FROM dbo.fhsmAlwaysOnState AS aoState WHERE (aoState.GroupA = pvt.GroupA) AND (aoState.GroupB = pvt.GroupB) AND (aoState.Query = 3) AND (aoState.ValidTo = ''''9999-12-31 23:59:59.000'''')) AS MinTimestamp
-						,(SELECT MAX(aoState.Timestamp) FROM dbo.fhsmAlwaysOnState AS aoState WHERE (aoState.GroupA = pvt.GroupA) AND (aoState.GroupB = pvt.GroupB) AND (aoState.Query = 3) AND (aoState.ValidTo = ''''9999-12-31 23:59:59.000'''')) AS MaxTimestamp
+						,(SELECT MIN(aoState.Timestamp) FROM dbo.fhsmAlwaysOnState AS aoState WHERE (aoState.GroupA = pvt.GroupA) AND (aoState.GroupB = pvt.GroupB) AND (aoState.Query = 3) AND (aoState.ValidTo = ''''9999-12-31T23:59:59'''')) AS MinTimestamp
+						,(SELECT MAX(aoState.Timestamp) FROM dbo.fhsmAlwaysOnState AS aoState WHERE (aoState.GroupA = pvt.GroupA) AND (aoState.GroupB = pvt.GroupB) AND (aoState.Query = 3) AND (aoState.ValidTo = ''''9999-12-31T23:59:59'''')) AS MaxTimestamp
 						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(pvt.GroupA, DEFAULT,    DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS AlwaysOnGroupKey
 						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(pvt.GroupA, pvt.GroupB, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS AlwaysOnGroupReplicaKey
 					FROM (
 						SELECT aoState.GroupA, aoState.GroupB, aoState.[Key], aoState.Value AS _Value_
 						FROM dbo.fhsmAlwaysOnState AS aoState
-						WHERE (aoState.Query = 3) AND (aoState.ValidTo = ''''9999-12-31 23:59:59.000'''')
+						WHERE (aoState.Query = 3) AND (aoState.ValidTo = ''''9999-12-31T23:59:59'''')
 					) AS p
 					PIVOT (
 						MAX(_Value_)
@@ -9639,14 +11002,14 @@ ELSE BEGIN
 						,pvt.read_only_routing_url													AS ReadOnlyRoutingURL
 						,CAST(pvt.routing_priority AS int)											AS RoutingPriority
 						,dbo.fhsmFNConvertToDisplayTxt(pvt.secondary_role_allow_connections_desc)	AS SecondaryRoleAllowConnections
-						,(SELECT MIN(aoState.Timestamp) FROM dbo.fhsmAlwaysOnState AS aoState WHERE (aoState.GroupA = pvt.GroupA) AND (aoState.GroupB = pvt.GroupB) AND (aoState.GroupC = pvt.GroupC) AND (aoState.Query = 4) AND (aoState.ValidTo = ''''9999-12-31 23:59:59.000'''')) AS MinTimestamp
-						,(SELECT MAX(aoState.Timestamp) FROM dbo.fhsmAlwaysOnState AS aoState WHERE (aoState.GroupA = pvt.GroupA) AND (aoState.GroupB = pvt.GroupB) AND (aoState.GroupC = pvt.GroupC) AND (aoState.Query = 4) AND (aoState.ValidTo = ''''9999-12-31 23:59:59.000'''')) AS MaxTimestamp
+						,(SELECT MIN(aoState.Timestamp) FROM dbo.fhsmAlwaysOnState AS aoState WHERE (aoState.GroupA = pvt.GroupA) AND (aoState.GroupB = pvt.GroupB) AND (aoState.GroupC = pvt.GroupC) AND (aoState.Query = 4) AND (aoState.ValidTo = ''''9999-12-31T23:59:59'''')) AS MinTimestamp
+						,(SELECT MAX(aoState.Timestamp) FROM dbo.fhsmAlwaysOnState AS aoState WHERE (aoState.GroupA = pvt.GroupA) AND (aoState.GroupB = pvt.GroupB) AND (aoState.GroupC = pvt.GroupC) AND (aoState.Query = 4) AND (aoState.ValidTo = ''''9999-12-31T23:59:59'''')) AS MaxTimestamp
 						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(pvt.GroupA, DEFAULT,    DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS AlwaysOnGroupKey
 						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(pvt.GroupA, pvt.GroupB, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS AlwaysOnGroupReplicaKey
 					FROM (
 						SELECT aoState.GroupA, aoState.GroupB, aoState.GroupC, aoState.[Key], aoState.Value AS _Value_
 						FROM dbo.fhsmAlwaysOnState AS aoState
-						WHERE (aoState.Query = 4) AND (aoState.ValidTo = ''''9999-12-31 23:59:59.000'''')
+						WHERE (aoState.Query = 4) AND (aoState.ValidTo = ''''9999-12-31T23:59:59'''')
 					) AS p
 					PIVOT (
 						MAX(_Value_)
@@ -9700,14 +11063,14 @@ ELSE BEGIN
 						,CAST(pvt.backup_priority AS int)											AS BackupPriority
 						,pvt.read_only_routing_url													AS ReadOnlyRoutingURL
 						,pvt.read_write_routing_url													AS ReadWriteRoutingURL
-						,(SELECT MIN(aoState.Timestamp) FROM dbo.fhsmAlwaysOnState AS aoState WHERE (aoState.GroupA = pvt.GroupA) AND (aoState.GroupB = pvt.GroupB) AND (aoState.Query = 5) AND (aoState.ValidTo = ''''9999-12-31 23:59:59.000'''')) AS MinTimestamp
-						,(SELECT MAX(aoState.Timestamp) FROM dbo.fhsmAlwaysOnState AS aoState WHERE (aoState.GroupA = pvt.GroupA) AND (aoState.GroupB = pvt.GroupB) AND (aoState.Query = 5) AND (aoState.ValidTo = ''''9999-12-31 23:59:59.000'''')) AS MaxTimestamp
+						,(SELECT MIN(aoState.Timestamp) FROM dbo.fhsmAlwaysOnState AS aoState WHERE (aoState.GroupA = pvt.GroupA) AND (aoState.GroupB = pvt.GroupB) AND (aoState.Query = 5) AND (aoState.ValidTo = ''''9999-12-31T23:59:59'''')) AS MinTimestamp
+						,(SELECT MAX(aoState.Timestamp) FROM dbo.fhsmAlwaysOnState AS aoState WHERE (aoState.GroupA = pvt.GroupA) AND (aoState.GroupB = pvt.GroupB) AND (aoState.Query = 5) AND (aoState.ValidTo = ''''9999-12-31T23:59:59'''')) AS MaxTimestamp
 						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(pvt.GroupA, DEFAULT,    DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS AlwaysOnGroupKey
 						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(pvt.GroupA, pvt.GroupB, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS AlwaysOnGroupReplicaKey
 					FROM (
 						SELECT aoState.GroupA, aoState.GroupB, aoState.[Key], aoState.Value AS _Value_
 						FROM dbo.fhsmAlwaysOnState AS aoState
-						WHERE (aoState.Query = 5) AND (aoState.ValidTo = ''''9999-12-31 23:59:59.000'''')
+						WHERE (aoState.Query = 5) AND (aoState.ValidTo = ''''9999-12-31T23:59:59'''')
 					) AS p
 					PIVOT (
 						MAX(_Value_)
@@ -9761,6 +11124,7 @@ ELSE BEGIN
 							WHEN 2 THEN ''''Forced''''
 							ELSE ''''?:'''' + pvt.delayed_durability
 						END AS DelayedDurability
+						,pvt.database_owner AS DatabaseOwner
 						,CAST(pvt.is_auto_close_on AS bit) AS IsAutoCloseOn
 						,CASE CAST(pvt.is_auto_close_on AS bit)
 							WHEN 0 THEN ''''No''''
@@ -9823,6 +11187,12 @@ ELSE BEGIN
 							WHEN 1 THEN ''''Yes''''
 							ELSE ''''N.A.''''
 						END AS IsReadOnlyTxt
+						,CAST(pvt.is_trustworthy_on AS bit) AS IsTrustworthyOn
+						,CASE CAST(pvt.is_trustworthy_on AS bit)
+							WHEN 0 THEN ''''No''''
+							WHEN 1 THEN ''''Yes''''
+							ELSE ''''N.A.''''
+						END AS IsTrustworthyOnTxt
 						,CASE pvt.recovery_model
 							WHEN 1 THEN ''''Full''''
 							WHEN 2 THEN ''''Bulk logged''''
@@ -9845,8 +11215,8 @@ ELSE BEGIN
 						,pvt.replica_id AS ReplicaId
 						,pvt.AlwaysOnGroupName
 						,CAST(pvt.IsOnAlwaysOnPrimary AS int) AS IsOnAlwaysOnPrimary
-						,(SELECT MIN(dbState.Timestamp) FROM dbo.fhsmDatabaseState AS dbState WHERE (dbState.DatabaseName = pvt.DatabaseName) AND (dbState.Query = 31) AND (dbState.ValidTo = ''''9999-12-31 23:59:59.000'''')) AS MinTimestamp
-						,(SELECT MAX(dbState.Timestamp) FROM dbo.fhsmDatabaseState AS dbState WHERE (dbState.DatabaseName = pvt.DatabaseName) AND (dbState.Query = 31) AND (dbState.ValidTo = ''''9999-12-31 23:59:59.000'''')) AS MaxTimestamp
+						,(SELECT MIN(dbState.Timestamp) FROM dbo.fhsmDatabaseState AS dbState WHERE (dbState.DatabaseName = pvt.DatabaseName) AND (dbState.Query = 31) AND (dbState.ValidTo = ''''9999-12-31T23:59:59'''')) AS MinTimestamp
+						,(SELECT MAX(dbState.Timestamp) FROM dbo.fhsmDatabaseState AS dbState WHERE (dbState.DatabaseName = pvt.DatabaseName) AND (dbState.Query = 31) AND (dbState.ValidTo = ''''9999-12-31T23:59:59'''')) AS MaxTimestamp
 						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(pvt.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
 					FROM (
 						SELECT dbState.DatabaseName, dbState.[Key], dbState.Value AS _Value_
@@ -9855,17 +11225,18 @@ ELSE BEGIN
 							FROM dbo.fhsmDatabaseState AS dbState
 							WHERE
 								(dbState.Query = 31)
-								AND (dbState.ValidTo = ''''9999-12-31 23:59:59.000'''')
+								AND (dbState.ValidTo = ''''9999-12-31T23:59:59'''')
 						) AS toCheck
 						INNER JOIN dbo.fhsmDatabaseState AS dbState ON (dbState.DatabaseName = toCheck.DatabaseName)
-						WHERE (dbState.Query = 31) AND (dbState.ValidTo = ''''9999-12-31 23:59:59.000'''')
+						WHERE (dbState.Query = 31) AND (dbState.ValidTo = ''''9999-12-31T23:59:59'''')
 					) AS p
 					PIVOT (
 						MAX(_Value_)
 						FOR [Key] IN (
-							[collation_name], [compatibility_level], [delayed_durability]
+							[collation_name], [compatibility_level], [database_owner], [delayed_durability]
 							,[is_auto_close_on], [is_auto_shrink_on], [is_auto_update_stats_async_on], [is_encrypted], [is_in_standby]
 							,[is_mixed_page_allocation_on], [is_parameterization_forced], [is_read_committed_snapshot_on], [is_read_only]
+							,[is_trustworthy_on]
 							,[page_verify_option], [recovery_model], [state], [target_recovery_time_in_seconds], [replica_id]
 							,[AlwaysOnGroupName], [IsOnAlwaysOnPrimary])
 					) AS pvt;
@@ -9918,14 +11289,16 @@ ELSE BEGIN
 						FROM dbo.fhsmDatabaseState AS dbState
 						WHERE
 							(dbState.Query = 31)
-							AND (dbState.ValidTo = ''''9999-12-31 23:59:59.000'''')
+							AND (dbState.ValidTo = ''''9999-12-31T23:59:59'''')
 					) AS toCheck
 					INNER JOIN dbo.fhsmDatabaseState AS dbState ON (dbState.DatabaseName = toCheck.DatabaseName)
 					WHERE (dbState.Query = 31)
 						AND (dbState.[Key] IN (
-							''''collation_name'''', ''''compatibility_level'''', ''''delayed_durability''''
-							,''''is_auto_close_on'''', ''''is_auto_shrink_on'''', ''''is_auto_update_stats_async_on'''', ''''is_encrypted'''', ''''is_mixed_page_allocation_on''''
-							,''''is_read_committed_snapshot_on'''', ''''page_verify_option'''', ''''recovery_model'''', ''''target_recovery_time_in_seconds''''
+							''''collation_name'''', ''''compatibility_level'''', ''''database_owner'''', ''''delayed_durability''''
+							,''''is_auto_close_on'''', ''''is_auto_shrink_on'''', ''''is_auto_update_stats_async_on'''', ''''is_encrypted'''', ''''is_in_standby''''
+							,''''is_mixed_page_allocation_on'''', ''''is_parameterization_forced'''', ''''is_read_committed_snapshot_on'''', ''''is_read_only''''
+							,''''is_trustworthy_on''''
+							,''''page_verify_option'''', ''''recovery_model'''', ''''state'''', ''''target_recovery_time_in_seconds''''
 							,''''AlwaysOnGroupName'''', ''''IsOnAlwaysOnPrimary''''
 						))
 				)
@@ -9938,78 +11311,110 @@ ELSE BEGIN
 						,CASE a.[Key]
 							WHEN ''''collation_name'''' THEN ''''Collation''''
 							WHEN ''''compatibility_level'''' THEN ''''Comp. level''''
+							WHEN ''''database_owner'''' THEN ''''Database owner''''
 							WHEN ''''delayed_durability'''' THEN ''''Delayed durability''''
 							WHEN ''''is_auto_close_on'''' THEN ''''Auto close''''
 							WHEN ''''is_auto_shrink_on'''' THEN ''''Auto shrink''''
 							WHEN ''''is_auto_update_stats_async_on'''' THEN ''''Auto update stats. async.''''
 							WHEN ''''is_encrypted'''' THEN ''''Encrypted''''
+							WHEN ''''is_in_standby'''' THEN ''''In standby''''
 							WHEN ''''is_mixed_page_allocation_on'''' THEN ''''Mixed page allocation''''
+							WHEN ''''is_parameterization_forced'''' THEN ''''Parameterization forced''''
 							WHEN ''''is_read_committed_snapshot_on'''' THEN ''''Is read committed snapshot on''''
+							WHEN ''''is_read_only'''' THEN ''''Read only''''
+							WHEN ''''is_trustworthy_on'''' THEN ''''Trustworthy''''
 							WHEN ''''page_verify_option'''' THEN ''''Page verify''''
 							WHEN ''''recovery_model'''' THEN ''''Recovery model''''
+							WHEN ''''state'''' THEN ''''State''''
 							WHEN ''''target_recovery_time_in_seconds'''' THEN ''''Target recovery time in sec.''''
 							WHEN ''''AlwaysOnGroupName'''' THEN ''''AlwaysOn group''''
 							WHEN ''''IsOnAlwaysOnPrimary'''' THEN ''''Is on AlwaysOn primary''''
 							ELSE a.[Key]
 						END AS [Key]
 						,a.ValidFrom
-						,NULLIF(a.ValidTo, ''''9999-12-31 23:59:59.000'''') AS ValidTo
+						,NULLIF(a.ValidTo, ''''9999-12-31T23:59:59'''') AS ValidTo
+			'';
+			SET @stmt += ''
 						,CASE a.[Key]
 							WHEN ''''delayed_durability''''
 								THEN CASE a.Value
-									WHEN 0 THEN ''''DISABLED''''
-									WHEN 1 THEN ''''ALLOWED''''
-									WHEN 2 THEN ''''FORCED''''
+									WHEN 0 THEN ''''Disabled''''
+									WHEN 1 THEN ''''Allowed''''
+									WHEN 2 THEN ''''Forced''''
 									ELSE ''''?:'''' + a.Value
 								END
 							WHEN ''''is_auto_close_on''''
 								THEN CASE a.Value
-									WHEN 0 THEN ''''False''''
-									WHEN 1 THEN ''''True''''
+									WHEN 0 THEN ''''No''''
+									WHEN 1 THEN ''''Yes''''
 									ELSE ''''?:'''' + a.Value
 								END
 							WHEN ''''is_auto_shrink_on''''
 								THEN CASE a.Value
-									WHEN 0 THEN ''''False''''
-									WHEN 1 THEN ''''True''''
+									WHEN 0 THEN ''''No''''
+									WHEN 1 THEN ''''Yes''''
 									ELSE ''''?:'''' + a.Value
 								END
 							WHEN ''''is_auto_update_stats_async_on''''
 								THEN CASE a.Value
-									WHEN 0 THEN ''''False''''
-									WHEN 1 THEN ''''True''''
+									WHEN 0 THEN ''''No''''
+									WHEN 1 THEN ''''Yes''''
 									ELSE ''''?:'''' + a.Value
 								END
 							WHEN ''''is_encrypted''''
 								THEN CASE a.Value
-									WHEN 0 THEN ''''False''''
-									WHEN 1 THEN ''''True''''
+									WHEN 0 THEN ''''No''''
+									WHEN 1 THEN ''''Yes''''
+									ELSE ''''?:'''' + a.Value
+								END
+							WHEN ''''is_in_standby''''
+								THEN CASE a.Value
+									WHEN 0 THEN ''''No''''
+									WHEN 1 THEN ''''Yes''''
 									ELSE ''''?:'''' + a.Value
 								END
 							WHEN ''''is_mixed_page_allocation_on''''
 								THEN CASE a.Value
-									WHEN 0 THEN ''''False''''
-									WHEN 1 THEN ''''True''''
+									WHEN 0 THEN ''''No''''
+									WHEN 1 THEN ''''Yes''''
+									ELSE ''''?:'''' + a.Value
+								END
+							WHEN ''''is_parameterization_forced''''
+								THEN CASE a.Value
+									WHEN 0 THEN ''''No''''
+									WHEN 1 THEN ''''Yes''''
 									ELSE ''''?:'''' + a.Value
 								END
 							WHEN ''''page_verify_option''''
 								THEN CASE a.Value
-									WHEN 0 THEN ''''NONE''''
-									WHEN 1 THEN ''''TORN_PAGE_DETECTION''''
-									WHEN 2 THEN ''''CHECKSUM''''
+									WHEN 0 THEN ''''None''''
+									WHEN 1 THEN ''''Torn page detection''''
+									WHEN 2 THEN ''''Checksum''''
 									ELSE ''''?:'''' + a.Value
 								END
 							WHEN ''''is_read_committed_snapshot_on''''
 								THEN CASE a.Value
-									WHEN 0 THEN ''''False''''
-									WHEN 1 THEN ''''True''''
+									WHEN 0 THEN ''''No''''
+									WHEN 1 THEN ''''Yes''''
+									ELSE ''''?:'''' + a.Value
+								END
+							WHEN ''''is_read_only''''
+								THEN CASE a.Value
+									WHEN 0 THEN ''''No''''
+									WHEN 1 THEN ''''Yes''''
+									ELSE ''''?:'''' + a.Value
+								END
+							WHEN ''''is_trustworthy_on''''
+								THEN CASE a.Value
+									WHEN 0 THEN ''''No''''
+									WHEN 1 THEN ''''Yes''''
 									ELSE ''''?:'''' + a.Value
 								END
 							WHEN ''''recovery_model''''
 								THEN CASE a.Value
-									WHEN 1 THEN ''''FULL''''
-									WHEN 2 THEN ''''BULK_LOGGED''''
-									WHEN 3 THEN ''''SIMPLE''''
+									WHEN 1 THEN ''''Full''''
+									WHEN 2 THEN ''''Bulk logged''''
+									WHEN 3 THEN ''''Simple''''
 									ELSE ''''?:'''' + a.Value
 								END
 							WHEN ''''IsOnAlwaysOnPrimary''''
@@ -10017,6 +11422,19 @@ ELSE BEGIN
 									WHEN 1 THEN ''''Yes''''
 									WHEN 2 THEN ''''No''''
 									WHEN 3 THEN ''''N.A.''''
+									ELSE ''''?:'''' + a.Value
+								END
+							WHEN ''''State''''
+								THEN CASE a.Value
+									WHEN  0 THEN ''''Online''''
+									WHEN  1 THEN ''''Restoring''''
+									WHEN  2 THEN ''''Recovering''''
+									WHEN  3 THEN ''''Recovery pending''''
+									WHEN  4 THEN ''''Suspect''''
+									WHEN  5 THEN ''''Emergency''''
+									WHEN  6 THEN ''''Offline''''
+									WHEN  7 THEN ''''Copying''''
+									WHEN 10 THEN ''''Offline secondary''''
 									ELSE ''''?:'''' + a.Value
 								END
 							ELSE a.Value
@@ -10051,14 +11469,16 @@ ELSE BEGIN
 							FROM dbo.fhsmDatabaseState AS dbState
 							WHERE
 								(dbState.Query = 31)
-								AND (dbState.ValidTo = ''''9999-12-31 23:59:59.000'''')
+								AND (dbState.ValidTo = ''''9999-12-31T23:59:59'''')
 						) AS toCheck
 						INNER JOIN dbo.fhsmDatabaseState AS dbState ON (dbState.DatabaseName = toCheck.DatabaseName)
 						WHERE (dbState.Query = 31)
 							AND (dbState.[Key] IN (
-								''''collation_name'''', ''''compatibility_level'''', ''''delayed_durability''''
-								,''''is_auto_close_on'''', ''''is_auto_shrink_on'''', ''''is_auto_update_stats_async_on'''', ''''is_encrypted'''', ''''is_mixed_page_allocation_on''''
-								,''''is_read_committed_snapshot_on'''', ''''page_verify_option'''', ''''recovery_model'''', ''''target_recovery_time_in_seconds''''
+								''''collation_name'''', ''''compatibility_level'''', ''''database_owner'''', ''''delayed_durability''''
+								,''''is_auto_close_on'''', ''''is_auto_shrink_on'''', ''''is_auto_update_stats_async_on'''', ''''is_encrypted'''', ''''is_in_standby''''
+								,''''is_mixed_page_allocation_on'''', ''''is_parameterization_forced'''', ''''is_read_committed_snapshot_on'''', ''''is_read_only''''
+								,''''is_trustworthy_on''''
+								,''''page_verify_option'''', ''''recovery_model'''', ''''state'''', ''''target_recovery_time_in_seconds''''
 								,''''AlwaysOnGroupName'''', ''''IsOnAlwaysOnPrimary''''
 							))
 				'';
@@ -10079,7 +11499,7 @@ ELSE BEGIN
 						,a.DatabaseName
 						,a.[Key]
 						,a.ValidFrom
-						,NULLIF(a.ValidTo, ''''9999-12-31 23:59:59.000'''') AS ValidTo
+						,NULLIF(a.ValidTo, ''''9999-12-31T23:59:59'''') AS ValidTo
 						,a.Value
 						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(a.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
 					FROM (
@@ -10091,7 +11511,7 @@ ELSE BEGIN
 							FROM dbo.fhsmDatabaseState AS dbState
 							WHERE
 								(dbState.Query = 60)
-								AND (dbState.ValidTo = ''''9999-12-31 23:59:59.000'''')
+								AND (dbState.ValidTo = ''''9999-12-31T23:59:59'''')
 						) AS toCheck
 						INNER JOIN dbo.fhsmDatabaseState AS dbState ON (dbState.DatabaseName = toCheck.DatabaseName)
 						WHERE (dbState.Query = 60)
@@ -10116,7 +11536,7 @@ ELSE BEGIN
 						,a.DatabaseName
 						,a.[Key]
 						,a.ValidFrom
-						,NULLIF(a.ValidTo, ''''9999-12-31 23:59:59.000'''') AS ValidTo
+						,NULLIF(a.ValidTo, ''''9999-12-31T23:59:59'''') AS ValidTo
 						,a.Value
 						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(a.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
 					FROM (
@@ -10128,7 +11548,7 @@ ELSE BEGIN
 							FROM dbo.fhsmDatabaseState AS dbState
 							WHERE
 								(dbState.Query = 1060)
-								AND (dbState.ValidTo = ''''9999-12-31 23:59:59.000'''')
+								AND (dbState.ValidTo = ''''9999-12-31T23:59:59'''')
 						) AS toCheck
 						INNER JOIN dbo.fhsmDatabaseState AS dbState ON (dbState.DatabaseName = toCheck.DatabaseName)
 						WHERE (dbState.Query = 1060)
@@ -10244,21 +11664,21 @@ ELSE BEGIN
 						FROM dbo.fhsmDatabaseState AS ds
 						WHERE
 							(ds.Query = 60)
-							AND (ds.ValidTo = ''''9999-12-31 23:59:59.000'''')
+							AND (ds.ValidTo = ''''9999-12-31T23:59:59'''')
 					) AS ds
 					LEFT OUTER JOIN (
 						SELECT ds.DatabaseName, ds.[Key], ds.Value
 						FROM dbo.fhsmDatabaseState AS ds
 						WHERE
 							(ds.Query = 1060)
-							AND (ds.ValidTo = ''''9999-12-31 23:59:59.000'''')
+							AND (ds.ValidTo = ''''9999-12-31T23:59:59'''')
 					) AS dsSecondary ON (dsSecondary.DatabaseName = ds.DatabaseName) AND (dsSecondary.[Key] = ds.[Key])
 					LEFT OUTER JOIN (
 						SELECT ds.DatabaseName, ds.[Key], ds.Value
 						FROM dbo.fhsmDatabaseState AS ds
 						WHERE
 							(ds.Query = 2060)
-							AND (ds.ValidTo = ''''9999-12-31 23:59:59.000'''')
+							AND (ds.ValidTo = ''''9999-12-31T23:59:59'''')
 					) AS dsDefault ON (dsDefault.DatabaseName = ds.DatabaseName) AND (dsDefault.[Key] = ds.[Key]);
 			'';
 			EXEC(@stmt);
@@ -10300,12 +11720,12 @@ ELSE BEGIN
 						,dbo.fhsmFNConvertToDisplayTxt(pvt.member_state_desc)	AS MemberState
 						,CAST(pvt.number_of_quorum_votes AS int)				AS NumberOfQuorumVotes
 						,CAST(pvt.number_of_current_votes AS int)				AS NumberOfCurrentVotes
-						,(SELECT MIN(aoState.Timestamp) FROM dbo.fhsmAlwaysOnState AS aoState WHERE (aoState.GroupA = pvt.GroupA) AND (aoState.Query = 2) AND (aoState.ValidTo = ''''9999-12-31 23:59:59.000'''')) AS MinTimestamp
-						,(SELECT MAX(aoState.Timestamp) FROM dbo.fhsmAlwaysOnState AS aoState WHERE (aoState.GroupA = pvt.GroupA) AND (aoState.Query = 2) AND (aoState.ValidTo = ''''9999-12-31 23:59:59.000'''')) AS MaxTimestamp
+						,(SELECT MIN(aoState.Timestamp) FROM dbo.fhsmAlwaysOnState AS aoState WHERE (aoState.GroupA = pvt.GroupA) AND (aoState.Query = 2) AND (aoState.ValidTo = ''''9999-12-31T23:59:59'''')) AS MinTimestamp
+						,(SELECT MAX(aoState.Timestamp) FROM dbo.fhsmAlwaysOnState AS aoState WHERE (aoState.GroupA = pvt.GroupA) AND (aoState.Query = 2) AND (aoState.ValidTo = ''''9999-12-31T23:59:59'''')) AS MaxTimestamp
 					FROM (
 						SELECT aoState.GroupA, aoState.[Key], aoState.Value AS _Value_
 						FROM dbo.fhsmAlwaysOnState AS aoState
-						WHERE (aoState.Query = 2) AND (aoState.ValidTo = ''''9999-12-31 23:59:59.000'''')
+						WHERE (aoState.Query = 2) AND (aoState.ValidTo = ''''9999-12-31T23:59:59'''')
 					) AS p
 					PIVOT (
 						MAX(_Value_)
@@ -10352,12 +11772,12 @@ ELSE BEGIN
 						pvt.cluster_name										AS WSFCClusterName
 						,dbo.fhsmFNConvertToDisplayTxt(pvt.quorum_type_desc)	AS QuorumType
 						,dbo.fhsmFNConvertToDisplayTxt(pvt.quorum_state_desc)	AS QuorumState
-						,(SELECT MIN(aoState.Timestamp) FROM dbo.fhsmAlwaysOnState AS aoState WHERE (aoState.Query = 1) AND (aoState.ValidTo = ''''9999-12-31 23:59:59.000'''')) AS MinTimestamp
-						,(SELECT MAX(aoState.Timestamp) FROM dbo.fhsmAlwaysOnState AS aoState WHERE (aoState.Query = 1) AND (aoState.ValidTo = ''''9999-12-31 23:59:59.000'''')) AS MaxTimestamp
+						,(SELECT MIN(aoState.Timestamp) FROM dbo.fhsmAlwaysOnState AS aoState WHERE (aoState.Query = 1) AND (aoState.ValidTo = ''''9999-12-31T23:59:59'''')) AS MinTimestamp
+						,(SELECT MAX(aoState.Timestamp) FROM dbo.fhsmAlwaysOnState AS aoState WHERE (aoState.Query = 1) AND (aoState.ValidTo = ''''9999-12-31T23:59:59'''')) AS MaxTimestamp
 					FROM (
 						SELECT aoState.[Key], aoState.Value AS _Value_
 						FROM dbo.fhsmAlwaysOnState AS aoState
-						WHERE (aoState.Query = 1) AND (aoState.ValidTo = ''''9999-12-31 23:59:59.000'''')
+						WHERE (aoState.Query = 1) AND (aoState.ValidTo = ''''9999-12-31T23:59:59'''')
 					) AS p
 					PIVOT (
 						MAX(_Value_)
@@ -10719,7 +12139,7 @@ ELSE BEGIN
 									(
 										(src.Query IS NULL)
 										OR ((src.Value COLLATE DATABASE_DEFAULT <> tgt.Value) OR (src.Value IS NULL AND tgt.Value IS NOT NULL) OR (src.Value IS NOT NULL AND tgt.Value IS NULL))
-									) AND (tgt.ValidTo = ''''9999-dec-31 23:59:59'''');
+									) AND (tgt.ValidTo = ''''9999-12-31T23:59:59'''');
 							END;
 
 							--
@@ -10727,7 +12147,7 @@ ELSE BEGIN
 							--
 							BEGIN
 								INSERT INTO dbo.fhsmAlwaysOnState(Query, GroupA, GroupB, GroupC, [Key], Value, ValidFrom, ValidTo, TimestampUTC, Timestamp)
-								SELECT src.Query, src.GroupA, src.GroupB, src.GroupC, src.[Key], src.Value, @nowUTC AS ValidFrom, ''''9999-dec-31 23:59:59'''' AS ValidTo, @nowUTC, @now
+								SELECT src.Query, src.GroupA, src.GroupB, src.GroupC, src.[Key], src.Value, @nowUTC AS ValidFrom, ''''9999-12-31T23:59:59'''' AS ValidTo, @nowUTC, @now
 								FROM #alwaysOn AS src
 								WHERE NOT EXISTS (
 									SELECT *
@@ -10738,7 +12158,7 @@ ELSE BEGIN
 										AND (tgt.GroupB COLLATE DATABASE_DEFAULT = src.GroupB)
 										AND (tgt.GroupC COLLATE DATABASE_DEFAULT = src.GroupC)
 										AND (tgt.[Key] COLLATE DATABASE_DEFAULT = src.[Key])
-										AND ((tgt.Value COLLATE DATABASE_DEFAULT = src.Value) OR (tgt.Value IS NULL AND src.Value IS NULL)) AND (tgt.ValidTo = ''''9999-dec-31 23:59:59'''')
+										AND ((tgt.Value COLLATE DATABASE_DEFAULT = src.Value) OR (tgt.Value IS NULL AND src.Value IS NULL)) AND (tgt.ValidTo = ''''9999-12-31T23:59:59'''')
 								);
 							END;
 						END;
@@ -11642,7 +13062,7 @@ ELSE BEGIN
 									(
 										(src.Query IS NULL)
 										OR ((src.Value COLLATE DATABASE_DEFAULT <> tgt.Value) OR (src.Value IS NULL AND tgt.Value IS NOT NULL) OR (src.Value IS NOT NULL AND tgt.Value IS NULL))
-									) AND (tgt.ValidTo = ''''9999-dec-31 23:59:59'''');
+									) AND (tgt.ValidTo = ''''9999-12-31T23:59:59'''');
 							END;
 
 							--
@@ -11650,7 +13070,7 @@ ELSE BEGIN
 							--
 							BEGIN
 								INSERT INTO dbo.fhsmDatabaseState(Query, DatabaseName, [Key], Value, ValidFrom, ValidTo, TimestampUTC, Timestamp)
-								SELECT src.Query, src.DatabaseName, src.[Key], src.Value, @nowUTC AS ValidFrom, ''''9999-dec-31 23:59:59'''' AS ValidTo, @nowUTC, @now
+								SELECT src.Query, src.DatabaseName, src.[Key], src.Value, @nowUTC AS ValidFrom, ''''9999-12-31T23:59:59'''' AS ValidTo, @nowUTC, @now
 								FROM #inventory AS src
 								WHERE NOT EXISTS (
 									SELECT *
@@ -11659,7 +13079,7 @@ ELSE BEGIN
 										(tgt.Query = src.Query)
 										AND (tgt.DatabaseName COLLATE DATABASE_DEFAULT = src.DatabaseName)
 										AND (tgt.[Key] COLLATE DATABASE_DEFAULT = src.[Key])
-										AND ((tgt.Value COLLATE DATABASE_DEFAULT = src.Value) OR (tgt.Value IS NULL AND src.Value IS NULL)) AND (tgt.ValidTo = ''''9999-dec-31 23:59:59'''')
+										AND ((tgt.Value COLLATE DATABASE_DEFAULT = src.Value) OR (tgt.Value IS NULL AND src.Value IS NULL)) AND (tgt.ValidTo = ''''9999-12-31T23:59:59'''')
 								);
 							END;
 				'';
@@ -11824,14 +13244,16 @@ ELSE BEGIN
 	-- Update dimensions based upon the fact tables
 	--
 	BEGIN
-		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmAlwaysOnState'';
-		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmDatabaseState'';
+		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmAlwaysOnState'', @ignoreAutoIndex = @ignoreAutoIndex;
+		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmDatabaseState'', @ignoreAutoIndex = @ignoreAutoIndex;
 	END;
 END;
 
 ';
 SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
+
+SET @stmt = REPLACE(@stmt, 'SET @ignoreAutoIndex = 0;',                'SET @ignoreAutoIndex = 1;');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
@@ -11863,10 +13285,10 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @ena
 EXEC(@stmt);
 
 --
--- File part:AgentJobs.sql modified: 2025.09.14 09.33.49
+-- File part:AgentJobs.sql modified: 2026.01.19 14.43.19
 --
 SET @stmt = '
-USE [' + @fhSQLMonitorDatabase + '];
+USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
 SET NOCOUNT ON;
 
 --
@@ -11874,8 +13296,10 @@ SET NOCOUNT ON;
 --
 BEGIN
 	DECLARE @enableAgentJobs bit;
+	DECLARE @ignoreAutoIndex bit;
 
 	SET @enableAgentJobs = 0;
+	SET @ignoreAutoIndex = 0;
 END;
 
 --
@@ -11935,7 +13359,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.11.0'';
+		SET @version = ''2.12.0'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -12057,68 +13481,286 @@ ELSE BEGIN
 		-- Create fact view @pbiSchema.[Agent jobs - grid]
 		--
 		BEGIN
-			SET @stmt = ''
-				IF OBJECT_ID('''''' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Agent jobs - grid'') + '''''', ''''V'''') IS NULL
-				BEGIN
-					EXEC(''''CREATE VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Agent jobs - grid'') + '' AS SELECT ''''''''dummy'''''''' AS Txt'''');
-				END;
-			'';
-			EXEC(@stmt);
+			BEGIN
+				SET @stmt = ''
+					IF OBJECT_ID('''''' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Agent jobs - grid'') + '''''', ''''V'''') IS NULL
+					BEGIN
+						EXEC(''''CREATE VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Agent jobs - grid'') + '' AS SELECT ''''''''dummy'''''''' AS Txt'''');
+					END;
+				'';
+				EXEC(@stmt);
 
-			SET @stmt = ''
-				ALTER VIEW  '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Agent jobs - grid'') + ''
-				AS
-				WITH
-				L0   AS (SELECT 1 AS c UNION ALL SELECT 1),
-				L1   AS (SELECT 1 AS c FROM L0 AS A CROSS JOIN L0 AS B),
-				L2   AS (SELECT 1 AS c FROM L1 AS A CROSS JOIN L1 AS B),
-				L3   AS (SELECT 1 AS c FROM L2 AS A CROSS JOIN L2 AS B),
-				Nums AS (
+				SET @stmt = ''
+					ALTER VIEW  '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Agent jobs - grid'') + ''
+					AS
+					WITH
+					L0   AS (SELECT 1 AS c UNION ALL SELECT 1),
+					L1   AS (SELECT 1 AS c FROM L0 AS A CROSS JOIN L0 AS B),
+					L2   AS (SELECT 1 AS c FROM L1 AS A CROSS JOIN L1 AS B),
+					L3   AS (SELECT 1 AS c FROM L2 AS A CROSS JOIN L2 AS B),
+					Nums AS (
+						SELECT
+							ROW_NUMBER() OVER(ORDER BY (SELECT NULL)) - 1 AS n
+						FROM L3
+					)
 					SELECT
-						ROW_NUMBER() OVER(ORDER BY (SELECT NULL)) - 1 AS n
-					FROM L3
-				)
-				SELECT
-					p.JobName
-					,p.JobEnabled
-					,CASE p.JobEnabled
-						WHEN 0 THEN ''''No''''
-						WHEN 1 THEN ''''Yes''''
-						ELSE ''''N.A.''''
-					END AS JobEnabledTxt
-					,p.ScheduleId
-					,p.ScheduleEnabled
-					,CASE p.ScheduleEnabled
-						WHEN 0 THEN ''''No''''
-						WHEN 1 THEN ''''Yes''''
-						ELSE ''''N.A.''''
-					END AS ScheduleEnabledTxt
-					,p.[0],  p.[1],  p.[2],  p.[3],  p.[4],  p.[5],  p.[6],  p.[7],  p.[8],  p.[9]
-					,p.[10], p.[11], p.[12], p.[13], p.[14], p.[15], p.[16], p.[17], p.[18], p.[19]
-					,p.[20], p.[21], p.[22], p.[23]
-					,p.WhenDesc
-					,p.WhenDetailsDesc
-					,p.ActiveDesc
-					,p.Timestamp
-				FROM (
-			'';
-			SET @stmt += ''
+						p.JobName
+						,p.JobEnabled
+						,CASE p.JobEnabled
+							WHEN 0 THEN ''''No''''
+							WHEN 1 THEN ''''Yes''''
+							ELSE ''''N.A.''''
+						END AS JobEnabledTxt
+						,p.ScheduleId
+						,p.ScheduleEnabled
+						,CASE p.ScheduleEnabled
+							WHEN 0 THEN ''''No''''
+							WHEN 1 THEN ''''Yes''''
+							ELSE ''''N.A.''''
+						END AS ScheduleEnabledTxt
+						,p.[0],  p.[1],  p.[2],  p.[3],  p.[4],  p.[5],  p.[6],  p.[7],  p.[8],  p.[9]
+						,p.[10], p.[11], p.[12], p.[13], p.[14], p.[15], p.[16], p.[17], p.[18], p.[19]
+						,p.[20], p.[21], p.[22], p.[23]
+						,p.WhenDesc
+						,p.WhenDetailsDesc
+						,p.ActiveDesc
+						,p.Timestamp
+						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(p.JobName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS AgentJobKey
+					FROM (
+				'';
+				SET @stmt += ''
+						SELECT
+							a.JobName,
+							n.n AS HourSlot,
+							a.JobEnabled,
+							a.ScheduleId,
+							a.ScheduleEnabled,
+							CASE a.FreqType
+								WHEN   1 THEN ''''Once on '''' + CAST(a.ActiveStartDate AS nvarchar) + '''':'''' + CAST(a.ActiveStartTime AS nvarchar)
+								WHEN   4 THEN ''''Every '''' + CASE WHEN a.FreqInterval = 1 THEN ''''day'''' ELSE CAST(a.FreqInterval AS nvarchar) + '''' days'''' END
+								WHEN   8 THEN ''''Every '''' + CASE WHEN a.FreqRecurrenceFactor = 1 THEN ''''week'''' ELSE CAST(a.FreqRecurrenceFactor AS nvarchar) + '''' weeks'''' END
+							END
+							AS WhenDesc,
+							CASE
+								WHEN (a.FreqSubdayType = 0)          THEN ''''''''
+								WHEN (a.FreqSubdayType = 1)          THEN ''''At '''' + CAST(a.ActiveStartTime AS nvarchar)
+								WHEN (a.FreqSubdayType IN (2, 4, 8)) THEN ''''Every '''' + CAST(a.FreqSubdayInterval AS nvarchar) + '''' ''''
+									+ CASE a.FreqSubdayType
+										WHEN 2 THEN ''''second''''
+										WHEN 4 THEN ''''minute''''
+										WHEN 8 THEN ''''hour''''
+									END
+									+ CASE WHEN a.FreqSubdayInterval > 1 THEN ''''s'''' ELSE '''''''' END
+									+ '''' between '''' + CAST(a.ActiveStartTime AS nvarchar) + '''' and '''' + CAST(a.ActiveEndTime AS nvarchar)
+							END
+							AS WhenDetailsDesc,
+							CASE
+								WHEN (a.FreqType IN (4, 8, 16, 32))
+								THEN
+									CASE
+										WHEN (a.ActiveEndDate = CAST(''''9999-12-31'''' AS date)) THEN ''''Starting on '''' + CAST(a.ActiveStartDate AS nvarchar)
+										ELSE ''''Between '''' + CAST(a.ActiveStartDate AS nvarchar) + '''' and '''' + CAST(a.ActiveEndDate AS nvarchar)
+									END
+								ELSE ''''''''
+							END
+							AS ActiveDesc,
+							CASE a.FreqType
+								WHEN 8 THEN
+									SUBSTRING(
+										(
+											CASE WHEN (a.FreqInterval &  2) =  2 THEN CHAR(10) + ''''Mon'''' ELSE '''''''' END +
+											CASE WHEN (a.FreqInterval &  4) =  4 THEN CHAR(10) + ''''Tue'''' ELSE '''''''' END +
+											CASE WHEN (a.FreqInterval &  8) =  8 THEN CHAR(10) + ''''Wed'''' ELSE '''''''' END +
+											CASE WHEN (a.FreqInterval & 16) = 16 THEN CHAR(10) + ''''Thu'''' ELSE '''''''' END +
+											CASE WHEN (a.FreqInterval & 32) = 32 THEN CHAR(10) + ''''Fri'''' ELSE '''''''' END +
+											CASE WHEN (a.FreqInterval & 64) = 64 THEN CHAR(10) + ''''Sat'''' ELSE '''''''' END +
+											CASE WHEN (a.FreqInterval &  1) =  1 THEN CHAR(10) + ''''Sun'''' ELSE '''''''' END
+										)
+										,2
+										,128
+									)
+								ELSE ''''X''''
+							END
+							AS DayDesc,
+							a.Timestamp
+						FROM (
+				'';
+				SET @stmt += ''
+							SELECT
+								aj.JobName
+								,CAST(aj.JobEnabled AS bit)				AS JobEnabled
+								,aj.ScheduleId
+								,CAST(aj.ScheduleEnabled AS bit)		AS ScheduleEnabled
+								,aj.FreqType
+								,aj.FreqInterval
+								,aj.FreqSubdayType
+								,aj.FreqSubdayInterval
+								,aj.FreqRecurrenceFactor
+								,CONVERT(
+									date,
+										CAST(aj.ActiveStartDate / 10000 AS nvarchar)
+										+ ''''-'''' + CAST((aj.ActiveStartDate / 100) % 100 AS nvarchar)
+										+ ''''-'''' + CAST((aj.ActiveStartDate % 100) AS nvarchar),
+									102
+								)										AS ActiveStartDate
+								,CONVERT(
+									date,
+										CAST(aj.ActiveEndDate / 10000 AS nvarchar)
+										+ ''''-'''' + CAST((aj.ActiveEndDate / 100) % 100 AS nvarchar)
+										+ ''''-'''' + CAST((aj.ActiveEndDate % 100) AS nvarchar),
+									102
+								)										AS ActiveEndDate
+								,CONVERT(
+									time(0),
+										CAST(aj.ActiveStartTime / 10000 AS nvarchar)
+										+ '''':'''' + CAST((aj.ActiveStartTime / 100) % 100 AS nvarchar)
+										+ '''':'''' + CAST((aj.ActiveStartTime % 100) AS nvarchar),
+									108
+								)										AS ActiveStartTime
+								,CONVERT(
+									time(0),
+										CAST(aj.ActiveEndTime / 10000 AS nvarchar)
+										+ '''':'''' + CAST((aj.ActiveEndTime / 100) % 100 AS nvarchar)
+										+ '''':'''' + CAST((aj.ActiveEndTime % 100) AS nvarchar),
+									108
+								)										AS ActiveEndTime
+								,aj.Timestamp
+							FROM dbo.fhsmAgentJobs AS aj
+							WHERE (aj.TimestampUTC = (
+								SELECT TOP (1) aj2.TimestampUTC
+								FROM dbo.fhsmAgentJobs AS aj2
+								ORDER BY aj2.TimestampUTC DESC
+							))
+						) AS a
+						CROSS JOIN Nums AS n
+						WHERE (1 = 1)
+							AND (a.FreqType IN (4, 8))
+							AND (CAST(GETDATE() AS date) <= a.ActiveEndDate)
+							AND (n.n <= 23)
+							AND (
+								(
+									(a.FreqSubdayType = 1)			-- At the specified time
+									AND (n.n = DATEPART(HOUR, a.ActiveStartTime))
+								)
+								OR (
+									(a.FreqSubdayType IN (2, 4))	-- Seconds and minutes
+									AND (n.n BETWEEN DATEPART(HOUR, a.ActiveStartTime) AND DATEPART(HOUR, a.ActiveEndTime))
+								)
+								OR (
+									(a.FreqSubdayType = 8)	-- Hours
+									AND (n.n BETWEEN DATEPART(HOUR, a.ActiveStartTime) AND DATEPART(HOUR, a.ActiveEndTime))
+									AND (((n.n - DATEPART(HOUR, a.ActiveStartTime)) % NULLIF(a.FreqSubdayInterval, 0)) = 0)
+								)
+							)
+					) AS b
+					PIVOT (
+						MAX(b.DayDesc)
+						FOR b.HourSlot IN (
+							  [0],  [1],  [2],  [3],  [4],  [5],  [6],  [7],  [8],  [9]
+							,[10], [11], [12], [13], [14], [15], [16], [17], [18], [19]
+							,[20], [21], [22], [23]
+						)
+					) AS p
+				'';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Register extended properties on fact view @pbiSchema.[Agent jobs - grid]
+			--
+			BEGIN
+				SET @objectName = QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Agent jobs - grid'');
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+			END;
+		END;
+
+		--
+		-- Create fact view @pbiSchema.[Agent jobs - list]
+		--
+		BEGIN
+			BEGIN
+				SET @stmt = ''
+					IF OBJECT_ID('''''' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Agent jobs - list'') + '''''', ''''V'''') IS NULL
+					BEGIN
+						EXEC(''''CREATE VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Agent jobs - list'') + '' AS SELECT ''''''''dummy'''''''' AS Txt'''');
+					END;
+				'';
+				EXEC(@stmt);
+
+				SET @stmt = ''
+					ALTER VIEW  '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Agent jobs - list'') + ''
+					AS
 					SELECT
-						a.JobName,
-						n.n AS HourSlot,
-						a.JobEnabled,
-						a.ScheduleId,
-						a.ScheduleEnabled,
-						CASE a.FreqType
+						a.JobName
+						,a.JobEnabled
+						,CASE a.JobEnabled
+							WHEN 0 THEN ''''No''''
+							WHEN 1 THEN ''''Yes''''
+							ELSE ''''N.A.''''
+						END AS JobEnabledTxt
+						,a.ScheduleEnabled
+						,CASE a.ScheduleEnabled
+							WHEN 0 THEN ''''No''''
+							WHEN 1 THEN ''''Yes''''
+							ELSE ''''N.A.''''
+						END AS ScheduleEnabledTxt
+						,CASE a.FreqType
 							WHEN   1 THEN ''''Once on '''' + CAST(a.ActiveStartDate AS nvarchar) + '''':'''' + CAST(a.ActiveStartTime AS nvarchar)
 							WHEN   4 THEN ''''Every '''' + CASE WHEN a.FreqInterval = 1 THEN ''''day'''' ELSE CAST(a.FreqInterval AS nvarchar) + '''' days'''' END
 							WHEN   8 THEN ''''Every '''' + CASE WHEN a.FreqRecurrenceFactor = 1 THEN ''''week'''' ELSE CAST(a.FreqRecurrenceFactor AS nvarchar) + '''' weeks'''' END
+								+ '''' on ''''
+								+ SUBSTRING(
+									(
+										CASE WHEN (a.FreqInterval &  2) =  2 THEN '''', Monday''''    ELSE '''''''' END +
+										CASE WHEN (a.FreqInterval &  4) =  4 THEN '''', Tuesday''''   ELSE '''''''' END +
+										CASE WHEN (a.FreqInterval &  8) =  8 THEN '''', Wednesday'''' ELSE '''''''' END +
+										CASE WHEN (a.FreqInterval & 16) = 16 THEN '''', Thursday''''  ELSE '''''''' END +
+										CASE WHEN (a.FreqInterval & 32) = 32 THEN '''', Friday''''    ELSE '''''''' END +
+										CASE WHEN (a.FreqInterval & 64) = 64 THEN '''', Saturday''''  ELSE '''''''' END +
+										CASE WHEN (a.FreqInterval &  1) =  1 THEN '''', Sunday''''    ELSE '''''''' END
+									)
+									,3
+									,128
+								)
+							WHEN  16 THEN ''''Every '''' + CASE WHEN a.FreqRecurrenceFactor = 1 THEN ''''month'''' ELSE CAST(a.FreqRecurrenceFactor AS nvarchar) + '''' months'''' END
+								+ '''' on day '''' + CAST(a.FreqInterval AS nvarchar) + '''' of that month''''
+							WHEN  32 THEN ''''Every ''''
+								+ CASE a.FreqRelativeInterval
+									WHEN  1 THEN ''''first''''
+									WHEN  2 THEN ''''second''''
+									WHEN  4 THEN ''''third''''
+									WHEN  8 THEN ''''fourth''''
+									WHEN 16 THEN ''''last''''
+								END
+								+ '''' ''''
+								+ CASE a.FreqInterval
+									WHEN  1 THEN ''''Sunday''''
+									WHEN  2 THEN ''''Monday''''
+									WHEN  3 THEN ''''Tuesday''''
+									WHEN  4 THEN ''''Wednesday''''
+									WHEN  5 THEN ''''Thursday''''
+									WHEN  6 THEN ''''Friday''''
+									WHEN  7 THEN ''''Saturday''''
+									WHEN  8 THEN ''''Day''''
+									WHEN  9 THEN ''''Weekday''''
+									WHEN 10 THEN ''''Weekend day''''
+								END
+								+ '''' of every '''' + CASE WHEN a.FreqRecurrenceFactor = 1 THEN ''''month'''' ELSE CAST(a.FreqRecurrenceFactor AS nvarchar) + '''' months'''' END
+
+							WHEN  64 THEN ''''When SQL Server Agent starts''''
+							WHEN 128 THEN ''''Whenever the CPUs become idle''''
 						END
-						AS WhenDesc,
-						CASE
+						+ CASE
 							WHEN (a.FreqSubdayType = 0)          THEN ''''''''
-							WHEN (a.FreqSubdayType = 1)          THEN ''''At '''' + CAST(a.ActiveStartTime AS nvarchar)
-							WHEN (a.FreqSubdayType IN (2, 4, 8)) THEN ''''Every '''' + CAST(a.FreqSubdayInterval AS nvarchar) + '''' ''''
+							WHEN (a.FreqSubdayType = 1)          THEN '''' at '''' + CAST(a.ActiveStartTime AS nvarchar)
+							WHEN (a.FreqSubdayType IN (2, 4, 8)) THEN '''' every '''' + CAST(a.FreqSubdayInterval AS nvarchar) + '''' ''''
 								+ CASE a.FreqSubdayType
 									WHEN 2 THEN ''''second''''
 									WHEN 4 THEN ''''minute''''
@@ -12127,49 +13769,31 @@ ELSE BEGIN
 								+ CASE WHEN a.FreqSubdayInterval > 1 THEN ''''s'''' ELSE '''''''' END
 								+ '''' between '''' + CAST(a.ActiveStartTime AS nvarchar) + '''' and '''' + CAST(a.ActiveEndTime AS nvarchar)
 						END
-						AS WhenDetailsDesc,
-						CASE
-							WHEN (a.FreqType IN (4, 8, 16, 32))
-							THEN
-								CASE
-									WHEN (a.ActiveEndDate = CAST(''''9999-12-31'''' AS date)) THEN ''''Starting on '''' + CAST(a.ActiveStartDate AS nvarchar)
-									ELSE ''''Between '''' + CAST(a.ActiveStartDate AS nvarchar) + '''' and '''' + CAST(a.ActiveEndDate AS nvarchar)
+						+ CASE
+							WHEN (a.FreqType IN (4, 8, 16, 32)) THEN ''''. Schedule will be used ''''
+								+ CASE
+									WHEN (a.ActiveEndDate = CAST(''''9999-12-31'''' AS date)) THEN ''''starting on '''' + CAST(a.ActiveStartDate AS nvarchar)
+									ELSE ''''between '''' + CAST(a.ActiveStartDate AS nvarchar) + '''' and '''' + CAST(a.ActiveEndDate AS nvarchar)
 								END
 							ELSE ''''''''
 						END
-						AS ActiveDesc,
-						CASE a.FreqType
-							WHEN 8 THEN
-								SUBSTRING(
-									(
-										CASE WHEN (a.FreqInterval &  2) =  2 THEN CHAR(10) + ''''Mon'''' ELSE '''''''' END +
-										CASE WHEN (a.FreqInterval &  4) =  4 THEN CHAR(10) + ''''Tue'''' ELSE '''''''' END +
-										CASE WHEN (a.FreqInterval &  8) =  8 THEN CHAR(10) + ''''Wed'''' ELSE '''''''' END +
-										CASE WHEN (a.FreqInterval & 16) = 16 THEN CHAR(10) + ''''Thu'''' ELSE '''''''' END +
-										CASE WHEN (a.FreqInterval & 32) = 32 THEN CHAR(10) + ''''Fri'''' ELSE '''''''' END +
-										CASE WHEN (a.FreqInterval & 64) = 64 THEN CHAR(10) + ''''Sat'''' ELSE '''''''' END +
-										CASE WHEN (a.FreqInterval &  1) =  1 THEN CHAR(10) + ''''Sun'''' ELSE '''''''' END
-									)
-									,2
-									,128
-								)
-							ELSE ''''X''''
-						END
-						AS DayDesc,
-						a.Timestamp
+						AS TotalDesc
+						,a.Timestamp
+						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(a.JobName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS AgentJobKey
 					FROM (
-			'';
-			SET @stmt += ''
+				'';
+				SET @stmt += ''
 						SELECT
 							aj.JobName
 							,CAST(aj.JobEnabled AS bit)				AS JobEnabled
-							,aj.ScheduleId
 							,CAST(aj.ScheduleEnabled AS bit)		AS ScheduleEnabled
 							,aj.FreqType
 							,aj.FreqInterval
 							,aj.FreqSubdayType
 							,aj.FreqSubdayInterval
+							,aj.FreqRelativeInterval
 							,aj.FreqRecurrenceFactor
+
 							,CONVERT(
 								date,
 									CAST(aj.ActiveStartDate / 10000 AS nvarchar)
@@ -12206,221 +13830,87 @@ ELSE BEGIN
 							ORDER BY aj2.TimestampUTC DESC
 						))
 					) AS a
-					CROSS JOIN Nums AS n
 					WHERE (1 = 1)
-						AND (a.FreqType IN (4, 8))
+						AND (a.FreqType NOT IN (4, 8))
 						AND (CAST(GETDATE() AS date) <= a.ActiveEndDate)
-						AND (n.n <= 23)
-						AND (
-							(
-								(a.FreqSubdayType = 1)			-- At the specified time
-								AND (n.n = DATEPART(HOUR, a.ActiveStartTime))
-							)
-							OR (
-								(a.FreqSubdayType IN (2, 4))	-- Seconds and minutes
-								AND (n.n BETWEEN DATEPART(HOUR, a.ActiveStartTime) AND DATEPART(HOUR, a.ActiveEndTime))
-							)
-							OR (
-								(a.FreqSubdayType = 8)	-- Hours
-								AND (n.n BETWEEN DATEPART(HOUR, a.ActiveStartTime) AND DATEPART(HOUR, a.ActiveEndTime))
-								AND (((n.n - DATEPART(HOUR, a.ActiveStartTime)) % NULLIF(a.FreqSubdayInterval, 0)) = 0)
-							)
-						)
-				) AS b
-				PIVOT (
-					MAX(b.DayDesc)
-					FOR b.HourSlot IN (
-						  [0],  [1],  [2],  [3],  [4],  [5],  [6],  [7],  [8],  [9]
-						,[10], [11], [12], [13], [14], [15], [16], [17], [18], [19]
-						,[20], [21], [22], [23]
-					)
-				) AS p
-			'';
-			EXEC(@stmt);
+				'';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Register extended properties on fact view @pbiSchema.[Agent jobs - list]
+			--
+			BEGIN
+				SET @objectName = QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Agent jobs - list'');
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+			END;
 		END;
 
 		--
-		-- Register extended properties on fact view @pbiSchema.[Agent jobs - grid]
+		-- Create fact view @pbiSchema.[Agent jobs - not scheduled]
 		--
 		BEGIN
-			SET @objectName = QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Agent jobs - grid'');
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
+			BEGIN
+				SET @stmt = ''
+					IF OBJECT_ID('''''' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Agent jobs - not scheduled'') + '''''', ''''V'''') IS NULL
+					BEGIN
+						EXEC(''''CREATE VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Agent jobs - not scheduled'') + '' AS SELECT ''''''''dummy'''''''' AS Txt'''');
+					END;
+				'';
+				EXEC(@stmt);
 
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
-		END;
-
-		--
-		-- Create fact view @pbiSchema.[Agent jobs - list]
-		--
-		BEGIN
-			SET @stmt = ''
-				IF OBJECT_ID('''''' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Agent jobs - list'') + '''''', ''''V'''') IS NULL
-				BEGIN
-					EXEC(''''CREATE VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Agent jobs - list'') + '' AS SELECT ''''''''dummy'''''''' AS Txt'''');
-				END;
-			'';
-			EXEC(@stmt);
-
-			SET @stmt = ''
-				ALTER VIEW  '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Agent jobs - list'') + ''
-				AS
-				SELECT
-					a.JobName,
-					a.JobEnabled,
-					CASE a.JobEnabled
-						WHEN 0 THEN ''''No''''
-						WHEN 1 THEN ''''Yes''''
-						ELSE ''''N.A.''''
-					END AS JobEnabledTxt,
-					a.ScheduleEnabled,
-					CASE a.ScheduleEnabled
-						WHEN 0 THEN ''''No''''
-						WHEN 1 THEN ''''Yes''''
-						ELSE ''''N.A.''''
-					END AS ScheduleEnabledTxt,
-					CASE a.FreqType
-						WHEN   1 THEN ''''Once on '''' + CAST(a.ActiveStartDate AS nvarchar) + '''':'''' + CAST(a.ActiveStartTime AS nvarchar)
-						WHEN   4 THEN ''''Every '''' + CASE WHEN a.FreqInterval = 1 THEN ''''day'''' ELSE CAST(a.FreqInterval AS nvarchar) + '''' days'''' END
-						WHEN   8 THEN ''''Every '''' + CASE WHEN a.FreqRecurrenceFactor = 1 THEN ''''week'''' ELSE CAST(a.FreqRecurrenceFactor AS nvarchar) + '''' weeks'''' END
-							+ '''' on ''''
-							+ SUBSTRING(
-								(
-									CASE WHEN (a.FreqInterval &  2) =  2 THEN '''', Monday''''    ELSE '''''''' END +
-									CASE WHEN (a.FreqInterval &  4) =  4 THEN '''', Tuesday''''   ELSE '''''''' END +
-									CASE WHEN (a.FreqInterval &  8) =  8 THEN '''', Wednesday'''' ELSE '''''''' END +
-									CASE WHEN (a.FreqInterval & 16) = 16 THEN '''', Thursday''''  ELSE '''''''' END +
-									CASE WHEN (a.FreqInterval & 32) = 32 THEN '''', Friday''''    ELSE '''''''' END +
-									CASE WHEN (a.FreqInterval & 64) = 64 THEN '''', Saturday''''  ELSE '''''''' END +
-									CASE WHEN (a.FreqInterval &  1) =  1 THEN '''', Sunday''''    ELSE '''''''' END
-								)
-								,3
-								,128
-							)
-						WHEN  16 THEN ''''Every '''' + CASE WHEN a.FreqRecurrenceFactor = 1 THEN ''''month'''' ELSE CAST(a.FreqRecurrenceFactor AS nvarchar) + '''' months'''' END
-							+ '''' on day '''' + CAST(a.FreqInterval AS nvarchar) + '''' of that month''''
-						WHEN  32 THEN ''''Every ''''
-							+ CASE a.FreqRelativeInterval
-								WHEN  1 THEN ''''first''''
-								WHEN  2 THEN ''''second''''
-								WHEN  4 THEN ''''third''''
-								WHEN  8 THEN ''''fourth''''
-								WHEN 16 THEN ''''last''''
-							END
-							+ '''' ''''
-							+ CASE a.FreqInterval
-								WHEN  1 THEN ''''Sunday''''
-								WHEN  2 THEN ''''Monday''''
-								WHEN  3 THEN ''''Tuesday''''
-								WHEN  4 THEN ''''Wednesday''''
-								WHEN  5 THEN ''''Thursday''''
-								WHEN  6 THEN ''''Friday''''
-								WHEN  7 THEN ''''Saturday''''
-								WHEN  8 THEN ''''Day''''
-								WHEN  9 THEN ''''Weekday''''
-								WHEN 10 THEN ''''Weekend day''''
-							END
-							+ '''' of every '''' + CASE WHEN a.FreqRecurrenceFactor = 1 THEN ''''month'''' ELSE CAST(a.FreqRecurrenceFactor AS nvarchar) + '''' months'''' END
-
-						WHEN  64 THEN ''''When SQL Server Agent starts''''
-						WHEN 128 THEN ''''Whenever the CPUs become idle''''
-					END
-					+ CASE
-						WHEN (a.FreqSubdayType = 0)          THEN ''''''''
-						WHEN (a.FreqSubdayType = 1)          THEN '''' at '''' + CAST(a.ActiveStartTime AS nvarchar)
-						WHEN (a.FreqSubdayType IN (2, 4, 8)) THEN '''' every '''' + CAST(a.FreqSubdayInterval AS nvarchar) + '''' ''''
-							+ CASE a.FreqSubdayType
-								WHEN 2 THEN ''''second''''
-								WHEN 4 THEN ''''minute''''
-								WHEN 8 THEN ''''hour''''
-							END
-							+ CASE WHEN a.FreqSubdayInterval > 1 THEN ''''s'''' ELSE '''''''' END
-							+ '''' between '''' + CAST(a.ActiveStartTime AS nvarchar) + '''' and '''' + CAST(a.ActiveEndTime AS nvarchar)
-					END
-					+ CASE
-						WHEN (a.FreqType IN (4, 8, 16, 32)) THEN ''''. Schedule will be used ''''
-							+ CASE
-								WHEN (a.ActiveEndDate = CAST(''''9999-12-31'''' AS date)) THEN ''''starting on '''' + CAST(a.ActiveStartDate AS nvarchar)
-								ELSE ''''between '''' + CAST(a.ActiveStartDate AS nvarchar) + '''' and '''' + CAST(a.ActiveEndDate AS nvarchar)
-							END
-						ELSE ''''''''
-					END
-					AS TotalDesc,
-					a.Timestamp
-				FROM (
-			'';
-			SET @stmt += ''
+				SET @stmt = ''
+					ALTER VIEW  '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Agent jobs - not scheduled'') + ''
+					AS
 					SELECT
-						aj.JobName
-						,CAST(aj.JobEnabled AS bit)				AS JobEnabled
-						,CAST(aj.ScheduleEnabled AS bit)		AS ScheduleEnabled
-						,aj.FreqType
-						,aj.FreqInterval
-						,aj.FreqSubdayType
-						,aj.FreqSubdayInterval
-						,aj.FreqRelativeInterval
-						,aj.FreqRecurrenceFactor
+						a.JobName
+						,a.JobEnabled
+						,CASE a.JobEnabled
+							WHEN 0 THEN ''''No''''
+							WHEN 1 THEN ''''Yes''''
+							ELSE ''''N.A.''''
+						END AS JobEnabledTxt
+						,a.Timestamp
+						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(a.JobName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS AgentJobKey
+					FROM (
+						SELECT
+							aj.JobName
+							,CAST(aj.JobEnabled AS bit) AS JobEnabled
+							,aj.ScheduleId
+							,aj.Timestamp
+						FROM dbo.fhsmAgentJobs AS aj
+						WHERE (aj.TimestampUTC = (
+							SELECT TOP (1) aj2.TimestampUTC
+							FROM dbo.fhsmAgentJobs AS aj2
+							ORDER BY aj2.TimestampUTC DESC
+						))
+					) AS a
+					WHERE (a.ScheduleId IS NULL);
+				'';
+				EXEC(@stmt);
+			END;
 
-						,CONVERT(
-							date,
-								CAST(aj.ActiveStartDate / 10000 AS nvarchar)
-								+ ''''-'''' + CAST((aj.ActiveStartDate / 100) % 100 AS nvarchar)
-								+ ''''-'''' + CAST((aj.ActiveStartDate % 100) AS nvarchar),
-							102
-						)										AS ActiveStartDate
-						,CONVERT(
-							date,
-								CAST(aj.ActiveEndDate / 10000 AS nvarchar)
-								+ ''''-'''' + CAST((aj.ActiveEndDate / 100) % 100 AS nvarchar)
-								+ ''''-'''' + CAST((aj.ActiveEndDate % 100) AS nvarchar),
-							102
-						)										AS ActiveEndDate
-						,CONVERT(
-							time(0),
-								CAST(aj.ActiveStartTime / 10000 AS nvarchar)
-								+ '''':'''' + CAST((aj.ActiveStartTime / 100) % 100 AS nvarchar)
-								+ '''':'''' + CAST((aj.ActiveStartTime % 100) AS nvarchar),
-							108
-						)										AS ActiveStartTime
-						,CONVERT(
-							time(0),
-								CAST(aj.ActiveEndTime / 10000 AS nvarchar)
-								+ '''':'''' + CAST((aj.ActiveEndTime / 100) % 100 AS nvarchar)
-								+ '''':'''' + CAST((aj.ActiveEndTime % 100) AS nvarchar),
-							108
-						)										AS ActiveEndTime
-						,aj.Timestamp
-					FROM dbo.fhsmAgentJobs AS aj
-					WHERE (aj.TimestampUTC = (
-						SELECT TOP (1) aj2.TimestampUTC
-						FROM dbo.fhsmAgentJobs AS aj2
-						ORDER BY aj2.TimestampUTC DESC
-					))
-				) AS a
-				WHERE (1 = 1)
-					AND (a.FreqType NOT IN (4, 8))
-					AND (CAST(GETDATE() AS date) <= a.ActiveEndDate)
-			'';
-			EXEC(@stmt);
-		END;
+			--
+			-- Register extended properties on fact view @pbiSchema.[Agent jobs - not scheduled]
+			--
+			BEGIN
+				SET @objectName = QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Agent jobs - not scheduled'');
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
 
-		--
-		-- Register extended properties on fact view @pbiSchema.[Agent jobs - list]
-		--
-		BEGIN
-			SET @objectName = QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Agent jobs - list'');
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+			END;
 		END;
 	END;
 
@@ -12580,18 +14070,71 @@ ELSE BEGIN
 	--
 	-- Register dimensions
 	--
+	BEGIN
+		WITH
+		dimensions(
+			DimensionName, DimensionKey
+			,SrcTable, SrcAlias, SrcWhere, SrcDateColumn
+			,SrcColumn1, SrcColumn2, SrcColumn3, SrcColumn4, SrcColumn5
+			,OutputColumn1, OutputColumn2, OutputColumn3, OutputColumn4, OutputColumn5
+		) AS (
+			SELECT
+				''Agent job'' AS DimensionName
+				,''AgentJobKey'' AS DimensionKey
+				,''dbo.fhsmAgentJobs'' AS SrcTable
+				,''src'' AS SrcAlias
+				,NULL AS SrcWhere
+				,''src.[Timestamp]'' AS SrcDateColumn
+				,''src.[JobName]'', NULL, NULL, NULL, NULL
+				,''Job name'', NULL, NULL, NULL, NULL
+		)
+		MERGE dbo.fhsmDimensions AS tgt
+		USING dimensions AS src ON (src.DimensionName = tgt.DimensionName) AND (src.SrcTable = tgt.SrcTable)
+		WHEN MATCHED
+			THEN UPDATE SET
+				tgt.DimensionKey = src.DimensionKey
+				,tgt.SrcTable = src.SrcTable
+				,tgt.SrcAlias = src.SrcAlias
+				,tgt.SrcWhere = src.SrcWhere
+				,tgt.SrcDateColumn = src.SrcDateColumn
+				,tgt.SrcColumn1 = src.SrcColumn1
+				,tgt.SrcColumn2 = src.SrcColumn2
+				,tgt.SrcColumn3 = src.SrcColumn3
+				,tgt.SrcColumn4 = src.SrcColumn4
+				,tgt.SrcColumn5 = src.SrcColumn5
+				,tgt.OutputColumn1 = src.OutputColumn1
+				,tgt.OutputColumn2 = src.OutputColumn2
+				,tgt.OutputColumn3 = src.OutputColumn3
+				,tgt.OutputColumn4 = src.OutputColumn4
+				,tgt.OutputColumn5 = src.OutputColumn5
+		WHEN NOT MATCHED BY TARGET
+			THEN INSERT(
+				DimensionName, DimensionKey
+				,SrcTable, SrcAlias, SrcWhere, SrcDateColumn
+				,SrcColumn1, SrcColumn2, SrcColumn3, SrcColumn4, SrcColumn5
+				,OutputColumn1, OutputColumn2, OutputColumn3, OutputColumn4, OutputColumn5
+			)
+			VALUES(
+				src.DimensionName, src.DimensionKey
+				,src.SrcTable, src.SrcAlias, src.SrcWhere, src.SrcDateColumn
+				,src.SrcColumn1, src.SrcColumn2, src.SrcColumn3, src.SrcColumn4, src.SrcColumn5
+				,src.OutputColumn1, src.OutputColumn2, src.OutputColumn3, src.OutputColumn4, src.OutputColumn5
+			);
+	END;
 
 	--
 	-- Update dimensions based upon the fact tables
 	--
 	BEGIN
-		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmAgentJobs'';
+		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmAgentJobs'', @ignoreAutoIndex = @ignoreAutoIndex;
 	END;
 END;
 
 ';
 SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
+
+SET @stmt = REPLACE(@stmt, 'SET @ignoreAutoIndex = 0;',                'SET @ignoreAutoIndex = 1;');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
@@ -12623,10 +14166,10 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @ena
 EXEC(@stmt);
 
 --
--- File part:AgentJobsPerformance.sql modified: 2025.09.14 09.32.50
+-- File part:AgentJobsPerformance.sql modified: 2026.03.22 08.36.36
 --
 SET @stmt = '
-USE [' + @fhSQLMonitorDatabase + '];
+USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
 SET NOCOUNT ON;
 
 --
@@ -12634,8 +14177,10 @@ SET NOCOUNT ON;
 --
 BEGIN
 	DECLARE @enableAgentJobsPerformance bit;
+	DECLARE @ignoreAutoIndex bit;
 
 	SET @enableAgentJobsPerformance = 0;
+	SET @ignoreAutoIndex = 0;
 END;
 
 --
@@ -12695,7 +14240,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.11.0'';
+		SET @version = ''2.12.0'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -13145,6 +14690,79 @@ ELSE BEGIN
 		END;
 
 		--
+		-- Create table dbo.fhsmAgentJobsWatermark and indexes if they not already exists
+		--
+		BEGIN
+			IF OBJECT_ID(''dbo.fhsmAgentJobsWatermark'', ''U'') IS NULL
+			BEGIN
+				RAISERROR(''Creating table dbo.fhsmAgentJobsWatermark'', 0, 1) WITH NOWAIT;
+
+				SET @stmt = ''
+					CREATE TABLE dbo.fhsmAgentJobsWatermark(
+						Id bigint identity(1,1) NOT NULL
+						,Name nvarchar(128) NOT NULL
+						,StartDateTime datetime NOT NULL
+						,TimestampUTC datetime NOT NULL
+						,Timestamp datetime NOT NULL
+						,CONSTRAINT PK_fhsmAgentJobsWatermark PRIMARY KEY(Id)'' + @tableCompressionStmt + ''
+						,CONSTRAINT UQ_fhsmAgentJobsWatermark_Name UNIQUE(Name)'' + @tableCompressionStmt + ''
+					);
+				'';
+				EXEC(@stmt);
+
+				RAISERROR(''Populating table dbo.fhsmAgentJobsWatermark with data from dbo.fhsmAgentJobsPerformanceLatest'', 0, 1) WITH NOWAIT;
+
+				SET @stmt = ''
+					INSERT INTO dbo.fhsmAgentJobsWatermark(Name, StartDateTime, TimestampUTC, Timestamp)
+					SELECT
+						jpl.Name,
+						MAX(jpl.StartDateTime) AS StartDateTime,
+						MAX(jpl.TimestampUTC) AS TimestampUTC,
+						MAX(jpl.Timestamp) AS Timestamp
+					FROM dbo.fhsmAgentJobsPerformanceLatest AS jpl
+					GROUP BY jpl.Name
+					ORDER BY jpl.Name;
+				'';
+				EXEC(@stmt);
+			END;
+
+			IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmAgentJobsWatermark'')) AND (i.name = ''NC_fhsmAgentJobsWatermark_TimestampUTC''))
+			BEGIN
+				RAISERROR(''Adding index [NC_fhsmAgentJobsWatermark_TimestampUTC] to table dbo.fhsmAgentJobsWatermark'', 0, 1) WITH NOWAIT;
+
+				SET @stmt = ''
+					CREATE NONCLUSTERED INDEX NC_fhsmAgentJobsWatermark_TimestampUTC ON dbo.fhsmAgentJobsWatermark(TimestampUTC)'' + @tableCompressionStmt + '';
+				'';
+				EXEC(@stmt);
+			END;
+
+			IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmAgentJobsWatermark'')) AND (i.name = ''NC_fhsmAgentJobsWatermark_Timestamp''))
+			BEGIN
+				RAISERROR(''Adding index [NC_fhsmAgentJobsWatermark_Timestamp] to table dbo.fhsmAgentJobsWatermark'', 0, 1) WITH NOWAIT;
+
+				SET @stmt = ''
+					CREATE NONCLUSTERED INDEX NC_fhsmAgentJobsWatermark_Timestamp ON dbo.fhsmAgentJobsWatermark(Timestamp)'' + @tableCompressionStmt + '';
+				'';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Register extended properties on the table dbo.fhsmAgentJobsWatermark
+			--
+			BEGIN
+				SET @objectName = ''dbo.fhsmAgentJobsWatermark'';
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+			END;
+		END;
+
+		--
 		-- Add indexes to msdb.dbo.sysjobhistory if they if they not already exists
 		--
 		BEGIN
@@ -13417,8 +15035,8 @@ ELSE BEGIN
 					DECLARE @productVersion1 int;
 					DECLARE @productVersion2 int;
 					DECLARE @productVersion3 int;
-					DECLARE @startDateTime datetime;
-					DECLARE @startDateTimeTxt nvarchar(32);
+					DECLARE @startRunDate int;
+					DECLARE @startRunTime int;
 					DECLARE @stmt nvarchar(max);
 					DECLARE @thisTask nvarchar(128);
 					DECLARE @whereStmt nvarchar(max);
@@ -13462,17 +15080,68 @@ ELSE BEGIN
 					END;
 			'';
 			SET @stmt += ''
+					IF (OBJECT_ID(''''tempdb..#jobsWatermark'''') IS NOT NULL) DROP TABLE #jobsWatermark;
+
+					CREATE TABLE #jobsWatermark(
+						Name nvarchar(128) NOT NULL
+						,StartDateTime datetime NOT NULL
+						,PRIMARY KEY(Name)
+					);
+			'';
+			SET @stmt += ''
+					--
+					-- Set global variables
+					--
+					BEGIN
+						SELECT
+							@now = SYSDATETIME()
+							,@nowUTC = SYSUTCDATETIME();
+					END;
+			'';
+			SET @stmt += ''
+					--
+					-- Get new watermark
+					--
+					BEGIN
+						INSERT INTO #jobsWatermark
+						SELECT
+							a.name AS Name
+							,ajt.StartDateTime
+						FROM (
+							SELECT
+								sj.name
+								,sjh.run_date
+								,sjh.run_time
+								,ROW_NUMBER() OVER(PARTITION BY sjh.job_id ORDER BY sjh.instance_id DESC) AS _Rnk_
+							FROM msdb.dbo.sysjobs AS sj
+							INNER JOIN msdb.dbo.sysjobhistory AS sjh ON (sjh.job_id =  sj.job_id)
+							WHERE (1 = 1)
+								AND (sjh.step_id = 0)
+						) AS a
+						CROSS APPLY dbo.fhsmFNAgentJobTime(a.run_date, a.run_time, NULL) AS ajt
+						WHERE (a._Rnk_ = 1);
+					END;
+			'';
+			SET @stmt += ''
 					--
 					-- Create where condition to load latest and newest per job
 					--
 					BEGIN
 						DECLARE jCur CURSOR LOCAL READ_ONLY FAST_FORWARD FOR
 						SELECT
-							jpl.Name AS JobName,
-							MAX(jpl.StartDateTime) AS StartDateTime
-						FROM dbo.fhsmAgentJobsPerformanceLatest AS jpl
-						GROUP BY jpl.Name
-						ORDER BY jpl.Name;
+							jw.Name AS JobName,
+							(
+								DATEPART(YEAR, jw.StartDateTime) * 10000
+								+ DATEPART(MONTH, jw.StartDateTime) * 100
+								+ DATEPART(DAY, jw.StartDateTime)
+							) AS StartRunDate,
+							(
+								DATEPART(HOUR, jw.StartDateTime) * 10000
+								+ DATEPART(MINUTE, jw.StartDateTime) * 100
+								+ DATEPART(SECOND, jw.StartDateTime)
+							) AS StartRunTime
+						FROM dbo.fhsmAgentJobsWatermark AS jw
+						ORDER BY jw.Name;
 
 						OPEN jCur;
 
@@ -13482,20 +15151,18 @@ ELSE BEGIN
 						WHILE (1 = 1)
 						BEGIN
 							FETCH NEXT FROM jCur
-							INTO @jobName, @startDateTime;
+							INTO @jobName, @startRunDate, @startRunTime;
 
 							IF (@@FETCH_STATUS <> 0)
 							BEGIN
 								BREAK;
 							END;
 
-							SET @startDateTimeTxt = CONVERT(nvarchar, @startDateTime, 126);
-
 							IF (@whereStmt1 <> '''''''')
 							BEGIN
 								SET @whereStmt1 += ''''OR '''';
 							END;
-							SET @whereStmt1 += ''''((sj.name = '''''''''''' + @jobName + '''''''''''') AND (ajt.StartDateTime >= '''''''''''' + @startDateTimeTxt + ''''''''''''))'''' + CHAR(13);;
+							SET @whereStmt1 += ''''((sj.name = '''''''''''' + @jobName + '''''''''''') AND (((sj.run_date = '''' + CAST(@startRunDate AS nvarchar) + '''') AND (sj.run_time >= '''' + CAST(@startRunTime AS nvarchar) + '''')) OR (sj.run_date > '''' + CAST(@startRunDate AS nvarchar) + '''')))'''' + CHAR(13);;
 
 							IF (@whereStmt2 <> '''''''')
 							BEGIN
@@ -13528,11 +15195,25 @@ ELSE BEGIN
 					BEGIN
 						DECLARE jCur CURSOR LOCAL READ_ONLY FAST_FORWARD FOR
 						SELECT
-							jple.Name AS JobName,
-							MAX(jple.StartDateTime) AS StartDateTime
-						FROM dbo.fhsmAgentJobsPerformanceLatestError AS jple
-						GROUP BY jple.Name
-						ORDER BY jple.Name;
+							jw.JobName,
+							(
+								DATEPART(YEAR, jw.StartDateTime) * 10000
+								+ DATEPART(MONTH, jw.StartDateTime) * 100
+								+ DATEPART(DAY, jw.StartDateTime)
+							) AS StartRunDate,
+							(
+								DATEPART(HOUR, jw.StartDateTime) * 10000
+								+ DATEPART(MINUTE, jw.StartDateTime) * 100
+								+ DATEPART(SECOND, jw.StartDateTime)
+							) AS StartRunTime
+						FROM (
+							SELECT
+								jple.Name AS JobName,
+								MAX(jple.StartDateTime) AS StartDateTime
+							FROM dbo.fhsmAgentJobsPerformanceLatestError AS jple
+							GROUP BY jple.Name
+						) AS jw
+						ORDER BY jw.JobName;
 
 						OPEN jCur;
 
@@ -13542,20 +15223,18 @@ ELSE BEGIN
 						WHILE (1 = 1)
 						BEGIN
 							FETCH NEXT FROM jCur
-							INTO @jobName, @startDateTime;
+							INTO @jobName, @startRunDate, @startRunTime;
 
 							IF (@@FETCH_STATUS <> 0)
 							BEGIN
 								BREAK;
 							END;
 
-							SET @startDateTimeTxt = CONVERT(nvarchar, @startDateTime, 126);
-
 							IF (@whereStmtError1 <> '''''''')
 							BEGIN
 								SET @whereStmtError1 += ''''OR '''';
 							END;
-							SET @whereStmtError1 += ''''((sj.name = '''''''''''' + @jobName + '''''''''''') AND (ajt.StartDateTime > '''''''''''' + @startDateTimeTxt + ''''''''''''))'''' + CHAR(13);;
+							SET @whereStmtError1 += ''''((sj.name = '''''''''''' + @jobName + '''''''''''') AND (((sjh.run_date = '''' + CAST(@startRunDate AS nvarchar) + '''') AND (sjh.run_time > '''' + CAST(@startRunTime AS nvarchar) + '''')) OR (sjh.run_date > '''' + CAST(@startRunDate AS nvarchar) + '''')))'''' + CHAR(13);;
 
 							IF (@whereStmtError2 <> '''''''')
 							BEGIN
@@ -13586,10 +15265,6 @@ ELSE BEGIN
 					-- Collect data
 					--
 					BEGIN
-						SELECT
-							@now = SYSDATETIME()
-							,@nowUTC = SYSUTCDATETIME();
-
 						--
 						-- Collect data into temp table
 						--
@@ -13646,11 +15321,15 @@ ELSE BEGIN
 									,jrn.run_time
 									,jrn.run_duration
 									,jrn.run_status
-									,COALESCE(prevJRN.instance_id, 0) AS PrevInstanceId
+									,COALESCE(prevJRN.instance_id, 0)          AS PrevInstanceId
+									,COALESCE(nextJRN.instance_id, 2147483647) AS NextInstanceId
 								FROM jrn
 								LEFT OUTER JOIN jrn AS prevJRN ON
 									(prevJRN.job_id = jrn.job_id)
 									AND (prevJRN.JobRunNumber = jrn.JobRunNumber - 1)
+								LEFT OUTER JOIN jrn AS nextJRN ON
+									(nextJRN.job_id = jrn.job_id)
+									AND (nextJRN.JobRunNumber = jrn.JobRunNumber + 1)
 							'''';
 						END
 						ELSE BEGIN
@@ -13665,7 +15344,8 @@ ELSE BEGIN
 									,jrn.run_time
 									,jrn.run_duration
 									,jrn.run_status
-									,LAG(jrn.instance_id, 1, 0) OVER(PARTITION BY jrn.job_id ORDER BY jrn.JobRunNumber) AS PrevInstanceId
+									,LAG(jrn.instance_id, 1, 0)           OVER(PARTITION BY jrn.job_id ORDER BY jrn.JobRunNumber) AS PrevInstanceId
+									,LEAD(jrn.instance_id, 1, 2147483647) OVER(PARTITION BY jrn.job_id ORDER BY jrn.JobRunNumber) AS NextInstanceId
 								FROM (
 									SELECT
 										sj.name
@@ -13689,6 +15369,15 @@ ELSE BEGIN
 							) AS sj
 							CROSS APPLY dbo.fhsmFNAgentJobTime(sj.run_date, sj.run_time, sj.run_duration) AS ajt
 							WHERE (1 = 1)
+								AND EXISTS (
+									SELECT *
+									FROM msdb.dbo.sysjobhistory AS sjh
+									WHERE (sjh.job_id =  sj.job_id)
+										AND (sjh.instance_id > sj.PrevInstanceId)
+										AND (sjh.instance_id < sj.NextInstanceId)
+										AND (sjh.step_id <> 0)
+										'''' + @parameterStmt + ''''
+								)
 								'''' + @whereStmt + '''';
 						'''';
 						EXEC sp_executesql
@@ -13756,9 +15445,8 @@ ELSE BEGIN
 							CROSS APPLY (
 								SELECT TOP 1 job.run_duration
 								FROM msdb.dbo.sysjobhistory AS job
-								CROSS APPLY dbo.fhsmFNAgentJobTime(job.run_date, job.run_time, job.run_duration) AS ajtParent
-								WHERE (job.job_id = sj.job_id) AND (job.step_id = 0) AND (ajtParent.StartDateTime <= ajt.StartDateTime)
-								ORDER BY ajtParent.StartDateTime DESC
+								WHERE (job.job_id = sj.job_id) AND (job.step_id = 0) AND (((job.run_date = sjh.run_date) AND (job.run_time <= sjh.run_time)) OR (job.run_date < sjh.run_date))
+								ORDER BY job.run_date DESC, job.run_time DESC
 							) AS job
 							WHERE (1 = 1)
 								AND (sjh.run_status NOT IN (1, 4))	-- Ignore 1:Succeeded and 4:In progress
@@ -13776,7 +15464,7 @@ ELSE BEGIN
 			SET @stmt += ''
 					--
 					-- Check if the newest record (Rnk = 1) in dbo.fhsmAgentJobsPerformanceLatest exists in dbo.fhsmAgentJobsPerformanceDelta
-					-- If not we are running to slow, or the SQL Server agent must have its Histiry settings changed
+					-- If not we are running to slow, or the SQL Server agent must have its History settings changed
 					-- We will only record one per hour bucket
 					--
 					BEGIN
@@ -13900,6 +15588,34 @@ ELSE BEGIN
 					END;
 			'';
 			SET @stmt += ''
+					--
+					-- Load latest watermark into table
+					--
+					BEGIN
+						MERGE dbo.fhsmAgentJobsWatermark AS tgt
+						USING (
+							SELECT
+								jw.Name,
+								jw.StartDateTime,
+								@nowUTC AS TimestampUTC,
+								@now AS Timestamp
+							FROM #jobsWatermark AS jw
+						) AS src
+						ON (src.Name COLLATE DATABASE_DEFAULT = tgt.Name)
+						WHEN MATCHED
+							THEN
+							UPDATE
+							SET
+								tgt.StartDateTime = src.StartDateTime,
+								tgt.TimestampUTC = src.TimestampUTC,
+								tgt.Timestamp = src.Timestamp
+						WHEN NOT MATCHED
+							THEN
+							INSERT(Name, StartDateTime, TimestampUTC, Timestamp)
+							VALUES(src.Name, src.StartDateTime, src.TimestampUTC, src.Timestamp);
+					END;
+			'';
+			SET @stmt += ''
 					RETURN 0;
 				END;
 			'';
@@ -13962,7 +15678,7 @@ ELSE BEGIN
 					SET @version = '''''' + @version + '''''';
 			'';
 			SET @stmt += ''
-					IF (@Type = ''''Parameter'''')
+					IF (@Type = ''''parameter'''')
 					BEGIN
 						IF (@Command = ''''set'''')
 						BEGIN
@@ -14032,7 +15748,7 @@ ELSE BEGIN
 					END
 			'';
 			SET @stmt += ''
-					ELSE IF (@Type = ''''Uninstall'''')
+					ELSE IF (@Type = ''''uninstall'''')
 					BEGIN
 						--
 						-- Place holder
@@ -14185,13 +15901,15 @@ ELSE BEGIN
 	-- Update dimensions based upon the fact tables
 	--
 	BEGIN
-		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmAgentJobsPerformance'';
+		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmAgentJobsPerformance'', @ignoreAutoIndex = @ignoreAutoIndex;
 	END;
 END;
 
 ';
 SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
+
+SET @stmt = REPLACE(@stmt, 'SET @ignoreAutoIndex = 0;',                'SET @ignoreAutoIndex = 1;');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
@@ -14223,10 +15941,10 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @ena
 EXEC(@stmt);
 
 --
--- File part:AgeOfStatistics.sql modified: 2025.09.14 09.34.17
+-- File part:AgeOfStatistics.sql modified: 2026.02.07 20.24.28
 --
 SET @stmt = '
-USE [' + @fhSQLMonitorDatabase + '];
+USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
 SET NOCOUNT ON;
 
 --
@@ -14234,8 +15952,10 @@ SET NOCOUNT ON;
 --
 BEGIN
 	DECLARE @enableAgeOfStatistics bit;
+	DECLARE @ignoreAutoIndex bit;
 
 	SET @enableAgeOfStatistics = 0;
+	SET @ignoreAutoIndex = 0;
 END;
 
 --
@@ -14295,7 +16015,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.11.0'';
+		SET @version = ''2.12.0'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -14997,7 +16717,7 @@ ELSE BEGIN
 					SET @version = '''''' + @version + '''''';
 			'';
 			SET @stmt += ''
-					IF (@Type = ''''Parameter'''')
+					IF (@Type = ''''parameter'''')
 					BEGIN
 						IF (@Command = ''''set'''')
 						BEGIN
@@ -15067,7 +16787,7 @@ ELSE BEGIN
 					END
 			'';
 			SET @stmt += ''
-					ELSE IF (@Type = ''''Uninstall'''')
+					ELSE IF (@Type = ''''uninstall'''')
 					BEGIN
 						--
 						-- Place holder
@@ -15280,14 +17000,16 @@ ELSE BEGIN
 	-- Update dimensions based upon the fact tables
 	--
 	BEGIN
-		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmStatisticsAge'';
-		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmStatisticsAgeIncremental'';
+		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmStatisticsAge'', @ignoreAutoIndex = @ignoreAutoIndex;
+		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmStatisticsAgeIncremental'', @ignoreAutoIndex = @ignoreAutoIndex;
 	END;
 END;
 
 ';
 SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
+
+SET @stmt = REPLACE(@stmt, 'SET @ignoreAutoIndex = 0;',                'SET @ignoreAutoIndex = 1;');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
@@ -15319,10 +17041,10 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @ena
 EXEC(@stmt);
 
 --
--- File part:BackupStatus.sql modified: 2025.09.14 09.34.33
+-- File part:BackupStatus.sql modified: 2026.02.28 23.09.30
 --
 SET @stmt = '
-USE [' + @fhSQLMonitorDatabase + '];
+USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
 SET NOCOUNT ON;
 
 --
@@ -15330,8 +17052,10 @@ SET NOCOUNT ON;
 --
 BEGIN
 	DECLARE @enableBackupStatus bit;
+	DECLARE @ignoreAutoIndex bit;
 
 	SET @enableBackupStatus = 0;
+	SET @ignoreAutoIndex = 0;
 END;
 
 --
@@ -15391,7 +17115,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.11.0'';
+		SET @version = ''2.12.0'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -15587,7 +17311,7 @@ ELSE BEGIN
 							FROM dbo.fhsmDatabaseState AS dbState
 							WHERE
 								(dbState.Query = 31)
-								AND (dbState.ValidTo = ''''9999-12-31 23:59:59.000'''')
+								AND (dbState.ValidTo = ''''9999-12-31T23:59:59'''')
 								AND (dbState.[Key] = ''''recovery_model'''')
 								AND (dbState.DatabaseName <> ''''tempdb'''')
 						) AS d
@@ -15652,7 +17376,6 @@ ELSE BEGIN
 					,bs.BackupStartDate
 					,bs.BackupFinishDate
 					,COALESCE(NULLIF(DATEDIFF(SECOND, bs.BackupStartDate, bs.BackupFinishDate), 0), 1) AS Duration		-- Duration of 0 sec. will always be 1 sec.
-					,bs.ExpirationDate
 					,CASE bs.Type
 						WHEN ''''D'''' THEN ''''Database''''
 						WHEN ''''I'''' THEN ''''Differential database''''
@@ -15677,16 +17400,27 @@ ELSE BEGIN
 						WHEN 1 THEN ''''Yes''''
 						ELSE ''''N.A.''''
 					END AS IsDamagedTxt
-					,bs.LogicalDeviceName
-					,bs.PhysicalDeviceName
-					,bs.BackupsetName
-					,bs.BackupsetDescription
 					,bs.Timestamp
 					,CAST(bs.Timestamp AS date) AS Date
 					,(DATEPART(HOUR, bs.Timestamp) * 60 * 60) + (DATEPART(MINUTE, bs.Timestamp) * 60) + (DATEPART(SECOND, bs.Timestamp)) AS TimeKey
 					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(bs.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
 					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(1, bs.Type, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS BackupTypeJunkDimensionKey
-				FROM dbo.fhsmBackupStatus AS bs;
+				FROM (
+					SELECT
+						bs.DatabaseName, bs.Type
+						,bs.BackupStartDate, bs.BackupFinishDate
+						,bs.BackupSize, bs.CompressedBackupSize
+						,bs.IsCopyOnly, bs.IsDamaged
+						,bs.Timestamp
+						,COUNT(*) AS NumberOfPhysicalFiles
+					FROM dbo.fhsmBackupStatus AS bs
+					GROUP BY
+						bs.DatabaseName, bs.Type
+						,bs.BackupStartDate, bs.BackupFinishDate
+						,bs.BackupSize, bs.CompressedBackupSize
+						,bs.IsCopyOnly, bs.IsDamaged
+						,bs.Timestamp
+				) AS bs;
 			'';
 			EXEC(@stmt);
 		END;
@@ -15920,13 +17654,15 @@ ELSE BEGIN
 	-- Update dimensions based upon the fact tables
 	--
 	BEGIN
-		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmBackupStatus'';
+		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmBackupStatus'', @ignoreAutoIndex = @ignoreAutoIndex;
 	END;
 END;
 
 ';
 SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
+
+SET @stmt = REPLACE(@stmt, 'SET @ignoreAutoIndex = 0;',                'SET @ignoreAutoIndex = 1;');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
@@ -15958,10 +17694,10 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @ena
 EXEC(@stmt);
 
 --
--- File part:BlocksAndDeadlocks.sql modified: 2025.09.14 09.43.28
+-- File part:BlocksAndDeadlocks.sql modified: 2026.02.28 23.42.40
 --
 SET @stmt = '
-USE [' + @fhSQLMonitorDatabase + '];
+USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
 SET NOCOUNT ON;
 
 --
@@ -15969,8 +17705,10 @@ SET NOCOUNT ON;
 --
 BEGIN
 	DECLARE @enableBlocksAndDeadlocks bit;
+	DECLARE @ignoreAutoIndex bit;
 
 	SET @enableBlocksAndDeadlocks = 0;
+	SET @ignoreAutoIndex = 0;
 END;
 
 --
@@ -16048,7 +17786,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.11.0'';
+		SET @version = ''2.12.0'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -17203,7 +18941,12 @@ ELSE BEGIN
 						);
 						DECLARE @filePath nvarchar(260);
 						DECLARE @filePathEvent nvarchar(260);
+						DECLARE @jobName nvarchar(128);
 						DECLARE @jobStatus int;
+						DECLARE @jobStatuses TABLE(
+							JobName nvarchar(128),
+							JobStatus int
+						);
 						DECLARE @message nvarchar(max);
 						DECLARE @parameterChanges TABLE(
 							Action nvarchar(10),
@@ -17227,7 +18970,7 @@ ELSE BEGIN
 						SET @version = '''''' + @version + '''''';
 				'';
 				SET @stmt += ''
-						IF (@Type = ''''Configuration'''')
+						IF (@Type = ''''configuration'''')
 						BEGIN
 							IF (@Command = ''''set'''') AND (@Key = ''''BlockedProcessThreshold'''')
 							BEGIN
@@ -17333,7 +19076,7 @@ ELSE BEGIN
 						END
 				'';
 				SET @stmt += ''
-						ELSE IF (@Type = ''''Parameter'''')
+						ELSE IF (@Type = ''''parameter'''')
 						BEGIN
 							IF (@Command = ''''set'''')
 							BEGIN
@@ -17349,9 +19092,41 @@ ELSE BEGIN
 									RAISERROR(@message, 0, 1) WITH NOWAIT;
 									RETURN -11;
 								END;
+				'';
+				SET @stmt += ''
+								--
+								-- Disable all agent jobs
+								--
+								BEGIN
+									DECLARE jCur CURSOR LOCAL READ_ONLY FAST_FORWARD FOR
+									SELECT c.Value AS JobName
+									FROM dbo.fhsmConfigurations AS c
+									WHERE (c.[Key] LIKE ''''AgentJobName[01]'''')
+									ORDER BY c.[Key];
 
-								EXEC dbo.fhsmSPAgentJobControl @command = ''''Disable'''', @jobStatus = @jobStatus OUTPUT;
+									OPEN jCur;
 
+									WHILE (1 = 1)
+									BEGIN
+										FETCH NEXT FROM jCur
+										INTO @jobName;
+
+										IF (@@FETCH_STATUS <> 0)
+										BEGIN
+											BREAK;
+										END;
+
+										EXEC dbo.fhsmSPAgentJobControl @jobName = @jobName, @command = ''''Disable'''', @jobStatus = @jobStatus OUTPUT;
+
+										INSERT INTO @jobStatuses(JobName, JobStatus)
+										SELECT @jobName, @jobStatus;
+									END;
+
+									CLOSE jCur;
+									DEALLOCATE jCur;
+								END;
+				'';
+				SET @stmt += ''
 								--
 								-- Register configuration changes
 								--
@@ -17431,7 +19206,8 @@ ELSE BEGIN
 										INNER JOIN sys.server_event_session_fields AS sesf ON (sesf.event_session_id = ses.event_session_id)
 										WHERE (ses.name = @sessionName) AND (sesf.name = ''''FILENAME'''')
 									);
-
+				'';
+				SET @stmt += ''
 									IF (@runningFilePath <> @filePathEvent) OR (@runningFilePath IS NULL)
 									BEGIN
 										IF EXISTS(
@@ -17480,10 +19256,37 @@ ELSE BEGIN
 										EXEC(@stmt);
 									END;
 								END;
-
-								IF (@jobStatus = 1)
+				'';
+				SET @stmt += ''
+								--
+								-- Enable all agent jobs that was enable when starting
+								--
 								BEGIN
-									EXEC dbo.fhsmSPAgentJobControl @command = ''''Enable'''', @jobStatus = @jobStatus OUTPUT;
+									DECLARE jCur CURSOR LOCAL READ_ONLY FAST_FORWARD FOR
+									SELECT js.JobName, js.JobStatus
+									FROM @jobStatuses AS js
+									ORDER BY js.JobName;
+
+									OPEN jCur;
+
+									WHILE (1 = 1)
+									BEGIN
+										FETCH NEXT FROM jCur
+										INTO @jobName, @jobStatus;
+
+										IF (@@FETCH_STATUS <> 0)
+										BEGIN
+											BREAK;
+										END;
+
+										IF (@jobStatus = 1)
+										BEGIN
+											EXEC dbo.fhsmSPAgentJobControl @jobName = @jobName, @command = ''''Enable'''', @jobStatus = @jobStatus OUTPUT;
+										END;
+									END;
+
+									CLOSE jCur;
+									DEALLOCATE jCur;
 								END;
 							END
 							ELSE BEGIN
@@ -17494,7 +19297,7 @@ ELSE BEGIN
 						END
 				'';
 				SET @stmt += ''
-						ELSE IF (@Type = ''''Uninstall'''')
+						ELSE IF (@Type = ''''uninstall'''')
 						BEGIN
 							--
 							-- Initialize variables
@@ -17624,6 +19427,8 @@ END;
 SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
+SET @stmt = REPLACE(@stmt, 'SET @ignoreAutoIndex = 0;',                'SET @ignoreAutoIndex = 1;');
+
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
@@ -17654,10 +19459,10 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @ena
 EXEC(@stmt);
 
 --
--- File part:Capacity.sql modified: 2025.09.14 09.32.53
+-- File part:Capacity.sql modified: 2026.02.28 23.55.25
 --
 SET @stmt = '
-USE [' + @fhSQLMonitorDatabase + '];
+USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
 SET NOCOUNT ON;
 
 --
@@ -17665,8 +19470,10 @@ SET NOCOUNT ON;
 --
 BEGIN
 	DECLARE @enableCapacity bit;
+	DECLARE @ignoreAutoIndex bit;
 
 	SET @enableCapacity = 0;
+	SET @ignoreAutoIndex = 0;
 END;
 
 --
@@ -17726,7 +19533,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.11.0'';
+		SET @version = ''2.12.0'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -17747,18 +19554,6 @@ ELSE BEGIN
 	BEGIN
 		RAISERROR(''!!!'', 0, 1) WITH NOWAIT;
 		RAISERROR(''!!! Can not install the Disk size part on SQL version SQL2008'', 0, 1) WITH NOWAIT;
-		RAISERROR(''!!!'', 0, 1) WITH NOWAIT;
-	END;
-
-	--
-	-- Check if SQL is lower than 2016 SP2
-	--
-	IF
-		(@productVersion1 < 13)
-		OR ((@productVersion1 = 13) AND (@productVersion2 = 0) AND (@productVersion3 < 5026))
-	BEGIN
-		RAISERROR(''!!!'', 0, 1) WITH NOWAIT;
-		RAISERROR(''!!! Can not install the VLF part on SQL versions lower than SQL2016 SP2'', 0, 1) WITH NOWAIT;
 		RAISERROR(''!!!'', 0, 1) WITH NOWAIT;
 	END;
 
@@ -17884,6 +19679,9 @@ ELSE BEGIN
 						,FileGroupType char(2) NULL
 						,CurrentSize int NOT NULL
 						,UsedSize int NULL
+						,MaxSize int NULL
+						,Growth int NULL
+						,IsPercentGrowth bit NULL
 						,TimestampUTC datetime NOT NULL
 						,Timestamp datetime NOT NULL
 						,CONSTRAINT PK_fhsmDatabaseSize PRIMARY KEY(Id)'' + @tableCompressionStmt + ''
@@ -17958,6 +19756,48 @@ ELSE BEGIN
 				SET @stmt = ''
 					ALTER TABLE dbo.fhsmDatabaseSize
 						ADD FileGroupType char(2) NULL;
+				'';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Adding column MaxSize to table dbo.fhsmDatabaseSize if it not already exists
+			--
+			IF NOT EXISTS (SELECT * FROM sys.columns AS c WHERE (c.object_id = OBJECT_ID(''dbo.fhsmDatabaseSize'')) AND (c.name = ''MaxSize''))
+			BEGIN
+				RAISERROR(''Adding column [MaxSize] to table dbo.fhsmDatabaseSize'', 0, 1) WITH NOWAIT;
+
+				SET @stmt = ''
+					ALTER TABLE dbo.fhsmDatabaseSize
+						ADD MaxSize int NULL;
+				'';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Adding column Growth to table dbo.fhsmDatabaseSize if it not already exists
+			--
+			IF NOT EXISTS (SELECT * FROM sys.columns AS c WHERE (c.object_id = OBJECT_ID(''dbo.fhsmDatabaseSize'')) AND (c.name = ''Growth''))
+			BEGIN
+				RAISERROR(''Adding column [Growth] to table dbo.fhsmDatabaseSize'', 0, 1) WITH NOWAIT;
+
+				SET @stmt = ''
+					ALTER TABLE dbo.fhsmDatabaseSize
+						ADD Growth int NULL;
+				'';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Adding column IsPercentGrowth to table dbo.fhsmDatabaseSize if it not already exists
+			--
+			IF NOT EXISTS (SELECT * FROM sys.columns AS c WHERE (c.object_id = OBJECT_ID(''dbo.fhsmDatabaseSize'')) AND (c.name = ''IsPercentGrowth''))
+			BEGIN
+				RAISERROR(''Adding column [IsPercentGrowth] to table dbo.fhsmDatabaseSize'', 0, 1) WITH NOWAIT;
+
+				SET @stmt = ''
+					ALTER TABLE dbo.fhsmDatabaseSize
+						ADD IsPercentGrowth bit NULL;
 				'';
 				EXEC(@stmt);
 			END;
@@ -18383,6 +20223,9 @@ ELSE BEGIN
 					SELECT
 						ds.CurrentSize
 						,ds.UsedSize
+						,ds.MaxSize
+						,ds.Growth
+						,ds.IsPercentGrowth
 						,CAST(ds.Timestamp AS date) AS Date
 						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ds.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
 						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(ds.DatabaseName, ds.LogicalName, ds.PhysicalName,
@@ -19126,6 +20969,9 @@ ELSE BEGIN
 											,a.FileGroupType
 											,a.CurrentSize
 											,a.UsedSize
+											,a.MaxSize
+											,a.Growth
+											,a.IsPercentGrowth
 											,@nowUTC, @now
 										FROM (
 											SELECT
@@ -19151,8 +20997,11 @@ ELSE BEGIN
 				SET @stmt += ''
 												,fg.name					AS FilegroupName
 												,fg.type					AS FileGroupType
-												,CAST((df.size / 128.0) AS int) AS CurrentSize
-												,CAST((CAST(FILEPROPERTY(df.name, ''''''''SpaceUsed'''''''') AS int) / 128.0) AS int) AS UsedSize
+												,CAST((df.size / 128.0) AS int)													AS CurrentSize
+												,CAST((CAST(FILEPROPERTY(df.name, ''''''''SpaceUsed'''''''') AS int) / 128.0) AS int)	AS UsedSize
+												,CAST((df.max_size / 128.0) AS int)												AS MaxSize
+												,CAST((df.growth / 128.0) AS int)												AS Growth
+												,df.is_percent_growth															AS IsPercentGrowth
 											FROM sys.database_files AS df WITH (NOLOCK)
 				'';
 				IF NOT ((@productVersion1 = 10) AND (@productVersion2 = 0))
@@ -19167,7 +21016,10 @@ ELSE BEGIN
 										) AS a;
 									'''';
 									BEGIN TRY
-										INSERT INTO dbo.fhsmDatabaseSize(DatabaseName, LogicalName, PhysicalName, Type, VolumeMountPoint, LogicalVolumeName, FilegroupName, FileGroupType, CurrentSize, UsedSize, TimestampUTC, Timestamp)
+										INSERT INTO dbo.fhsmDatabaseSize(
+											DatabaseName, LogicalName, PhysicalName, Type, VolumeMountPoint, LogicalVolumeName, FilegroupName, FileGroupType
+											,CurrentSize, UsedSize, MaxSize, Growth, IsPercentGrowth
+											,TimestampUTC, Timestamp)
 										EXEC sp_executesql
 											@stmt
 											,N''''@now datetime, @nowUTC datetime''''
@@ -19599,7 +21451,7 @@ ELSE BEGIN
 							WHERE (o.type = ''''''''U'''''''')
 							ORDER BY sch.name, o.name;
 
-							OPEN OCur;
+							OPEN oCur;
 
 							WHILE (1 = 1)
 							BEGIN
@@ -19663,8 +21515,8 @@ ELSE BEGIN
 								END;
 							END;
 
-							CLOSE OCur;
-							DEALLOCATE OCur;
+							CLOSE oCur;
+							DEALLOCATE oCur;
 
 							SELECT *
 							FROM @spaceUsed AS su
@@ -19877,54 +21729,188 @@ ELSE BEGIN
 		-- Create stored procedure dbo.fhsmSPVLFSize
 		--
 		BEGIN
-			SET @stmt = ''
-				IF OBJECT_ID(''''dbo.fhsmSPVLFSize'''', ''''P'''') IS NULL
-				BEGIN
-					EXEC(''''CREATE PROC dbo.fhsmSPVLFSize AS SELECT ''''''''dummy'''''''' AS Txt'''');
-				END;
-			'';
-			EXEC(@stmt);
-
-			SET @stmt = ''
-				ALTER PROC dbo.fhsmSPVLFSize
-				AS
-				BEGIN
-					SET NOCOUNT ON;
-
-					DECLARE @now datetime;
-					DECLARE @nowUTC datetime;
-
-					--
-					-- Collect data
-					--
+			BEGIN
+				SET @stmt = ''
+					IF OBJECT_ID(''''dbo.fhsmSPVLFSize'''', ''''P'''') IS NULL
 					BEGIN
-						SELECT
-							@now = SYSDATETIME()
-							,@nowUTC = SYSUTCDATETIME();
-
-						--
-						-- Get VLF statistics
-						--
-						IF EXISTS(SELECT * FROM master.sys.system_objects AS so WHERE (so.name = ''''dm_db_log_info''''))
-						BEGIN
-							INSERT INTO dbo.fhsmVLFSize(DatabaseName, VLFCount, ActiveVLF, VLFSizeMB, ActiveVLFSizeMB, TimestampUTC, Timestamp)
-							SELECT
-								d.name AS DatabaseName
-								,COUNT(d.database_id) AS VLFCount
-								,SUM(CAST(ddli.vlf_active AS int)) AS ActiveVLF
-								,SUM(ddli.vlf_size_mb) AS VLFSizeMB
-								,SUM(ddli.vlf_active * ddli.vlf_size_mb) AS ActiveVLFSizeMB
-								,@nowUTC, @now
-							FROM sys.databases AS d
-							CROSS APPLY sys.dm_db_log_info(d.database_id) AS ddli
-							GROUP BY d.name;
-						END;
+						EXEC(''''CREATE PROC dbo.fhsmSPVLFSize AS SELECT ''''''''dummy'''''''' AS Txt'''');
 					END;
+				'';
+				EXEC(@stmt);
 
-					RETURN 0;
+				SET @stmt = ''
+					ALTER PROC dbo.fhsmSPVLFSize (
+						@name nvarchar(128),
+						@parameter nvarchar(max)
+					)
+					AS
+					BEGIN
+						SET NOCOUNT ON;
+
+						DECLARE @database nvarchar(128);
+						DECLARE @databases nvarchar(max);
+						DECLARE @errorMsg nvarchar(max);
+						DECLARE @message nvarchar(max);
+						DECLARE @now datetime;
+						DECLARE @nowUTC datetime;
+						DECLARE @parameterTable TABLE([Key] nvarchar(128) NOT NULL, Value nvarchar(128) NULL);
+						DECLARE @replicaId uniqueidentifier;
+						DECLARE @stmt nvarchar(max);
+						DECLARE @thisTask nvarchar(128);
+						DECLARE @version nvarchar(128);
+
+						SET @thisTask = OBJECT_NAME(@@PROCID);
+						SET @version = '''''' + @version + '''''';
+
+						--
+						-- Get the parameter for the command
+						--
+						BEGIN
+							INSERT INTO @parameterTable([Key], Value)
+							SELECT
+								(SELECT s.Txt FROM dbo.fhsmFNSplitString(p.Txt, ''''='''') AS s WHERE (s.Part = 1)) AS [Key]
+								,(SELECT s.Txt FROM dbo.fhsmFNSplitString(p.Txt, ''''='''') AS s WHERE (s.Part = 2)) AS Value
+							FROM dbo.fhsmFNSplitString(@parameter, '''';'''') AS p;
+
+							SET @databases = (SELECT pt.Value FROM @parameterTable AS pt WHERE (pt.[Key] = ''''@Databases''''));
+
+							--
+							-- Trim @databases if Ola Hallengren style has been chosen
+							--
+							BEGIN
+								SET @databases = LTRIM(RTRIM(@databases));
+								WHILE (LEFT(@databases, 1) = '''''''''''''''') AND (LEFT(@databases, 1) = '''''''''''''''')
+								BEGIN
+									SET @databases = SUBSTRING(@databases, 2, LEN(@databases) - 2);
+								END;
+							END;
+						END;
+				'';
+				SET @stmt += ''
+						--
+						-- Get the list of databases to process
+						--
+						BEGIN
+							SELECT d.DatabaseName, d.[Order]
+							INTO #dbList
+							FROM dbo.fhsmFNParseDatabasesStr(@databases) AS d;
+						END;
+
+						--
+						-- Collect data
+						--
+						BEGIN
+							SELECT
+								@now = SYSDATETIME()
+								,@nowUTC = SYSUTCDATETIME();
+
+							--
+							-- Get VLF statistics
+							--
+				'';
+				IF
+					(@productVersion1 < 13)
+					OR ((@productVersion1 = 13) AND (@productVersion2 = 0) AND (@productVersion3 < 5026))
+				BEGIN
+					SET @stmt += ''
+							DECLARE dCur CURSOR LOCAL READ_ONLY FAST_FORWARD FOR
+							SELECT dl.DatabaseName, '' + CASE WHEN (@productVersion1 <= 10) THEN ''NULL'' ELSE ''d.replica_id'' END + '' AS replica_id
+							FROM #dbList AS dl
+							INNER JOIN sys.databases AS d ON (d.name COLLATE DATABASE_DEFAULT = dl.DatabaseName)
+							ORDER BY dl.[Order];
+
+							OPEN dCur;
+					'';
+					SET @stmt += ''
+							WHILE (1 = 1)
+							BEGIN
+								FETCH NEXT FROM dCur
+								INTO @database, @replicaId;
+
+								IF (@@FETCH_STATUS <> 0)
+								BEGIN
+									BREAK;
+								END;
+
+								SET @stmt = ''''
+									USE '''' + QUOTENAME(@database) + '''';
+
+									DECLARE @dbccLoginfo TABLE(
+					'';
+				IF
+					(@productVersion1 >= 11)
+				BEGIN
+					SET @stmt += ''
+										RecoveryUnitId int,
+					'';
+				END
+					SET @stmt += ''
+										FileId tinyint,
+										FileSize bigint,
+										StartOffset bigint,
+										FSeqNo int,
+										Status tinyint,
+										Parity tinyint,
+										CreateLSN numeric(25,0)
+									);
+
+									INSERT INTO @dbccLoginfo
+									EXEC(''''''''DBCC LOGINFO'''''''');
+
+									INSERT INTO '''' + QUOTENAME(DB_NAME()) + ''''.dbo.fhsmVLFSize(DatabaseName, VLFCount, ActiveVLF, VLFSizeMB, ActiveVLFSizeMB, TimestampUTC, Timestamp)
+									SELECT
+										DB_NAME() AS DatabaseName
+										,COUNT(*) AS VLFCount
+										,SUM(CASE WHEN (dl.Status = 2) THEN 1 ELSE 0 END) AS ActiveVLF
+										,SUM(dl.FileSize) / 1024.0 / 1024.0 AS VLFSizeMB
+										,SUM(CASE WHEN (dl.Status = 2) THEN dl.FileSize ELSE 0 END) / 1024.0 / 1024.0 AS ActiveVLFSizeMB
+										,@nowUTC, @now
+									FROM @dbccLoginfo AS dl;
+								'''';
+								BEGIN TRY
+									EXEC sp_executesql
+										@stmt
+										,N''''@now datetime, @nowUTC datetime''''
+										,@now = @now, @nowUTC = @nowUTC;
+								END TRY
+								BEGIN CATCH
+									SET @errorMsg = ERROR_MESSAGE();
+
+									SET @message = ''''Database '''''''''''' + @database + '''''''''''' failed due to - '''' + @errorMsg;
+									EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''''Warning'''', @message = @message;
+								END CATCH;
+							END;
+
+							CLOSE dCur;
+							DEALLOCATE dCur;
+					'';
+				END
+				ELSE BEGIN
+					SET @stmt += ''
+							IF EXISTS(SELECT * FROM master.sys.system_objects AS so WHERE (so.name = ''''dm_db_log_info''''))
+							BEGIN
+								INSERT INTO dbo.fhsmVLFSize(DatabaseName, VLFCount, ActiveVLF, VLFSizeMB, ActiveVLFSizeMB, TimestampUTC, Timestamp)
+								SELECT
+									d.name AS DatabaseName
+									,COUNT(d.database_id) AS VLFCount
+									,SUM(CAST(ddli.vlf_active AS int)) AS ActiveVLF
+									,SUM(ddli.vlf_size_mb) AS VLFSizeMB
+									,SUM(ddli.vlf_active * ddli.vlf_size_mb) AS ActiveVLFSizeMB
+									,@nowUTC, @now
+								FROM sys.databases AS d
+								CROSS APPLY sys.dm_db_log_info(d.database_id) AS ddli
+								GROUP BY d.name;
+							END;
+					'';
 				END;
-			'';
-			EXEC(@stmt);
+				SET @stmt += ''
+						END;
+
+						RETURN 0;
+					END;
+				'';
+				EXEC(@stmt);
+			END;
 
 			--
 			-- Register extended properties on the stored procedure dbo.fhsmSPVLFSize
@@ -20187,7 +22173,7 @@ ELSE BEGIN
 								,@processingTimestamp = SYSDATETIME();
 							EXEC dbo.fhsmSPProcessing @name = @name, @task = @thisTask, @version = NULL, @type = 6, @timestampUTC = @processingTimestampUTC, @timestamp = @processingTimestamp, @id = @processingId OUTPUT;
 
-							EXEC dbo.fhsmSPVLFSize;
+							EXEC dbo.fhsmSPVLFSize @name = @name, @parameter = @parameter;
 
 							--
 							-- Update Processing record from before execution with @version, @processingTimestampUTC and @processingTimestamp
@@ -20268,7 +22254,7 @@ ELSE BEGIN
 					SET @version = '''''' + @version + '''''';
 			'';
 			SET @stmt += ''
-					IF (@Type = ''''Parameter'''')
+					IF (@Type = ''''parameter'''')
 					BEGIN
 						IF (@Command = ''''set'''')
 						BEGIN
@@ -20338,7 +22324,7 @@ ELSE BEGIN
 					END
 			'';
 			SET @stmt += ''
-					ELSE IF (@Type = ''''Uninstall'''')
+					ELSE IF (@Type = ''''uninstall'''')
 					BEGIN
 						--
 						-- Place holder
@@ -20770,17 +22756,19 @@ ELSE BEGIN
 	-- Update dimensions based upon the fact tables
 	--
 	BEGIN
-		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmAllocationUnits'';
-		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmDatabaseSize'';
-		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmDiskSize'';
-		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmPartitionedIndexes'';
-		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmTableSize'';
+		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmAllocationUnits'', @ignoreAutoIndex = @ignoreAutoIndex;
+		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmDatabaseSize'', @ignoreAutoIndex = @ignoreAutoIndex;
+		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmDiskSize'', @ignoreAutoIndex = @ignoreAutoIndex;
+		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmPartitionedIndexes'', @ignoreAutoIndex = @ignoreAutoIndex;
+		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmTableSize'', @ignoreAutoIndex = @ignoreAutoIndex;
 	END;
 END;
 
 ';
 SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
+
+SET @stmt = REPLACE(@stmt, 'SET @ignoreAutoIndex = 0;',                'SET @ignoreAutoIndex = 1;');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
@@ -20812,10 +22800,10 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @ena
 EXEC(@stmt);
 
 --
--- File part:Connections.sql modified: 2025.09.14 09.34.59
+-- File part:Connections.sql modified: 2025.11.22 23.56.36
 --
 SET @stmt = '
-USE [' + @fhSQLMonitorDatabase + '];
+USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
 SET NOCOUNT ON;
 
 --
@@ -20823,8 +22811,10 @@ SET NOCOUNT ON;
 --
 BEGIN
 	DECLARE @enableConnections bit;
+	DECLARE @ignoreAutoIndex bit;
 
 	SET @enableConnections = 0;
+	SET @ignoreAutoIndex = 0;
 END;
 
 --
@@ -20884,7 +22874,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.11.0'';
+		SET @version = ''2.12.0'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -21279,13 +23269,15 @@ ELSE BEGIN
 	-- Update dimensions based upon the fact tables
 	--
 	BEGIN
-		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmConnections'';
+		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmConnections'', @ignoreAutoIndex = @ignoreAutoIndex;
 	END;
 END;
 
 ';
 SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
+
+SET @stmt = REPLACE(@stmt, 'SET @ignoreAutoIndex = 0;',                'SET @ignoreAutoIndex = 1;');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
@@ -21317,10 +23309,10 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @ena
 EXEC(@stmt);
 
 --
--- File part:CPUUtilization.sql modified: 2025.09.14 09.35.07
+-- File part:CPUUtilization.sql modified: 2025.11.22 23.57.22
 --
 SET @stmt = '
-USE [' + @fhSQLMonitorDatabase + '];
+USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
 SET NOCOUNT ON;
 
 --
@@ -21328,8 +23320,10 @@ SET NOCOUNT ON;
 --
 BEGIN
 	DECLARE @enableCPUUtilization bit;
+	DECLARE @ignoreAutoIndex bit;
 
 	SET @enableCPUUtilization = 0;
+	SET @ignoreAutoIndex = 0;
 END;
 
 --
@@ -21389,7 +23383,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.11.0'';
+		SET @version = ''2.12.0'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -21941,13 +23935,15 @@ ELSE BEGIN
 	-- Update dimensions based upon the fact tables
 	--
 	BEGIN
-		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmCPUPerDatabase'';
+		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmCPUPerDatabase'', @ignoreAutoIndex = @ignoreAutoIndex;
 	END;
 END;
 
 ';
 SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
+
+SET @stmt = REPLACE(@stmt, 'SET @ignoreAutoIndex = 0;',                'SET @ignoreAutoIndex = 1;');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
@@ -21979,10 +23975,10 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @ena
 EXEC(@stmt);
 
 --
--- File part:DatabaseIO.sql modified: 2025.09.14 09.35.16
+-- File part:DatabaseIO.sql modified: 2026.02.07 20.27.31
 --
 SET @stmt = '
-USE [' + @fhSQLMonitorDatabase + '];
+USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
 SET NOCOUNT ON;
 
 --
@@ -21990,8 +23986,10 @@ SET NOCOUNT ON;
 --
 BEGIN
 	DECLARE @enableDatabaseIO bit;
+	DECLARE @ignoreAutoIndex bit;
 
 	SET @enableDatabaseIO = 0;
+	SET @ignoreAutoIndex = 0;
 END;
 
 --
@@ -22051,7 +24049,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.11.0'';
+		SET @version = ''2.12.0'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -22805,7 +24803,7 @@ ELSE BEGIN
 					SET @version = '''''' + @version + '''''';
 			'';
 			SET @stmt += ''
-					IF (@Type = ''''Parameter'''')
+					IF (@Type = ''''parameter'''')
 					BEGIN
 						IF (@Command = ''''set'''')
 						BEGIN
@@ -22875,7 +24873,7 @@ ELSE BEGIN
 					END
 			'';
 			SET @stmt += ''
-					ELSE IF (@Type = ''''Uninstall'''')
+					ELSE IF (@Type = ''''uninstall'''')
 					BEGIN
 						--
 						-- Place holder
@@ -23053,13 +25051,15 @@ ELSE BEGIN
 	-- Update dimensions based upon the fact tables
 	--
 	BEGIN
-		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmDatabaseIO'';
+		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmDatabaseIO'', @ignoreAutoIndex = @ignoreAutoIndex;
 	END;
 END;
 
 ';
 SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
+
+SET @stmt = REPLACE(@stmt, 'SET @ignoreAutoIndex = 0;',                'SET @ignoreAutoIndex = 1;');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
@@ -23091,10 +25091,10 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @ena
 EXEC(@stmt);
 
 --
--- File part:IndexOperational.sql modified: 2025.09.14 09.35.31
+-- File part:IndexOperational.sql modified: 2026.02.21 12.20.10
 --
 SET @stmt = '
-USE [' + @fhSQLMonitorDatabase + '];
+USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
 SET NOCOUNT ON;
 
 --
@@ -23102,8 +25102,10 @@ SET NOCOUNT ON;
 --
 BEGIN
 	DECLARE @enableIndexOperational bit;
+	DECLARE @ignoreAutoIndex bit;
 
 	SET @enableIndexOperational = 0;
+	SET @ignoreAutoIndex = 0;
 END;
 
 --
@@ -23163,7 +25165,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.11.0'';
+		SET @version = ''2.12.0'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -24229,21 +26231,168 @@ ELSE BEGIN
 				END;
 			'';
 			EXEC(@stmt);
+
+			--
+			-- Register extended properties on the stored procedure dbo.fhsmSPIndexOperational
+			--
+			BEGIN
+				SET @objectName = ''dbo.fhsmSPIndexOperational'';
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+			END;
 		END;
 
 		--
-		-- Register extended properties on the stored procedure dbo.fhsmSPIndexOperational
+		-- Create stored procedure dbo.fhsmSPControlIndexOperational
 		--
 		BEGIN
-			SET @objectName = ''dbo.fhsmSPIndexOperational'';
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
+			SET @stmt = ''
+				IF OBJECT_ID(''''dbo.fhsmSPControlIndexOperational'''', ''''P'''') IS NULL
+				BEGIN
+					EXEC(''''CREATE PROC dbo.fhsmSPControlIndexOperational AS SELECT ''''''''dummy'''''''' AS Txt'''');
+				END;
+			'';
+			EXEC(@stmt);
 
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+			SET @stmt = ''
+				ALTER PROC dbo.fhsmSPControlIndexOperational (
+					@Type nvarchar(16)
+					,@Command nvarchar(16)
+					,@Name nvarchar(128) = NULL
+					,@Parameter nvarchar(max) = NULL
+					,@Task nvarchar(128) = NULL
+				)
+				AS
+				BEGIN
+					SET NOCOUNT ON;
+
+					DECLARE @message nvarchar(max);
+					DECLARE @parameterChanges TABLE(
+						Action nvarchar(10),
+						DeletedTask nvarchar(128),
+						DeletedName nvarchar(128),
+						DeletedParameter nvarchar(max),
+						InsertedTask nvarchar(128),
+						InsertedName nvarchar(128),
+						InsertedParameter nvarchar(max)
+					);
+					DECLARE @thisTask nvarchar(128);
+					DECLARE @version nvarchar(128);
+
+					SET @thisTask = OBJECT_NAME(@@PROCID);
+					SET @version = '''''' + @version + '''''';
+			'';
+			SET @stmt += ''
+					IF (@Type = ''''parameter'''')
+					BEGIN
+						IF (@Command = ''''set'''')
+						BEGIN
+							SET @Parameter = NULLIF(@Parameter, '''''''');
+
+							IF NOT EXISTS (
+								SELECT *
+								FROM dbo.fhsmSchedules AS s
+								WHERE (s.Task = @Task) AND (s.Name = @Name) AND (s.DeploymentStatus <> -1)
+							)
+							BEGIN
+								SET @message = ''''Invalid @Task:'''''''''''' + COALESCE(NULLIF(@Task, ''''''''), ''''<NULL>'''') + '''''''''''' and @Name:'''''''''''' + COALESCE(NULLIF(@Name, ''''''''), ''''<NULL>'''') + '''''''''''''''';
+								RAISERROR(@message, 0, 1) WITH NOWAIT;
+								RETURN -11;
+							END;
+
+							--
+							-- Register configuration changes
+							--
+							BEGIN
+								WITH
+								conf(Task, Name, Parameter) AS(
+									SELECT
+										@Task AS Task
+										,@Name AS Name
+										,@Parameter AS Parameter
+								)
+								MERGE dbo.fhsmSchedules AS tgt
+								USING conf AS src ON (src.[Task] = tgt.[Task] COLLATE SQL_Latin1_General_CP1_CI_AS) AND (src.[Name] = tgt.[Name] COLLATE SQL_Latin1_General_CP1_CI_AS)
+								-- Not testing for NULL as a NULL parameter is not allowed
+								WHEN MATCHED AND (tgt.Parameter <> src.Parameter)
+									THEN UPDATE
+										SET tgt.Parameter = src.Parameter
+								WHEN NOT MATCHED BY TARGET
+									THEN INSERT(Task, Name, Parameter)
+									VALUES(src.Task, src.Name, src.Parameter)
+								OUTPUT
+									$action,
+									deleted.Task,
+									deleted.Name,
+									deleted.Parameter,
+									inserted.Task,
+									inserted.Name,
+									inserted.Parameter
+								INTO @parameterChanges;
+
+								IF (@@ROWCOUNT <> 0)
+								BEGIN
+									SET @message = (
+										SELECT ''''Parameter is '''''''''''' + COALESCE(src.InsertedParameter, ''''<NULL>'''') + '''''''''''' - changed from '''''''''''' + COALESCE(src.DeletedParameter, ''''<NULL>'''') + ''''''''''''''''
+										FROM @parameterChanges AS src
+									);
+									IF (@message IS NOT NULL)
+									BEGIN
+										EXEC dbo.fhsmSPLog @name = @Name, @version = @version, @task = @thisTask, @type = ''''Info'''', @message = @message;
+									END;
+								END;
+							END;
+			'';
+			SET @stmt += ''
+						END
+						ELSE BEGIN
+							SET @message = ''''Illegal Combination of @Type:'''''''''''' + COALESCE(@Type, ''''<NULL>'''') + '''''''''''' and @Command:'''''''''''' + COALESCE(@Command, ''''<NULL>'''') + '''''''''''''''';
+							RAISERROR(@message, 0, 1) WITH NOWAIT;
+							RETURN -19;
+						END;
+					END
+			'';
+			SET @stmt += ''
+					ELSE IF (@Type = ''''uninstall'''')
+					BEGIN
+						--
+						-- Place holder
+						--
+						SET @Type = @Type;
+					END
+			'';
+			SET @stmt += ''
+					ELSE BEGIN
+						SET @message = ''''Illegal @Type:'''''''''''' + COALESCE(@Type, ''''<NULL>'''') + '''''''''''''''';
+						RAISERROR(@message, 0, 1) WITH NOWAIT;
+						RETURN -999;
+					END;
+
+					RETURN 0;
+				END;
+			'';
+			EXEC(@stmt);
+
+			--
+			-- Register extended properties on the stored procedure dbo.fhsmSPControlIndexOperational
+			--
+			BEGIN
+				SET @objectName = ''dbo.fhsmSPControlIndexOperational'';
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+			END;
 		END;
 	END;
 
@@ -24397,13 +26546,15 @@ ELSE BEGIN
 	-- Update dimensions based upon the fact tables
 	--
 	BEGIN
-		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmIndexOperational'';
+		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmIndexOperational'', @ignoreAutoIndex = @ignoreAutoIndex;
 	END;
 END;
 
 ';
 SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
+
+SET @stmt = REPLACE(@stmt, 'SET @ignoreAutoIndex = 0;',                'SET @ignoreAutoIndex = 1;');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
@@ -24435,10 +26586,10 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @ena
 EXEC(@stmt);
 
 --
--- File part:IndexPhysical.sql modified: 2025.09.14 09.36.59
+-- File part:IndexPhysical.sql modified: 2026.02.07 20.28.59
 --
 SET @stmt = '
-USE [' + @fhSQLMonitorDatabase + '];
+USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
 SET NOCOUNT ON;
 
 --
@@ -24446,8 +26597,10 @@ SET NOCOUNT ON;
 --
 BEGIN
 	DECLARE @enableIndexPhysical bit;
+	DECLARE @ignoreAutoIndex bit;
 
 	SET @enableIndexPhysical = 0;
+	SET @ignoreAutoIndex = 0;
 END;
 
 --
@@ -24507,7 +26660,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.11.0'';
+		SET @version = ''2.12.0'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -25311,7 +27464,7 @@ ELSE BEGIN
 					SET @version = '''''' + @version + '''''';
 			'';
 			SET @stmt += ''
-					IF (@Type = ''''Parameter'''')
+					IF (@Type = ''''parameter'''')
 					BEGIN
 						IF (@Command = ''''set'''')
 						BEGIN
@@ -25381,7 +27534,7 @@ ELSE BEGIN
 					END
 			'';
 			SET @stmt += ''
-					ELSE IF (@Type = ''''Uninstall'''')
+					ELSE IF (@Type = ''''uninstall'''')
 					BEGIN
 						--
 						-- Place holder
@@ -25585,13 +27738,15 @@ ELSE BEGIN
 	-- Update dimensions based upon the fact tables
 	--
 	BEGIN
-		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmIndexPhysical'';
+		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmIndexPhysical'', @ignoreAutoIndex = @ignoreAutoIndex;
 	END;
 END;
 
 ';
 SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
+
+SET @stmt = REPLACE(@stmt, 'SET @ignoreAutoIndex = 0;',                'SET @ignoreAutoIndex = 1;');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
@@ -25623,10 +27778,10 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @ena
 EXEC(@stmt);
 
 --
--- File part:IndexUsage.sql modified: 2025.09.14 09.37.07
+-- File part:IndexUsage.sql modified: 2026.02.07 20.29.27
 --
 SET @stmt = '
-USE [' + @fhSQLMonitorDatabase + '];
+USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
 SET NOCOUNT ON;
 
 --
@@ -25634,8 +27789,10 @@ SET NOCOUNT ON;
 --
 BEGIN
 	DECLARE @enableIndexUsage bit;
+	DECLARE @ignoreAutoIndex bit;
 
 	SET @enableIndexUsage = 0;
+	SET @ignoreAutoIndex = 0;
 END;
 
 --
@@ -25697,7 +27854,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.11.0'';
+		SET @version = ''2.12.0'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -26836,7 +28993,7 @@ ELSE BEGIN
 					SET @version = '''''' + @version + '''''';
 			'';
 			SET @stmt += ''
-					IF (@Type = ''''Parameter'''')
+					IF (@Type = ''''parameter'''')
 					BEGIN
 						IF (@Command = ''''set'''')
 						BEGIN
@@ -26906,7 +29063,7 @@ ELSE BEGIN
 					END
 			'';
 			SET @stmt += ''
-					ELSE IF (@Type = ''''Uninstall'''')
+					ELSE IF (@Type = ''''uninstall'''')
 					BEGIN
 						--
 						-- Place holder
@@ -27099,13 +29256,15 @@ ELSE BEGIN
 	-- Update dimensions based upon the fact tables
 	--
 	BEGIN
-		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmIndexUsage'';
+		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmIndexUsage'', @ignoreAutoIndex = @ignoreAutoIndex;
 	END;
 END;
 
 ';
 SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
+
+SET @stmt = REPLACE(@stmt, 'SET @ignoreAutoIndex = 0;',                'SET @ignoreAutoIndex = 1;');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
@@ -27137,10 +29296,10 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @ena
 EXEC(@stmt);
 
 --
--- File part:InstanceState.sql modified: 2025.09.14 09.37.13
+-- File part:InstanceState.sql modified: 2026.03.17 00.53.32
 --
 SET @stmt = '
-USE [' + @fhSQLMonitorDatabase + '];
+USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
 SET NOCOUNT ON;
 
 --
@@ -27148,8 +29307,10 @@ SET NOCOUNT ON;
 --
 BEGIN
 	DECLARE @enableInstanceState bit;
+	DECLARE @ignoreAutoIndex bit;
 
 	SET @enableInstanceState = 0;
+	SET @ignoreAutoIndex = 0;
 END;
 
 --
@@ -27211,7 +29372,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.11.0'';
+		SET @version = ''2.12.0'';
 
 		SET @DEFAULT_SEVERITY_LEVEL = 17;
 
@@ -27413,6 +29574,64 @@ ELSE BEGIN
 			--
 			BEGIN
 				SET @objectName = ''dbo.fhsmErrorLog'';
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Table'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+			END;
+		END;
+
+		--
+		-- Create table dbo.fhsmErrorLogMessages and indexes if they not already exists
+		--
+		BEGIN
+			IF OBJECT_ID(''dbo.fhsmErrorLogMessages'', ''U'') IS NULL
+			BEGIN
+				RAISERROR(''Creating table dbo.fhsmErrorLogMessages'', 0, 1) WITH NOWAIT;
+
+				SET @stmt = ''
+					CREATE TABLE dbo.fhsmErrorLogMessages(
+						Id int identity(1,1) NOT NULL
+						,Text nvarchar(2048) NOT NULL
+						,MessageId int NOT NULL
+						,LanguageId int NOT NULL
+						,TimestampUTC datetime NOT NULL
+						,Timestamp datetime NOT NULL
+						,CONSTRAINT PK_fhsmErrorLogMessages PRIMARY KEY(Id)'' + @tableCompressionStmt + ''
+					);
+				'';
+				EXEC(@stmt);
+			END;
+
+			IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmErrorLogMessages'')) AND (i.name = ''NC_fhsmErrorLogMessages_TimestampUTC''))
+			BEGIN
+				RAISERROR(''Adding index [NC_fhsmErrorLogMessages_TimestampUTC] to table dbo.fhsmErrorLogMessages'', 0, 1) WITH NOWAIT;
+
+				SET @stmt = ''
+					CREATE NONCLUSTERED INDEX NC_fhsmErrorLogMessages_TimestampUTC ON dbo.fhsmErrorLogMessages(TimestampUTC)'' + @tableCompressionStmt + '';
+				'';
+				EXEC(@stmt);
+			END;
+
+			IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmErrorLogMessages'')) AND (i.name = ''NC_fhsmErrorLogMessages_Timestamp''))
+			BEGIN
+				RAISERROR(''Adding index [NC_fhsmErrorLogMessages_Timestamp] to table dbo.fhsmErrorLogMessages'', 0, 1) WITH NOWAIT;
+
+				SET @stmt = ''
+					CREATE NONCLUSTERED INDEX NC_fhsmErrorLogMessages_Timestamp ON dbo.fhsmErrorLogMessages(Timestamp)'' + @tableCompressionStmt + '';
+				'';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Register extended properties on the table dbo.fhsmErrorLogMessages
+			--
+			BEGIN
+				SET @objectName = ''dbo.fhsmErrorLogMessages'';
 				SET @objName = PARSENAME(@objectName, 1);
 				SET @schName = PARSENAME(@objectName, 2);
 
@@ -27691,6 +29910,108 @@ ELSE BEGIN
 	BEGIN
 		MERGE dbo.fhsmDefaultConfigurations AS tgt
 		USING (
+			--SQL2025
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,   101 AS ConfigurationId,          0 AS Value UNION ALL -- recovery interval (min)
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,   102 AS ConfigurationId,          0 AS Value UNION ALL -- allow updates
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,   103 AS ConfigurationId,          0 AS Value UNION ALL -- user connections
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,   106 AS ConfigurationId,          0 AS Value UNION ALL -- locks
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,   107 AS ConfigurationId,          0 AS Value UNION ALL -- open objects
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,   109 AS ConfigurationId,          0 AS Value UNION ALL -- fill factor (%)
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,   114 AS ConfigurationId,          0 AS Value UNION ALL -- disallow results from triggers
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,   115 AS ConfigurationId,          1 AS Value UNION ALL -- nested triggers
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,   116 AS ConfigurationId,          1 AS Value UNION ALL -- server trigger recursion
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,   117 AS ConfigurationId,          1 AS Value UNION ALL -- remote access
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,   124 AS ConfigurationId,          0 AS Value UNION ALL -- default language
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,   400 AS ConfigurationId,          0 AS Value UNION ALL -- cross db ownership chaining
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,   503 AS ConfigurationId,          0 AS Value UNION ALL -- max worker threads
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,   505 AS ConfigurationId,       4096 AS Value UNION ALL -- network packet size (B)
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,   542 AS ConfigurationId,          0 AS Value UNION ALL -- remote proc trans
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,   544 AS ConfigurationId,          0 AS Value UNION ALL -- c2 audit mode
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1127 AS ConfigurationId,       2049 AS Value UNION ALL -- two digit year cutoff
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1505 AS ConfigurationId,          0 AS Value UNION ALL -- index create memory (KB)
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1517 AS ConfigurationId,          0 AS Value UNION ALL -- priority boost
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1519 AS ConfigurationId,         10 AS Value UNION ALL -- remote login timeout (s)
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1520 AS ConfigurationId,        600 AS Value UNION ALL -- remote query timeout (s)
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1531 AS ConfigurationId,         -1 AS Value UNION ALL -- cursor threshold
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1532 AS ConfigurationId,          0 AS Value UNION ALL -- set working set size
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1534 AS ConfigurationId,          0 AS Value UNION ALL -- user options
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1535 AS ConfigurationId,          0 AS Value UNION ALL -- affinity mask
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1536 AS ConfigurationId,      65536 AS Value UNION ALL -- max text repl size (B)
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1537 AS ConfigurationId,          0 AS Value UNION ALL -- media retention
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1538 AS ConfigurationId,          5 AS Value UNION ALL -- cost threshold for parallelism
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1539 AS ConfigurationId,          0 AS Value UNION ALL -- max degree of parallelism
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1540 AS ConfigurationId,       1024 AS Value UNION ALL -- min memory per query (KB)
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1541 AS ConfigurationId,         -1 AS Value UNION ALL -- query wait (s)
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1543 AS ConfigurationId,          0 AS Value UNION ALL -- min server memory (MB)
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1544 AS ConfigurationId, 2147483647 AS Value UNION ALL -- max server memory (MB)
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1545 AS ConfigurationId,          0 AS Value UNION ALL -- query governor cost limit
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1546 AS ConfigurationId,          0 AS Value UNION ALL -- lightweight pooling
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1547 AS ConfigurationId,          0 AS Value UNION ALL -- scan for startup procs
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1549 AS ConfigurationId,          0 AS Value UNION ALL -- affinity64 mask
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1550 AS ConfigurationId,          0 AS Value UNION ALL -- affinity I/O mask
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1551 AS ConfigurationId,          0 AS Value UNION ALL -- affinity64 I/O mask
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1555 AS ConfigurationId,          0 AS Value UNION ALL -- transform noise words
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1556 AS ConfigurationId,          0 AS Value UNION ALL -- precompute rank
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1557 AS ConfigurationId,         60 AS Value UNION ALL -- PH timeout (s)
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1562 AS ConfigurationId,          0 AS Value UNION ALL -- clr enabled
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1563 AS ConfigurationId,          4 AS Value UNION ALL -- max full-text crawl range
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1564 AS ConfigurationId,          0 AS Value UNION ALL -- ft notify bandwidth (min)
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1565 AS ConfigurationId,        100 AS Value UNION ALL -- ft notify bandwidth (max)
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1566 AS ConfigurationId,          0 AS Value UNION ALL -- ft crawl bandwidth (min)
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1567 AS ConfigurationId,        100 AS Value UNION ALL -- ft crawl bandwidth (max)
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1568 AS ConfigurationId,          1 AS Value UNION ALL -- default trace enabled
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1569 AS ConfigurationId,          0 AS Value UNION ALL -- blocked process threshold (s)
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1570 AS ConfigurationId,          0 AS Value UNION ALL -- in-doubt xact resolution
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1576 AS ConfigurationId,          0 AS Value UNION ALL -- remote admin connections
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1577 AS ConfigurationId,          0 AS Value UNION ALL -- common criteria compliance enabled
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1578 AS ConfigurationId,          0 AS Value UNION ALL -- EKM provider enabled
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1579 AS ConfigurationId,          0 AS Value UNION ALL -- backup compression default
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1580 AS ConfigurationId,          0 AS Value UNION ALL -- filestream access level
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1581 AS ConfigurationId,          0 AS Value UNION ALL -- optimize for ad hoc workloads
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1582 AS ConfigurationId,          0 AS Value UNION ALL -- access check cache bucket count
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1583 AS ConfigurationId,          0 AS Value UNION ALL -- access check cache quota
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1584 AS ConfigurationId,          0 AS Value UNION ALL -- backup checksum default
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1585 AS ConfigurationId,          0 AS Value UNION ALL -- automatic soft-NUMA disabled
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1586 AS ConfigurationId,          0 AS Value UNION ALL -- external scripts enabled
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1587 AS ConfigurationId,          1 AS Value UNION ALL -- clr strict security
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1588 AS ConfigurationId,          0 AS Value UNION ALL -- column encryption enclave type
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1589 AS ConfigurationId,          0 AS Value UNION ALL -- tempdb metadata memory-optimized
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1591 AS ConfigurationId,         15 AS Value UNION ALL -- ADR cleaner retry timeout (min)
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1592 AS ConfigurationId,          4 AS Value UNION ALL -- ADR Preallocation Factor
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1595 AS ConfigurationId, 2147483647 AS Value UNION ALL -- Data processed daily limit in TB
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1596 AS ConfigurationId, 2147483647 AS Value UNION ALL -- Data processed weekly limit in TB
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1597 AS ConfigurationId, 2147483647 AS Value UNION ALL -- Data processed monthly limit in TB
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1598 AS ConfigurationId,          1 AS Value UNION ALL -- ADR Cleaner Thread Count
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1599 AS ConfigurationId,          0 AS Value UNION ALL -- hardware offload enabled
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1600 AS ConfigurationId,          0 AS Value UNION ALL -- hardware offload config
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1601 AS ConfigurationId,          0 AS Value UNION ALL -- hardware offload mode
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1602 AS ConfigurationId,          0 AS Value UNION ALL -- backup compression algorithm
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1603 AS ConfigurationId,          5 AS Value UNION ALL -- ADR cleaner lock timeout (s)
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1606 AS ConfigurationId,         75 AS Value UNION ALL -- SLOG memory quota (%)
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1609 AS ConfigurationId,          0 AS Value UNION ALL -- max RPC request params (KB)
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1610 AS ConfigurationId,        256 AS Value UNION ALL -- max UCS send boxcars
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1611 AS ConfigurationId,          0 AS Value UNION ALL -- availability group commit time (ms)
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1612 AS ConfigurationId,          0 AS Value UNION ALL -- tiered memory enabled
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion,  1613 AS ConfigurationId, 2147483647 AS Value UNION ALL -- max server tiered memory (MB)
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion, 16386 AS ConfigurationId,          0 AS Value UNION ALL -- Database Mail XPs
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion, 16387 AS ConfigurationId,          1 AS Value UNION ALL -- SMO and DMO XPs
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion, 16388 AS ConfigurationId,          0 AS Value UNION ALL -- Ole Automation Procedures
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion, 16390 AS ConfigurationId,          0 AS Value UNION ALL -- xp_cmdshell
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion, 16391 AS ConfigurationId,          0 AS Value UNION ALL -- Ad Hoc Distributed Queries
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion, 16392 AS ConfigurationId,          0 AS Value UNION ALL -- Replication XPs
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion, 16393 AS ConfigurationId,          0 AS Value UNION ALL -- contained database authentication
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion, 16394 AS ConfigurationId,          0 AS Value UNION ALL -- hadoop connectivity
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion, 16395 AS ConfigurationId,          1 AS Value UNION ALL -- polybase network encryption
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion, 16396 AS ConfigurationId,          0 AS Value UNION ALL -- remote data archive
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion, 16397 AS ConfigurationId,          0 AS Value UNION ALL -- allow polybase export
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion, 16398 AS ConfigurationId,          1 AS Value UNION ALL -- allow filesystem enumeration
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion, 16399 AS ConfigurationId,          0 AS Value UNION ALL -- polybase enabled
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion, 16400 AS ConfigurationId,          0 AS Value UNION ALL -- suppress recovery model errors
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion, 16401 AS ConfigurationId,          1 AS Value UNION ALL -- openrowset auto_create_statistics
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion, 16402 AS ConfigurationId,          0 AS Value UNION ALL -- external rest endpoint enabled
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion, 16403 AS ConfigurationId,          0 AS Value UNION ALL -- external xtp dll gen util enabled
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion, 16404 AS ConfigurationId,          0 AS Value UNION ALL -- external AI runtimes enabled
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion, 16405 AS ConfigurationId,          0 AS Value UNION ALL -- allow server scoped db credentials
 			--SQL2022
 			SELECT 16 AS ProductMajorVersion,  0 AS ProductMinorVersion,   101 AS ConfigurationId,          0 AS Value UNION ALL -- recovery interval (min)
 			SELECT 16 AS ProductMajorVersion,  0 AS ProductMinorVersion,   102 AS ConfigurationId,          0 AS Value UNION ALL -- allow updates
@@ -28366,6 +30687,19 @@ ELSE BEGIN
 	BEGIN
 		MERGE dbo.fhsmInstanceConfigurations AS tgt
 		USING (
+			--SQL2025
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion, 1585 AS ConfigurationId,    0 AS Minimum,      0 AS Maximum UNION ALL	--automatic soft-NUMA disabled
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion, 1584 AS ConfigurationId,    1 AS Minimum,      1 AS Maximum UNION ALL	--backup checksum default
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion, 1579 AS ConfigurationId,    1 AS Minimum,      1 AS Maximum UNION ALL	--backup compression default
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion, 1562 AS ConfigurationId,    0 AS Minimum,      0 AS Maximum UNION ALL	--clr enabled
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion, 1538 AS ConfigurationId,    6 AS Minimum,  32767 AS Maximum UNION ALL	--cost threshold for parallelism
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion, 1546 AS ConfigurationId,    0 AS Minimum,      0 AS Maximum UNION ALL	--lightweight pooling
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion, 1539 AS ConfigurationId,    0 AS Minimum,  32767 AS Maximum UNION ALL	--max degree of parallelism
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion, 1544 AS ConfigurationId, 2048 AS Minimum, 524288 AS Maximum UNION ALL	--max server memory (MB)
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion, 1581 AS ConfigurationId,    1 AS Minimum,      1 AS Maximum UNION ALL	--optimize for ad hoc workloads
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion, 1517 AS ConfigurationId,    0 AS Minimum,      0 AS Maximum UNION ALL	--priority boost
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion, 1576 AS ConfigurationId,    1 AS Minimum,      1 AS Maximum UNION ALL	--remote admin connections
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion, 1589 AS ConfigurationId,    0 AS Minimum,      1 AS Maximum UNION ALL	--tempdb metadata memory-optimized
 			--SQL2022
 			SELECT 16 AS ProductMajorVersion,  0 AS ProductMinorVersion, 1585 AS ConfigurationId,    0 AS Minimum,      0 AS Maximum UNION ALL	--automatic soft-NUMA disabled
 			SELECT 16 AS ProductMajorVersion,  0 AS ProductMinorVersion, 1584 AS ConfigurationId,    1 AS Minimum,      1 AS Maximum UNION ALL	--backup checksum default
@@ -28472,22 +30806,24 @@ ELSE BEGIN
 	BEGIN
 		MERGE dbo.fhsmLifecycle AS tgt
 		USING (
+			--SQL2025
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion, ''2031-01-06'' AS MainstreamEndDate, ''2036-01-06'' AS ExtendedEndDate UNION ALL
 			--SQL2022
-			SELECT 16 AS ProductMajorVersion,  0 AS ProductMinorVersion, ''2028-jan-11'' AS MainstreamEndDate, ''2033-jan-11'' AS ExtendedEndDate UNION ALL
+			SELECT 16 AS ProductMajorVersion,  0 AS ProductMinorVersion, ''2028-01-11'' AS MainstreamEndDate, ''2033-01-11'' AS ExtendedEndDate UNION ALL
 			--SQL2019
-			SELECT 15 AS ProductMajorVersion,  0 AS ProductMinorVersion, ''2025-feb-28'' AS MainstreamEndDate, ''2030-jan-08'' AS ExtendedEndDate UNION ALL
+			SELECT 15 AS ProductMajorVersion,  0 AS ProductMinorVersion, ''2025-02-28'' AS MainstreamEndDate, ''2030-01-08'' AS ExtendedEndDate UNION ALL
 			--SQL2017
-			SELECT 14 AS ProductMajorVersion,  0 AS ProductMinorVersion, ''2022-oct-11'' AS MainstreamEndDate, ''2027-oct-12'' AS ExtendedEndDate UNION ALL
+			SELECT 14 AS ProductMajorVersion,  0 AS ProductMinorVersion, ''2022-10-11'' AS MainstreamEndDate, ''2027-10-12'' AS ExtendedEndDate UNION ALL
 			--SQL2016
-			SELECT 13 AS ProductMajorVersion,  0 AS ProductMinorVersion, ''2021-jul-13'' AS MainstreamEndDate, ''2026-jul-14'' AS ExtendedEndDate UNION ALL
+			SELECT 13 AS ProductMajorVersion,  0 AS ProductMinorVersion, ''2021-07-13'' AS MainstreamEndDate, ''2026-07-14'' AS ExtendedEndDate UNION ALL
 			--SQL2014
-			SELECT 12 AS ProductMajorVersion,  0 AS ProductMinorVersion, ''2019-jul-09'' AS MainstreamEndDate, ''2024-jul-09'' AS ExtendedEndDate UNION ALL
+			SELECT 12 AS ProductMajorVersion,  0 AS ProductMinorVersion, ''2019-07-09'' AS MainstreamEndDate, ''2024-07-09'' AS ExtendedEndDate UNION ALL
 			--SQL2012
-			SELECT 11 AS ProductMajorVersion,  0 AS ProductMinorVersion, ''2017-jul-11'' AS MainstreamEndDate, ''2022-jul-12'' AS ExtendedEndDate UNION ALL
+			SELECT 11 AS ProductMajorVersion,  0 AS ProductMinorVersion, ''2017-07-11'' AS MainstreamEndDate, ''2022-07-12'' AS ExtendedEndDate UNION ALL
 			--SQL2008R2
-			SELECT 10 AS ProductMajorVersion, 50 AS ProductMinorVersion, ''2014-jul-08'' AS MainstreamEndDate, ''2019-jul-09'' AS ExtendedEndDate UNION ALL
+			SELECT 10 AS ProductMajorVersion, 50 AS ProductMinorVersion, ''2014-07-08'' AS MainstreamEndDate, ''2019-07-09'' AS ExtendedEndDate UNION ALL
 			--SQL2008
-			SELECT 10 AS ProductMajorVersion,  0 AS ProductMinorVersion, ''2014-jul-08'' AS MainstreamEndDate, ''2019-jul-09'' AS ExtendedEndDate
+			SELECT 10 AS ProductMajorVersion,  0 AS ProductMinorVersion, ''2014-07-08'' AS MainstreamEndDate, ''2019-07-09'' AS ExtendedEndDate
 		) AS src
 		ON (tgt.ProductMajorVersion = src.ProductMajorVersion) AND
 			(tgt.ProductMinorVersion = src.ProductMinorVersion)
@@ -28506,6 +30842,11 @@ ELSE BEGIN
 	BEGIN
 		MERGE dbo.fhsmTraceFlags AS tgt
 		USING (
+			--SQL2025
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion, 3226 AS TraceFlag, ''Supresses logging of successful database backup messages to the SQL Server Error Log'' AS Description
+				,''https://bit.ly/38zDNAK'' AS URL UNION ALL
+			SELECT 17 AS ProductMajorVersion,  0 AS ProductMinorVersion, 7745 AS TraceFlag, ''Prevents Query Store data from being written to disk in case of a failover or shutdown command'' AS Description
+				,''https://bit.ly/2GU69Km'' AS URL UNION ALL
 			--SQL2022
 			SELECT 16 AS ProductMajorVersion,  0 AS ProductMinorVersion, 3226 AS TraceFlag, ''Supresses logging of successful database backup messages to the SQL Server Error Log'' AS Description
 				,''https://bit.ly/38zDNAK'' AS URL UNION ALL
@@ -28594,1510 +30935,363 @@ ELSE BEGIN
 	--
 	-- Create functions
 	--
-
-	--
-	-- Create views
-	--
 	BEGIN
 		--
-		-- Create fact view @pbiSchema.[Agent alerts]
+		-- Create function dbo.fhsmFNConvertUserOptionsToTxt
 		--
 		BEGIN
 			BEGIN
 				SET @stmt = ''
-					IF OBJECT_ID('''''' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Agent alerts'') + '''''', ''''V'''') IS NULL
+					IF OBJECT_ID(''''dbo.fhsmFNConvertUserOptionsToTxt'''', ''''FN'''') IS NULL
 					BEGIN
-						EXEC(''''CREATE VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Agent alerts'') + '' AS SELECT ''''''''dummy'''''''' AS Txt'''');
+						EXEC(''''CREATE FUNCTION dbo.fhsmFNConvertUserOptionsToTxt() RETURNS bit AS BEGIN RETURN 0; END;'''');
 					END;
 				'';
 				EXEC(@stmt);
 
 				SET @stmt = ''
-					ALTER VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Agent alerts'') + ''
+					ALTER FUNCTION dbo.fhsmFNConvertUserOptionsToTxt(
+						@value int
+					)
+					RETURNS nvarchar(max)
 					AS
-						SELECT
-							aa.Description
-							,aa.MessageId
-							,aa.Severity
-							,alertsDetected.AlertName
-							,CASE WHEN alertsDetected.MessageId IS NULL THEN 0 ELSE 1 END AS AlertExists	-- 0: Warning; 1: OK
-							,ROW_NUMBER() OVER(
-								ORDER BY
-									CASE
-										WHEN (alertsDetected.MessageId IS NULL) THEN 1
-										ELSE 2
+					BEGIN
+						DECLARE @txt nvarchar(max);
+
+						WITH uo AS (
+							SELECT uo.Value, uo.Configuration, uo.Description
+							FROM (
+								VALUES
+
+								(    1, ''''DISABLE_DEF_CNST_CHK'''',    ''''Controls interim or deferred constraint checking.''''),
+								(    2, ''''IMPLICIT_TRANSACTIONS'''',   ''''For dblib network library connections, controls whether a transaction is started implicitly when a statement is executed. The IMPLICIT_TRANSACTIONS setting has no effect on ODBC or OLEDB connections.''''),
+								(    4, ''''CURSOR_CLOSE_ON_COMMIT'''',  ''''Controls behavior of cursors after a commit operation has been performed.''''),
+								(    8, ''''ANSI_WARNINGS'''',           ''''Controls truncation and NULL in aggregate warnings.''''),
+								(   16, ''''ANSI_PADDING'''',            ''''Controls padding of fixed-length variables.''''),
+								(   32, ''''ANSI_NULLS'''',              ''''Controls NULL handling when using equality operators.''''),
+								(   64, ''''ARITHABORT'''',              ''''Terminates a query when an overflow or divide-by-zero error occurs during query execution.''''),
+								(  128, ''''ARITHIGNORE'''',             ''''Returns NULL when an overflow or divide-by-zero error occurs during a query.''''),
+								(  256, ''''QUOTED_IDENTIFIER'''',       ''''Differentiates between single and double quotation marks when evaluating an expression.''''),
+								(  512, ''''NOCOUNT'''',                 ''''Turns off the message returned at the end of each statement that states how many rows were affected.''''),
+								( 1024, ''''ANSI_NULL_DFLT_ON'''',       ''''Alters the session''''''''s behavior to use ANSI compatibility for nullability. New columns defined without explicit nullability are defined to allow nulls.''''),
+								( 2048, ''''ANSI_NULL_DFLT_OFF'''',      ''''Alters the session''''''''s behavior not to use ANSI compatibility for nullability. New columns defined without explicit nullability don''''''''t allow nulls.''''),
+								( 4096, ''''CONCAT_NULL_YIELDS_NULL'''', ''''Returns NULL when concatenating a NULL value with a string.''''),
+								( 8192, ''''NUMERIC_ROUNDABORT'''',      ''''Generates an error when a loss of precision occurs in an expression.''''),
+								(16384, ''''XACT_ABORT'''',              ''''Rolls back a transaction if a Transact-SQL statement raises a run-time error.'''')
+							) AS uo(Value, Configuration, Description)
+						)
+						SELECT @txt = STUFF((
+							SELECT CHAR(10) + uo.Configuration + '''' ('''' + CAST(uo.Value AS nvarchar) + ''''): '''' + uo.Description
+							FROM uo
+							WHERE (@value & uo.Value) <> 0
+							ORDER BY uo.Value
+							FOR XML PATH(''''''''), type
+						).value(''''.'''', ''''nvarchar(max)''''), 1, 1, '''''''');
+
+						RETURN @txt;
+					END;
+				'';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Register extended properties on the function dbo.fhsmFNConvertUserOptionsToTxt
+			--
+			BEGIN
+				SET @objectName = ''dbo.fhsmFNConvertUserOptionsToTxt'';
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+			END;
+		END;
+
+		--
+		-- Create function dbo.fhsmFNErrorLogMessage
+		--
+		BEGIN
+			BEGIN
+				SET @stmt = ''
+					IF OBJECT_ID(''''dbo.fhsmFNErrorLogMessage'''', ''''TF'''') IS NULL
+					BEGIN
+						EXEC(''''CREATE FUNCTION dbo.fhsmFNErrorLogMessage() RETURNS @dummy TABLE(A int) AS BEGIN RETURN; END;'''');
+					END;
+				'';
+				EXEC(@stmt);
+
+				SET @stmt = ''
+					ALTER FUNCTION dbo.fhsmFNErrorLogMessage(
+						@errorLogTxt nvarchar(max)
+					)
+					RETURNS
+						@severity TABLE(
+							MessageId int,
+							TemplateStr nvarchar(max)
+						)
+					AS
+					BEGIN
+						DECLARE @messageId int;
+						DECLARE @posA int;
+						DECLARE @posB int;
+						DECLARE @templateStr nvarchar(max);
+
+						SET @errorLogTxt = LTRIM(RTRIM(REPLACE(REPLACE(@errorLogTxt, CHAR(10), ''''''''), CHAR(13), '''''''')));
+
+						DECLARE tCur CURSOR LOCAL READ_ONLY FAST_FORWARD FOR
+						SELECT elm.Text AS TemplateStr, elm.MessageId
+						FROM dbo.fhsmErrorLogMessages AS elm
+						ORDER BY CASE WHEN elm.LanguageId = 1033 THEN 0 ELSE 1 END;	-- First us_english then local language
+
+						OPEN tCur;
+
+						WHILE (1 = 1)
+						BEGIN
+							FETCH NEXT FROM tCur
+							INTO @templateStr, @messageId;
+
+							IF (@@FETCH_STATUS <> 0)
+							BEGIN
+								BREAK;
+							END;
+
+							/*
+								Replace all '''' %<...> '''' with ''''%''''
+							*/
+
+							SET @posA = 0;
+
+							WHILE (1 = 1)
+							BEGIN
+								SET @posA = CHARINDEX(''''%'''', @templateStr, @posA);
+
+								IF (@posA > 0)
+								BEGIN
+									SET @posB = @posA + 1;
+
+									/*
+										Find space before %
+									*/
+									BEGIN
+										WHILE (@posA > 1)
+										BEGIN
+											IF (SUBSTRING(@templateStr, @posA, 1) = '''' '''')
+											BEGIN
+												BREAK;
+											END;
+
+											SET @posA -= 1;
+										END;
+									END;
+
+									/*
+										Find space after %
+									*/
+									BEGIN
+										WHILE (@posB < LEN(@templateStr))
+										BEGIN
+											IF (SUBSTRING(@templateStr, @posB, 1) = '''' '''')
+											BEGIN
+												BREAK;
+											END;
+
+											SET @posB += 1;
+										END;
+									END;
+
+									IF (SUBSTRING(@templateStr, @posB, 1) = '''' '''')
+									BEGIN
+										SET @templateStr = SUBSTRING(@templateStr, 1, @posA) + ''''%'''' + SUBSTRING(@templateStr, @posB, LEN(@templateStr));
 									END
-									,aa.Description
-							) AS DescriptionSortOrder
-							,(SELECT MAX(iState.Timestamp) FROM dbo.fhsmInstanceState AS iState WHERE (iState.Category = alertsDetected.AlertName)) AS Timestamp
-						FROM dbo.fhsmAgentAlerts AS aa
-						LEFT OUTER JOIN (
-							SELECT
-								pvt.Category AS AlertName
-								,CAST(pvt.message_id AS int) AS MessageId
-								,CAST(pvt.severity AS int) AS Severity
-							FROM (
-								SELECT iState.Category, iState.[Key], iState.Value AS _Value_
-								FROM (
-									SELECT DISTINCT iState.Category
-									FROM dbo.fhsmInstanceState AS iState
-									WHERE
-										(iState.Query = 10)
-										AND (iState.ValidTo = ''''9999-12-31 23:59:59.000'''')
-								) AS toCheck
-								INNER JOIN dbo.fhsmInstanceState AS iState ON (iState.Category = toCheck.Category)
-								WHERE (iState.Query = 10) AND (iState.ValidTo = ''''9999-12-31 23:59:59.000'''')
-							) AS p
-							PIVOT (
-								MAX(_Value_)
-								FOR [Key] IN ([message_id], [severity])
-							) AS pvt
-						) AS alertsDetected ON (alertsDetected.MessageId = aa.MessageId) AND (alertsDetected.Severity = aa.Severity);
+									ELSE BEGIN
+										SET @templateStr = SUBSTRING(@templateStr, 1, @posA) + ''''%'''';
+									END;
+
+									SET @posA += 2;
+								END
+								ELSE BEGIN
+									BREAK;
+								END;
+							END;
+
+							IF (@errorLogTxt LIKE @templateStr)
+							BEGIN
+								INSERT INTO @severity(MessageId, TemplateStr)
+								SELECT @messageId, @templateStr;
+							END;
+						END;
+
+						CLOSE tCur;
+						DEALLOCATE tCur;
+					
+						RETURN;
+					END;
 				'';
 				EXEC(@stmt);
 			END;
 
 			--
-			-- Register extended properties on fact view @pbiSchema.[Agent alerts]
+			-- Register extended properties on the function dbo.fhsmFNErrorLogMessage
 			--
 			BEGIN
-				SET @objectName = QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Agent alerts'');
+				SET @objectName = ''dbo.fhsmFNErrorLogMessage'';
 				SET @objName = PARSENAME(@objectName, 1);
 				SET @schName = PARSENAME(@objectName, 2);
 
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
 			END;
 		END;
 
 		--
-		-- Create fact view @pbiSchema.[Agent jobs]
+		-- Create function dbo.fhsmFNErrorLogSeverity
 		--
 		BEGIN
 			BEGIN
 				SET @stmt = ''
-					IF OBJECT_ID('''''' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Agent jobs'') + '''''', ''''V'''') IS NULL
+					IF OBJECT_ID(''''dbo.fhsmFNErrorLogSeverity'''', ''''TF'''') IS NULL
 					BEGIN
-						EXEC(''''CREATE VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Agent jobs'') + '' AS SELECT ''''''''dummy'''''''' AS Txt'''');
+						EXEC(''''CREATE FUNCTION dbo.fhsmFNErrorLogSeverity() RETURNS @dummy TABLE(A int) AS BEGIN RETURN; END;'''');
 					END;
 				'';
 				EXEC(@stmt);
 
 				SET @stmt = ''
-					ALTER VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Agent jobs'') + ''
+					ALTER FUNCTION dbo.fhsmFNErrorLogSeverity(
+						@errorLogTxt nvarchar(max)
+					)
+					RETURNS
+						@severity TABLE(
+							Severity int
+						)
 					AS
-						SELECT
-							pvt.Category AS JobName
-							,CAST(pvt.job_enabled AS bit) AS JobEnabled
-							,CAST(pvt.number_of_enabled_schedules AS int) AS NumberOfEnabledSchedules
-							,pvt.job_owner AS JobOwner
-							,CAST(pvt.notify_email_operator_id AS int) AS NotifyEmailOperatorId
-							,CAST(pvt.notify_level_email AS int) AS NotifyLevelEmail
-							,ROW_NUMBER() OVER(
-								ORDER BY
-									CASE
-										WHEN (CAST(pvt.job_enabled AS bit) = 1) AND (CAST(pvt.notify_email_operator_id AS int) = 0) THEN 1
-										WHEN (CAST(pvt.job_enabled AS bit) = 0) AND (CAST(pvt.notify_email_operator_id AS int) = 0) THEN 2
-										ELSE 3
-									END
-									,pvt.Category
-							) AS JobNameSortOrder
-						FROM (
-							SELECT iState.Category, iState.[Key], iState.Value AS _Value_
-							FROM (
-								SELECT DISTINCT iState.Category
-								FROM dbo.fhsmInstanceState AS iState
-								WHERE
-									(iState.Query = 9)
-									AND (iState.ValidTo = ''''9999-12-31 23:59:59.000'''')
-							) AS toCheck
-							INNER JOIN dbo.fhsmInstanceState AS iState ON (iState.Category = toCheck.Category)
-							WHERE (iState.Query = 9) AND (iState.ValidTo = ''''9999-12-31 23:59:59.000'''')
-						) AS p
-						PIVOT (
-							MAX(_Value_)
-							FOR [Key] IN ([job_enabled], [number_of_enabled_schedules], [job_owner], [notify_email_operator_id], [notify_level_email])
-						) AS pvt;
-				'';
-				EXEC(@stmt);
-			END;
-
-			--
-			-- Register extended properties on fact view @pbiSchema.[Agent jobs]
-			--
-			BEGIN
-				SET @objectName = QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Agent jobs'');
-				SET @objName = PARSENAME(@objectName, 1);
-				SET @schName = PARSENAME(@objectName, 2);
-
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
-			END;
-		END;
-
-		--
-		-- Create fact view @pbiSchema.[Error logs]
-		--
-		BEGIN
-			BEGIN
-				SET @stmt = ''
-					IF OBJECT_ID('''''' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Error logs'') + '''''', ''''V'''') IS NULL
 					BEGIN
-						EXEC(''''CREATE VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Error logs'') + '' AS SELECT ''''''''dummy'''''''' AS Txt'''');
+						DECLARE @posA int;
+						DECLARE @posB int;
+						DECLARE @severityStr nvarchar(max);
+						DECLARE @severityValue int;
+						DECLARE @severityValueStr nvarchar(max);
+						DECLARE @templateStr nvarchar(max);
+						DECLARE @templateStrTable TABLE(TemplateStr nvarchar(max), LanguageId int);
+					
+						/*
+							Get template string:
+								us_english:	Error: %d Severity: %d State: %d %s
+								Deutsch:	Fehler: %1!, Schweregrad: %2!, Status: %3! %4!
+					
+							All template strings are either with %1!, %2!, %3! and %4! OR with %d and %s
+						*/
+						BEGIN
+							INSERT INTO @templateStrTable(TemplateStr, LanguageId)
+							SELECT m.text, m.language_id
+							FROM sys.messages AS m
+							WHERE (m.message_id = 17061)
+								AND (m.language_id IN (
+									SELECT l.msglangid
+									FROM sys.syslanguages AS l
+									WHERE (l.name IN (@@LANGUAGE, ''''us_english''''))
+								));
+						END;
+					
+						DECLARE tCur CURSOR LOCAL READ_ONLY FAST_FORWARD FOR
+						SELECT t.TemplateStr
+						FROM @templateStrTable AS t
+						ORDER BY CASE WHEN t.LanguageId = 1033 THEN 1 ELSE 0 END;	-- First local language then us_english
+
+						OPEN tCur;
+
+						WHILE (1 = 1)
+						BEGIN
+							FETCH NEXT FROM
+							tCur INTO @templateStr;
+
+							IF (@@FETCH_STATUS <> 0)
+							BEGIN
+								BREAK;
+							END;
+
+							/*
+								Get <severity> string
+							*/
+							BEGIN
+								SET @posA = CHARINDEX(''''%1!'''', @templateStr);;
+								SET @posB = CHARINDEX(''''%2!'''', @templateStr);
+					
+								IF (@posA > 0) AND (@posB > 0)
+								BEGIN
+									SET @posA = @posA + LEN(''''%1!'''');
+								END
+								ELSE BEGIN
+									SET @posA = CHARINDEX(''''%d'''', @templateStr);
+
+									IF (@posA > 0)
+									BEGIN
+										SET @posA = @posA + LEN(''''%d'''');
+										SET @posB = CHARINDEX(''''%d'''', @templateStr, @posA);
+									END;
+								END;
+					
+								IF (@posA = 0) OR (@posB = 0)
+								BEGIN
+									RETURN;
+								END;
+					
+								SET @severityStr = SUBSTRING(@templateStr, @posA, @posB - @posA);
+							END;
+					
+							/*
+								Find severity in error text
+							*/
+							BEGIN
+								SET @posA = CHARINDEX(@severityStr, @errorLogTxt);
+					
+								IF (@posA > 0)
+								BEGIN
+									SET @posA = @posA + LEN(@severityStr);
+									SET @posB = CHARINDEX('''' '''', @errorLogTxt, @posA + 1) - 1;
+
+									SET @severityValueStr = SUBSTRING(@errorLogTxt, @posA, @posB - @posA);
+									SET @severityValue = dbo.fhsmFNTryParseAsInt(@severityValueStr);
+								END;
+							END;
+					
+							IF (@severityValue IS NOT NULL)
+							BEGIN
+								INSERT INTO @severity(Severity)
+								SELECT @severityValue AS Severity;
+
+								BREAK;
+							END;
+						END;
+
+						CLOSE tCur;
+						DEALLOCATE tCur;
+					
+						RETURN;
 					END;
 				'';
 				EXEC(@stmt);
-
-				SET @stmt = ''
-					ALTER VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Error logs'') + ''
-					AS
-						SELECT
-							el.SetId
-							,el.Id
-							,el.LogDate
-							,el.Severity
-							,el.ProcessInfo
-							,el.Text
-							,CAST(el.LogDate AS date)	AS Date
-						FROM dbo.fhsmErrorLog AS el
-						WHERE(el.Heartbeat = 0);
-				'';
-				EXEC(@stmt);
 			END;
 
 			--
-			-- Register extended properties on fact view @pbiSchema.[Error logs]
+			-- Register extended properties on the function dbo.fhsmFNErrorLogSeverity
 			--
 			BEGIN
-				SET @objectName = QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Error logs'');
+				SET @objectName = ''dbo.fhsmFNErrorLogSeverity'';
 				SET @objName = PARSENAME(@objectName, 1);
 				SET @schName = PARSENAME(@objectName, 2);
 
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
-			END;
-		END;
-
-		--
-		-- Create fact view @pbiSchema.[Instance configurations]
-		--
-		BEGIN
-			BEGIN
-				SET @stmt = ''
-					IF OBJECT_ID('''''' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance configurations'') + '''''', ''''V'''') IS NULL
-					BEGIN
-						EXEC(''''CREATE VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance configurations'') + '' AS SELECT ''''''''dummy'''''''' AS Txt'''');
-					END;
-				'';
-				EXEC(@stmt);
-
-				SET @stmt = '''';
-				SET @stmt += ''
-					ALTER VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance configurations'') + ''
-					AS
-						SELECT
-							ic.ConfigurationId
-							,ic.Name
-							,ic.Value
-							,ic.State	-- 0: Warning; 1: OK
-							,ic.DefaultValue
-							,ic.DefaultState	-- 0: Changed; 1: Default
-							,ROW_NUMBER() OVER(
-								ORDER BY
-									CASE
-										WHEN (ic.State = 0) THEN 1
-										WHEN (ic.DefaultState = 0) THEN 2
-										ELSE 3
-									END
-									,ic.Name
-							) AS NameSortOrder
-							,(SELECT MAX(iState.Timestamp) FROM dbo.fhsmInstanceState AS iState WHERE (iState.Category = ic.ConfigurationId) AND (iState.[Key] = ''''value'''')) AS Timestamp
-						FROM (
-							SELECT
-								c.ConfigurationId
-								,configurationsDetected.name AS Name
-								,configurationsDetected.value_in_use AS Value
-								,CASE WHEN (configurationsDetected.value_in_use < c.Minimum) OR (configurationsDetected.value_in_use > c.Maximum) THEN 0 ELSE 1 END AS State	-- 0: Warning; 1: OK
-								,dc.Value AS DefaultValue
-								,CASE WHEN (configurationsDetected.value_in_use <> dc.Value) THEN 0 ELSE 1 END AS DefaultState	-- 0: Changed; 1: Default
-							FROM dbo.fhsmInstanceConfigurations AS c
-							CROSS APPLY (
-								SELECT CAST(iState.Value AS int) AS Value
-								FROM dbo.fhsmInstanceState AS iState
-								WHERE (iState.Query = 3) AND (iState.[Key] = ''''ProductMajorVersion'''') AND (iState.ValidTo = ''''9999-12-31 23:59:59.000'''')
-							) AS productMajorVersion
-							CROSS APPLY (
-								SELECT CAST(iState.Value AS int) AS Value
-								FROM dbo.fhsmInstanceState AS iState
-								WHERE (iState.Query = 3) AND (iState.[Key] = ''''ProductMinorVersion'''') AND (iState.ValidTo = ''''9999-12-31 23:59:59.000'''')
-							) AS productMinorVersion
-							INNER JOIN (
-								SELECT pvt.Category, pvt.name, CAST(pvt.value AS int) AS value, CAST(pvt.minimum AS int) AS minimum, CAST(pvt.maximum AS int) AS maximum, CAST(pvt.value_in_use AS int) AS value_in_use, pvt.description, pvt.is_dynamic, pvt.is_advanced
-								FROM (
-									SELECT iState.Category, iState.[Key], iState.Value AS _Value_
-									FROM (
-										SELECT DISTINCT iState.Category
-										FROM dbo.fhsmInstanceState AS iState
-										WHERE
-											(iState.Query = 4)
-											AND (iState.Category IN (1517, 1538, 1539, 1544, 1546, 1562, 1576, 1579, 1581, 1584, 1585, 1589))
-											AND (iState.ValidTo = ''''9999-12-31 23:59:59.000'''')
-									) AS toCheck
-									INNER JOIN dbo.fhsmInstanceState AS iState ON (iState.Category = toCheck.Category)
-									WHERE (iState.Query = 4) AND (iState.ValidTo = ''''9999-12-31 23:59:59.000'''')
-								) AS p
-								PIVOT (
-									MAX(_Value_)
-									FOR [Key] IN ([name], [value], [minimum], [maximum], [value_in_use], [description], [is_dynamic], [is_advanced])
-								) AS pvt
-							) AS configurationsDetected ON (configurationsDetected.Category = c.ConfigurationId)
-							LEFT OUTER JOIN dbo.fhsmDefaultConfigurations AS dc ON (dc.ConfigurationId = configurationsDetected.Category) AND (dc.ProductMajorVersion = productMajorVersion.Value) AND (dc.ProductMinorVersion = productMinorVersion.Value)
-							WHERE (c.ProductMajorVersion = productMajorVersion.Value) AND (c.ProductMinorVersion = productMinorVersion.Value)
-
-							UNION
-					'';
-					SET @stmt += ''
-							SELECT
-								configurationsDetected.ConfigurationId
-								,configurationsDetected.name AS Name
-								,configurationsDetected.value_in_use AS Value
-								,CASE WHEN (configurationsDetected.value_in_use < rc.Minimum) OR (configurationsDetected.value_in_use > rc.Maximum) THEN 0 ELSE 1 END AS State	-- 0: Warning; 1: OK
-								,dc.Value AS DefaultValue
-								,CASE WHEN ((configurationsDetected.ConfigurationId = 1543) AND (configurationsDetected.value_in_use <= 16)) THEN 1 ELSE 0 END AS DefaultState	-- 0: Changed; 1: Default
-							FROM (
-								SELECT pvt.Category AS ConfigurationId, pvt.name, CAST(pvt.value AS int) AS value, CAST(pvt.minimum AS int) AS minimum, CAST(pvt.maximum AS int) AS maximum, CAST(pvt.value_in_use AS int) AS value_in_use, pvt.description, pvt.is_dynamic, pvt.is_advanced
-								FROM (
-									SELECT iState.Category, iState.[Key], iState.Value AS _Value_
-									FROM dbo.fhsmInstanceState AS iState
-									WHERE (iState.Query = 4) AND (iState.ValidTo = ''''9999-12-31 23:59:59.000'''')
-								) AS p
-								PIVOT (
-									MAX(_Value_)
-									FOR [Key] IN ([name], [value], [minimum], [maximum], [value_in_use], [description], [is_dynamic], [is_advanced])
-								) AS pvt
-							) AS configurationsDetected
-							CROSS APPLY (
-								SELECT CAST(iState.Value AS int) AS Value
-								FROM dbo.fhsmInstanceState AS iState
-								WHERE (iState.Query = 3) AND (iState.[Key] = ''''ProductMajorVersion'''') AND (iState.ValidTo = ''''9999-12-31 23:59:59.000'''')
-							) AS productMajorVersion
-							CROSS APPLY (
-								SELECT CAST(iState.Value AS int) AS Value
-								FROM dbo.fhsmInstanceState AS iState
-								WHERE (iState.Query = 3) AND (iState.[Key] = ''''ProductMinorVersion'''') AND (iState.ValidTo = ''''9999-12-31 23:59:59.000'''')
-							) AS productMinorVersion
-							INNER JOIN dbo.fhsmDefaultConfigurations AS dc ON (dc.ConfigurationId = configurationsDetected.ConfigurationId) AND (dc.ProductMajorVersion = productMajorVersion.Value) AND (dc.ProductMinorVersion = productMinorVersion.Value)
-							LEFT OUTER JOIN dbo.fhsmInstanceConfigurations AS rc ON (rc.ConfigurationId = configurationsDetected.ConfigurationId) AND (rc.ProductMajorVersion = productMajorVersion.Value) AND (rc.ProductMinorVersion = productMinorVersion.Value)
-							WHERE (dc.Value <> configurationsDetected.value_in_use)
-						) AS ic
-				'';
-				EXEC(@stmt);
-			END;
-
-			--
-			-- Register extended properties on fact view @pbiSchema.[Instance configurations]
-			--
-			BEGIN
-				SET @objectName = QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance configurations'');
-				SET @objName = PARSENAME(@objectName, 1);
-				SET @schName = PARSENAME(@objectName, 2);
-
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
-			END;
-		END;
-
-		--
-		-- Create fact view @pbiSchema.[Instance configurations history]
-		--
-		BEGIN
-			BEGIN
-				SET @stmt = ''
-					IF OBJECT_ID('''''' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance configurations history'') + '''''', ''''V'''') IS NULL
-					BEGIN
-						EXEC(''''CREATE VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance configurations history'') + '' AS SELECT ''''''''dummy'''''''' AS Txt'''');
-					END;
-				'';
-				EXEC(@stmt);
-
-				SET @stmt = '''';
-				SET @stmt += ''
-					ALTER VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance configurations history'') + ''
-					AS
-						SELECT
-							c.ConfigurationId
-							,configurationsDetected.ValidFrom
-							,configurationsDetected.ValidTo
-							,latestName.Value AS Name
-							,configurationsDetected.value_in_use AS Value
-						FROM dbo.fhsmInstanceConfigurations AS c
-						CROSS APPLY (
-							SELECT CAST(iState.Value AS int) AS Value
-							FROM dbo.fhsmInstanceState AS iState
-							WHERE (iState.Query = 3) AND (iState.[Key] = ''''ProductMajorVersion'''') AND (iState.ValidTo = ''''9999-12-31 23:59:59.000'''')
-						) AS productMajorVersion
-						CROSS APPLY (
-							SELECT CAST(iState.Value AS int) AS Value
-							FROM dbo.fhsmInstanceState AS iState
-							WHERE (iState.Query = 3) AND (iState.[Key] = ''''ProductMinorVersion'''') AND (iState.ValidTo = ''''9999-12-31 23:59:59.000'''')
-						) AS productMinorVersion
-						INNER JOIN (
-							SELECT pvt.ValidFrom, pvt.ValidTo, pvt.Category, CAST(pvt.value AS int) AS value, CAST(pvt.value_in_use AS int) AS value_in_use
-							FROM (
-								SELECT iState.ValidFrom, NULLIF(iState.ValidTo, ''''9999-12-31 23:59:59.000'''') AS ValidTo, iState.Category, iState.[Key], iState.Value AS _Value_
-								FROM dbo.fhsmInstanceState AS iState
-								WHERE
-									(iState.Query = 4)
-									AND (iState.Category IN (1517, 1538, 1539, 1544, 1546, 1562, 1576, 1579, 1581, 1584, 1585, 1589))
-									AND (iState.[Key] IN (''''value'''', ''''value_in_use''''))
-							) AS p
-							PIVOT (
-								MAX(_Value_)
-								FOR [Key] IN ([value], [value_in_use])
-							) AS pvt
-						) AS configurationsDetected ON (configurationsDetected.Category = c.ConfigurationId)
-						INNER JOIN (
-							SELECT iState.Category, iState.Value
-							FROM dbo.fhsmInstanceState AS iState
-							WHERE
-								(iState.Query = 4)
-								AND (iState.[Key] = ''''name'''')
-								AND (iState.ValidTo = ''''9999-12-31 23:59:59.000'''')
-						) AS latestName ON (latestName.Category = c.ConfigurationId)
-						WHERE (c.ProductMajorVersion = productMajorVersion.Value) AND (c.ProductMinorVersion = productMinorVersion.Value)
-
-						UNION
-					'';
-					SET @stmt += ''
-						SELECT
-							iState.Category AS ConfigurationId
-							,iState.ValidFrom
-							,NULLIF(iState.ValidTo, ''''9999-12-31 23:59:59.000'''') AS ValidTo
-							,latestName.Value AS Name
-							,iState.Value
-						FROM (
-							SELECT configurationsDetected.ConfigurationId
-							FROM (
-								SELECT pvt.Category AS ConfigurationId, pvt.name, CAST(pvt.value AS int) AS value, CAST(pvt.minimum AS int) AS minimum, CAST(pvt.maximum AS int) AS maximum, CAST(pvt.value_in_use AS int) AS value_in_use, pvt.description, pvt.is_dynamic, pvt.is_advanced
-								FROM (
-									SELECT iState.Category, iState.[Key], iState.Value AS _Value_
-									FROM dbo.fhsmInstanceState AS iState
-									WHERE (iState.Query = 4) AND (iState.ValidTo = ''''9999-12-31 23:59:59.000'''')
-								) AS p
-								PIVOT (
-									MAX(_Value_)
-									FOR [Key] IN ([name], [value], [minimum], [maximum], [value_in_use], [description], [is_dynamic], [is_advanced])
-								) AS pvt
-							) AS configurationsDetected
-							CROSS APPLY (
-								SELECT CAST(iState.Value AS int) AS Value
-								FROM dbo.fhsmInstanceState AS iState
-								WHERE (iState.Query = 3) AND (iState.[Key] = ''''ProductMajorVersion'''') AND (iState.ValidTo = ''''9999-12-31 23:59:59.000'''')
-							) AS productMajorVersion
-							CROSS APPLY (
-								SELECT CAST(iState.Value AS int) AS Value
-								FROM dbo.fhsmInstanceState AS iState
-								WHERE (iState.Query = 3) AND (iState.[Key] = ''''ProductMinorVersion'''') AND (iState.ValidTo = ''''9999-12-31 23:59:59.000'''')
-							) AS productMinorVersion
-							INNER JOIN dbo.fhsmDefaultConfigurations AS dc ON (dc.ConfigurationId = configurationsDetected.ConfigurationId) AND (dc.ProductMajorVersion = productMajorVersion.Value) AND (dc.ProductMinorVersion = productMinorVersion.Value)
-							LEFT OUTER JOIN dbo.fhsmInstanceConfigurations AS rc ON (rc.ConfigurationId = configurationsDetected.ConfigurationId) AND (rc.ProductMajorVersion = productMajorVersion.Value) AND (rc.ProductMinorVersion = productMinorVersion.Value)
-							WHERE (dc.Value <> configurationsDetected.value_in_use)
-						) AS notDefault
-						INNER JOIN dbo.fhsmInstanceState AS iState ON (iState.Category = notDefault.ConfigurationId)
-						INNER JOIN (
-							SELECT iState.Category, iState.Value
-							FROM dbo.fhsmInstanceState AS iState
-							WHERE
-								(iState.Query = 4)
-								AND (iState.[Key] = ''''name'''')
-								AND (iState.ValidTo = ''''9999-12-31 23:59:59.000'''')
-						) AS latestName ON (latestName.Category = iState.Category)
-						WHERE (iState.[Key] = ''''value_in_use'''')
-				'';
-				EXEC(@stmt);
-			END;
-
-			--
-			-- Register extended properties on fact view @pbiSchema.[Instance configurations history]
-			--
-			BEGIN
-				SET @objectName = QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance configurations history'');
-				SET @objName = PARSENAME(@objectName, 1);
-				SET @schName = PARSENAME(@objectName, 2);
-
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
-			END;
-		END;
-
-		--
-		-- Create fact view @pbiSchema.[Instance dump files]
-		--
-		BEGIN
-			BEGIN
-				SET @stmt = ''
-					IF OBJECT_ID('''''' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance dump files'') + '''''', ''''V'''') IS NULL
-					BEGIN
-						EXEC(''''CREATE VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance dump files'') + '' AS SELECT ''''''''dummy'''''''' AS Txt'''');
-					END;
-				'';
-				EXEC(@stmt);
-
-				SET @stmt = ''
-					ALTER VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance dump files'') + ''
-					AS
-						SELECT
-							pvt.Category AS Sequence
-							,CAST(CAST(pvt.creation_time AS datetime2(0)) AS datetime) AS CreationTime
-							,pvt.filename AS Filename
-							,CAST(pvt.size_in_bytes AS int) AS SizeInBytes
-							,CAST(CAST(pvt.creation_time AS datetime2(0)) AS date) AS Date
-						FROM (
-							SELECT iState.Category, iState.[Key], iState.Value AS _Value_
-							FROM dbo.fhsmInstanceState AS iState
-							WHERE (iState.Query = 21) AND (iState.ValidTo = ''''9999-12-31 23:59:59.000'''')
-						) AS p
-						PIVOT (
-							MAX(_Value_)
-							FOR [Key] IN ([creation_time], [filename], [size_in_bytes])
-						) AS pvt;
-				'';
-				EXEC(@stmt);
-			END;
-
-			--
-			-- Register extended properties on fact view @pbiSchema.[Instance dump files]
-			--
-			BEGIN
-				SET @objectName = QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance dump files'');
-				SET @objName = PARSENAME(@objectName, 1);
-				SET @schName = PARSENAME(@objectName, 2);
-
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
-			END;
-		END;
-
-		--
-		-- Create fact view @pbiSchema.[Instance hardware]
-		--
-		BEGIN
-			BEGIN
-				SET @stmt = ''
-					IF OBJECT_ID('''''' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance hardware'') + '''''', ''''V'''') IS NULL
-					BEGIN
-						EXEC(''''CREATE VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance hardware'') + '' AS SELECT ''''''''dummy'''''''' AS Txt'''');
-					END;
-				'';
-				EXEC(@stmt);
-
-				SET @stmt = ''
-					ALTER VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance hardware'') + ''
-					AS
-						SELECT
-							CASE iState.[Key]
-								WHEN ''''cores_per_socket'''' THEN ''''Cores per socket''''
-								WHEN ''''cpu_count'''' THEN ''''CPU count''''
-								WHEN ''''max_workers_count'''' THEN ''''Max workers count''''
-								WHEN ''''numa_node_count'''' THEN ''''NUMA node count''''
-								WHEN ''''physical_memory_kb'''' THEN ''''Physical memory MB''''
-								WHEN ''''ProcessorNameString'''' THEN ''''Processor''''
-								WHEN ''''scheduler_count'''' THEN ''''Scheduler count''''
-								WHEN ''''socket_count'''' THEN ''''Socket count''''
-								WHEN ''''sql_memory_model'''' THEN ''''SQL memory model''''
-								WHEN ''''SQL Server and OS Version Info'''' THEN ''''SQL Server and OS Version Info''''
-								WHEN ''''sqlserver_start_time'''' THEN ''''SQL server start time''''
-								WHEN ''''virtual_machine_type'''' THEN ''''Virtual machine type''''
-								ELSE ''''?:'''' + iState.[Key]
-							END AS [Key]
-							,CASE iState.[Key]
-								WHEN ''''physical_memory_kb'''' THEN CAST((CAST(iState.Value AS int) / 1024) AS nvarchar(max))
-								WHEN ''''sql_memory_model'''' THEN
-									CASE iState.Value
-										WHEN 1 THEN ''''CONVENTIONAL''''
-										WHEN 2 THEN ''''LOCK_PAGES''''
-										WHEN 3 THEN ''''LARGE_PAGES''''
-										ELSE ''''?:'''' + CAST(iState.Value AS nvarchar)
-									END
-								WHEN ''''sqlserver_start_time'''' THEN CONVERT(nvarchar(max), CAST(iState.Value AS datetime), 126)
-								WHEN ''''virtual_machine_type'''' THEN
-									CASE iState.Value
-										WHEN 0 THEN ''''NONE''''
-										WHEN 1 THEN ''''HYPERVISOR''''
-										WHEN 2 THEN ''''OTHER''''
-										ELSE ''''?:'''' + CAST(iState.Value AS nvarchar)
-									END
-								ELSE iState.Value
-							END AS Value
-							,iState.Timestamp
-						FROM (
-							SELECT iState.[Key], iState.Value, iState.Timestamp
-							FROM dbo.fhsmInstanceState AS iState
-							WHERE
-								(
-									(
-										(iState.Query = 1)
-										AND (iState.[Key] = ''''SQL Server and OS Version Info'''')
-									)
-									OR (
-										(iState.Query = 17)
-										AND (iState.[Key] IN (
-											''''cores_per_socket''''
-											,''''cpu_count''''
-											,''''max_workers_count''''
-											,''''numa_node_count''''
-											,''''physical_memory_kb''''
-											,''''scheduler_count''''
-											,''''socket_count''''
-											,''''sql_memory_model''''
-											,''''sqlserver_start_time''''
-											,''''virtual_machine_type''''
-										))
-									)
-									OR (
-										(iState.Query = 20)
-									)
-								)
-								AND (iState.ValidTo = ''''9999-12-31 23:59:59.000'''')
-						) AS iState;
-				'';
-				EXEC(@stmt);
-			END;
-
-			--
-			-- Register extended properties on fact view @pbiSchema.[Instance hardware]
-			--
-			BEGIN
-				SET @objectName = QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance hardware'');
-				SET @objName = PARSENAME(@objectName, 1);
-				SET @schName = PARSENAME(@objectName, 2);
-
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
-			END;
-		END;
-
-		--
-		-- Create fact view @pbiSchema.[Instance hardware history]
-		--
-		BEGIN
-			BEGIN
-				SET @stmt = ''
-					IF OBJECT_ID('''''' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance hardware history'') + '''''', ''''V'''') IS NULL
-					BEGIN
-						EXEC(''''CREATE VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance hardware history'') + '' AS SELECT ''''''''dummy'''''''' AS Txt'''');
-					END;
-				'';
-				EXEC(@stmt);
-
-				SET @stmt = ''
-					ALTER VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance hardware history'') + ''
-					AS
-						SELECT
-							CASE iState.[Key]
-								WHEN ''''cores_per_socket'''' THEN ''''Cores per socket''''
-								WHEN ''''cpu_count'''' THEN ''''CPU count''''
-								WHEN ''''max_workers_count'''' THEN ''''Max workers count''''
-								WHEN ''''numa_node_count'''' THEN ''''NUMA node count''''
-								WHEN ''''physical_memory_kb'''' THEN ''''Physical memory MB''''
-								WHEN ''''ProcessorNameString'''' THEN ''''Processor''''
-								WHEN ''''scheduler_count'''' THEN ''''Scheduler count''''
-								WHEN ''''socket_count'''' THEN ''''Socket count''''
-								WHEN ''''sql_memory_model'''' THEN ''''SQL memory model''''
-								WHEN ''''SQL Server and OS Version Info'''' THEN ''''SQL Server and OS Version Info''''
-								WHEN ''''sqlserver_start_time'''' THEN ''''SQL server start time''''
-								WHEN ''''virtual_machine_type'''' THEN ''''Virtual machine type''''
-								ELSE ''''?:'''' + iState.[Key]
-							END AS [Key]
-							,iState.ValidFrom
-							,NULLIF(iState.ValidTo, ''''9999-12-31 23:59:59.000'''') AS ValidTo
-							,CASE iState.[Key]
-								WHEN ''''physical_memory_kb'''' THEN CAST((CAST(iState.Value AS int) / 1024) AS nvarchar(max))
-								WHEN ''''sql_memory_model'''' THEN
-									CASE iState.Value
-										WHEN 1 THEN ''''CONVENTIONAL''''
-										WHEN 2 THEN ''''LOCK_PAGES''''
-										WHEN 3 THEN ''''LARGE_PAGES''''
-										ELSE ''''?:'''' + CAST(iState.Value AS nvarchar)
-									END
-								WHEN ''''sqlserver_start_time'''' THEN CONVERT(nvarchar(max), CAST(iState.Value AS datetime), 126)
-								WHEN ''''virtual_machine_type'''' THEN
-									CASE iState.Value
-										WHEN 0 THEN ''''NONE''''
-										WHEN 1 THEN ''''HYPERVISOR''''
-										WHEN 2 THEN ''''OTHER''''
-										ELSE ''''?:'''' + CAST(iState.Value AS nvarchar)
-									END
-								ELSE iState.Value
-							END AS Value
-						FROM (
-							SELECT iState.ValidFrom, iState.ValidTo, iState.[Key], iState.Value
-							FROM dbo.fhsmInstanceState AS iState
-							WHERE
-								(
-									(
-										(iState.Query = 1)
-										AND (iState.[Key] IN (
-											''''SQL Server and OS Version Info''''
-										))
-									)
-									OR (
-										(iState.Query = 17)
-										AND (iState.[Key] IN (
-											''''cores_per_socket''''
-											,''''cpu_count''''
-											,''''max_workers_count''''
-											,''''numa_node_count''''
-											,''''physical_memory_kb''''
-											,''''scheduler_count''''
-											,''''socket_count''''
-											,''''sql_memory_model''''
-											,''''sqlserver_start_time''''
-											,''''virtual_machine_type''''
-										))
-									)
-									OR (
-										(iState.Query = 20)
-									)
-								)
-						) AS iState;
-				'';
-				EXEC(@stmt);
-			END;
-
-			--
-			-- Register extended properties on fact view @pbiSchema.[Instance hardware history]
-			--
-			BEGIN
-				SET @objectName = QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance hardware history'');
-				SET @objName = PARSENAME(@objectName, 1);
-				SET @schName = PARSENAME(@objectName, 2);
-
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
-			END;
-		END;
-
-		--
-		-- Create fact view @pbiSchema.[Instance services]
-		--
-		BEGIN
-			BEGIN
-				SET @stmt = ''
-					IF OBJECT_ID('''''' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance services'') + '''''', ''''V'''') IS NULL
-					BEGIN
-						EXEC(''''CREATE VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance services'') + '' AS SELECT ''''''''dummy'''''''' AS Txt'''');
-					END;
-				'';
-				EXEC(@stmt);
-
-				SET @stmt = ''
-					ALTER VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance services'') + ''
-					AS
-						SELECT
-							pvt.Category AS Name
-							,CASE pvt.startup_type
-								WHEN 0 THEN ''''Other''''
-								WHEN 1 THEN ''''Other''''
-								WHEN 2 THEN ''''Automatic''''
-								WHEN 3 THEN ''''Manual''''
-								WHEN 4 THEN ''''Disabled''''
-								ELSE ''''?:'''' + CAST(pvt.startup_type AS nvarchar)
-							END AS StartupType
-							,CASE pvt.status
-								WHEN 1 THEN ''''Stopped''''
-								WHEN 2 THEN ''''Other (start pending)''''
-								WHEN 3 THEN ''''Other (stop pending)''''
-								WHEN 4 THEN ''''Running''''
-								WHEN 5 THEN ''''Other (continue pending)''''
-								WHEN 6 THEN ''''Other (pause pending)''''
-								WHEN 7 THEN ''''Paused''''
-								ELSE ''''?:'''' + CAST(pvt.status AS nvarchar)
-							END AS Status
-							,pvt.service_account AS ServiceAccount
-							,CAST((CASE pvt.instant_file_initialization_enabled
-								WHEN ''''Y'''' THEN 1
-								WHEN ''''N'''' THEN 0
-							END) AS bit) AS InstantFileInitializationEnabled
-							,CASE pvt.instant_file_initialization_enabled
-								WHEN ''''Y'''' THEN ''''Yes''''
-								WHEN ''''N'''' THEN ''''No''''
-								ELSE ''''N.A.''''
-							END AS InstantFileInitializationEnabledTxt
-							,(SELECT MAX(iState.Timestamp) FROM dbo.fhsmInstanceState AS iState WHERE (iState.Category = pvt.Category) AND (iState.[Key] NOT IN (''''filename'''', ''''is_clustered'''', ''''last_startup_time'''', ''''process_id''''))) AS Timestamp
-
-						FROM (
-							SELECT iState.Category, iState.[Key], iState.Value AS _Value_
-							FROM (
-								SELECT DISTINCT iState.Category
-								FROM dbo.fhsmInstanceState AS iState
-								WHERE
-									(iState.Query = 7)
-									AND (iState.ValidTo = ''''9999-12-31 23:59:59.000'''')
-							) AS toCheck
-							INNER JOIN dbo.fhsmInstanceState AS iState ON (iState.Category = toCheck.Category)
-							WHERE (iState.Query = 7) AND (iState.ValidTo = ''''9999-12-31 23:59:59.000'''')
-						) AS p
-						PIVOT (
-							MAX(_Value_)
-							FOR [Key] IN ([startup_type], [status], [service_account], [instant_file_initialization_enabled])
-						) AS pvt;
-				'';
-				EXEC(@stmt);
-			END;
-
-			--
-			-- Register extended properties on fact view @pbiSchema.[Instance services]
-			--
-			BEGIN
-				SET @objectName = QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance services'');
-				SET @objName = PARSENAME(@objectName, 1);
-				SET @schName = PARSENAME(@objectName, 2);
-
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
-			END;
-		END;
-
-		--
-		-- Create fact view @pbiSchema.[Instance suspect pages]
-		--
-		BEGIN
-			BEGIN
-				SET @stmt = ''
-					IF OBJECT_ID('''''' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance suspect pages'') + '''''', ''''V'''') IS NULL
-					BEGIN
-						EXEC(''''CREATE VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance suspect pages'') + '' AS SELECT ''''''''dummy'''''''' AS Txt'''');
-					END;
-				'';
-				EXEC(@stmt);
-
-				SET @stmt = ''
-					ALTER VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance suspect pages'') + ''
-					AS
-						SELECT
-							SUBSTRING(pvt.Category, 1, CHARINDEX('''':'''', pvt.Category) - 1) AS DatabaseName
-							,CAST(SUBSTRING(pvt.Category, CHARINDEX('''':'''', pvt.Category) + 1, LEN(pvt.Category) - CHARINDEX('''':'''', REVERSE(pvt.Category)) - (CHARINDEX('''':'''', pvt.Category))) AS int) AS FileId
-							,CAST(SUBSTRING(pvt.Category, LEN(pvt.Category) - CHARINDEX('''':'''', REVERSE(pvt.Category)) + 2, LEN(pvt.Category)) AS bigint) AS PageId
-							,CASE pvt.event_type
-								WHEN 1 THEN ''''An 823 error that causes a suspect page (such as a disk error) or an 824 error other than a bad checksum or a torn page (such as a bad page ID)''''
-								WHEN 2 THEN ''''Bad checksum''''
-								WHEN 3 THEN ''''Torn page''''
-								WHEN 4 THEN ''''Restored (page was restored after it was marked bad)''''
-								WHEN 5 THEN ''''Repaired (DBCC repaired the page)''''
-								WHEN 7 THEN ''''Deallocated by DBCC''''
-								ELSE ''''?:'''' + CAST(pvt.event_type AS nvarchar)
-							END AS EventType
-							,CAST(pvt.error_count AS int) AS ErrorCount
-							,CAST(pvt.last_update_date AS datetime) AS LastUpdateDate
-							,CAST(pvt.last_update_date AS date) AS Date
-						FROM (
-							SELECT iState.Category, iState.[Key], iState.Value AS _Value_
-							FROM dbo.fhsmInstanceState AS iState
-							WHERE (iState.Query = 22) AND (iState.ValidTo = ''''9999-12-31 23:59:59.000'''')
-						) AS p
-						PIVOT (
-							MAX(_Value_)
-							FOR [Key] IN ([event_type], [error_count], [last_update_date])
-						) AS pvt;
-				'';
-				EXEC(@stmt);
-			END;
-
-			--
-			-- Register extended properties on fact view @pbiSchema.[Instance suspect pages]
-			--
-			BEGIN
-				SET @objectName = QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance suspect pages'');
-				SET @objName = PARSENAME(@objectName, 1);
-				SET @schName = PARSENAME(@objectName, 2);
-
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
-			END;
-		END;
-
-		--
-		-- Create fact view @pbiSchema.[Instance SQL agent properties]
-		--
-		BEGIN
-			BEGIN
-				SET @stmt = ''
-					IF OBJECT_ID('''''' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance SQL agent properties'') + '''''', ''''V'''') IS NULL
-					BEGIN
-						EXEC(''''CREATE VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance SQL agent properties'') + '' AS SELECT ''''''''dummy'''''''' AS Txt'''');
-					END;
-				'';
-				EXEC(@stmt);
-
-				SET @stmt = ''
-					ALTER VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance SQL agent properties'') + ''
-					AS
-						SELECT
-							CASE iState.[Key]
-								WHEN ''''idle_cpu_duration'''' THEN ''''Idle CPU duration''''
-								WHEN ''''idle_cpu_percent'''' THEN ''''Idle CPU percent''''
-								WHEN ''''jobhistory_max_rows'''' THEN ''''Job history max rows''''
-								WHEN ''''jobhistory_max_rows_per_job'''' THEN ''''Job history max rows per job''''
-								WHEN ''''job_shutdown_timeout'''' THEN ''''Job shutdown timeout''''
-							END AS [Key]
-							,iState.Value
-							,iState.Timestamp
-						FROM (
-							SELECT iState.[Key], iState.Value, iState.Timestamp
-							FROM dbo.fhsmInstanceState AS iState
-							WHERE (iState.Query = 29) AND (iState.ValidTo = ''''9999-12-31 23:59:59.000'''')
-								AND (iState.[Key] IN (
-									''''idle_cpu_duration''''
-									,''''idle_cpu_percent''''
-									,''''jobhistory_max_rows''''
-									,''''jobhistory_max_rows_per_job''''
-									,''''job_shutdown_timeout''''
-								))
-						) AS iState;
-				'';
-				EXEC(@stmt);
-			END;
-
-			--
-			-- Register extended properties on fact view @pbiSchema.[Instance SQL agent properties]
-			--
-			BEGIN
-				SET @objectName = QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance SQL agent properties'');
-				SET @objName = PARSENAME(@objectName, 1);
-				SET @schName = PARSENAME(@objectName, 2);
-
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
-			END;
-		END;
-
-		--
-		-- Create fact view @pbiSchema.[Instance SQL agent properties history]
-		--
-		BEGIN
-			BEGIN
-				SET @stmt = ''
-					IF OBJECT_ID('''''' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance SQL agent properties history'') + '''''', ''''V'''') IS NULL
-					BEGIN
-						EXEC(''''CREATE VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance SQL agent properties history'') + '' AS SELECT ''''''''dummy'''''''' AS Txt'''');
-					END;
-				'';
-				EXEC(@stmt);
-
-				SET @stmt = ''
-					ALTER VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance SQL agent properties history'') + ''
-					AS
-						SELECT
-							CASE iState.[Key]
-								WHEN ''''idle_cpu_duration'''' THEN ''''Idle CPU duration''''
-								WHEN ''''idle_cpu_percent'''' THEN ''''Idle CPU percent''''
-								WHEN ''''jobhistory_max_rows'''' THEN ''''Job history max rows''''
-								WHEN ''''jobhistory_max_rows_per_job'''' THEN ''''Job history max rows per job''''
-								WHEN ''''job_shutdown_timeout'''' THEN ''''Job shutdown timeout''''
-							END AS [Key]
-							,iState.ValidFrom
-							,NULLIF(iState.ValidTo, ''''9999-12-31 23:59:59.000'''') AS ValidTo
-							,iState.Value
-						FROM (
-							SELECT iState.ValidFrom, iState.ValidTo, iState.[Key], iState.Value
-							FROM dbo.fhsmInstanceState AS iState
-							WHERE (iState.Query = 29)
-								AND (iState.[Key] IN (
-									''''idle_cpu_duration''''
-									,''''idle_cpu_percent''''
-									,''''jobhistory_max_rows''''
-									,''''jobhistory_max_rows_per_job''''
-									,''''job_shutdown_timeout''''
-								))
-						) AS iState;
-				'';
-				EXEC(@stmt);
-			END;
-
-			--
-			-- Register extended properties on fact view @pbiSchema.[Instance SQL agent properties history]
-			--
-			BEGIN
-				SET @objectName = QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance SQL agent properties history'');
-				SET @objName = PARSENAME(@objectName, 1);
-				SET @schName = PARSENAME(@objectName, 2);
-
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
-			END;
-		END;
-
-		--
-		-- Create fact view @pbiSchema.[Lifecycle]
-		--
-		BEGIN
-			BEGIN
-				SET @stmt = ''
-					IF OBJECT_ID('''''' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Lifecycle'') + '''''', ''''V'''') IS NULL
-					BEGIN
-						EXEC(''''CREATE VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Lifecycle'') + '' AS SELECT ''''''''dummy'''''''' AS Txt'''');
-					END;
-				'';
-				EXEC(@stmt);
-
-				SET @stmt = ''
-					ALTER VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Lifecycle'') + ''
-					AS
-						SELECT
-							l.MainstreamEndDate
-							,l.ExtendedEndDate
-							,CASE
-								WHEN (CAST(GETDATE() AS date) <= l.MainstreamEndDate) THEN 0
-								WHEN (CAST(GETDATE() AS date) > l.MainstreamEndDate) AND (CAST(GETDATE() AS date) <= l.ExtendedEndDate) THEN 1
-								ELSE 2
-							END AS State	-- 0: Until mainstream end date
-											-- 1: After mainstream end date and until extended end date
-											-- 2: After extended end date
-						FROM dbo.fhsmLifecycle AS l
-						CROSS APPLY (
-							SELECT CAST(iState.Value AS int) AS Value
-							FROM dbo.fhsmInstanceState AS iState
-							WHERE (iState.Query = 3) AND (iState.[Key] = ''''ProductMajorVersion'''') AND (iState.ValidTo = ''''9999-12-31 23:59:59.000'''')
-						) AS productMajorVersion
-						CROSS APPLY (
-							SELECT CAST(iState.Value AS int) AS Value
-							FROM dbo.fhsmInstanceState AS iState
-							WHERE (iState.Query = 3) AND (iState.[Key] = ''''ProductMinorVersion'''') AND (iState.ValidTo = ''''9999-12-31 23:59:59.000'''')
-						) AS productMinorVersion
-						WHERE (l.ProductMajorVersion = productMajorVersion.Value) AND (l.ProductMinorVersion = productMinorVersion.Value);
-				'';
-				EXEC(@stmt);
-			END;
-
-			--
-			-- Register extended properties on fact view @pbiSchema.[Lifecycle]
-			--
-			BEGIN
-				SET @objectName = QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Lifecycle'');
-				SET @objName = PARSENAME(@objectName, 1);
-				SET @schName = PARSENAME(@objectName, 2);
-
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
-			END;
-		END;
-
-		--
-		-- Create fact view @pbiSchema.[Trace flags]
-		--
-		BEGIN
-			BEGIN
-				SET @stmt = ''
-					IF OBJECT_ID('''''' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Trace flags'') + '''''', ''''V'''') IS NULL
-					BEGIN
-						EXEC(''''CREATE VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Trace flags'') + '' AS SELECT ''''''''dummy'''''''' AS Txt'''');
-					END;
-				'';
-				EXEC(@stmt);
-
-				SET @stmt = ''
-					ALTER VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Trace flags'') + ''
-					AS
-						SELECT
-							tf.TraceFlag
-							,tf.Description
-							,tf.URL
-							,CASE WHEN traceFlagsDetected.TraceFlag IS NULL THEN 0 ELSE 1 END AS TraceFlagExists	-- 0: Warning; 1: OK
-							,traceFlagsDetected.Timestamp
-						FROM dbo.fhsmTraceFlags AS tf
-						CROSS APPLY (
-							SELECT CAST(iState.Value AS int) AS Value
-							FROM dbo.fhsmInstanceState AS iState
-							WHERE (iState.Query = 3) AND (iState.[Key] = ''''ProductMajorVersion'''') AND (iState.ValidTo = ''''9999-12-31 23:59:59.000'''')
-						) AS productMajorVersion
-						CROSS APPLY (
-							SELECT CAST(iState.Value AS int) AS Value
-							FROM dbo.fhsmInstanceState AS iState
-							WHERE (iState.Query = 3) AND (iState.[Key] = ''''ProductMinorVersion'''') AND (iState.ValidTo = ''''9999-12-31 23:59:59.000'''')
-						) AS productMinorVersion
-						LEFT OUTER JOIN (
-							SELECT CAST(iState.Category AS int) AS TraceFlag, iState.Timestamp
-							FROM dbo.fhsmInstanceState AS iState
-							WHERE (iState.Query = 5) AND (iState.[Key] = ''''Global'''') AND (dbo.fhsmFNTryParseAsInt(iState.Value) = 1) AND (iState.ValidTo = ''''9999-12-31 23:59:59.000'''')
-						) AS traceFlagsDetected ON (traceFlagsDetected.TraceFlag = tf.TraceFlag)
-						WHERE (tf.ProductMajorVersion = productMajorVersion.Value) AND (tf.ProductMinorVersion = productMinorVersion.Value);
-				'';
-				EXEC(@stmt);
-			END;
-
-			--
-			-- Register extended properties on fact view @pbiSchema.[Trace flags]
-			--
-			BEGIN
-				SET @objectName = QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Trace flags'');
-				SET @objName = PARSENAME(@objectName, 1);
-				SET @schName = PARSENAME(@objectName, 2);
-
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
-			END;
-		END;
-
-		--
-		-- Create fact view @pbiSchema.[Trace flags history]
-		--
-		BEGIN
-			BEGIN
-				SET @stmt = ''
-					IF OBJECT_ID('''''' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Trace flags history'') + '''''', ''''V'''') IS NULL
-					BEGIN
-						EXEC(''''CREATE VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Trace flags history'') + '' AS SELECT ''''''''dummy'''''''' AS Txt'''');
-					END;
-				'';
-				EXEC(@stmt);
-
-				SET @stmt = ''
-					ALTER VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Trace flags history'') + ''
-					AS
-						SELECT
-							tf.TraceFlag
-							,CAST(tf.TraceFlag AS nvarchar) AS TraceFlagTxt
-							,tf.Description
-							,traceFlags.ValidFrom
-							,NULLIF(traceFlags.ValidTo, ''''9999-12-31 23:59:59.000'''') AS ValidTo
-						FROM dbo.fhsmTraceFlags AS tf
-						CROSS APPLY (
-							SELECT CAST(iState.Value AS int) AS Value
-							FROM dbo.fhsmInstanceState AS iState
-							WHERE (iState.Query = 3) AND (iState.[Key] = ''''ProductMajorVersion'''') AND (iState.ValidTo = ''''9999-12-31 23:59:59.000'''')
-						) AS productMajorVersion
-						CROSS APPLY (
-							SELECT CAST(iState.Value AS int) AS Value
-							FROM dbo.fhsmInstanceState AS iState
-							WHERE (iState.Query = 3) AND (iState.[Key] = ''''ProductMinorVersion'''') AND (iState.ValidTo = ''''9999-12-31 23:59:59.000'''')
-						) AS productMinorVersion
-						INNER JOIN (
-							SELECT iState.ValidFrom, iState.ValidTo, CAST(iState.Category AS int) AS TraceFlag
-							FROM dbo.fhsmInstanceState AS iState
-							WHERE (iState.Query = 5) AND (iState.[Key] = ''''Global'''') AND (dbo.fhsmFNTryParseAsInt(iState.Value) = 1)
-						) AS traceFlags ON (traceFlags.TraceFlag = tf.TraceFlag)
-						WHERE (tf.ProductMajorVersion = productMajorVersion.Value) AND (tf.ProductMinorVersion = productMinorVersion.Value);
-				'';
-				EXEC(@stmt);
-			END;
-
-			--
-			-- Register extended properties on fact view @pbiSchema.[Trace flags history]
-			--
-			BEGIN
-				SET @objectName = QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Trace flags history'');
-				SET @objName = PARSENAME(@objectName, 1);
-				SET @schName = PARSENAME(@objectName, 2);
-
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
-			END;
-		END;
-
-		--
-		-- Create fact view @pbiSchema.[Resource governor configuration]
-		--
-		BEGIN
-			BEGIN
-				SET @stmt = ''
-					IF OBJECT_ID('''''' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Resource governor configuration'') + '''''', ''''V'''') IS NULL
-					BEGIN
-						EXEC(''''CREATE VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Resource governor configuration'') + '' AS SELECT ''''''''dummy'''''''' AS Txt'''');
-					END;
-				'';
-				EXEC(@stmt);
-
-				SET @stmt = ''
-					ALTER VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Resource governor configuration'') + ''
-					AS
-						SELECT
-							pvt.is_enabled AS IsEnabled
-							,CASE pvt.is_enabled
-								WHEN 0 THEN ''''No''''
-								WHEN 1 THEN ''''Yes''''
-								ELSE ''''N.A.''''
-							END AS IsEnabledTxt
-							,pvt.max_outstanding_io_per_volume AS MaxOutstandingIOperVolume
-							,pvt.ClassifierFunction
-							,pvt.ClassifierFunctionDefinition
-							,(SELECT MAX(iState.Timestamp) FROM dbo.fhsmInstanceState AS iState WHERE (iState.Category = pvt.Category) AND (iState.Query = 23)) AS Timestamp
-						FROM (
-							SELECT iState.Category, iState.[Key], iState.Value AS _Value_
-							FROM (
-								SELECT DISTINCT iState.Category
-								FROM dbo.fhsmInstanceState AS iState
-								WHERE
-									(iState.Query = 23)
-									AND (iState.ValidTo = ''''9999-12-31 23:59:59.000'''')
-							) AS toCheck
-							INNER JOIN dbo.fhsmInstanceState AS iState ON (iState.Category = toCheck.Category)
-							WHERE (iState.Query = 23) AND (iState.ValidTo = ''''9999-12-31 23:59:59.000'''')
-						) AS p
-						PIVOT (
-							MAX(_Value_)
-							FOR [Key] IN ([is_enabled], [max_outstanding_io_per_volume], [ClassifierFunction], [ClassifierFunctionDefinition])
-						) AS pvt;
-				'';
-				EXEC(@stmt);
-			END;
-
-			--
-			-- Register extended properties on fact view @pbiSchema.[Resource governor configuration]
-			--
-			BEGIN
-				SET @objectName = QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Resource governor configuration'');
-				SET @objName = PARSENAME(@objectName, 1);
-				SET @schName = PARSENAME(@objectName, 2);
-
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
-			END;
-		END;
-
-		--
-		-- Create fact view @pbiSchema.[Resource governor resource pool affinity]
-		--
-		BEGIN
-			BEGIN
-				SET @stmt = ''
-					IF OBJECT_ID('''''' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Resource governor resource pool affinity'') + '''''', ''''V'''') IS NULL
-					BEGIN
-						EXEC(''''CREATE VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Resource governor resource pool affinity'') + '' AS SELECT ''''''''dummy'''''''' AS Txt'''');
-					END;
-				'';
-				EXEC(@stmt);
-
-				SET @stmt = ''
-					ALTER VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Resource governor resource pool affinity'') + ''
-					AS
-						SELECT
-							pvt.Category AS PoolName
-							,pvt.processor_group AS ProcessorGroup
-							,pvt.scheduler_mask AS SchedulerMask
-							,(SELECT MAX(iState.Timestamp) FROM dbo.fhsmInstanceState AS iState WHERE (iState.Category = pvt.Category) AND (iState.Query = 24)) AS Timestamp
-						FROM (
-							SELECT iState.Category, iState.[Key], iState.Value AS _Value_
-							FROM (
-								SELECT DISTINCT iState.Category
-								FROM dbo.fhsmInstanceState AS iState
-								WHERE
-									(iState.Query = 24)
-									AND (iState.ValidTo = ''''9999-12-31 23:59:59.000'''')
-							) AS toCheck
-							INNER JOIN dbo.fhsmInstanceState AS iState ON (iState.Category = toCheck.Category)
-							WHERE (iState.Query = 24) AND (iState.ValidTo = ''''9999-12-31 23:59:59.000'''')
-						) AS p
-						PIVOT (
-							MAX(_Value_)
-							FOR [Key] IN ([processor_group], [scheduler_mask])
-						) AS pvt;
-				'';
-				EXEC(@stmt);
-			END;
-
-			--
-			-- Register extended properties on fact view @pbiSchema.[Resource governor resource pool affinity]
-			--
-			BEGIN
-				SET @objectName = QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Resource governor resource pool affinity'');
-				SET @objName = PARSENAME(@objectName, 1);
-				SET @schName = PARSENAME(@objectName, 2);
-
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
-			END;
-		END;
-
-		--
-		-- Create fact view @pbiSchema.[Resource governor resource pools]
-		--
-		BEGIN
-			BEGIN
-				SET @stmt = ''
-					IF OBJECT_ID('''''' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Resource governor resource pools'') + '''''', ''''V'''') IS NULL
-					BEGIN
-						EXEC(''''CREATE VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Resource governor resource pools'') + '' AS SELECT ''''''''dummy'''''''' AS Txt'''');
-					END;
-				'';
-				EXEC(@stmt);
-
-				SET @stmt = ''
-					ALTER VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Resource governor resource pools'') + ''
-					AS
-						SELECT
-							pvt.Category AS PoolName
-							,pvt.min_cpu_percent AS MinCPUpercent
-							,pvt.max_cpu_percent AS MaxCPUpercent
-							,pvt.min_memory_percent AS MinMemoryPercent
-							,pvt.max_memory_percent AS MaxMemoryPercent
-							,pvt.cap_cpu_percent AS CapCPUpercent
-							,pvt.min_iops_per_volume AS MinIOPSperVolume
-							,pvt.max_iops_per_volume AS MaxIOPSperVolume
-							,(SELECT MAX(iState.Timestamp) FROM dbo.fhsmInstanceState AS iState WHERE (iState.Category = pvt.Category) AND (iState.Query = 25)) AS Timestamp
-						FROM (
-							SELECT iState.Category, iState.[Key], iState.Value AS _Value_
-							FROM (
-								SELECT DISTINCT iState.Category
-								FROM dbo.fhsmInstanceState AS iState
-								WHERE
-									(iState.Query = 25)
-									AND (iState.ValidTo = ''''9999-12-31 23:59:59.000'''')
-							) AS toCheck
-							INNER JOIN dbo.fhsmInstanceState AS iState ON (iState.Category = toCheck.Category)
-							WHERE (iState.Query = 25) AND (iState.ValidTo = ''''9999-12-31 23:59:59.000'''')
-						) AS p
-						PIVOT (
-							MAX(_Value_)
-							FOR [Key] IN ([min_cpu_percent], [max_cpu_percent], [min_memory_percent], [max_memory_percent], [cap_cpu_percent], [min_iops_per_volume], [max_iops_per_volume])
-						) AS pvt;
-				'';
-				EXEC(@stmt);
-			END;
-
-			--
-			-- Register extended properties on fact view @pbiSchema.[Resource governor resource pools]
-			--
-			BEGIN
-				SET @objectName = QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Resource governor resource pools'');
-				SET @objName = PARSENAME(@objectName, 1);
-				SET @schName = PARSENAME(@objectName, 2);
-
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
-			END;
-		END;
-
-		--
-		-- Create fact view @pbiSchema.[Resource governor workload groups]
-		--
-		BEGIN
-			BEGIN
-				SET @stmt = ''
-					IF OBJECT_ID('''''' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Resource governor workload groups'') + '''''', ''''V'''') IS NULL
-					BEGIN
-						EXEC(''''CREATE VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Resource governor workload groups'') + '' AS SELECT ''''''''dummy'''''''' AS Txt'''');
-					END;
-				'';
-				EXEC(@stmt);
-
-				SET @stmt = ''
-					ALTER VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Resource governor workload groups'') + ''
-					AS
-						SELECT
-							PARSENAME(pvt.Category, 2) AS PoolName
-							,PARSENAME(pvt.Category, 1) AS WorkloadGroupName
-							,pvt.importance AS Importance
-							,pvt.request_max_memory_grant_percent AS RequestMaxMemoryGrantPercent
-							,pvt.request_max_cpu_time_sec AS RequestMaxCPUtimeSec
-							,pvt.request_memory_grant_timeout_sec AS RequestMemoryGrantTimeoutSec
-							,pvt.max_dop AS MaxDOP
-							,pvt.group_max_requests AS GroupMaxRequests
-							,pvt.request_max_memory_grant_percent_numeric AS RequestMaxMemoryGrantPercentNumeric
-							,(SELECT MAX(iState.Timestamp) FROM dbo.fhsmInstanceState AS iState WHERE (iState.Category = pvt.Category) AND (iState.Query = 26)) AS Timestamp
-						FROM (
-							SELECT iState.Category, iState.[Key], iState.Value AS _Value_
-							FROM (
-								SELECT DISTINCT iState.Category
-								FROM dbo.fhsmInstanceState AS iState
-								WHERE
-									(iState.Query = 26)
-									AND (iState.ValidTo = ''''9999-12-31 23:59:59.000'''')
-							) AS toCheck
-							INNER JOIN dbo.fhsmInstanceState AS iState ON (iState.Category = toCheck.Category)
-							WHERE (iState.Query = 26) AND (iState.ValidTo = ''''9999-12-31 23:59:59.000'''')
-						) AS p
-						PIVOT (
-							MAX(_Value_)
-							FOR [Key] IN ([importance], [request_max_memory_grant_percent], [request_max_cpu_time_sec], [request_memory_grant_timeout_sec], [max_dop], [group_max_requests], [request_max_memory_grant_percent_numeric])
-						) AS pvt;
-				'';
-				EXEC(@stmt);
-			END;
-
-			--
-			-- Register extended properties on fact view @pbiSchema.[Resource governor workload groups]
-			--
-			BEGIN
-				SET @objectName = QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Resource governor workload groups'');
-				SET @objName = PARSENAME(@objectName, 1);
-				SET @schName = PARSENAME(@objectName, 2);
-
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
-			END;
-		END;
-
-		--
-		-- Create fact view @pbiSchema.[Resource governor external resource pool affinity]
-		--
-		BEGIN
-			BEGIN
-				SET @stmt = ''
-					IF OBJECT_ID('''''' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Resource governor external resource pool affinity'') + '''''', ''''V'''') IS NULL
-					BEGIN
-						EXEC(''''CREATE VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Resource governor external resource pool affinity'') + '' AS SELECT ''''''''dummy'''''''' AS Txt'''');
-					END;
-				'';
-				EXEC(@stmt);
-
-				SET @stmt = ''
-					ALTER VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Resource governor external resource pool affinity'') + ''
-					AS
-						SELECT
-							pvt.Category AS PoolName
-							,pvt.processor_group AS ProcessorGroup
-							,pvt.cpu_mask AS CPUMask
-							,(SELECT MAX(iState.Timestamp) FROM dbo.fhsmInstanceState AS iState WHERE (iState.Category = pvt.Category) AND (iState.Query = 27)) AS Timestamp
-						FROM (
-							SELECT iState.Category, iState.[Key], iState.Value AS _Value_
-							FROM (
-								SELECT DISTINCT iState.Category
-								FROM dbo.fhsmInstanceState AS iState
-								WHERE
-									(iState.Query = 27)
-									AND (iState.ValidTo = ''''9999-12-31 23:59:59.000'''')
-							) AS toCheck
-							INNER JOIN dbo.fhsmInstanceState AS iState ON (iState.Category = toCheck.Category)
-							WHERE (iState.Query = 27) AND (iState.ValidTo = ''''9999-12-31 23:59:59.000'''')
-						) AS p
-						PIVOT (
-							MAX(_Value_)
-							FOR [Key] IN ([processor_group], [cpu_mask])
-						) AS pvt;
-				'';
-				EXEC(@stmt);
-			END;
-
-			--
-			-- Register extended properties on fact view @pbiSchema.[Resource governor external resource pool affinity]
-			--
-			BEGIN
-				SET @objectName = QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Resource governor external resource pool affinity'');
-				SET @objName = PARSENAME(@objectName, 1);
-				SET @schName = PARSENAME(@objectName, 2);
-
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
-			END;
-		END;
-
-		--
-		-- Create fact view @pbiSchema.[Resource governor external resource pools]
-		--
-		BEGIN
-			BEGIN
-				SET @stmt = ''
-					IF OBJECT_ID('''''' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Resource governor external resource pools'') + '''''', ''''V'''') IS NULL
-					BEGIN
-						EXEC(''''CREATE VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Resource governor external resource pools'') + '' AS SELECT ''''''''dummy'''''''' AS Txt'''');
-					END;
-				'';
-				EXEC(@stmt);
-
-				SET @stmt = ''
-					ALTER VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Resource governor external resource pools'') + ''
-					AS
-						SELECT
-							pvt.Category AS PoolName
-							,pvt.max_cpu_percent AS MaxCPUpercent
-							,pvt.max_memory_percent AS MaxMemoryPercent
-							,pvt.max_processes AS MaxProcesses
-							,pvt.version AS Version
-							,(SELECT MAX(iState.Timestamp) FROM dbo.fhsmInstanceState AS iState WHERE (iState.Category = pvt.Category) AND (iState.Query = 28)) AS Timestamp
-						FROM (
-							SELECT iState.Category, iState.[Key], iState.Value AS _Value_
-							FROM (
-								SELECT DISTINCT iState.Category
-								FROM dbo.fhsmInstanceState AS iState
-								WHERE
-									(iState.Query = 28)
-									AND (iState.ValidTo = ''''9999-12-31 23:59:59.000'''')
-							) AS toCheck
-							INNER JOIN dbo.fhsmInstanceState AS iState ON (iState.Category = toCheck.Category)
-							WHERE (iState.Query = 28) AND (iState.ValidTo = ''''9999-12-31 23:59:59.000'''')
-						) AS p
-						PIVOT (
-							MAX(_Value_)
-							FOR [Key] IN ([max_cpu_percent], [max_memory_percent], [max_processes], [version])
-						) AS pvt;
-				'';
-				EXEC(@stmt);
-			END;
-
-			--
-			-- Register extended properties on fact view @pbiSchema.[Resource governor external resource pools]
-			--
-			BEGIN
-				SET @objectName = QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Resource governor external resource pools'');
-				SET @objName = PARSENAME(@objectName, 1);
-				SET @schName = PARSENAME(@objectName, 2);
-
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Function'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
 			END;
 		END;
 	END;
@@ -30130,6 +31324,7 @@ ELSE BEGIN
 					DECLARE @lastLogDate datetime;
 					DECLARE @lastLogDateTxt nvarchar(32);
 					DECLARE @maxSetId int;
+					DECLARE @messageIds nvarchar(max);
 					DECLARE @now datetime;
 					DECLARE @nowUTC datetime;
 					DECLARE @parameter nvarchar(max);
@@ -30171,6 +31366,9 @@ ELSE BEGIN
 
 						SET @severityLevel = (SELECT pt.Value FROM @parameterTable AS pt WHERE (pt.[Key] = ''''@SeverityLevel''''));
 						SET @severityLevel = COALESCE(@severityLevel, '' + CAST(@DEFAULT_SEVERITY_LEVEL AS nvarchar) + '');
+
+						SET @messageIds = (SELECT pt.Value FROM @parameterTable AS pt WHERE (pt.[Key] = ''''@MessageIds''''));
+						SET @messageIds = COALESCE(@messageIds, ''''833, 3197, 3198'''');
 					END;
 
 					--
@@ -30197,9 +31395,9 @@ ELSE BEGIN
 							LogDate datetime NOT NULL,
 							ProcessInfo nvarchar(128) NULL,
 							Text nvarchar(max) NULL,
-							Id int identity(1,1) NOT NULL,
-							CONSTRAINT PK_readErrorLog PRIMARY KEY (Id)
+							Id int identity(1,1) NOT NULL
 						  );
+						ALTER TABLE #readErrorLog ADD PRIMARY KEY CLUSTERED (Id);
 
 						DECLARE @xpReadErrorLog TABLE(LogDate datetime, ProcessorInfo nvarchar(128), Text nvarchar(max));
 						DECLARE @xpReadReg TABLE(Value nvarchar(128), Data nvarchar(max));
@@ -31304,7 +32502,7 @@ ELSE BEGIN
 								(
 									(src.Query IS NULL)
 									OR ((src.Value COLLATE DATABASE_DEFAULT <> tgt.Value) OR (src.Value IS NULL AND tgt.Value IS NOT NULL) OR (src.Value IS NOT NULL AND tgt.Value IS NULL))
-								) AND (tgt.ValidTo = ''''9999-dec-31 23:59:59'''');
+								) AND (tgt.ValidTo = ''''9999-12-31T23:59:59'''');
 						END;
 
 						--
@@ -31312,7 +32510,7 @@ ELSE BEGIN
 						--
 						BEGIN
 							INSERT INTO dbo.fhsmInstanceState(Query, Category, [Key], Value, ValidFrom, ValidTo, TimestampUTC, Timestamp)
-							SELECT src.Query, src.Category, src.[Key], src.Value, @nowUTC AS ValidFrom, ''''9999-dec-31 23:59:59'''' AS ValidTo, @nowUTC, @now
+							SELECT src.Query, src.Category, src.[Key], src.Value, @nowUTC AS ValidFrom, ''''9999-12-31T23:59:59'''' AS ValidTo, @nowUTC, @now
 							FROM #inventory AS src
 							WHERE NOT EXISTS (
 								SELECT *
@@ -31321,7 +32519,7 @@ ELSE BEGIN
 									(tgt.Query = src.Query)
 									AND (tgt.Category COLLATE DATABASE_DEFAULT = src.Category)
 									AND (tgt.[Key] COLLATE DATABASE_DEFAULT = src.[Key])
-									AND ((tgt.Value COLLATE DATABASE_DEFAULT = src.Value) OR (tgt.Value IS NULL AND src.Value IS NULL)) AND (tgt.ValidTo = ''''9999-dec-31 23:59:59'''')
+									AND ((tgt.Value COLLATE DATABASE_DEFAULT = src.Value) OR (tgt.Value IS NULL AND src.Value IS NULL)) AND (tgt.ValidTo = ''''9999-12-31T23:59:59'''')
 							);
 						END;
 
@@ -31389,19 +32587,10 @@ ELSE BEGIN
 								FROM #readErrorLog AS tgt
 								INNER JOIN (
 									SELECT
-										a.Id
-										,a.LogDate
-										,a.ProcessInfo
-										,a.Text
-										,dbo.fhsmFNTryParseAsInt(SUBSTRING(a.SeverityTxt, 1, CHARINDEX('''','''', a.SeverityTxt) - 1)) AS Severity
-									FROM (
-										SELECT
-											rel.*
-											,SUBSTRING(rel.Text, CHARINDEX(''''Severity: '''', rel.Text) + LEN(''''Severity: '''') + 1, LEN(rel.Text)) AS SeverityTxt
-										FROM #readErrorLog AS rel
-										WHERE (1 = 1)
-											AND (rel.Text LIKE ''''%Severity: %'''')
-									) AS a
+										rel.Id
+										,els.Severity
+									FROM #readErrorLog AS rel
+									CROSS APPLY dbo.fhsmFNErrorLogSeverity(rel.Text) AS els
 								) AS b ON (b.Id = tgt.Id);
 							END;
 
@@ -31410,8 +32599,44 @@ ELSE BEGIN
 							--
 							BEGIN
 								UPDATE tgt
-								SET tgt.Severity = COALESCE(tgt.Severity, (SELECT TOP 1 rel.Severity FROM #readErrorLog AS rel WHERE (rel.Id < tgt.Id) AND (rel.Severity IS NOT NULL) ORDER BY rel.Id DESC))
-								FROM #readErrorLog AS tgt;
+								SET tgt.Severity = src.Severity
+								FROM #readErrorLog AS tgt
+								INNER JOIN #readErrorLog AS src ON (src.LogDate = tgt.LogDate)
+								WHERE (tgt.Severity IS NULL) AND (tgt.Header IS NULL) AND (src.Severity IS NOT NULL) AND (src.Header IS NOT NULL);
+							END;
+
+							--
+							-- Update Header and Severity columns for configurerd sys messages
+							--
+							BEGIN
+								TRUNCATE TABLE dbo.fhsmErrorLogMessages;
+								INSERT INTO dbo.fhsmErrorLogMessages(Text, MessageId, LanguageId, TimestampUTC, Timestamp)
+								SELECT m.text, m.message_id, m.language_id, @nowUTC, @now
+								FROM sys.messages AS m
+								WHERE
+									(m.message_id IN (
+										SELECT dbo.fhsmFNTryParseAsInt(m.Txt) AS Id
+										FROM dbo.fhsmFNSplitString(@messageIds, '''','''') AS m
+									))
+									AND (m.language_id IN (
+										SELECT l.msglangid
+										FROM sys.syslanguages AS l
+										WHERE (l.name IN (@@LANGUAGE, ''''us_english''''))
+									));
+
+								UPDATE tgt
+								SET
+									tgt.Header = 1
+									,tgt.Severity = b.MessageId * -1
+								FROM #readErrorLog AS tgt
+								INNER JOIN (
+									SELECT
+										rel.Id
+										,elm.MessageId
+									FROM #readErrorLog AS rel
+									CROSS APPLY dbo.fhsmFNErrorLogMessage(rel.Text) AS elm
+									WHERE (rel.Severity IS NULL)
+								) AS b ON (b.Id = tgt.Id);
 							END;
 
 							--
@@ -31428,12 +32653,12 @@ ELSE BEGIN
 							END;
 
 							--
-							-- Delete all records with severity lower than @severityLevel
+							-- Delete all records with severity lower than @severityLevel and not negative as they are configures sys messages
 							--
 							BEGIN
 								DELETE tgt
 								FROM #readErrorLog AS tgt
-								WHERE (tgt.Severity < @severityLevel);
+								WHERE (tgt.Severity < @severityLevel) AND (tgt.Severity >= 0);
 							END;
 
 							--
@@ -31561,6 +32786,7 @@ ELSE BEGIN
 					SET NOCOUNT ON;
 
 					DECLARE @message nvarchar(max);
+					DECLARE @messageIds nvarchar(max);
 					DECLARE @parameterChanges TABLE(
 						Action nvarchar(10),
 						DeletedTask nvarchar(128),
@@ -31570,6 +32796,8 @@ ELSE BEGIN
 						InsertedName nvarchar(128),
 						InsertedParameter nvarchar(max)
 					);
+					DECLARE @parameterTable TABLE([Key] nvarchar(128) NOT NULL, Value nvarchar(128) NULL);
+					DECLARE @severityLevel nvarchar(max);
 					DECLARE @thisTask nvarchar(128);
 					DECLARE @version nvarchar(128);
 
@@ -31577,7 +32805,7 @@ ELSE BEGIN
 					SET @version = '''''' + @version + '''''';
 			'';
 			SET @stmt += ''
-					IF (@Type = ''''Parameter'''')
+					IF (@Type = ''''parameter'''')
 					BEGIN
 						IF (@Command = ''''set'''')
 						BEGIN
@@ -31592,6 +32820,43 @@ ELSE BEGIN
 								SET @message = ''''Invalid @Task:'''''''''''' + COALESCE(NULLIF(@Task, ''''''''), ''''<NULL>'''') + '''''''''''' and @Name:'''''''''''' + COALESCE(NULLIF(@Name, ''''''''), ''''<NULL>'''') + '''''''''''''''';
 								RAISERROR(@message, 0, 1) WITH NOWAIT;
 								RETURN -11;
+							END;
+
+							--
+							-- Verify parameters
+							--
+							BEGIN
+								INSERT INTO @parameterTable([Key], Value)
+								SELECT
+									(SELECT s.Txt FROM dbo.fhsmFNSplitString(p.Txt, ''''='''') AS s WHERE (s.Part = 1)) AS [Key]
+									,(SELECT s.Txt FROM dbo.fhsmFNSplitString(p.Txt, ''''='''') AS s WHERE (s.Part = 2)) AS Value
+								FROM dbo.fhsmFNSplitString(@Parameter, '''';'''') AS p;
+
+								SET @severityLevel = (SELECT pt.Value FROM @parameterTable AS pt WHERE (pt.[Key] = ''''@SeverityLevel''''));
+								IF (@severityLevel IS NOT NULL)
+								BEGIN
+									IF (dbo.fhsmFNTryParseAsInt(@severityLevel) IS NULL)
+									BEGIN
+										SET @message = ''''Invalid @SeverityLevel value:'''''''''''' + COALESCE(NULLIF(@severityLevel, ''''''''), ''''<NULL>'''') + '''''''''''''''';
+										RAISERROR(@message, 0, 1) WITH NOWAIT;
+										RETURN -12;
+									END;
+								END;
+
+								SET @messageIds = (SELECT pt.Value FROM @parameterTable AS pt WHERE (pt.[Key] = ''''@MessageIds''''));
+								IF (@messageIds IS NOT NULL)
+								BEGIN
+									IF EXISTS (
+										SELECT 1
+										FROM dbo.fhsmFNSplitString(@messageIds, '''','''') AS m
+										WHERE (dbo.fhsmFNTryParseAsInt(m.Txt) IS NULL)
+									)
+									BEGIN
+										SET @message = ''''Invalid @MessageIds value:'''''''''''' + COALESCE(NULLIF(@messageIds, ''''''''), ''''<NULL>'''') + '''''''''''''''';
+										RAISERROR(@message, 0, 1) WITH NOWAIT;
+										RETURN -13;
+									END;
+								END;
 							END;
 
 							--
@@ -31647,7 +32912,7 @@ ELSE BEGIN
 					END
 			'';
 			SET @stmt += ''
-					ELSE IF (@Type = ''''Uninstall'''')
+					ELSE IF (@Type = ''''uninstall'''')
 					BEGIN
 						--
 						-- Place holder
@@ -31680,6 +32945,1783 @@ ELSE BEGIN
 				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
 				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
 				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+			END;
+		END;
+
+		--
+		-- Create stored procedure dbo.fhsmSPViewsInstanceState
+		--
+		BEGIN
+			SET @stmt = ''
+				IF OBJECT_ID(''''dbo.fhsmSPViewsInstanceState'''', ''''P'''') IS NULL
+				BEGIN
+					EXEC(''''CREATE PROC dbo.fhsmSPViewsInstanceState AS SELECT ''''''''dummy'''''''' AS Txt'''');
+				END;
+			'';
+			EXEC(@stmt);
+
+			SET @stmt = ''
+				ALTER PROC dbo.fhsmSPViewsInstanceState (
+					@view nvarchar(128),
+					@version sql_variant,
+					@nowUTC datetime
+				)
+				AS
+				BEGIN
+					SET NOCOUNT ON;
+
+					DECLARE @days int;
+					DECLARE @defaultViewErrorLogsDays int;
+					DECLARE @defaultViewErrorLogsRows int;
+					DECLARE @defaultViewLogMessagesDays int;
+					DECLARE @defaultViewLogMessagesRows int;
+					DECLARE @message nvarchar(max);
+					DECLARE @myUserName nvarchar(128);
+					DECLARE @noOfRows int;
+					DECLARE @nowUTCStr nvarchar(128);
+					DECLARE @objectName nvarchar(128);
+					DECLARE @pbiSchema nvarchar(128);
+					DECLARE @stmt nvarchar(max);
+
+					SET @myUserName = SUSER_NAME();
+
+					SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
+
+					SET @defaultViewErrorLogsDays = 30;
+					SET @defaultViewErrorLogsRows = 1000;
+					SET @defaultViewLogMessagesDays = 30;
+					SET @defaultViewLogMessagesRows = 1000;
+
+					SET @pbiSchema = (
+						SELECT c.Value
+						FROM dbo.fhsmConfigurations AS c
+						WHERE (c.[Key] = ''''PBISchema'''')
+					);
+					IF (@pbiSchema IS NULL)
+					BEGIN
+						RAISERROR(''''The configuration key ''''''''PBISchema'''''''' could not be found'''', 0, 1) WITH NOWAIT;
+						RETURN -1;
+					END;
+			'';
+			SET @stmt += ''
+					IF (@view = ''''ErrorLogs'''')
+					BEGIN
+						SET @days = (
+							SELECT c.Value
+							FROM dbo.fhsmConfigurations AS c
+							WHERE (c.[Key] = ''''View.ErrorLogs.Days'''')
+						);
+						IF (@days IS NULL)
+						BEGIN
+							INSERT INTO dbo.fhsmConfigurations([Key], Value)
+							VALUES(''''View.ErrorLogs.Days'''', @defaultViewErrorLogsDays);
+
+							SET @days = @defaultViewErrorLogsDays;
+						END;
+						SET @days = ABS(@days);
+
+						SET @noOfRows = (
+							SELECT c.Value
+							FROM dbo.fhsmConfigurations AS c
+							WHERE (c.[Key] = ''''View.ErrorLogs.Rows'''')
+						);
+						IF (@noOfRows IS NULL)
+						BEGIN
+							INSERT INTO dbo.fhsmConfigurations([Key], Value)
+							VALUES(''''View.ErrorLogs.Rows'''', @defaultViewErrorLogsRows);
+
+							SET @noOfRows = @defaultViewErrorLogsRows;
+						END;
+						SET @noOfRows = ABS(@noOfRows);
+			'';
+			SET @stmt += ''
+						--
+						-- Create fact view @pbiSchema.[Error logs]
+						--
+						BEGIN
+							BEGIN
+								SET @stmt = ''''
+									IF OBJECT_ID('''''''''''' + QUOTENAME(@pbiSchema) + ''''.'''' + QUOTENAME(''''Error logs'''') + '''''''''''', ''''''''V'''''''') IS NULL
+									BEGIN
+										EXEC(''''''''CREATE VIEW '''' + QUOTENAME(@pbiSchema) + ''''.'''' + QUOTENAME(''''Error logs'''') + '''' AS SELECT ''''''''''''''''dummy'''''''''''''''' AS Txt'''''''');
+									END;
+								'''';
+								EXEC(@stmt);
+
+								SET @message = ''''Alter view '''' + QUOTENAME(@pbiSchema) + ''''.'''' + QUOTENAME(''''Error logs'''') + '''''''';
+								RAISERROR(@message, 0, 1) WITH NOWAIT;
+
+								SET @stmt = ''''
+									ALTER VIEW '''' + QUOTENAME(@pbiSchema) + ''''.'''' + QUOTENAME(''''Error logs'''') + ''''
+									AS
+										SELECT
+											TOP ('''' + CAST(@noOfRows AS nvarchar) + '''')
+											el.SetId
+											,el.Id
+											,el.LogDate
+											,el.Severity
+											,el.ProcessInfo
+											,el.Text
+											,CAST(el.LogDate AS date)	AS Date
+										FROM dbo.fhsmErrorLog AS el
+										WHERE (el.Heartbeat = 0) AND (el.Severity >= 0)
+											AND (DATEDIFF(DAY, el.LogDate, (SELECT MAX(el2.LogDate) FROM dbo.fhsmErrorLog AS el2)) < '''' + CAST(@days AS nvarchar) + '''');
+								'''';
+								EXEC(@stmt);
+							END;
+			'';
+			SET @stmt += ''
+							--
+							-- Register extended properties on fact view @pbiSchema.[Error logs]
+							--
+							BEGIN
+								SET @objectName = QUOTENAME(@pbiSchema) + ''''.'''' + QUOTENAME(''''Error logs'''');
+
+								SET @stmt = ''''
+									DECLARE @objName nvarchar(128);
+									DECLARE @schName nvarchar(128);
+
+									SET @objName = PARSENAME(@objectName, 1);
+									SET @schName = PARSENAME(@objectName, 2);
+
+									EXEC dbo.fhsmSPExtendedProperties @objectType = ''''''''View'''''''', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''''''''FHSMVersion'''''''', @propertyValue = @version;
+									EXEC dbo.fhsmSPExtendedProperties @objectType = ''''''''View'''''''', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''''''''FHSMCreated'''''''', @propertyValue = @nowUTCStr;
+									EXEC dbo.fhsmSPExtendedProperties @objectType = ''''''''View'''''''', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''''''''FHSMCreatedBy'''''''', @propertyValue = @myUserName;
+									EXEC dbo.fhsmSPExtendedProperties @objectType = ''''''''View'''''''', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''''''''FHSMModified'''''''', @propertyValue = @nowUTCStr;
+									EXEC dbo.fhsmSPExtendedProperties @objectType = ''''''''View'''''''', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''''''''FHSMModifiedBy'''''''', @propertyValue = @myUserName;
+								'''';
+								EXEC sp_executesql
+									@stmt
+									,N''''@objectName nvarchar(128), @version sql_variant, @nowUTCStr sql_variant, @myUserName sql_variant''''
+									,@objectName = @objectName
+									,@version = @version
+									,@nowUTCStr = @nowUTCStr
+									,@myUserName = @myUserName;
+							END;
+						END;
+					END
+			'';
+			SET @stmt += ''
+					ELSE IF (@view = ''''LogMessages'''')
+					BEGIN
+						SET @days = (
+							SELECT c.Value
+							FROM dbo.fhsmConfigurations AS c
+							WHERE (c.[Key] = ''''View.LogMessages.Days'''')
+						);
+						IF (@days IS NULL)
+						BEGIN
+							INSERT INTO dbo.fhsmConfigurations([Key], Value)
+							VALUES(''''View.LogMessages.Days'''', @defaultViewLogMessagesDays);
+
+							SET @days = @defaultViewLogMessagesDays;
+						END;
+						SET @days = ABS(@days);
+
+						SET @noOfRows = (
+							SELECT c.Value
+							FROM dbo.fhsmConfigurations AS c
+							WHERE (c.[Key] = ''''View.LogMessages.Rows'''')
+						);
+						IF (@noOfRows IS NULL)
+						BEGIN
+							INSERT INTO dbo.fhsmConfigurations([Key], Value)
+							VALUES(''''View.LogMessages.Rows'''', @defaultViewLogMessagesRows);
+
+							SET @noOfRows = @defaultViewLogMessagesRows;
+						END;
+						SET @noOfRows = ABS(@noOfRows);
+			'';
+			SET @stmt += ''
+						--
+						-- Create fact view @pbiSchema.[Log messages]
+						--
+						BEGIN
+							BEGIN
+								SET @stmt = ''''
+									IF OBJECT_ID('''''''''''' + QUOTENAME(@pbiSchema) + ''''.'''' + QUOTENAME(''''Log messages'''') + '''''''''''', ''''''''V'''''''') IS NULL
+									BEGIN
+										EXEC(''''''''CREATE VIEW '''' + QUOTENAME(@pbiSchema) + ''''.'''' + QUOTENAME(''''Log messages'''') + '''' AS SELECT ''''''''''''''''dummy'''''''''''''''' AS Txt'''''''');
+									END;
+								'''';
+								EXEC(@stmt);
+
+								SET @message = ''''Alter view '''' + QUOTENAME(@pbiSchema) + ''''.'''' + QUOTENAME(''''Log messages'''') + '''''''';
+								RAISERROR(@message, 0, 1) WITH NOWAIT;
+
+								SET @stmt = ''''
+									ALTER VIEW '''' + QUOTENAME(@pbiSchema) + ''''.'''' + QUOTENAME(''''Log messages'''') + ''''
+									AS
+										SELECT
+											TOP ('''' + CAST(@noOfRows AS nvarchar) + '''')
+											el.Id
+											,el.LogDate
+											,el.Severity * -1 AS MessageId
+											,el.ProcessInfo
+											,el.Text
+											,CAST(el.LogDate AS date)	AS Date
+										FROM dbo.fhsmErrorLog AS el
+										WHERE (el.Heartbeat = 0) AND (el.Severity < 0)
+											AND (DATEDIFF(DAY, el.LogDate, (SELECT MAX(el2.LogDate) FROM dbo.fhsmErrorLog AS el2)) < '''' + CAST(@days AS nvarchar) + '''');
+								'''';
+								EXEC(@stmt);
+							END;
+			'';
+			SET @stmt += ''
+							--
+							-- Register extended properties on fact view @pbiSchema.[Log messages]
+							--
+							BEGIN
+								SET @objectName = QUOTENAME(@pbiSchema) + ''''.'''' + QUOTENAME(''''Log messages'''');
+
+								SET @stmt = ''''
+									DECLARE @objName nvarchar(128);
+									DECLARE @schName nvarchar(128);
+
+									SET @objName = PARSENAME(@objectName, 1);
+									SET @schName = PARSENAME(@objectName, 2);
+
+									EXEC dbo.fhsmSPExtendedProperties @objectType = ''''''''View'''''''', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''''''''FHSMVersion'''''''', @propertyValue = @version;
+									EXEC dbo.fhsmSPExtendedProperties @objectType = ''''''''View'''''''', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''''''''FHSMCreated'''''''', @propertyValue = @nowUTCStr;
+									EXEC dbo.fhsmSPExtendedProperties @objectType = ''''''''View'''''''', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''''''''FHSMCreatedBy'''''''', @propertyValue = @myUserName;
+									EXEC dbo.fhsmSPExtendedProperties @objectType = ''''''''View'''''''', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''''''''FHSMModified'''''''', @propertyValue = @nowUTCStr;
+									EXEC dbo.fhsmSPExtendedProperties @objectType = ''''''''View'''''''', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''''''''FHSMModifiedBy'''''''', @propertyValue = @myUserName;
+								'''';
+								EXEC sp_executesql
+									@stmt
+									,N''''@objectName nvarchar(128), @version sql_variant, @nowUTCStr sql_variant, @myUserName sql_variant''''
+									,@objectName = @objectName
+									,@version = @version
+									,@nowUTCStr = @nowUTCStr
+									,@myUserName = @myUserName;
+							END;
+						END;
+					END;
+
+					RETURN 0;
+				END;
+			'';
+			EXEC(@stmt);
+
+			--
+			-- Register extended properties on the stored procedure dbo.fhsmSPViewsInstanceState
+			--
+			BEGIN
+				SET @objectName = ''dbo.fhsmSPViewsInstanceState'';
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+			END;
+		END;
+	END;
+
+	--
+	-- Create views
+	--
+	BEGIN
+		--
+		-- Create fact view @pbiSchema.[Agent alerts]
+		--
+		BEGIN
+			BEGIN
+				SET @stmt = ''
+					IF OBJECT_ID('''''' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Agent alerts'') + '''''', ''''V'''') IS NULL
+					BEGIN
+						EXEC(''''CREATE VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Agent alerts'') + '' AS SELECT ''''''''dummy'''''''' AS Txt'''');
+					END;
+				'';
+				EXEC(@stmt);
+
+				SET @stmt = ''
+					ALTER VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Agent alerts'') + ''
+					AS
+						SELECT
+							aa.Description
+							,aa.MessageId
+							,aa.Severity
+							,alertsDetected.AlertName
+							,CASE WHEN alertsDetected.MessageId IS NULL THEN 0 ELSE 1 END AS AlertExists	-- 0: Warning; 1: OK
+							,ROW_NUMBER() OVER(
+								ORDER BY
+									CASE
+										WHEN (alertsDetected.MessageId IS NULL) THEN 1
+										ELSE 2
+									END
+									,aa.Description
+							) AS DescriptionSortOrder
+							,(SELECT MAX(iState.Timestamp) FROM dbo.fhsmInstanceState AS iState WHERE (iState.Category = alertsDetected.AlertName)) AS Timestamp
+						FROM dbo.fhsmAgentAlerts AS aa
+						LEFT OUTER JOIN (
+							SELECT
+								pvt.Category AS AlertName
+								,CAST(pvt.message_id AS int) AS MessageId
+								,CAST(pvt.severity AS int) AS Severity
+							FROM (
+								SELECT iState.Category, iState.[Key], iState.Value AS _Value_
+								FROM (
+									SELECT DISTINCT iState.Category
+									FROM dbo.fhsmInstanceState AS iState
+									WHERE
+										(iState.Query = 10)
+										AND (iState.ValidTo = ''''9999-12-31T23:59:59'''')
+								) AS toCheck
+								INNER JOIN dbo.fhsmInstanceState AS iState ON (iState.Category = toCheck.Category)
+								WHERE (iState.Query = 10) AND (iState.ValidTo = ''''9999-12-31T23:59:59'''')
+							) AS p
+							PIVOT (
+								MAX(_Value_)
+								FOR [Key] IN ([message_id], [severity])
+							) AS pvt
+						) AS alertsDetected ON (alertsDetected.MessageId = aa.MessageId) AND (alertsDetected.Severity = aa.Severity);
+				'';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Register extended properties on fact view @pbiSchema.[Agent alerts]
+			--
+			BEGIN
+				SET @objectName = QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Agent alerts'');
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+			END;
+		END;
+
+		--
+		-- Create fact view @pbiSchema.[Agent jobs]
+		--
+		BEGIN
+			BEGIN
+				SET @stmt = ''
+					IF OBJECT_ID('''''' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Agent jobs'') + '''''', ''''V'''') IS NULL
+					BEGIN
+						EXEC(''''CREATE VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Agent jobs'') + '' AS SELECT ''''''''dummy'''''''' AS Txt'''');
+					END;
+				'';
+				EXEC(@stmt);
+
+				SET @stmt = ''
+					ALTER VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Agent jobs'') + ''
+					AS
+						SELECT
+							pvt.Category AS JobName
+							,CAST(pvt.job_enabled AS bit) AS JobEnabled
+							,CAST(pvt.number_of_enabled_schedules AS int) AS NumberOfEnabledSchedules
+							,pvt.job_owner AS JobOwner
+							,CAST(pvt.notify_email_operator_id AS int) AS NotifyEmailOperatorId
+							,CAST(pvt.notify_level_email AS int) AS NotifyLevelEmail
+							,ROW_NUMBER() OVER(
+								ORDER BY
+									CASE
+										WHEN (CAST(pvt.job_enabled AS bit) = 1) AND (CAST(pvt.notify_email_operator_id AS int) = 0) THEN 1
+										WHEN (CAST(pvt.job_enabled AS bit) = 0) AND (CAST(pvt.notify_email_operator_id AS int) = 0) THEN 2
+										ELSE 3
+									END
+									,pvt.Category
+							) AS JobNameSortOrder
+						FROM (
+							SELECT iState.Category, iState.[Key], iState.Value AS _Value_
+							FROM (
+								SELECT DISTINCT iState.Category
+								FROM dbo.fhsmInstanceState AS iState
+								WHERE
+									(iState.Query = 9)
+									AND (iState.ValidTo = ''''9999-12-31T23:59:59'''')
+							) AS toCheck
+							INNER JOIN dbo.fhsmInstanceState AS iState ON (iState.Category = toCheck.Category)
+							WHERE (iState.Query = 9) AND (iState.ValidTo = ''''9999-12-31T23:59:59'''')
+						) AS p
+						PIVOT (
+							MAX(_Value_)
+							FOR [Key] IN ([job_enabled], [number_of_enabled_schedules], [job_owner], [notify_email_operator_id], [notify_level_email])
+						) AS pvt;
+				'';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Register extended properties on fact view @pbiSchema.[Agent jobs]
+			--
+			BEGIN
+				SET @objectName = QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Agent jobs'');
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+			END;
+		END;
+
+		--
+		-- Create fact view @pbiSchema.[Error logs]
+		--
+		BEGIN
+			EXEC dbo.fhsmSPViewsInstanceState @view = ''ErrorLogs'', @version = @version, @nowUTC = @nowUTC;
+		END;
+
+		--
+		-- Create fact view @pbiSchema.[Instance configurations]
+		--
+		BEGIN
+			BEGIN
+				SET @stmt = ''
+					IF OBJECT_ID('''''' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance configurations'') + '''''', ''''V'''') IS NULL
+					BEGIN
+						EXEC(''''CREATE VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance configurations'') + '' AS SELECT ''''''''dummy'''''''' AS Txt'''');
+					END;
+				'';
+				EXEC(@stmt);
+
+				SET @stmt = '''';
+				SET @stmt += ''
+					ALTER VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance configurations'') + ''
+					AS
+						SELECT
+							a.ConfigurationId
+							,UPPER(LEFT(a.Name, 1)) + SUBSTRING(a.Name, 2, LEN(a.Name)) AS Name
+							,a.Value, a.State
+							,a.DefaultValue, a.DefaultState
+							,a.NameSortOrder
+							,a.Timestamp
+							,CASE
+								WHEN (a.ConfigurationId = 1534) THEN dbo.fhsmFNConvertUserOptionsToTxt(a.Value)
+							END AS Description
+						FROM (
+					'';
+					SET @stmt += ''
+							SELECT
+								ic.ConfigurationId
+								,ic.Name
+								,ic.Value
+								,ic.State	-- 0: Warning; 1: OK
+								,ic.DefaultValue
+								,ic.DefaultState	-- 0: Changed; 1: Default
+								,ROW_NUMBER() OVER(
+									ORDER BY
+										CASE
+											WHEN (ic.State = 0) THEN 1
+											WHEN (ic.DefaultState = 0) THEN 2
+											ELSE 3
+										END
+										,ic.Name
+								) AS NameSortOrder
+								,(SELECT MAX(iState.Timestamp) FROM dbo.fhsmInstanceState AS iState WHERE (iState.Category = ic.ConfigurationId) AND (iState.[Key] = ''''value'''')) AS Timestamp
+							FROM (
+								SELECT
+									c.ConfigurationId
+									,configurationsDetected.name AS Name
+									,configurationsDetected.value_in_use AS Value
+									,CASE WHEN (configurationsDetected.value_in_use < c.Minimum) OR (configurationsDetected.value_in_use > c.Maximum) THEN 0 ELSE 1 END AS State	-- 0: Warning; 1: OK
+									,dc.Value AS DefaultValue
+									,CASE WHEN (configurationsDetected.value_in_use <> dc.Value) THEN 0 ELSE 1 END AS DefaultState	-- 0: Changed; 1: Default
+								FROM dbo.fhsmInstanceConfigurations AS c
+								CROSS APPLY (
+									SELECT CAST(iState.Value AS int) AS Value
+									FROM dbo.fhsmInstanceState AS iState
+									WHERE (iState.Query = 3) AND (iState.[Key] = ''''ProductMajorVersion'''') AND (iState.ValidTo = ''''9999-12-31T23:59:59'''')
+								) AS productMajorVersion
+								CROSS APPLY (
+									SELECT CAST(iState.Value AS int) AS Value
+									FROM dbo.fhsmInstanceState AS iState
+									WHERE (iState.Query = 3) AND (iState.[Key] = ''''ProductMinorVersion'''') AND (iState.ValidTo = ''''9999-12-31T23:59:59'''')
+								) AS productMinorVersion
+								INNER JOIN (
+									SELECT pvt.Category, pvt.name, CAST(pvt.value AS int) AS value, CAST(pvt.minimum AS int) AS minimum, CAST(pvt.maximum AS int) AS maximum, CAST(pvt.value_in_use AS int) AS value_in_use, pvt.description, pvt.is_dynamic, pvt.is_advanced
+									FROM (
+										SELECT iState.Category, iState.[Key], iState.Value AS _Value_
+										FROM (
+											SELECT DISTINCT iState.Category
+											FROM dbo.fhsmInstanceState AS iState
+											WHERE
+												(iState.Query = 4)
+												AND (iState.Category IN (1517, 1538, 1539, 1544, 1546, 1562, 1576, 1579, 1581, 1584, 1585, 1589))
+												AND (iState.ValidTo = ''''9999-12-31T23:59:59'''')
+										) AS toCheck
+										INNER JOIN dbo.fhsmInstanceState AS iState ON (iState.Category = toCheck.Category)
+										WHERE (iState.Query = 4) AND (iState.ValidTo = ''''9999-12-31T23:59:59'''')
+									) AS p
+									PIVOT (
+										MAX(_Value_)
+										FOR [Key] IN ([name], [value], [minimum], [maximum], [value_in_use], [description], [is_dynamic], [is_advanced])
+									) AS pvt
+								) AS configurationsDetected ON (configurationsDetected.Category = c.ConfigurationId)
+								LEFT OUTER JOIN dbo.fhsmDefaultConfigurations AS dc ON (dc.ConfigurationId = configurationsDetected.Category) AND (dc.ProductMajorVersion = productMajorVersion.Value) AND (dc.ProductMinorVersion = productMinorVersion.Value)
+								WHERE (c.ProductMajorVersion = productMajorVersion.Value) AND (c.ProductMinorVersion = productMinorVersion.Value)
+					'';
+					SET @stmt += ''
+								UNION
+					'';
+					SET @stmt += ''
+								SELECT
+									configurationsDetected.ConfigurationId
+									,configurationsDetected.name AS Name
+									,configurationsDetected.value_in_use AS Value
+									,CASE WHEN (configurationsDetected.value_in_use < rc.Minimum) OR (configurationsDetected.value_in_use > rc.Maximum) THEN 0 ELSE 1 END AS State	-- 0: Warning; 1: OK
+									,dc.Value AS DefaultValue
+									,CASE WHEN ((configurationsDetected.ConfigurationId = 1543) AND (configurationsDetected.value_in_use <= 16)) THEN 1 ELSE 0 END AS DefaultState	-- 0: Changed; 1: Default
+								FROM (
+									SELECT pvt.Category AS ConfigurationId, pvt.name, CAST(pvt.value AS int) AS value, CAST(pvt.minimum AS int) AS minimum, CAST(pvt.maximum AS int) AS maximum, CAST(pvt.value_in_use AS int) AS value_in_use, pvt.description, pvt.is_dynamic, pvt.is_advanced
+									FROM (
+										SELECT iState.Category, iState.[Key], iState.Value AS _Value_
+										FROM dbo.fhsmInstanceState AS iState
+										WHERE (iState.Query = 4) AND (iState.ValidTo = ''''9999-12-31T23:59:59'''')
+									) AS p
+									PIVOT (
+										MAX(_Value_)
+										FOR [Key] IN ([name], [value], [minimum], [maximum], [value_in_use], [description], [is_dynamic], [is_advanced])
+									) AS pvt
+								) AS configurationsDetected
+								CROSS APPLY (
+									SELECT CAST(iState.Value AS int) AS Value
+									FROM dbo.fhsmInstanceState AS iState
+									WHERE (iState.Query = 3) AND (iState.[Key] = ''''ProductMajorVersion'''') AND (iState.ValidTo = ''''9999-12-31T23:59:59'''')
+								) AS productMajorVersion
+								CROSS APPLY (
+									SELECT CAST(iState.Value AS int) AS Value
+									FROM dbo.fhsmInstanceState AS iState
+									WHERE (iState.Query = 3) AND (iState.[Key] = ''''ProductMinorVersion'''') AND (iState.ValidTo = ''''9999-12-31T23:59:59'''')
+								) AS productMinorVersion
+								INNER JOIN dbo.fhsmDefaultConfigurations AS dc ON (dc.ConfigurationId = configurationsDetected.ConfigurationId) AND (dc.ProductMajorVersion = productMajorVersion.Value) AND (dc.ProductMinorVersion = productMinorVersion.Value)
+								LEFT OUTER JOIN dbo.fhsmInstanceConfigurations AS rc ON (rc.ConfigurationId = configurationsDetected.ConfigurationId) AND (rc.ProductMajorVersion = productMajorVersion.Value) AND (rc.ProductMinorVersion = productMinorVersion.Value)
+								WHERE (dc.Value <> configurationsDetected.value_in_use)
+							) AS ic
+					'';
+					SET @stmt += ''
+						) AS a
+				'';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Register extended properties on fact view @pbiSchema.[Instance configurations]
+			--
+			BEGIN
+				SET @objectName = QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance configurations'');
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+			END;
+		END;
+
+		--
+		-- Create fact view @pbiSchema.[Instance configurations history]
+		--
+		BEGIN
+			BEGIN
+				SET @stmt = ''
+					IF OBJECT_ID('''''' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance configurations history'') + '''''', ''''V'''') IS NULL
+					BEGIN
+						EXEC(''''CREATE VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance configurations history'') + '' AS SELECT ''''''''dummy'''''''' AS Txt'''');
+					END;
+				'';
+				EXEC(@stmt);
+
+				SET @stmt = '''';
+				SET @stmt += ''
+					ALTER VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance configurations history'') + ''
+					AS
+						SELECT
+							a.ConfigurationId
+							,a.ValidFrom, a.ValidTo
+							,UPPER(LEFT(a.Name, 1)) + SUBSTRING(a.Name, 2, LEN(a.Name)) AS Name, a.Value
+							,CASE
+								WHEN (a.ConfigurationId = 1534) THEN dbo.fhsmFNConvertUserOptionsToTxt(a.Value)
+							END AS Description
+						FROM (
+					'';
+					SET @stmt += ''
+							SELECT
+								c.ConfigurationId
+								,configurationsDetected.ValidFrom
+								,configurationsDetected.ValidTo
+								,latestName.Value AS Name
+								,configurationsDetected.value_in_use AS Value
+							FROM dbo.fhsmInstanceConfigurations AS c
+							CROSS APPLY (
+								SELECT CAST(iState.Value AS int) AS Value
+								FROM dbo.fhsmInstanceState AS iState
+								WHERE (iState.Query = 3) AND (iState.[Key] = ''''ProductMajorVersion'''') AND (iState.ValidTo = ''''9999-12-31T23:59:59'''')
+							) AS productMajorVersion
+							CROSS APPLY (
+								SELECT CAST(iState.Value AS int) AS Value
+								FROM dbo.fhsmInstanceState AS iState
+								WHERE (iState.Query = 3) AND (iState.[Key] = ''''ProductMinorVersion'''') AND (iState.ValidTo = ''''9999-12-31T23:59:59'''')
+							) AS productMinorVersion
+							INNER JOIN (
+								SELECT pvt.ValidFrom, pvt.ValidTo, pvt.Category, CAST(pvt.value AS int) AS value, CAST(pvt.value_in_use AS int) AS value_in_use
+								FROM (
+									SELECT iState.ValidFrom, NULLIF(iState.ValidTo, ''''9999-12-31T23:59:59'''') AS ValidTo, iState.Category, iState.[Key], iState.Value AS _Value_
+									FROM dbo.fhsmInstanceState AS iState
+									WHERE
+										(iState.Query = 4)
+										AND (iState.Category IN (1517, 1534, 1538, 1539, 1544, 1546, 1562, 1576, 1579, 1581, 1584, 1585, 1589))
+										AND (iState.[Key] IN (''''value'''', ''''value_in_use''''))
+								) AS p
+								PIVOT (
+									MAX(_Value_)
+									FOR [Key] IN ([value], [value_in_use])
+								) AS pvt
+							) AS configurationsDetected ON (configurationsDetected.Category = c.ConfigurationId)
+							INNER JOIN (
+								SELECT iState.Category, iState.Value
+								FROM dbo.fhsmInstanceState AS iState
+								WHERE
+									(iState.Query = 4)
+									AND (iState.[Key] = ''''name'''')
+									AND (iState.ValidTo = ''''9999-12-31T23:59:59'''')
+							) AS latestName ON (latestName.Category = c.ConfigurationId)
+							WHERE (c.ProductMajorVersion = productMajorVersion.Value) AND (c.ProductMinorVersion = productMinorVersion.Value)
+					'';
+					SET @stmt += ''
+							UNION
+					'';
+					SET @stmt += ''
+							SELECT
+								iState.Category AS ConfigurationId
+								,iState.ValidFrom
+								,NULLIF(iState.ValidTo, ''''9999-12-31T23:59:59'''') AS ValidTo
+								,latestName.Value AS Name
+								,iState.Value
+							FROM (
+								SELECT configurationsDetected.ConfigurationId
+								FROM (
+									SELECT pvt.Category AS ConfigurationId, pvt.name, CAST(pvt.value AS int) AS value, CAST(pvt.minimum AS int) AS minimum, CAST(pvt.maximum AS int) AS maximum, CAST(pvt.value_in_use AS int) AS value_in_use, pvt.description, pvt.is_dynamic, pvt.is_advanced
+									FROM (
+										SELECT iState.Category, iState.[Key], iState.Value AS _Value_
+										FROM dbo.fhsmInstanceState AS iState
+										WHERE (iState.Query = 4) AND (iState.ValidTo = ''''9999-12-31T23:59:59'''')
+									) AS p
+									PIVOT (
+										MAX(_Value_)
+										FOR [Key] IN ([name], [value], [minimum], [maximum], [value_in_use], [description], [is_dynamic], [is_advanced])
+									) AS pvt
+								) AS configurationsDetected
+								CROSS APPLY (
+									SELECT CAST(iState.Value AS int) AS Value
+									FROM dbo.fhsmInstanceState AS iState
+									WHERE (iState.Query = 3) AND (iState.[Key] = ''''ProductMajorVersion'''') AND (iState.ValidTo = ''''9999-12-31T23:59:59'''')
+								) AS productMajorVersion
+								CROSS APPLY (
+									SELECT CAST(iState.Value AS int) AS Value
+									FROM dbo.fhsmInstanceState AS iState
+									WHERE (iState.Query = 3) AND (iState.[Key] = ''''ProductMinorVersion'''') AND (iState.ValidTo = ''''9999-12-31T23:59:59'''')
+								) AS productMinorVersion
+								INNER JOIN dbo.fhsmDefaultConfigurations AS dc ON (dc.ConfigurationId = configurationsDetected.ConfigurationId) AND (dc.ProductMajorVersion = productMajorVersion.Value) AND (dc.ProductMinorVersion = productMinorVersion.Value)
+								LEFT OUTER JOIN dbo.fhsmInstanceConfigurations AS rc ON (rc.ConfigurationId = configurationsDetected.ConfigurationId) AND (rc.ProductMajorVersion = productMajorVersion.Value) AND (rc.ProductMinorVersion = productMinorVersion.Value)
+								WHERE (dc.Value <> configurationsDetected.value_in_use)
+							) AS notDefault
+							INNER JOIN dbo.fhsmInstanceState AS iState ON (iState.Category = notDefault.ConfigurationId)
+							INNER JOIN (
+								SELECT iState.Category, iState.Value
+								FROM dbo.fhsmInstanceState AS iState
+								WHERE
+									(iState.Query = 4)
+									AND (iState.[Key] = ''''name'''')
+									AND (iState.ValidTo = ''''9999-12-31T23:59:59'''')
+							) AS latestName ON (latestName.Category = iState.Category)
+							WHERE (iState.[Key] = ''''value_in_use'''')
+					'';
+					SET @stmt += ''
+						) AS a
+				'';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Register extended properties on fact view @pbiSchema.[Instance configurations history]
+			--
+			BEGIN
+				SET @objectName = QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance configurations history'');
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+			END;
+		END;
+
+		--
+		-- Create fact view @pbiSchema.[Instance dump files]
+		--
+		BEGIN
+			BEGIN
+				SET @stmt = ''
+					IF OBJECT_ID('''''' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance dump files'') + '''''', ''''V'''') IS NULL
+					BEGIN
+						EXEC(''''CREATE VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance dump files'') + '' AS SELECT ''''''''dummy'''''''' AS Txt'''');
+					END;
+				'';
+				EXEC(@stmt);
+
+				SET @stmt = ''
+					ALTER VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance dump files'') + ''
+					AS
+						SELECT
+							pvt.Category AS Sequence
+							,CAST(CAST(pvt.creation_time AS datetime2(0)) AS datetime) AS CreationTime
+							,pvt.filename AS Filename
+							,CAST(pvt.size_in_bytes AS int) AS SizeInBytes
+							,CAST(CAST(pvt.creation_time AS datetime2(0)) AS date) AS Date
+						FROM (
+							SELECT iState.Category, iState.[Key], iState.Value AS _Value_
+							FROM dbo.fhsmInstanceState AS iState
+							WHERE (iState.Query = 21) AND (iState.ValidTo = ''''9999-12-31T23:59:59'''')
+						) AS p
+						PIVOT (
+							MAX(_Value_)
+							FOR [Key] IN ([creation_time], [filename], [size_in_bytes])
+						) AS pvt;
+				'';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Register extended properties on fact view @pbiSchema.[Instance dump files]
+			--
+			BEGIN
+				SET @objectName = QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance dump files'');
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+			END;
+		END;
+
+		--
+		-- Create fact view @pbiSchema.[Instance hardware]
+		--
+		BEGIN
+			BEGIN
+				SET @stmt = ''
+					IF OBJECT_ID('''''' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance hardware'') + '''''', ''''V'''') IS NULL
+					BEGIN
+						EXEC(''''CREATE VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance hardware'') + '' AS SELECT ''''''''dummy'''''''' AS Txt'''');
+					END;
+				'';
+				EXEC(@stmt);
+
+				SET @stmt = ''
+					ALTER VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance hardware'') + ''
+					AS
+						SELECT
+							CASE iState.[Key]
+								WHEN ''''cores_per_socket'''' THEN ''''Cores per socket''''
+								WHEN ''''cpu_count'''' THEN ''''CPU count''''
+								WHEN ''''max_workers_count'''' THEN ''''Max workers count''''
+								WHEN ''''numa_node_count'''' THEN ''''NUMA node count''''
+								WHEN ''''physical_memory_kb'''' THEN ''''Physical memory MB''''
+								WHEN ''''ProcessorNameString'''' THEN ''''Processor''''
+								WHEN ''''scheduler_count'''' THEN ''''Scheduler count''''
+								WHEN ''''socket_count'''' THEN ''''Socket count''''
+								WHEN ''''sql_memory_model'''' THEN ''''SQL memory model''''
+								WHEN ''''SQL Server and OS Version Info'''' THEN ''''SQL Server and OS Version Info''''
+								WHEN ''''sqlserver_start_time'''' THEN ''''SQL server start time''''
+								WHEN ''''virtual_machine_type'''' THEN ''''Virtual machine type''''
+								ELSE ''''?:'''' + iState.[Key]
+							END AS [Key]
+							,CASE iState.[Key]
+								WHEN ''''physical_memory_kb'''' THEN CAST((CAST(iState.Value AS int) / 1024) AS nvarchar(max))
+								WHEN ''''sql_memory_model'''' THEN
+									CASE iState.Value
+										WHEN 1 THEN ''''CONVENTIONAL''''
+										WHEN 2 THEN ''''LOCK_PAGES''''
+										WHEN 3 THEN ''''LARGE_PAGES''''
+										ELSE ''''?:'''' + CAST(iState.Value AS nvarchar)
+									END
+								WHEN ''''sqlserver_start_time'''' THEN CONVERT(nvarchar(max), CAST(iState.Value AS datetime), 126)
+								WHEN ''''virtual_machine_type'''' THEN
+									CASE iState.Value
+										WHEN 0 THEN ''''NONE''''
+										WHEN 1 THEN ''''HYPERVISOR''''
+										WHEN 2 THEN ''''OTHER''''
+										ELSE ''''?:'''' + CAST(iState.Value AS nvarchar)
+									END
+								ELSE iState.Value
+							END AS Value
+							,iState.Timestamp
+						FROM (
+							SELECT iState.[Key], iState.Value, iState.Timestamp
+							FROM dbo.fhsmInstanceState AS iState
+							WHERE
+								(
+									(
+										(iState.Query = 1)
+										AND (iState.[Key] = ''''SQL Server and OS Version Info'''')
+									)
+									OR (
+										(iState.Query = 17)
+										AND (iState.[Key] IN (
+											''''cores_per_socket''''
+											,''''cpu_count''''
+											,''''max_workers_count''''
+											,''''numa_node_count''''
+											,''''physical_memory_kb''''
+											,''''scheduler_count''''
+											,''''socket_count''''
+											,''''sql_memory_model''''
+											,''''sqlserver_start_time''''
+											,''''virtual_machine_type''''
+										))
+									)
+									OR (
+										(iState.Query = 20)
+									)
+								)
+								AND (iState.ValidTo = ''''9999-12-31T23:59:59'''')
+						) AS iState;
+				'';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Register extended properties on fact view @pbiSchema.[Instance hardware]
+			--
+			BEGIN
+				SET @objectName = QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance hardware'');
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+			END;
+		END;
+
+		--
+		-- Create fact view @pbiSchema.[Instance hardware history]
+		--
+		BEGIN
+			BEGIN
+				SET @stmt = ''
+					IF OBJECT_ID('''''' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance hardware history'') + '''''', ''''V'''') IS NULL
+					BEGIN
+						EXEC(''''CREATE VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance hardware history'') + '' AS SELECT ''''''''dummy'''''''' AS Txt'''');
+					END;
+				'';
+				EXEC(@stmt);
+
+				SET @stmt = ''
+					ALTER VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance hardware history'') + ''
+					AS
+						SELECT
+							CASE iState.[Key]
+								WHEN ''''cores_per_socket'''' THEN ''''Cores per socket''''
+								WHEN ''''cpu_count'''' THEN ''''CPU count''''
+								WHEN ''''max_workers_count'''' THEN ''''Max workers count''''
+								WHEN ''''numa_node_count'''' THEN ''''NUMA node count''''
+								WHEN ''''physical_memory_kb'''' THEN ''''Physical memory MB''''
+								WHEN ''''ProcessorNameString'''' THEN ''''Processor''''
+								WHEN ''''scheduler_count'''' THEN ''''Scheduler count''''
+								WHEN ''''socket_count'''' THEN ''''Socket count''''
+								WHEN ''''sql_memory_model'''' THEN ''''SQL memory model''''
+								WHEN ''''SQL Server and OS Version Info'''' THEN ''''SQL Server and OS Version Info''''
+								WHEN ''''sqlserver_start_time'''' THEN ''''SQL server start time''''
+								WHEN ''''virtual_machine_type'''' THEN ''''Virtual machine type''''
+								ELSE ''''?:'''' + iState.[Key]
+							END AS [Key]
+							,iState.ValidFrom
+							,NULLIF(iState.ValidTo, ''''9999-12-31T23:59:59'''') AS ValidTo
+							,CASE iState.[Key]
+								WHEN ''''physical_memory_kb'''' THEN CAST((CAST(iState.Value AS int) / 1024) AS nvarchar(max))
+								WHEN ''''sql_memory_model'''' THEN
+									CASE iState.Value
+										WHEN 1 THEN ''''CONVENTIONAL''''
+										WHEN 2 THEN ''''LOCK_PAGES''''
+										WHEN 3 THEN ''''LARGE_PAGES''''
+										ELSE ''''?:'''' + CAST(iState.Value AS nvarchar)
+									END
+								WHEN ''''sqlserver_start_time'''' THEN CONVERT(nvarchar(max), CAST(iState.Value AS datetime), 126)
+								WHEN ''''virtual_machine_type'''' THEN
+									CASE iState.Value
+										WHEN 0 THEN ''''NONE''''
+										WHEN 1 THEN ''''HYPERVISOR''''
+										WHEN 2 THEN ''''OTHER''''
+										ELSE ''''?:'''' + CAST(iState.Value AS nvarchar)
+									END
+								ELSE iState.Value
+							END AS Value
+						FROM (
+							SELECT iState.ValidFrom, iState.ValidTo, iState.[Key], iState.Value
+							FROM dbo.fhsmInstanceState AS iState
+							WHERE
+								(
+									(
+										(iState.Query = 1)
+										AND (iState.[Key] IN (
+											''''SQL Server and OS Version Info''''
+										))
+									)
+									OR (
+										(iState.Query = 17)
+										AND (iState.[Key] IN (
+											''''cores_per_socket''''
+											,''''cpu_count''''
+											,''''max_workers_count''''
+											,''''numa_node_count''''
+											,''''physical_memory_kb''''
+											,''''scheduler_count''''
+											,''''socket_count''''
+											,''''sql_memory_model''''
+											,''''sqlserver_start_time''''
+											,''''virtual_machine_type''''
+										))
+									)
+									OR (
+										(iState.Query = 20)
+									)
+								)
+						) AS iState;
+				'';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Register extended properties on fact view @pbiSchema.[Instance hardware history]
+			--
+			BEGIN
+				SET @objectName = QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance hardware history'');
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+			END;
+		END;
+
+		--
+		-- Create fact view @pbiSchema.[Instance services]
+		--
+		BEGIN
+			BEGIN
+				SET @stmt = ''
+					IF OBJECT_ID('''''' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance services'') + '''''', ''''V'''') IS NULL
+					BEGIN
+						EXEC(''''CREATE VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance services'') + '' AS SELECT ''''''''dummy'''''''' AS Txt'''');
+					END;
+				'';
+				EXEC(@stmt);
+
+				SET @stmt = ''
+					ALTER VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance services'') + ''
+					AS
+						SELECT
+							pvt.Category AS Name
+							,CASE pvt.startup_type
+								WHEN 0 THEN ''''Other''''
+								WHEN 1 THEN ''''Other''''
+								WHEN 2 THEN ''''Automatic''''
+								WHEN 3 THEN ''''Manual''''
+								WHEN 4 THEN ''''Disabled''''
+								ELSE ''''?:'''' + CAST(pvt.startup_type AS nvarchar)
+							END AS StartupType
+							,CASE pvt.status
+								WHEN 1 THEN ''''Stopped''''
+								WHEN 2 THEN ''''Other (start pending)''''
+								WHEN 3 THEN ''''Other (stop pending)''''
+								WHEN 4 THEN ''''Running''''
+								WHEN 5 THEN ''''Other (continue pending)''''
+								WHEN 6 THEN ''''Other (pause pending)''''
+								WHEN 7 THEN ''''Paused''''
+								ELSE ''''?:'''' + CAST(pvt.status AS nvarchar)
+							END AS Status
+							,pvt.service_account AS ServiceAccount
+							,CAST((CASE pvt.instant_file_initialization_enabled
+								WHEN ''''Y'''' THEN 1
+								WHEN ''''N'''' THEN 0
+							END) AS bit) AS InstantFileInitializationEnabled
+							,CASE pvt.instant_file_initialization_enabled
+								WHEN ''''Y'''' THEN ''''Yes''''
+								WHEN ''''N'''' THEN ''''No''''
+								ELSE ''''N.A.''''
+							END AS InstantFileInitializationEnabledTxt
+							,(SELECT MAX(iState.Timestamp) FROM dbo.fhsmInstanceState AS iState WHERE (iState.Category = pvt.Category) AND (iState.[Key] NOT IN (''''filename'''', ''''is_clustered'''', ''''last_startup_time'''', ''''process_id''''))) AS Timestamp
+
+						FROM (
+							SELECT iState.Category, iState.[Key], iState.Value AS _Value_
+							FROM (
+								SELECT DISTINCT iState.Category
+								FROM dbo.fhsmInstanceState AS iState
+								WHERE
+									(iState.Query = 7)
+									AND (iState.ValidTo = ''''9999-12-31T23:59:59'''')
+							) AS toCheck
+							INNER JOIN dbo.fhsmInstanceState AS iState ON (iState.Category = toCheck.Category)
+							WHERE (iState.Query = 7) AND (iState.ValidTo = ''''9999-12-31T23:59:59'''')
+						) AS p
+						PIVOT (
+							MAX(_Value_)
+							FOR [Key] IN ([startup_type], [status], [service_account], [instant_file_initialization_enabled])
+						) AS pvt;
+				'';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Register extended properties on fact view @pbiSchema.[Instance services]
+			--
+			BEGIN
+				SET @objectName = QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance services'');
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+			END;
+		END;
+
+		--
+		-- Create fact view @pbiSchema.[Instance suspect pages]
+		--
+		BEGIN
+			BEGIN
+				SET @stmt = ''
+					IF OBJECT_ID('''''' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance suspect pages'') + '''''', ''''V'''') IS NULL
+					BEGIN
+						EXEC(''''CREATE VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance suspect pages'') + '' AS SELECT ''''''''dummy'''''''' AS Txt'''');
+					END;
+				'';
+				EXEC(@stmt);
+
+				SET @stmt = ''
+					ALTER VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance suspect pages'') + ''
+					AS
+						SELECT
+							SUBSTRING(pvt.Category, 1, CHARINDEX('''':'''', pvt.Category) - 1) AS DatabaseName
+							,CAST(SUBSTRING(pvt.Category, CHARINDEX('''':'''', pvt.Category) + 1, LEN(pvt.Category) - CHARINDEX('''':'''', REVERSE(pvt.Category)) - (CHARINDEX('''':'''', pvt.Category))) AS int) AS FileId
+							,CAST(SUBSTRING(pvt.Category, LEN(pvt.Category) - CHARINDEX('''':'''', REVERSE(pvt.Category)) + 2, LEN(pvt.Category)) AS bigint) AS PageId
+							,CASE pvt.event_type
+								WHEN 1 THEN ''''An 823 error that causes a suspect page (such as a disk error) or an 824 error other than a bad checksum or a torn page (such as a bad page ID)''''
+								WHEN 2 THEN ''''Bad checksum''''
+								WHEN 3 THEN ''''Torn page''''
+								WHEN 4 THEN ''''Restored (page was restored after it was marked bad)''''
+								WHEN 5 THEN ''''Repaired (DBCC repaired the page)''''
+								WHEN 7 THEN ''''Deallocated by DBCC''''
+								ELSE ''''?:'''' + CAST(pvt.event_type AS nvarchar)
+							END AS EventType
+							,CAST(pvt.error_count AS int) AS ErrorCount
+							,CAST(pvt.last_update_date AS datetime) AS LastUpdateDate
+							,CAST(pvt.last_update_date AS date) AS Date
+						FROM (
+							SELECT iState.Category, iState.[Key], iState.Value AS _Value_
+							FROM dbo.fhsmInstanceState AS iState
+							WHERE (iState.Query = 22) AND (iState.ValidTo = ''''9999-12-31T23:59:59'''')
+						) AS p
+						PIVOT (
+							MAX(_Value_)
+							FOR [Key] IN ([event_type], [error_count], [last_update_date])
+						) AS pvt;
+				'';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Register extended properties on fact view @pbiSchema.[Instance suspect pages]
+			--
+			BEGIN
+				SET @objectName = QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance suspect pages'');
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+			END;
+		END;
+
+		--
+		-- Create fact view @pbiSchema.[Instance SQL agent properties]
+		--
+		BEGIN
+			BEGIN
+				SET @stmt = ''
+					IF OBJECT_ID('''''' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance SQL agent properties'') + '''''', ''''V'''') IS NULL
+					BEGIN
+						EXEC(''''CREATE VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance SQL agent properties'') + '' AS SELECT ''''''''dummy'''''''' AS Txt'''');
+					END;
+				'';
+				EXEC(@stmt);
+
+				SET @stmt = ''
+					ALTER VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance SQL agent properties'') + ''
+					AS
+						SELECT
+							CASE iState.[Key]
+								WHEN ''''idle_cpu_duration'''' THEN ''''Idle CPU duration''''
+								WHEN ''''idle_cpu_percent'''' THEN ''''Idle CPU percent''''
+								WHEN ''''jobhistory_max_rows'''' THEN ''''Job history max rows''''
+								WHEN ''''jobhistory_max_rows_per_job'''' THEN ''''Job history max rows per job''''
+								WHEN ''''job_shutdown_timeout'''' THEN ''''Job shutdown timeout''''
+							END AS [Key]
+							,iState.Value
+							,iState.Timestamp
+						FROM (
+							SELECT iState.[Key], iState.Value, iState.Timestamp
+							FROM dbo.fhsmInstanceState AS iState
+							WHERE (iState.Query = 29) AND (iState.ValidTo = ''''9999-12-31T23:59:59'''')
+								AND (iState.[Key] IN (
+									''''idle_cpu_duration''''
+									,''''idle_cpu_percent''''
+									,''''jobhistory_max_rows''''
+									,''''jobhistory_max_rows_per_job''''
+									,''''job_shutdown_timeout''''
+								))
+						) AS iState;
+				'';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Register extended properties on fact view @pbiSchema.[Instance SQL agent properties]
+			--
+			BEGIN
+				SET @objectName = QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance SQL agent properties'');
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+			END;
+		END;
+
+		--
+		-- Create fact view @pbiSchema.[Instance SQL agent properties history]
+		--
+		BEGIN
+			BEGIN
+				SET @stmt = ''
+					IF OBJECT_ID('''''' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance SQL agent properties history'') + '''''', ''''V'''') IS NULL
+					BEGIN
+						EXEC(''''CREATE VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance SQL agent properties history'') + '' AS SELECT ''''''''dummy'''''''' AS Txt'''');
+					END;
+				'';
+				EXEC(@stmt);
+
+				SET @stmt = ''
+					ALTER VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance SQL agent properties history'') + ''
+					AS
+						SELECT
+							CASE iState.[Key]
+								WHEN ''''idle_cpu_duration'''' THEN ''''Idle CPU duration''''
+								WHEN ''''idle_cpu_percent'''' THEN ''''Idle CPU percent''''
+								WHEN ''''jobhistory_max_rows'''' THEN ''''Job history max rows''''
+								WHEN ''''jobhistory_max_rows_per_job'''' THEN ''''Job history max rows per job''''
+								WHEN ''''job_shutdown_timeout'''' THEN ''''Job shutdown timeout''''
+							END AS [Key]
+							,iState.ValidFrom
+							,NULLIF(iState.ValidTo, ''''9999-12-31T23:59:59'''') AS ValidTo
+							,iState.Value
+						FROM (
+							SELECT iState.ValidFrom, iState.ValidTo, iState.[Key], iState.Value
+							FROM dbo.fhsmInstanceState AS iState
+							WHERE (iState.Query = 29)
+								AND (iState.[Key] IN (
+									''''idle_cpu_duration''''
+									,''''idle_cpu_percent''''
+									,''''jobhistory_max_rows''''
+									,''''jobhistory_max_rows_per_job''''
+									,''''job_shutdown_timeout''''
+								))
+						) AS iState;
+				'';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Register extended properties on fact view @pbiSchema.[Instance SQL agent properties history]
+			--
+			BEGIN
+				SET @objectName = QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Instance SQL agent properties history'');
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+			END;
+		END;
+
+		--
+		-- Create fact view @pbiSchema.[Lifecycle]
+		--
+		BEGIN
+			BEGIN
+				SET @stmt = ''
+					IF OBJECT_ID('''''' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Lifecycle'') + '''''', ''''V'''') IS NULL
+					BEGIN
+						EXEC(''''CREATE VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Lifecycle'') + '' AS SELECT ''''''''dummy'''''''' AS Txt'''');
+					END;
+				'';
+				EXEC(@stmt);
+
+				SET @stmt = ''
+					ALTER VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Lifecycle'') + ''
+					AS
+						SELECT
+							l.MainstreamEndDate
+							,l.ExtendedEndDate
+							,CASE
+								WHEN (CAST(GETDATE() AS date) <= l.MainstreamEndDate) THEN 0
+								WHEN (CAST(GETDATE() AS date) > l.MainstreamEndDate) AND (CAST(GETDATE() AS date) <= l.ExtendedEndDate) THEN 1
+								ELSE 2
+							END AS State	-- 0: Until mainstream end date
+											-- 1: After mainstream end date and until extended end date
+											-- 2: After extended end date
+						FROM dbo.fhsmLifecycle AS l
+						CROSS APPLY (
+							SELECT CAST(iState.Value AS int) AS Value
+							FROM dbo.fhsmInstanceState AS iState
+							WHERE (iState.Query = 3) AND (iState.[Key] = ''''ProductMajorVersion'''') AND (iState.ValidTo = ''''9999-12-31T23:59:59'''')
+						) AS productMajorVersion
+						CROSS APPLY (
+							SELECT CAST(iState.Value AS int) AS Value
+							FROM dbo.fhsmInstanceState AS iState
+							WHERE (iState.Query = 3) AND (iState.[Key] = ''''ProductMinorVersion'''') AND (iState.ValidTo = ''''9999-12-31T23:59:59'''')
+						) AS productMinorVersion
+						WHERE (l.ProductMajorVersion = productMajorVersion.Value) AND (l.ProductMinorVersion = productMinorVersion.Value);
+				'';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Register extended properties on fact view @pbiSchema.[Lifecycle]
+			--
+			BEGIN
+				SET @objectName = QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Lifecycle'');
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+			END;
+		END;
+
+		--
+		-- Create fact view @pbiSchema.[Log messages]
+		--
+		BEGIN
+			EXEC dbo.fhsmSPViewsInstanceState @view = ''LogMessages'', @version = @version, @nowUTC = @nowUTC;
+		END;
+
+		--
+		-- Create fact view @pbiSchema.[Trace flags]
+		--
+		BEGIN
+			BEGIN
+				SET @stmt = ''
+					IF OBJECT_ID('''''' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Trace flags'') + '''''', ''''V'''') IS NULL
+					BEGIN
+						EXEC(''''CREATE VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Trace flags'') + '' AS SELECT ''''''''dummy'''''''' AS Txt'''');
+					END;
+				'';
+				EXEC(@stmt);
+
+				SET @stmt = ''
+					ALTER VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Trace flags'') + ''
+					AS
+						SELECT
+							tf.TraceFlag
+							,tf.Description
+							,tf.URL
+							,CASE WHEN traceFlagsDetected.TraceFlag IS NULL THEN 0 ELSE 1 END AS TraceFlagExists	-- 0: Warning; 1: OK
+							,traceFlagsDetected.Timestamp
+						FROM dbo.fhsmTraceFlags AS tf
+						CROSS APPLY (
+							SELECT CAST(iState.Value AS int) AS Value
+							FROM dbo.fhsmInstanceState AS iState
+							WHERE (iState.Query = 3) AND (iState.[Key] = ''''ProductMajorVersion'''') AND (iState.ValidTo = ''''9999-12-31T23:59:59'''')
+						) AS productMajorVersion
+						CROSS APPLY (
+							SELECT CAST(iState.Value AS int) AS Value
+							FROM dbo.fhsmInstanceState AS iState
+							WHERE (iState.Query = 3) AND (iState.[Key] = ''''ProductMinorVersion'''') AND (iState.ValidTo = ''''9999-12-31T23:59:59'''')
+						) AS productMinorVersion
+						LEFT OUTER JOIN (
+							SELECT CAST(iState.Category AS int) AS TraceFlag, iState.Timestamp
+							FROM dbo.fhsmInstanceState AS iState
+							WHERE (iState.Query = 5) AND (iState.[Key] = ''''Global'''') AND (dbo.fhsmFNTryParseAsInt(iState.Value) = 1) AND (iState.ValidTo = ''''9999-12-31T23:59:59'''')
+						) AS traceFlagsDetected ON (traceFlagsDetected.TraceFlag = tf.TraceFlag)
+						WHERE (tf.ProductMajorVersion = productMajorVersion.Value) AND (tf.ProductMinorVersion = productMinorVersion.Value);
+				'';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Register extended properties on fact view @pbiSchema.[Trace flags]
+			--
+			BEGIN
+				SET @objectName = QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Trace flags'');
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+			END;
+		END;
+
+		--
+		-- Create fact view @pbiSchema.[Trace flags history]
+		--
+		BEGIN
+			BEGIN
+				SET @stmt = ''
+					IF OBJECT_ID('''''' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Trace flags history'') + '''''', ''''V'''') IS NULL
+					BEGIN
+						EXEC(''''CREATE VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Trace flags history'') + '' AS SELECT ''''''''dummy'''''''' AS Txt'''');
+					END;
+				'';
+				EXEC(@stmt);
+
+				SET @stmt = ''
+					ALTER VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Trace flags history'') + ''
+					AS
+						SELECT
+							tf.TraceFlag
+							,CAST(tf.TraceFlag AS nvarchar) AS TraceFlagTxt
+							,tf.Description
+							,traceFlags.ValidFrom
+							,NULLIF(traceFlags.ValidTo, ''''9999-12-31T23:59:59'''') AS ValidTo
+						FROM dbo.fhsmTraceFlags AS tf
+						CROSS APPLY (
+							SELECT CAST(iState.Value AS int) AS Value
+							FROM dbo.fhsmInstanceState AS iState
+							WHERE (iState.Query = 3) AND (iState.[Key] = ''''ProductMajorVersion'''') AND (iState.ValidTo = ''''9999-12-31T23:59:59'''')
+						) AS productMajorVersion
+						CROSS APPLY (
+							SELECT CAST(iState.Value AS int) AS Value
+							FROM dbo.fhsmInstanceState AS iState
+							WHERE (iState.Query = 3) AND (iState.[Key] = ''''ProductMinorVersion'''') AND (iState.ValidTo = ''''9999-12-31T23:59:59'''')
+						) AS productMinorVersion
+						INNER JOIN (
+							SELECT iState.ValidFrom, iState.ValidTo, CAST(iState.Category AS int) AS TraceFlag
+							FROM dbo.fhsmInstanceState AS iState
+							WHERE (iState.Query = 5) AND (iState.[Key] = ''''Global'''') AND (dbo.fhsmFNTryParseAsInt(iState.Value) = 1)
+						) AS traceFlags ON (traceFlags.TraceFlag = tf.TraceFlag)
+						WHERE (tf.ProductMajorVersion = productMajorVersion.Value) AND (tf.ProductMinorVersion = productMinorVersion.Value);
+				'';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Register extended properties on fact view @pbiSchema.[Trace flags history]
+			--
+			BEGIN
+				SET @objectName = QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Trace flags history'');
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+			END;
+		END;
+
+		--
+		-- Create fact view @pbiSchema.[Resource governor configuration]
+		--
+		BEGIN
+			BEGIN
+				SET @stmt = ''
+					IF OBJECT_ID('''''' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Resource governor configuration'') + '''''', ''''V'''') IS NULL
+					BEGIN
+						EXEC(''''CREATE VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Resource governor configuration'') + '' AS SELECT ''''''''dummy'''''''' AS Txt'''');
+					END;
+				'';
+				EXEC(@stmt);
+
+				SET @stmt = ''
+					ALTER VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Resource governor configuration'') + ''
+					AS
+						SELECT
+							pvt.is_enabled AS IsEnabled
+							,CASE pvt.is_enabled
+								WHEN 0 THEN ''''No''''
+								WHEN 1 THEN ''''Yes''''
+								ELSE ''''N.A.''''
+							END AS IsEnabledTxt
+							,pvt.max_outstanding_io_per_volume AS MaxOutstandingIOperVolume
+							,pvt.ClassifierFunction
+							,pvt.ClassifierFunctionDefinition
+							,(SELECT MAX(iState.Timestamp) FROM dbo.fhsmInstanceState AS iState WHERE (iState.Category = pvt.Category) AND (iState.Query = 23)) AS Timestamp
+						FROM (
+							SELECT iState.Category, iState.[Key], iState.Value AS _Value_
+							FROM (
+								SELECT DISTINCT iState.Category
+								FROM dbo.fhsmInstanceState AS iState
+								WHERE
+									(iState.Query = 23)
+									AND (iState.ValidTo = ''''9999-12-31T23:59:59'''')
+							) AS toCheck
+							INNER JOIN dbo.fhsmInstanceState AS iState ON (iState.Category = toCheck.Category)
+							WHERE (iState.Query = 23) AND (iState.ValidTo = ''''9999-12-31T23:59:59'''')
+						) AS p
+						PIVOT (
+							MAX(_Value_)
+							FOR [Key] IN ([is_enabled], [max_outstanding_io_per_volume], [ClassifierFunction], [ClassifierFunctionDefinition])
+						) AS pvt;
+				'';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Register extended properties on fact view @pbiSchema.[Resource governor configuration]
+			--
+			BEGIN
+				SET @objectName = QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Resource governor configuration'');
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+			END;
+		END;
+
+		--
+		-- Create fact view @pbiSchema.[Resource governor resource pool affinity]
+		--
+		BEGIN
+			BEGIN
+				SET @stmt = ''
+					IF OBJECT_ID('''''' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Resource governor resource pool affinity'') + '''''', ''''V'''') IS NULL
+					BEGIN
+						EXEC(''''CREATE VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Resource governor resource pool affinity'') + '' AS SELECT ''''''''dummy'''''''' AS Txt'''');
+					END;
+				'';
+				EXEC(@stmt);
+
+				SET @stmt = ''
+					ALTER VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Resource governor resource pool affinity'') + ''
+					AS
+						SELECT
+							pvt.Category AS PoolName
+							,pvt.processor_group AS ProcessorGroup
+							,pvt.scheduler_mask AS SchedulerMask
+							,(SELECT MAX(iState.Timestamp) FROM dbo.fhsmInstanceState AS iState WHERE (iState.Category = pvt.Category) AND (iState.Query = 24)) AS Timestamp
+						FROM (
+							SELECT iState.Category, iState.[Key], iState.Value AS _Value_
+							FROM (
+								SELECT DISTINCT iState.Category
+								FROM dbo.fhsmInstanceState AS iState
+								WHERE
+									(iState.Query = 24)
+									AND (iState.ValidTo = ''''9999-12-31T23:59:59'''')
+							) AS toCheck
+							INNER JOIN dbo.fhsmInstanceState AS iState ON (iState.Category = toCheck.Category)
+							WHERE (iState.Query = 24) AND (iState.ValidTo = ''''9999-12-31T23:59:59'''')
+						) AS p
+						PIVOT (
+							MAX(_Value_)
+							FOR [Key] IN ([processor_group], [scheduler_mask])
+						) AS pvt;
+				'';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Register extended properties on fact view @pbiSchema.[Resource governor resource pool affinity]
+			--
+			BEGIN
+				SET @objectName = QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Resource governor resource pool affinity'');
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+			END;
+		END;
+
+		--
+		-- Create fact view @pbiSchema.[Resource governor resource pools]
+		--
+		BEGIN
+			BEGIN
+				SET @stmt = ''
+					IF OBJECT_ID('''''' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Resource governor resource pools'') + '''''', ''''V'''') IS NULL
+					BEGIN
+						EXEC(''''CREATE VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Resource governor resource pools'') + '' AS SELECT ''''''''dummy'''''''' AS Txt'''');
+					END;
+				'';
+				EXEC(@stmt);
+
+				SET @stmt = ''
+					ALTER VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Resource governor resource pools'') + ''
+					AS
+						SELECT
+							pvt.Category AS PoolName
+							,pvt.min_cpu_percent AS MinCPUpercent
+							,pvt.max_cpu_percent AS MaxCPUpercent
+							,pvt.min_memory_percent AS MinMemoryPercent
+							,pvt.max_memory_percent AS MaxMemoryPercent
+							,pvt.cap_cpu_percent AS CapCPUpercent
+							,pvt.min_iops_per_volume AS MinIOPSperVolume
+							,pvt.max_iops_per_volume AS MaxIOPSperVolume
+							,(SELECT MAX(iState.Timestamp) FROM dbo.fhsmInstanceState AS iState WHERE (iState.Category = pvt.Category) AND (iState.Query = 25)) AS Timestamp
+						FROM (
+							SELECT iState.Category, iState.[Key], iState.Value AS _Value_
+							FROM (
+								SELECT DISTINCT iState.Category
+								FROM dbo.fhsmInstanceState AS iState
+								WHERE
+									(iState.Query = 25)
+									AND (iState.ValidTo = ''''9999-12-31T23:59:59'''')
+							) AS toCheck
+							INNER JOIN dbo.fhsmInstanceState AS iState ON (iState.Category = toCheck.Category)
+							WHERE (iState.Query = 25) AND (iState.ValidTo = ''''9999-12-31T23:59:59'''')
+						) AS p
+						PIVOT (
+							MAX(_Value_)
+							FOR [Key] IN ([min_cpu_percent], [max_cpu_percent], [min_memory_percent], [max_memory_percent], [cap_cpu_percent], [min_iops_per_volume], [max_iops_per_volume])
+						) AS pvt;
+				'';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Register extended properties on fact view @pbiSchema.[Resource governor resource pools]
+			--
+			BEGIN
+				SET @objectName = QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Resource governor resource pools'');
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+			END;
+		END;
+
+		--
+		-- Create fact view @pbiSchema.[Resource governor workload groups]
+		--
+		BEGIN
+			BEGIN
+				SET @stmt = ''
+					IF OBJECT_ID('''''' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Resource governor workload groups'') + '''''', ''''V'''') IS NULL
+					BEGIN
+						EXEC(''''CREATE VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Resource governor workload groups'') + '' AS SELECT ''''''''dummy'''''''' AS Txt'''');
+					END;
+				'';
+				EXEC(@stmt);
+
+				SET @stmt = ''
+					ALTER VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Resource governor workload groups'') + ''
+					AS
+						SELECT
+							PARSENAME(pvt.Category, 2) AS PoolName
+							,PARSENAME(pvt.Category, 1) AS WorkloadGroupName
+							,pvt.importance AS Importance
+							,pvt.request_max_memory_grant_percent AS RequestMaxMemoryGrantPercent
+							,pvt.request_max_cpu_time_sec AS RequestMaxCPUtimeSec
+							,pvt.request_memory_grant_timeout_sec AS RequestMemoryGrantTimeoutSec
+							,pvt.max_dop AS MaxDOP
+							,pvt.group_max_requests AS GroupMaxRequests
+							,pvt.request_max_memory_grant_percent_numeric AS RequestMaxMemoryGrantPercentNumeric
+							,(SELECT MAX(iState.Timestamp) FROM dbo.fhsmInstanceState AS iState WHERE (iState.Category = pvt.Category) AND (iState.Query = 26)) AS Timestamp
+						FROM (
+							SELECT iState.Category, iState.[Key], iState.Value AS _Value_
+							FROM (
+								SELECT DISTINCT iState.Category
+								FROM dbo.fhsmInstanceState AS iState
+								WHERE
+									(iState.Query = 26)
+									AND (iState.ValidTo = ''''9999-12-31T23:59:59'''')
+							) AS toCheck
+							INNER JOIN dbo.fhsmInstanceState AS iState ON (iState.Category = toCheck.Category)
+							WHERE (iState.Query = 26) AND (iState.ValidTo = ''''9999-12-31T23:59:59'''')
+						) AS p
+						PIVOT (
+							MAX(_Value_)
+							FOR [Key] IN ([importance], [request_max_memory_grant_percent], [request_max_cpu_time_sec], [request_memory_grant_timeout_sec], [max_dop], [group_max_requests], [request_max_memory_grant_percent_numeric])
+						) AS pvt;
+				'';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Register extended properties on fact view @pbiSchema.[Resource governor workload groups]
+			--
+			BEGIN
+				SET @objectName = QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Resource governor workload groups'');
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+			END;
+		END;
+
+		--
+		-- Create fact view @pbiSchema.[Resource governor external resource pool affinity]
+		--
+		BEGIN
+			BEGIN
+				SET @stmt = ''
+					IF OBJECT_ID('''''' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Resource governor external resource pool affinity'') + '''''', ''''V'''') IS NULL
+					BEGIN
+						EXEC(''''CREATE VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Resource governor external resource pool affinity'') + '' AS SELECT ''''''''dummy'''''''' AS Txt'''');
+					END;
+				'';
+				EXEC(@stmt);
+
+				SET @stmt = ''
+					ALTER VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Resource governor external resource pool affinity'') + ''
+					AS
+						SELECT
+							pvt.Category AS PoolName
+							,pvt.processor_group AS ProcessorGroup
+							,pvt.cpu_mask AS CPUMask
+							,(SELECT MAX(iState.Timestamp) FROM dbo.fhsmInstanceState AS iState WHERE (iState.Category = pvt.Category) AND (iState.Query = 27)) AS Timestamp
+						FROM (
+							SELECT iState.Category, iState.[Key], iState.Value AS _Value_
+							FROM (
+								SELECT DISTINCT iState.Category
+								FROM dbo.fhsmInstanceState AS iState
+								WHERE
+									(iState.Query = 27)
+									AND (iState.ValidTo = ''''9999-12-31T23:59:59'''')
+							) AS toCheck
+							INNER JOIN dbo.fhsmInstanceState AS iState ON (iState.Category = toCheck.Category)
+							WHERE (iState.Query = 27) AND (iState.ValidTo = ''''9999-12-31T23:59:59'''')
+						) AS p
+						PIVOT (
+							MAX(_Value_)
+							FOR [Key] IN ([processor_group], [cpu_mask])
+						) AS pvt;
+				'';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Register extended properties on fact view @pbiSchema.[Resource governor external resource pool affinity]
+			--
+			BEGIN
+				SET @objectName = QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Resource governor external resource pool affinity'');
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+			END;
+		END;
+
+		--
+		-- Create fact view @pbiSchema.[Resource governor external resource pools]
+		--
+		BEGIN
+			BEGIN
+				SET @stmt = ''
+					IF OBJECT_ID('''''' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Resource governor external resource pools'') + '''''', ''''V'''') IS NULL
+					BEGIN
+						EXEC(''''CREATE VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Resource governor external resource pools'') + '' AS SELECT ''''''''dummy'''''''' AS Txt'''');
+					END;
+				'';
+				EXEC(@stmt);
+
+				SET @stmt = ''
+					ALTER VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Resource governor external resource pools'') + ''
+					AS
+						SELECT
+							pvt.Category AS PoolName
+							,pvt.max_cpu_percent AS MaxCPUpercent
+							,pvt.max_memory_percent AS MaxMemoryPercent
+							,pvt.max_processes AS MaxProcesses
+							,pvt.version AS Version
+							,(SELECT MAX(iState.Timestamp) FROM dbo.fhsmInstanceState AS iState WHERE (iState.Category = pvt.Category) AND (iState.Query = 28)) AS Timestamp
+						FROM (
+							SELECT iState.Category, iState.[Key], iState.Value AS _Value_
+							FROM (
+								SELECT DISTINCT iState.Category
+								FROM dbo.fhsmInstanceState AS iState
+								WHERE
+									(iState.Query = 28)
+									AND (iState.ValidTo = ''''9999-12-31T23:59:59'''')
+							) AS toCheck
+							INNER JOIN dbo.fhsmInstanceState AS iState ON (iState.Category = toCheck.Category)
+							WHERE (iState.Query = 28) AND (iState.ValidTo = ''''9999-12-31T23:59:59'''')
+						) AS p
+						PIVOT (
+							MAX(_Value_)
+							FOR [Key] IN ([max_cpu_percent], [max_memory_percent], [max_processes], [version])
+						) AS pvt;
+				'';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Register extended properties on fact view @pbiSchema.[Resource governor external resource pools]
+			--
+			BEGIN
+				SET @objectName = QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Resource governor external resource pools'');
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
 			END;
 		END;
 	END;
@@ -31732,7 +34774,8 @@ ELSE BEGIN
 				,CAST(''1900-1-1T00:00:00.0000'' AS datetime2(0))						AS FromTime
 				,CAST(''1900-1-1T23:59:59.0000'' AS datetime2(0))						AS ToTime
 				,1, 1, 1, 1, 1, 1, 1												-- Monday..Sunday
-				,''@SeverityLevel = '' + CAST(@DEFAULT_SEVERITY_LEVEL AS nvarchar)	AS Parameter
+				,''@SeverityLevel = '' + CAST(@DEFAULT_SEVERITY_LEVEL AS nvarchar)
+					+ '' ; @MessageIds = 833, 3197, 3198''							AS Parameter
 		)
 		MERGE dbo.fhsmSchedules AS tgt
 		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
@@ -31756,6 +34799,8 @@ END;
 ';
 SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
+
+SET @stmt = REPLACE(@stmt, 'SET @ignoreAutoIndex = 0;',                'SET @ignoreAutoIndex = 1;');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
@@ -31787,10 +34832,10 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @ena
 EXEC(@stmt);
 
 --
--- File part:LogShipping.sql modified: 2025.09.14 09.33.08
+-- File part:LogShipping.sql modified: 2026.03.01 01.10.39
 --
 SET @stmt = '
-USE [' + @fhSQLMonitorDatabase + '];
+USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
 SET NOCOUNT ON;
 
 --
@@ -31798,8 +34843,10 @@ SET NOCOUNT ON;
 --
 BEGIN
 	DECLARE @enableLogShipping bit;
+	DECLARE @ignoreAutoIndex bit;
 
 	SET @enableLogShipping = 0;
+	SET @ignoreAutoIndex = 0;
 END;
 
 --
@@ -31859,7 +34906,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.11.0'';
+		SET @version = ''2.12.0'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -32037,12 +35084,42 @@ ELSE BEGIN
 						Id int identity(1,1) NOT NULL
 						,PrimaryServer nvarchar(128) NOT NULL
 						,PrimaryDatabase nvarchar(128) NOT NULL
-						,LastBackupDate datetime NOT NULL
-						,LastBackupDateUTC datetime NOT NULL
+						,LastBackupDate datetime NULL
+						,LastBackupDateUTC datetime NULL
 						,TimestampUTC datetime NOT NULL
 						,Timestamp datetime NOT NULL
 						,CONSTRAINT PK_fhsmLogShippingMonitorPrimary PRIMARY KEY(Id)'' + @tableCompressionStmt + ''
 					);
+				'';
+				EXEC(@stmt);
+			END;
+
+			IF EXISTS (SELECT * FROM sys.columns AS c WHERE (c.object_id = OBJECT_ID(''dbo.fhsmLogShippingMonitorPrimary'')) AND (c.name = ''LastBackupDate'') AND (c.is_nullable = 0))
+			BEGIN
+				RAISERROR(''Changing column [LastBackupDate] on table dbo.fhsmLogShippingMonitorPrimary to be NULL''''able'', 0, 1) WITH NOWAIT;
+
+				SET @stmt = ''
+					ALTER TABLE dbo.fhsmLogShippingMonitorPrimary ALTER COLUMN [LastBackupDate] datetime NULL;
+				'';
+				EXEC(@stmt);
+			END;
+
+			IF EXISTS (SELECT * FROM sys.columns AS c WHERE (c.object_id = OBJECT_ID(''dbo.fhsmLogShippingMonitorPrimary'')) AND (c.name = ''LastBackupDateUTC'') AND (c.is_nullable = 0))
+			BEGIN
+				IF EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmLogShippingMonitorPrimary'')) AND (i.name = ''NC_fhsmLogShippingMonitorPrimary_PrimaryServer_PrimaryDatabase_LastBackupDateUTC''))
+				BEGIN
+					RAISERROR(''Dropping index [NC_fhsmLogShippingMonitorPrimary_PrimaryServer_PrimaryDatabase_LastBackupDateUTC] on table dbo.fhsmLogShippingMonitorPrimary before changing column LastBackupDate'', 0, 1) WITH NOWAIT;
+
+					SET @stmt = ''
+						DROP INDEX NC_fhsmLogShippingMonitorPrimary_PrimaryServer_PrimaryDatabase_LastBackupDateUTC ON dbo.fhsmLogShippingMonitorPrimary;
+					'';
+					EXEC(@stmt);
+				END;
+
+				RAISERROR(''Changing column [LastBackupDateUTC] on table dbo.fhsmLogShippingMonitorPrimary to be NULL''''able'', 0, 1) WITH NOWAIT;
+
+				SET @stmt = ''
+					ALTER TABLE dbo.fhsmLogShippingMonitorPrimary ALTER COLUMN [LastBackupDateUTC] datetime NULL;
 				'';
 				EXEC(@stmt);
 			END;
@@ -32157,11 +35234,31 @@ ELSE BEGIN
 					CREATE TABLE dbo.fhsmLogShippingPrimaryDatabases(
 						Id int identity(1,1) NOT NULL
 						,PrimaryDatabase nvarchar(128) NOT NULL
-						,LastBackupDate datetime NOT NULL
+						,LastBackupDate datetime NULL
 						,TimestampUTC datetime NOT NULL
 						,Timestamp datetime NOT NULL
 						,CONSTRAINT PK_fhsmLogShippingPrimaryDatabases PRIMARY KEY(Id)'' + @tableCompressionStmt + ''
 					);
+				'';
+				EXEC(@stmt);
+			END;
+
+			IF EXISTS (SELECT * FROM sys.columns AS c WHERE (c.object_id = OBJECT_ID(''dbo.fhsmLogShippingPrimaryDatabases'')) AND (c.name = ''LastBackupDate'') AND (c.is_nullable = 0))
+			BEGIN
+				IF EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID(''dbo.fhsmLogShippingPrimaryDatabases'')) AND (i.name = ''NC_fhsmLogShippingPrimaryDatabases_PrimaryDatabase_LastBackupDate''))
+				BEGIN
+					RAISERROR(''Dropping index [NC_fhsmLogShippingPrimaryDatabases_PrimaryDatabase_LastBackupDate] on table dbo.fhsmLogShippingPrimaryDatabases before changing column LastBackupDate'', 0, 1) WITH NOWAIT;
+
+					SET @stmt = ''
+						DROP INDEX NC_fhsmLogShippingPrimaryDatabases_PrimaryDatabase_LastBackupDate ON dbo.fhsmLogShippingPrimaryDatabases;
+					'';
+					EXEC(@stmt);
+				END;
+
+				RAISERROR(''Changing column [LastBackupDate] on table dbo.fhsmLogShippingPrimaryDatabases to be NULL''''able'', 0, 1) WITH NOWAIT;
+
+				SET @stmt = ''
+					ALTER TABLE dbo.fhsmLogShippingPrimaryDatabases ALTER COLUMN [LastBackupDate] datetime NULL;
 				'';
 				EXEC(@stmt);
 			END;
@@ -33218,14 +36315,14 @@ ELSE BEGIN
 						,CAST(pvt.backup_threshold AS int)         AS BackupThreshold
 						,CAST(pvt.threshold_alert AS int)          AS ThresholdAlert
 						,CAST(pvt.history_retention_period AS int) AS HistoryRetentionPeriod
-						,(SELECT MIN(t.Timestamp) FROM dbo.fhsmLogShippingState AS t WHERE (t.ServerName = pvt.ServerName) AND (t.DatabaseName = pvt.DatabaseName) AND (t.Query = 11) AND (t.ValidTo = ''''9999-12-31 23:59:59.000'''')) AS MinTimestamp
-						,(SELECT MAX(t.Timestamp) FROM dbo.fhsmLogShippingState AS t WHERE (t.ServerName = pvt.ServerName) AND (t.DatabaseName = pvt.DatabaseName) AND (t.Query = 11) AND (t.ValidTo = ''''9999-12-31 23:59:59.000'''')) AS MaxTimestamp
+						,(SELECT MIN(t.Timestamp) FROM dbo.fhsmLogShippingState AS t WHERE (t.ServerName = pvt.ServerName) AND (t.DatabaseName = pvt.DatabaseName) AND (t.Query = 11) AND (t.ValidTo = ''''9999-12-31T23:59:59'''')) AS MinTimestamp
+						,(SELECT MAX(t.Timestamp) FROM dbo.fhsmLogShippingState AS t WHERE (t.ServerName = pvt.ServerName) AND (t.DatabaseName = pvt.DatabaseName) AND (t.Query = 11) AND (t.ValidTo = ''''9999-12-31T23:59:59'''')) AS MaxTimestamp
 						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(pvt.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
 						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(pvt.ServerName,   DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS ServerKey
 					FROM (
 						SELECT lsState.ServerName, lsState.DatabaseName, lsState.[Key], lsState.Value AS _Value_
 						FROM dbo.fhsmLogShippingState AS lsState
-						WHERE (lsState.Query = 11) AND (lsState.ValidTo = ''''9999-12-31 23:59:59.000'''')
+						WHERE (lsState.Query = 11) AND (lsState.ValidTo = ''''9999-12-31T23:59:59'''')
 					) AS p
 					PIVOT (
 						MAX(_Value_)
@@ -33279,14 +36376,14 @@ ELSE BEGIN
 							ELSE ''''N.A.''''
 						END AS ThresholdAlertEnabledTxt
 						,CAST(pvt.history_retention_period AS int) AS HistoryRetentionPeriod
-						,(SELECT MIN(t.Timestamp) FROM dbo.fhsmLogShippingState AS t WHERE (t.ServerName = pvt.ServerName) AND (t.DatabaseName = pvt.DatabaseName) AND (t.Query = 12) AND (t.ValidTo = ''''9999-12-31 23:59:59.000'''')) AS MinTimestamp
-						,(SELECT MAX(t.Timestamp) FROM dbo.fhsmLogShippingState AS t WHERE (t.ServerName = pvt.ServerName) AND (t.DatabaseName = pvt.DatabaseName) AND (t.Query = 12) AND (t.ValidTo = ''''9999-12-31 23:59:59.000'''')) AS MaxTimestamp
+						,(SELECT MIN(t.Timestamp) FROM dbo.fhsmLogShippingState AS t WHERE (t.ServerName = pvt.ServerName) AND (t.DatabaseName = pvt.DatabaseName) AND (t.Query = 12) AND (t.ValidTo = ''''9999-12-31T23:59:59'''')) AS MinTimestamp
+						,(SELECT MAX(t.Timestamp) FROM dbo.fhsmLogShippingState AS t WHERE (t.ServerName = pvt.ServerName) AND (t.DatabaseName = pvt.DatabaseName) AND (t.Query = 12) AND (t.ValidTo = ''''9999-12-31T23:59:59'''')) AS MaxTimestamp
 						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(pvt.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
 						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(pvt.ServerName,   DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS ServerKey
 					FROM (
 						SELECT lsState.ServerName, lsState.DatabaseName, lsState.[Key], lsState.Value AS _Value_
 						FROM dbo.fhsmLogShippingState AS lsState
-						WHERE (lsState.Query = 12) AND (lsState.ValidTo = ''''9999-12-31 23:59:59.000'''')
+						WHERE (lsState.Query = 12) AND (lsState.ValidTo = ''''9999-12-31T23:59:59'''')
 					) AS p
 					PIVOT (
 						MAX(_Value_)
@@ -33351,13 +36448,13 @@ ELSE BEGIN
 							WHEN 2 THEN ''''Uses the server configuration''''
 							ELSE ''''N.A.''''
 						END AS BackupCompressionTxt
-						,(SELECT MIN(t.Timestamp) FROM dbo.fhsmLogShippingState AS t WHERE (t.DatabaseName = pvt.DatabaseName) AND (t.Query = 21) AND (t.ValidTo = ''''9999-12-31 23:59:59.000'''')) AS MinTimestamp
-						,(SELECT MAX(t.Timestamp) FROM dbo.fhsmLogShippingState AS t WHERE (t.DatabaseName = pvt.DatabaseName) AND (t.Query = 21) AND (t.ValidTo = ''''9999-12-31 23:59:59.000'''')) AS MaxTimestamp
+						,(SELECT MIN(t.Timestamp) FROM dbo.fhsmLogShippingState AS t WHERE (t.DatabaseName = pvt.DatabaseName) AND (t.Query = 21) AND (t.ValidTo = ''''9999-12-31T23:59:59'''')) AS MinTimestamp
+						,(SELECT MAX(t.Timestamp) FROM dbo.fhsmLogShippingState AS t WHERE (t.DatabaseName = pvt.DatabaseName) AND (t.Query = 21) AND (t.ValidTo = ''''9999-12-31T23:59:59'''')) AS MaxTimestamp
 						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(pvt.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
 					FROM (
 						SELECT lsState.DatabaseName, lsState.[Key], lsState.Value AS _Value_
 						FROM dbo.fhsmLogShippingState AS lsState
-						WHERE (lsState.Query = 21) AND (lsState.ValidTo = ''''9999-12-31 23:59:59.000'''')
+						WHERE (lsState.Query = 21) AND (lsState.ValidTo = ''''9999-12-31T23:59:59'''')
 					) AS p
 					PIVOT (
 						MAX(_Value_)
@@ -33400,12 +36497,12 @@ ELSE BEGIN
 					SELECT
 						lsState.ServerName    AS SecondaryServer
 						,lsState.DatabaseName AS SecondaryDatabase
-						,(SELECT MIN(t.Timestamp) FROM dbo.fhsmLogShippingState AS t WHERE (t.ServerName = lsState.ServerName) AND (t.DatabaseName = lsState.DatabaseName) AND (t.Query = 22) AND (t.ValidTo = ''''9999-12-31 23:59:59.000'''')) AS MinTimestamp
-						,(SELECT MAX(t.Timestamp) FROM dbo.fhsmLogShippingState AS t WHERE (t.ServerName = lsState.ServerName) AND (t.DatabaseName = lsState.DatabaseName) AND (t.Query = 22) AND (t.ValidTo = ''''9999-12-31 23:59:59.000'''')) AS MaxTimestamp
+						,(SELECT MIN(t.Timestamp) FROM dbo.fhsmLogShippingState AS t WHERE (t.ServerName = lsState.ServerName) AND (t.DatabaseName = lsState.DatabaseName) AND (t.Query = 22) AND (t.ValidTo = ''''9999-12-31T23:59:59'''')) AS MinTimestamp
+						,(SELECT MAX(t.Timestamp) FROM dbo.fhsmLogShippingState AS t WHERE (t.ServerName = lsState.ServerName) AND (t.DatabaseName = lsState.DatabaseName) AND (t.Query = 22) AND (t.ValidTo = ''''9999-12-31T23:59:59'''')) AS MaxTimestamp
 						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(lsState.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
 						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(lsState.ServerName,   DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS ServerKey
 					FROM dbo.fhsmLogShippingState AS lsState
-					WHERE (lsState.Query = 22) AND (lsState.ValidTo = ''''9999-12-31 23:59:59.000'''');
+					WHERE (lsState.Query = 22) AND (lsState.ValidTo = ''''9999-12-31T23:59:59'''');
 			'';
 			EXEC(@stmt);
 
@@ -33464,13 +36561,13 @@ ELSE BEGIN
 						,CAST(pvt.block_size AS int)        AS BlockSize
 						,CAST(pvt.buffer_count AS int)      AS BufferCount
 						,CAST(pvt.max_transfer_size AS int) AS MaxTransferSize
-						,(SELECT MIN(t.Timestamp) FROM dbo.fhsmLogShippingState AS t WHERE (t.DatabaseName = pvt.DatabaseName) AND (t.Query = 31) AND (t.ValidTo = ''''9999-12-31 23:59:59.000'''')) AS MinTimestamp
-						,(SELECT MAX(t.Timestamp) FROM dbo.fhsmLogShippingState AS t WHERE (t.DatabaseName = pvt.DatabaseName) AND (t.Query = 31) AND (t.ValidTo = ''''9999-12-31 23:59:59.000'''')) AS MaxTimestamp
+						,(SELECT MIN(t.Timestamp) FROM dbo.fhsmLogShippingState AS t WHERE (t.DatabaseName = pvt.DatabaseName) AND (t.Query = 31) AND (t.ValidTo = ''''9999-12-31T23:59:59'''')) AS MinTimestamp
+						,(SELECT MAX(t.Timestamp) FROM dbo.fhsmLogShippingState AS t WHERE (t.DatabaseName = pvt.DatabaseName) AND (t.Query = 31) AND (t.ValidTo = ''''9999-12-31T23:59:59'''')) AS MaxTimestamp
 						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(pvt.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
 					FROM (
 						SELECT lsState.DatabaseName, lsState.[Key], lsState.Value AS _Value_
 						FROM dbo.fhsmLogShippingState AS lsState
-						WHERE (lsState.Query = 31) AND (lsState.ValidTo = ''''9999-12-31 23:59:59.000'''')
+						WHERE (lsState.Query = 31) AND (lsState.ValidTo = ''''9999-12-31T23:59:59'''')
 					) AS p
 					PIVOT (
 						MAX(_Value_)
@@ -33529,14 +36626,14 @@ ELSE BEGIN
 							WHEN 1 THEN ''''Yes''''
 							ELSE ''''N.A.''''
 						END AS UserSpecifiedMonitorTxt
-						,(SELECT MIN(t.Timestamp) FROM dbo.fhsmLogShippingState AS t WHERE (t.ServerName = pvt.ServerName) AND (t.DatabaseName = pvt.DatabaseName) AND (t.Query = 32) AND (t.ValidTo = ''''9999-12-31 23:59:59.000'''')) AS MinTimestamp
-						,(SELECT MAX(t.Timestamp) FROM dbo.fhsmLogShippingState AS t WHERE (t.ServerName = pvt.ServerName) AND (t.DatabaseName = pvt.DatabaseName) AND (t.Query = 32) AND (t.ValidTo = ''''9999-12-31 23:59:59.000'''')) AS MaxTimestamp
+						,(SELECT MIN(t.Timestamp) FROM dbo.fhsmLogShippingState AS t WHERE (t.ServerName = pvt.ServerName) AND (t.DatabaseName = pvt.DatabaseName) AND (t.Query = 32) AND (t.ValidTo = ''''9999-12-31T23:59:59'''')) AS MinTimestamp
+						,(SELECT MAX(t.Timestamp) FROM dbo.fhsmLogShippingState AS t WHERE (t.ServerName = pvt.ServerName) AND (t.DatabaseName = pvt.DatabaseName) AND (t.Query = 32) AND (t.ValidTo = ''''9999-12-31T23:59:59'''')) AS MaxTimestamp
 						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(pvt.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
 						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(pvt.ServerName,   DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS ServerKey
 					FROM (
 						SELECT lsState.ServerName, lsState.DatabaseName, lsState.[Key], lsState.Value AS _Value_
 						FROM dbo.fhsmLogShippingState AS lsState
-						WHERE (lsState.Query = 32) AND (lsState.ValidTo = ''''9999-12-31 23:59:59.000'''')
+						WHERE (lsState.Query = 32) AND (lsState.ValidTo = ''''9999-12-31T23:59:59'''')
 					) AS p
 					PIVOT (
 						MAX(_Value_)
@@ -33639,7 +36736,7 @@ ELSE BEGIN
 						ELSE a.[Key]
 					END AS [Key]
 					,a.ValidFrom
-					,NULLIF(a.ValidTo, ''''9999-12-31 23:59:59.000'''') AS ValidTo
+					,NULLIF(a.ValidTo, ''''9999-12-31T23:59:59'''') AS ValidTo
 					,CASE a.[Key]
 						WHEN ''''backup_compression''''
 							THEN CASE a.Value
@@ -33712,7 +36809,7 @@ ELSE BEGIN
 					FROM (
 						SELECT DISTINCT lsState.ServerName, lsState.DatabaseName
 						FROM dbo.fhsmLogShippingState AS lsState
-						WHERE (lsState.ValidTo = ''''9999-12-31 23:59:59.000'''')
+						WHERE (lsState.ValidTo = ''''9999-12-31T23:59:59'''')
 					) AS toCheck
 			'';
 			IF (@productVersion1 <= 10)
@@ -34233,7 +37330,7 @@ ELSE BEGIN
 									(
 										(src.Query IS NULL)
 										OR ((src.Value COLLATE DATABASE_DEFAULT <> tgt.Value) OR (src.Value IS NULL AND tgt.Value IS NOT NULL) OR (src.Value IS NOT NULL AND tgt.Value IS NULL))
-									) AND (tgt.ValidTo = ''''9999-dec-31 23:59:59'''');
+									) AND (tgt.ValidTo = ''''9999-12-31T23:59:59'''');
 							END;
 
 							--
@@ -34241,7 +37338,7 @@ ELSE BEGIN
 							--
 							BEGIN
 								INSERT INTO dbo.fhsmLogShippingState(Query, ServerName, DatabaseName, [Key], Value, ValidFrom, ValidTo, TimestampUTC, Timestamp)
-								SELECT src.Query, src.ServerName, src.DatabaseName, src.[Key], src.Value, @nowUTC AS ValidFrom, ''''9999-dec-31 23:59:59'''' AS ValidTo, @nowUTC, @now
+								SELECT src.Query, src.ServerName, src.DatabaseName, src.[Key], src.Value, @nowUTC AS ValidFrom, ''''9999-12-31T23:59:59'''' AS ValidTo, @nowUTC, @now
 								FROM #config AS src
 								WHERE NOT EXISTS (
 									SELECT *
@@ -34251,7 +37348,7 @@ ELSE BEGIN
 										AND (tgt.ServerName COLLATE DATABASE_DEFAULT = src.ServerName)
 										AND (tgt.DatabaseName COLLATE DATABASE_DEFAULT = src.DatabaseName)
 										AND (tgt.[Key] COLLATE DATABASE_DEFAULT = src.[Key])
-										AND ((tgt.Value COLLATE DATABASE_DEFAULT = src.Value) OR (tgt.Value IS NULL AND src.Value IS NULL)) AND (tgt.ValidTo = ''''9999-dec-31 23:59:59'''')
+										AND ((tgt.Value COLLATE DATABASE_DEFAULT = src.Value) OR (tgt.Value IS NULL AND src.Value IS NULL)) AND (tgt.ValidTo = ''''9999-12-31T23:59:59'''')
 								);
 							END;
 			'';
@@ -34317,9 +37414,10 @@ ELSE BEGIN
 	--
 	BEGIN
 		WITH
-		schedules(Enabled, DeploymentStatus, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameter) AS(
+		schedules(Type, Enabled, DeploymentStatus, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameter) AS(
 			SELECT
-				@enableLogShipping								AS Enabled
+				1												AS type
+				,@enableLogShipping								AS Enabled
 				,0												AS DeploymentStatus
 				,''Log shipping''									AS Name
 				,PARSENAME(''dbo.fhsmSPLogShipping'', 1)			AS Task
@@ -34332,8 +37430,8 @@ ELSE BEGIN
 		MERGE dbo.fhsmSchedules AS tgt
 		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
 		WHEN NOT MATCHED BY TARGET
-			THEN INSERT(Enabled, DeploymentStatus, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameter)
-			VALUES(src.Enabled, src.DeploymentStatus, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameter);
+			THEN INSERT(Type, Enabled, DeploymentStatus, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameter)
+			VALUES(src.Type, src.Enabled, src.DeploymentStatus, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameter);
 	END;
 
 	--
@@ -34527,19 +37625,21 @@ ELSE BEGIN
 	-- Update dimensions based upon the fact tables
 	--
 	BEGIN
-		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmLogShippingMonitorErrorDetail'';
-		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmLogShippingMonitorHistoryDetail'';
-		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmLogShippingMonitorPrimary'';
-		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmLogShippingMonitorSecondary'';
-		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmLogShippingPrimaryDatabases'';
-		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmLogShippingSecondary'';
-		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmLogShippingSecondaryDatabases'';
+		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmLogShippingMonitorErrorDetail'', @ignoreAutoIndex = @ignoreAutoIndex;
+		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmLogShippingMonitorHistoryDetail'', @ignoreAutoIndex = @ignoreAutoIndex;
+		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmLogShippingMonitorPrimary'', @ignoreAutoIndex = @ignoreAutoIndex;
+		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmLogShippingMonitorSecondary'', @ignoreAutoIndex = @ignoreAutoIndex;
+		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmLogShippingPrimaryDatabases'', @ignoreAutoIndex = @ignoreAutoIndex;
+		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmLogShippingSecondary'', @ignoreAutoIndex = @ignoreAutoIndex;
+		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmLogShippingSecondaryDatabases'', @ignoreAutoIndex = @ignoreAutoIndex;
 	END;
 END;
 
 ';
 SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
+
+SET @stmt = REPLACE(@stmt, 'SET @ignoreAutoIndex = 0;',                'SET @ignoreAutoIndex = 1;');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
@@ -34571,10 +37671,10 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @ena
 EXEC(@stmt);
 
 --
--- File part:MissingIndexes.sql modified: 2025.09.14 09.37.26
+-- File part:MissingIndexes.sql modified: 2026.02.16 10.25.16
 --
 SET @stmt = '
-USE [' + @fhSQLMonitorDatabase + '];
+USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
 SET NOCOUNT ON;
 
 --
@@ -34582,8 +37682,10 @@ SET NOCOUNT ON;
 --
 BEGIN
 	DECLARE @enableMissingIndexes bit;
+	DECLARE @ignoreAutoIndex bit;
 
 	SET @enableMissingIndexes = 0;
+	SET @ignoreAutoIndex = 0;
 END;
 
 --
@@ -34643,7 +37745,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.11.0'';
+		SET @version = ''2.12.0'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -35641,13 +38743,15 @@ ELSE BEGIN
 	-- Update dimensions based upon the fact tables
 	--
 	BEGIN
-		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmMissingIndexes'';
+		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmMissingIndexes'', @ignoreAutoIndex = @ignoreAutoIndex;
 	END;
 END;
 
 ';
 SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
+
+SET @stmt = REPLACE(@stmt, 'SET @ignoreAutoIndex = 0;',                'SET @ignoreAutoIndex = 1;');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
@@ -35679,10 +38783,10 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @ena
 EXEC(@stmt);
 
 --
--- File part:PerformanceStatistics.sql modified: 2025.09.14 09.33.10
+-- File part:PerformanceStatistics.sql modified: 2026.03.15 21.20.16
 --
 SET @stmt = '
-USE [' + @fhSQLMonitorDatabase + '];
+USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
 SET NOCOUNT ON;
 
 --
@@ -35690,8 +38794,10 @@ SET NOCOUNT ON;
 --
 BEGIN
 	DECLARE @enablePerformanceStatistics bit;
+	DECLARE @ignoreAutoIndex bit;
 
 	SET @enablePerformanceStatistics = 0;
+	SET @ignoreAutoIndex = 0;
 END;
 
 --
@@ -35757,7 +38863,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.11.0'';
+		SET @version = ''2.12.0'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -36070,6 +39176,261 @@ ELSE BEGIN
 	--
 
 	--
+	-- Create stored procedures
+	--
+	BEGIN
+		--
+		-- Create stored procedure dbo.fhsmSPViewsPerformanceStatistics
+		--
+		BEGIN
+			SET @stmt = ''
+				IF OBJECT_ID(''''dbo.fhsmSPViewsPerformanceStatistics'''', ''''P'''') IS NULL
+				BEGIN
+					EXEC(''''CREATE PROC dbo.fhsmSPViewsPerformanceStatistics AS SELECT ''''''''dummy'''''''' AS Txt'''');
+				END;
+			'';
+			EXEC(@stmt);
+
+			SET @stmt = ''
+				ALTER PROC dbo.fhsmSPViewsPerformanceStatistics (
+					@view nvarchar(128),
+					@version sql_variant,
+					@nowUTC datetime
+				)
+				AS
+				BEGIN
+					SET NOCOUNT ON;
+
+					DECLARE @defaultViewMemoryGrantsPendingRows int;
+					DECLARE @message nvarchar(max);
+					DECLARE @myUserName nvarchar(128);
+					DECLARE @noOfRows int;
+					DECLARE @nowUTCStr nvarchar(128);
+					DECLARE @objectName nvarchar(128);
+					DECLARE @pbiSchema nvarchar(128);
+					DECLARE @stmt nvarchar(max);
+
+					SET @myUserName = SUSER_NAME();
+
+					SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
+
+					SET @defaultViewMemoryGrantsPendingRows = 25;
+
+					SET @pbiSchema = (
+						SELECT c.Value
+						FROM dbo.fhsmConfigurations AS c
+						WHERE (c.[Key] = ''''PBISchema'''')
+					);
+					IF (@pbiSchema IS NULL)
+					BEGIN
+						RAISERROR(''''The configuration key ''''''''PBISchema'''''''' could not be found'''', 0, 1) WITH NOWAIT;
+						RETURN -1;
+					END;
+			'';
+			SET @stmt += ''
+					IF (@view = ''''MemoryGrantsPending'''')
+					BEGIN
+						SET @noOfRows = (
+							SELECT c.Value
+							FROM dbo.fhsmConfigurations AS c
+							WHERE (c.[Key] = ''''View.MemoryGrantsPending.Rows'''')
+						);
+						IF (@noOfRows IS NULL)
+						BEGIN
+							INSERT INTO dbo.fhsmConfigurations([Key], Value)
+							VALUES(''''View.MemoryGrantsPending.Rows'''', @defaultViewMemoryGrantsPendingRows);
+
+							SET @noOfRows = @defaultViewMemoryGrantsPendingRows;
+						END;
+						SET @noOfRows = ABS(@noOfRows);
+			'';
+			SET @stmt += ''
+						--
+						-- Create fact view @pbiSchema.[Memory grants pending]
+						--
+						BEGIN
+							BEGIN
+								SET @stmt = ''''
+									IF OBJECT_ID('''''''''''' + QUOTENAME(@pbiSchema) + ''''.'''' + QUOTENAME(''''Memory grants pending'''') + '''''''''''', ''''''''V'''''''') IS NULL
+									BEGIN
+										RAISERROR(''''''''Creating stub view '''' + QUOTENAME(@pbiSchema) + ''''.'''' + QUOTENAME(''''Memory grants pending'''') + '''''''''''', 0, 1) WITH NOWAIT;
+
+										EXEC(''''''''CREATE VIEW '''' + QUOTENAME(@pbiSchema) + ''''.'''' + QUOTENAME(''''Memory grants pending'''') + '''' AS SELECT ''''''''''''''''dummy'''''''''''''''' AS Txt'''''''');
+									END;
+								'''';
+								EXEC(@stmt);
+			'';
+			SET @stmt += ''
+								SET @message = ''''Alter view '''' + QUOTENAME(@pbiSchema) + ''''.'''' + QUOTENAME(''''Memory grants pending'''') + '''''''';
+								RAISERROR(@message, 0, 1) WITH NOWAIT;
+
+								SET @stmt = ''''
+									ALTER VIEW  '''' + QUOTENAME(@pbiSchema) + ''''.'''' + QUOTENAME(''''Memory grants pending'''') + ''''
+									AS
+									SELECT
+										TOP ('''' + CAST(@noOfRows AS nvarchar) + '''')
+										psa.CounterValue
+										,psa.Timestamp
+										,CAST(psa.Timestamp AS date) AS Date
+										,(DATEPART(HOUR, psa.Timestamp) * 60 * 60) + (DATEPART(MINUTE, psa.Timestamp) * 60) + (DATEPART(SECOND, psa.Timestamp)) AS TimeKey
+									FROM dbo.fhsmPerformStatisticsActual AS psa
+									WHERE ((psa.ObjectName LIKE ''''''''%:Memory Manager'''''''') AND (psa.CounterName = ''''''''Memory Grants Pending''''''''))
+										AND (psa.CounterValue <> 0)
+									ORDER BY psa.TimestampUTC DESC;
+								'''';
+								EXEC(@stmt);
+							END;
+			'';
+			SET @stmt += ''
+							--
+							-- Register extended properties on fact view @pbiSchema.[Memory grants pending]
+							--
+							BEGIN
+								SET @objectName = QUOTENAME(@pbiSchema) + ''''.'''' + QUOTENAME(''''Memory grants pending'''');
+
+								SET @stmt = ''''
+									DECLARE @objName nvarchar(128);
+									DECLARE @schName nvarchar(128);
+
+									SET @objName = PARSENAME(@objectName, 1);
+									SET @schName = PARSENAME(@objectName, 2);
+
+									EXEC dbo.fhsmSPExtendedProperties @objectType = ''''''''View'''''''', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''''''''FHSMVersion'''''''', @propertyValue = @version;
+									EXEC dbo.fhsmSPExtendedProperties @objectType = ''''''''View'''''''', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''''''''FHSMCreated'''''''', @propertyValue = @nowUTCStr;
+									EXEC dbo.fhsmSPExtendedProperties @objectType = ''''''''View'''''''', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''''''''FHSMCreatedBy'''''''', @propertyValue = @myUserName;
+									EXEC dbo.fhsmSPExtendedProperties @objectType = ''''''''View'''''''', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''''''''FHSMModified'''''''', @propertyValue = @nowUTCStr;
+									EXEC dbo.fhsmSPExtendedProperties @objectType = ''''''''View'''''''', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''''''''FHSMModifiedBy'''''''', @propertyValue = @myUserName;
+								'''';
+								EXEC sp_executesql
+									@stmt
+									,N''''@objectName nvarchar(128), @version sql_variant, @nowUTCStr sql_variant, @myUserName sql_variant''''
+									,@objectName = @objectName
+									,@version = @version
+									,@nowUTCStr = @nowUTCStr
+									,@myUserName = @myUserName;
+							END;
+						END;
+					END;
+
+					RETURN 0;
+				END;
+			'';
+			EXEC(@stmt);
+
+			--
+			-- Register extended properties on the stored procedure dbo.fhsmSPViewsPerformanceStatistics
+			--
+			BEGIN
+				SET @objectName = ''dbo.fhsmSPViewsPerformanceStatistics'';
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+			END;
+		END;
+
+		--
+		-- Create stored procedure dbo.fhsmSPPerfmonStatistics
+		--
+		BEGIN
+			SET @stmt = ''
+				IF OBJECT_ID(''''dbo.fhsmSPPerfmonStatistics'''', ''''P'''') IS NULL
+				BEGIN
+					EXEC(''''CREATE PROC dbo.fhsmSPPerfmonStatistics AS SELECT ''''''''dummy'''''''' AS Txt'''');
+				END;
+			'';
+			EXEC(@stmt);
+
+			SET @stmt = ''
+				ALTER PROC dbo.fhsmSPPerfmonStatistics (
+					@name nvarchar(128)
+					,@version nvarchar(128) OUTPUT
+				)
+				AS
+				BEGIN
+					SET NOCOUNT ON;
+
+					DECLARE @now datetime;
+					DECLARE @nowUTC datetime;
+					DECLARE @parameter nvarchar(max);
+					DECLARE @stmt nvarchar(max);
+					DECLARE @thisTask nvarchar(128);
+
+					SET @thisTask = OBJECT_NAME(@@PROCID);
+					SET @version = '''''' + @version + '''''';
+
+					--
+					-- Get the parameter for the command
+					--
+					BEGIN
+						SET @parameter = dbo.fhsmFNGetTaskParameter(@thisTask, @name);
+					END;
+
+					--
+					-- Collect data
+					--
+					BEGIN
+						SELECT
+							@now = SYSDATETIME()
+							,@nowUTC = SYSUTCDATETIME();
+
+						SET @stmt = ''''
+							SELECT
+								RTRIM(dopc.object_name) AS ObjectName
+								,RTRIM(dopc.counter_name) AS CounterName
+								,RTRIM(dopc.instance_name) AS InstanceName
+								,dopc.cntr_value AS CounterValue
+								,dopc.cntr_type AS CounterType
+								,(SELECT d.create_date FROM sys.databases AS d WITH (NOLOCK) WHERE (d.name = ''''''''tempdb'''''''')) AS LastSQLServiceRestart
+								,@nowUTC, @now
+							FROM dbo.fhsmPerfmonCounters AS pc
+							INNER JOIN sys.dm_os_performance_counters AS dopc WITH (NOLOCK)
+								ON (RTRIM(dopc.counter_name) COLLATE DATABASE_DEFAULT = pc.CounterName)
+								AND (RTRIM(dopc.[object_name]) COLLATE DATABASE_DEFAULT = pc.ObjectName)
+								AND (
+									(pc.InstanceName IS NULL)
+									OR (RTRIM(dopc.[instance_name]) COLLATE DATABASE_DEFAULT = pc.InstanceName)
+								);
+						'''';
+						INSERT INTO dbo.fhsmPerfmonStatistics(
+							ObjectName, CounterName, InstanceName
+							,CounterValue, CounterType
+							,LastSQLServiceRestart
+							,TimestampUTC, Timestamp
+						)
+						EXEC sp_executesql
+							@stmt
+							,N''''@now datetime, @nowUTC datetime''''
+							,@now = @now, @nowUTC = @nowUTC;
+					END;
+
+					RETURN 0;
+				END;
+			'';
+			EXEC(@stmt);
+
+			--
+			-- Register extended properties on the stored procedure dbo.fhsmSPPerfmonStatistics
+			--
+			BEGIN
+				SET @objectName = ''dbo.fhsmSPPerfmonStatistics'';
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+			END;
+		END;
+	END;
+
+	--
 	-- Create views
 	--
 	BEGIN
@@ -36376,6 +39737,13 @@ ELSE BEGIN
 		END;
 
 		--
+		-- Create fact view @pbiSchema.[Memory grants pending]
+		--
+		BEGIN
+			EXEC dbo.fhsmSPViewsPerformanceStatistics @view = ''MemoryGrantsPending'', @version = @version, @nowUTC = @nowUTC;
+		END;
+
+		--
 		-- Create fact view @pbiSchema.[Performance statistics]
 		--
 		BEGIN
@@ -36425,107 +39793,6 @@ ELSE BEGIN
 				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
 				EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
 			END;
-		END;
-	END;
-
-	--
-	-- Create stored procedures
-	--
-	BEGIN
-		--
-		-- Create stored procedure dbo.fhsmSPPerfmonStatistics
-		--
-		BEGIN
-			SET @stmt = ''
-				IF OBJECT_ID(''''dbo.fhsmSPPerfmonStatistics'''', ''''P'''') IS NULL
-				BEGIN
-					EXEC(''''CREATE PROC dbo.fhsmSPPerfmonStatistics AS SELECT ''''''''dummy'''''''' AS Txt'''');
-				END;
-			'';
-			EXEC(@stmt);
-
-			SET @stmt = ''
-				ALTER PROC dbo.fhsmSPPerfmonStatistics (
-					@name nvarchar(128)
-					,@version nvarchar(128) OUTPUT
-				)
-				AS
-				BEGIN
-					SET NOCOUNT ON;
-
-					DECLARE @now datetime;
-					DECLARE @nowUTC datetime;
-					DECLARE @parameter nvarchar(max);
-					DECLARE @stmt nvarchar(max);
-					DECLARE @thisTask nvarchar(128);
-
-					SET @thisTask = OBJECT_NAME(@@PROCID);
-					SET @version = '''''' + @version + '''''';
-
-					--
-					-- Get the parameter for the command
-					--
-					BEGIN
-						SET @parameter = dbo.fhsmFNGetTaskParameter(@thisTask, @name);
-					END;
-
-					--
-					-- Collect data
-					--
-					BEGIN
-						SELECT
-							@now = SYSDATETIME()
-							,@nowUTC = SYSUTCDATETIME();
-
-						SET @stmt = ''''
-							SELECT
-								RTRIM(dopc.object_name) AS ObjectName
-								,RTRIM(dopc.counter_name) AS CounterName
-								,RTRIM(dopc.instance_name) AS InstanceName
-								,dopc.cntr_value AS CounterValue
-								,dopc.cntr_type AS CounterType
-								,(SELECT d.create_date FROM sys.databases AS d WITH (NOLOCK) WHERE (d.name = ''''''''tempdb'''''''')) AS LastSQLServiceRestart
-								,@nowUTC, @now
-							FROM dbo.fhsmPerfmonCounters AS pc
-							INNER JOIN sys.dm_os_performance_counters AS dopc WITH (NOLOCK)
-								ON (RTRIM(dopc.counter_name) COLLATE DATABASE_DEFAULT = pc.CounterName)
-								AND (RTRIM(dopc.[object_name]) COLLATE DATABASE_DEFAULT = pc.ObjectName)
-								AND (
-									(pc.InstanceName IS NULL)
-									OR (RTRIM(dopc.[instance_name]) COLLATE DATABASE_DEFAULT = pc.InstanceName)
-								);
-						'''';
-						INSERT INTO dbo.fhsmPerfmonStatistics(
-							ObjectName, CounterName, InstanceName
-							,CounterValue, CounterType
-							,LastSQLServiceRestart
-							,TimestampUTC, Timestamp
-						)
-						EXEC sp_executesql
-							@stmt
-							,N''''@now datetime, @nowUTC datetime''''
-							,@now = @now, @nowUTC = @nowUTC;
-					END;
-
-					RETURN 0;
-				END;
-			'';
-			EXEC(@stmt);
-		END;
-
-		--
-		-- Register extended properties on the stored procedure dbo.fhsmSPPerfmonStatistics
-		--
-		BEGIN
-			SET @objectName = ''dbo.fhsmSPPerfmonStatistics'';
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
 		END;
 	END;
 
@@ -36649,13 +39916,15 @@ ELSE BEGIN
 	-- Update dimensions based upon the fact tables
 	--
 	BEGIN
-		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmPerfmonStatistics'';
+		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmPerfmonStatistics'', @ignoreAutoIndex = @ignoreAutoIndex;
 	END;
 END;
 
 ';
 SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
+
+SET @stmt = REPLACE(@stmt, 'SET @ignoreAutoIndex = 0;',                'SET @ignoreAutoIndex = 1;');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
@@ -36687,10 +39956,10 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @ena
 EXEC(@stmt);
 
 --
--- File part:PlanCacheUsage.sql modified: 2025.09.14 09.37.40
+-- File part:PlanCacheUsage.sql modified: 2025.11.23 00.07.08
 --
 SET @stmt = '
-USE [' + @fhSQLMonitorDatabase + '];
+USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
 SET NOCOUNT ON;
 
 --
@@ -36698,8 +39967,10 @@ SET NOCOUNT ON;
 --
 BEGIN
 	DECLARE @enablePlanCacheUsage bit;
+	DECLARE @ignoreAutoIndex bit;
 
 	SET @enablePlanCacheUsage = 0;
+	SET @ignoreAutoIndex = 0;
 END;
 
 --
@@ -36759,7 +40030,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.11.0'';
+		SET @version = ''2.12.0'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -37038,13 +40309,15 @@ ELSE BEGIN
 	-- Update dimensions based upon the fact tables
 	--
 	BEGIN
-		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmPlanCacheUsage'';
+		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmPlanCacheUsage'', @ignoreAutoIndex = @ignoreAutoIndex;
 	END;
 END;
 
 ';
 SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
+
+SET @stmt = REPLACE(@stmt, 'SET @ignoreAutoIndex = 0;',                'SET @ignoreAutoIndex = 1;');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
@@ -37076,10 +40349,10 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @ena
 EXEC(@stmt);
 
 --
--- File part:PlanGuides.sql modified: 2025.09.14 09.37.46
+-- File part:PlanGuides.sql modified: 2026.02.20 16.24.19
 --
 SET @stmt = '
-USE [' + @fhSQLMonitorDatabase + '];
+USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
 SET NOCOUNT ON;
 
 --
@@ -37087,8 +40360,10 @@ SET NOCOUNT ON;
 --
 BEGIN
 	DECLARE @enablePlanGuides bit;
+	DECLARE @ignoreAutoIndex bit;
 
 	SET @enablePlanGuides = 0;
+	SET @ignoreAutoIndex = 0;
 END;
 
 --
@@ -37148,7 +40423,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.11.0'';
+		SET @version = ''2.12.0'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -37311,11 +40586,13 @@ ELSE BEGIN
 					,pg.Message
 					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(pg.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
 				FROM dbo.fhsmPlanGuides AS pg
-				WHERE (pg.TimestampUTC = (
-					SELECT TOP (1) pg2.TimestampUTC
-					FROM dbo.fhsmPlanGuides AS pg2
-					ORDER BY pg2.TimestampUTC DESC
-				))
+				WHERE
+					(pg.TimestampUTC = (
+						SELECT TOP (1) pg2.TimestampUTC
+						FROM dbo.fhsmPlanGuides AS pg2
+						ORDER BY pg2.TimestampUTC DESC
+					))
+					AND (pg.DatabaseName <> ''''<HeartBeat>'''')
 			'';
 			EXEC(@stmt);
 		END;
@@ -37525,6 +40802,36 @@ ELSE BEGIN
 
 						CLOSE dCur;
 						DEALLOCATE dCur;
+
+						INSERT INTO dbo.fhsmPlanGuides(
+							DatabaseName
+							,PlanGuideId, Name
+							,CreateDate, ModifyDate
+							,IsDisabled, QueryText, ScopeTypeDesc
+							,ScopedSchema, ScopedObject
+							,ScopeBatch, Parameters, Hints
+							,MsgNum, Severity, State, Message
+							,TimestampUTC, Timestamp
+						)
+						SELECT
+							''''<HeartBeat>'''' AS DatabaseName
+							,-1 AS PlanGuideId
+							,''''<HeartBeat>'''' AS Name
+							,CAST(''''1900-01-01'''' AS datetime) AS CreateDate
+							,CAST(''''1900-01-01'''' AS datetime) AS ModifyDate
+							,0 AS IsDisabled
+							,NULL AS QueryText
+							,NULL AS ScopeTypeDesc
+							,NULL AS ScopedSchema
+							,NULL AS ScopedObject
+							,NULL AS ScopeBatch
+							,NULL AS Parameters
+							,NULL AS Hints
+							,-1 AS MsgNum
+							,0 AS Severity
+							,-1 AS State
+							,NULL AS Message
+							,@nowUTC, @now;
 					END;
 
 					RETURN 0;
@@ -37589,7 +40896,7 @@ ELSE BEGIN
 					SET @version = '''''' + @version + '''''';
 			'';
 			SET @stmt += ''
-					IF (@Type = ''''Parameter'''')
+					IF (@Type = ''''parameter'''')
 					BEGIN
 						IF (@Command = ''''set'''')
 						BEGIN
@@ -37659,7 +40966,7 @@ ELSE BEGIN
 					END
 			'';
 			SET @stmt += ''
-					ELSE IF (@Type = ''''Uninstall'''')
+					ELSE IF (@Type = ''''uninstall'''')
 					BEGIN
 						--
 						-- Place holder
@@ -37758,7 +41065,7 @@ ELSE BEGIN
 				,''DatabaseKey'' AS DimensionKey
 				,''dbo.fhsmPlanGuides'' AS SrcTable
 				,''src'' AS SrcAlias
-				,NULL AS SrcWhere
+				,''WHERE (src.DatabaseName <> ''''<HeartBeat>'''')'' AS SrcWhere
 				,''src.[Timestamp]'' AS SrcDateColumn
 				,''src.[DatabaseName]'', NULL, NULL, NULL
 				,''Database'', NULL, NULL, NULL
@@ -37799,13 +41106,15 @@ ELSE BEGIN
 	-- Update dimensions based upon the fact tables
 	--
 	BEGIN
-		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmPlanGuides'';
+		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmPlanGuides'', @ignoreAutoIndex = @ignoreAutoIndex;
 	END;
 END;
 
 ';
 SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
+
+SET @stmt = REPLACE(@stmt, 'SET @ignoreAutoIndex = 0;',                'SET @ignoreAutoIndex = 1;');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
@@ -37837,10 +41146,10 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @ena
 EXEC(@stmt);
 
 --
--- File part:QueryStatistics.sql modified: 2025.09.14 09.37.59
+-- File part:QueryStatistics.sql modified: 2026.02.07 20.30.55
 --
 SET @stmt = '
-USE [' + @fhSQLMonitorDatabase + '];
+USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
 SET NOCOUNT ON;
 
 --
@@ -37848,8 +41157,10 @@ SET NOCOUNT ON;
 --
 BEGIN
 	DECLARE @enableQueryStatistics bit;
+	DECLARE @ignoreAutoIndex bit;
 
 	SET @enableQueryStatistics = 0;
+	SET @ignoreAutoIndex = 0;
 END;
 
 --
@@ -37909,7 +41220,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.11.0'';
+		SET @version = ''2.12.0'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -38813,7 +42124,7 @@ ELSE BEGIN
 					SET @version = '''''' + @version + '''''';
 			'';
 			SET @stmt += ''
-					IF (@Type = ''''Parameter'''')
+					IF (@Type = ''''parameter'''')
 					BEGIN
 						IF (@Command = ''''set'''')
 						BEGIN
@@ -38883,7 +42194,7 @@ ELSE BEGIN
 					END
 			'';
 			SET @stmt += ''
-					ELSE IF (@Type = ''''Uninstall'''')
+					ELSE IF (@Type = ''''uninstall'''')
 					BEGIN
 						--
 						-- Place holder
@@ -39053,13 +42364,15 @@ ELSE BEGIN
 	-- Update dimensions based upon the fact tables
 	--
 	BEGIN
-		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmQueryStatistics'';
+		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmQueryStatistics'', @ignoreAutoIndex = @ignoreAutoIndex;
 	END;
 END;
 
 ';
 SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
+
+SET @stmt = REPLACE(@stmt, 'SET @ignoreAutoIndex = 0;',                'SET @ignoreAutoIndex = 1;');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
@@ -39091,10 +42404,10 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @ena
 EXEC(@stmt);
 
 --
--- File part:Triggers.sql modified: 2025.09.14 09.37.53
+-- File part:Triggers.sql modified: 2026.02.07 20.31.17
 --
 SET @stmt = '
-USE [' + @fhSQLMonitorDatabase + '];
+USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
 SET NOCOUNT ON;
 
 --
@@ -39102,8 +42415,10 @@ SET NOCOUNT ON;
 --
 BEGIN
 	DECLARE @enableTriggers bit;
+	DECLARE @ignoreAutoIndex bit;
 
 	SET @enableTriggers = 0;
+	SET @ignoreAutoIndex = 0;
 END;
 
 --
@@ -39163,7 +42478,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.11.0'';
+		SET @version = ''2.12.0'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -39312,6 +42627,7 @@ ELSE BEGIN
 					CASE t.ParentClass
 						WHEN 0 THEN ''''Database''''
 						WHEN 1 THEN ''''Object/Column''''
+						WHEN 100 THEN ''''Server''''
 						ELSE ''''ParentClass:'''' + CAST(t.ParentClass AS nvarchar)
 					END AS ParentClass
 					,QUOTENAME(t.ParentSchema) + ''''.'''' + QUOTENAME(t.ParentObject) AS ParentObject
@@ -39335,16 +42651,27 @@ ELSE BEGIN
 						WHEN 1 THEN ''''Yes''''
 						ELSE ''''N.A.''''
 					END AS IsDisabledTxt
-					,t.IsNotForReplication
-					,CASE t.IsNotForReplication
-						WHEN 0 THEN ''''No''''
-						WHEN 1 THEN ''''Yes''''
-						ELSE ''''N.A.''''
+					,CASE t.ParentClass
+						WHEN 100 THEN NULL
+						ELSE t.IsNotForReplication
+					END AS IsNotForReplication
+					,CASE t.ParentClass
+						WHEN 100 THEN ''''N.A''''
+						ELSE 
+							CASE t.IsNotForReplication
+								WHEN 0 THEN ''''No''''
+								WHEN 1 THEN ''''Yes''''
+								ELSE ''''N.A.''''
+							END
 					END AS IsNotForReplicationTxt
-					,CASE t.IsInsteadOfTrigger
-						WHEN 0 THEN ''''After trigger''''
-						ELSE ''''Instead of trigger''''
-					END TriggerType
+					,CASE t.ParentClass
+						WHEN 100 THEN ''''N.A''''
+						ELSE
+							CASE t.IsInsteadOfTrigger
+								WHEN 0 THEN ''''After trigger''''
+								ELSE ''''Instead of trigger''''
+							END
+					END AS TriggerType
 					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(t.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
 				FROM dbo.fhsmTriggers AS t
 				WHERE (t.TimestampUTC = (
@@ -39439,7 +42766,41 @@ ELSE BEGIN
 					END;
 			'';
 			SET @stmt += ''
+					SELECT
+						@now = SYSDATETIME()
+						,@nowUTC = SYSUTCDATETIME();
+			'';
+			SET @stmt += ''
 
+					--
+					-- Collect data for instance
+					--
+					BEGIN
+						INSERT INTO dbo.fhsmTriggers(
+							DatabaseName
+							,ParentClass, ParentSchema, ParentObject, Name, Type
+							,CreateDate, ModifyDate
+							,IsMsShipped, IsDisabled, IsNotForReplication, IsInsteadOfTrigger
+							,TimestampUTC, Timestamp
+						)
+						SELECT
+							''''<Instance>'''' AS DatabaseName
+							,t.parent_class AS ParentClass
+							,NULL AS ParentSchema
+							,NULL AS ParentObject
+							,t.name AS Name
+							,t.type AS Type
+							,t.create_date AS CreateDate
+							,t.modify_date AS ModifyDate
+							,t.is_ms_shipped AS IsMsShipped
+							,t.is_disabled AS IsDisabled
+							,0 AS IsNotForReplication
+							,0 AS IsInsteadOfTrigger
+							,@nowUTC, @now
+						FROM sys.server_triggers AS t;
+					END;
+			'';
+			SET @stmt += ''
 					--
 					-- Get the list of databases to process
 					--
@@ -39450,13 +42811,9 @@ ELSE BEGIN
 					END;
 
 					--
-					-- Collect data
+					-- Collect data for databases
 					--
 					BEGIN
-						SELECT
-							@now = SYSDATETIME()
-							,@nowUTC = SYSUTCDATETIME();
-
 						DECLARE dCur CURSOR LOCAL READ_ONLY FAST_FORWARD FOR
 						SELECT dl.DatabaseName, '' + CASE WHEN (@productVersion1 <= 10) THEN ''NULL'' ELSE ''d.replica_id'' END + '' AS replica_id
 						FROM #dbList AS dl
@@ -39617,7 +42974,7 @@ ELSE BEGIN
 					SET @version = '''''' + @version + '''''';
 			'';
 			SET @stmt += ''
-					IF (@Type = ''''Parameter'''')
+					IF (@Type = ''''parameter'''')
 					BEGIN
 						IF (@Command = ''''set'''')
 						BEGIN
@@ -39687,7 +43044,7 @@ ELSE BEGIN
 					END
 			'';
 			SET @stmt += ''
-					ELSE IF (@Type = ''''Uninstall'''')
+					ELSE IF (@Type = ''''uninstall'''')
 					BEGIN
 						--
 						-- Place holder
@@ -39827,13 +43184,15 @@ ELSE BEGIN
 	-- Update dimensions based upon the fact tables
 	--
 	BEGIN
-		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmTriggers'';
+		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmTriggers'', @ignoreAutoIndex = @ignoreAutoIndex;
 	END;
 END;
 
 ';
 SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
+
+SET @stmt = REPLACE(@stmt, 'SET @ignoreAutoIndex = 0;',                'SET @ignoreAutoIndex = 1;');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
@@ -39865,10 +43224,10 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @ena
 EXEC(@stmt);
 
 --
--- File part:WaitStatistics.sql modified: 2025.09.14 09.38.07
+-- File part:WaitStatistics.sql modified: 2025.11.23 00.10.44
 --
 SET @stmt = '
-USE [' + @fhSQLMonitorDatabase + '];
+USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
 SET NOCOUNT ON;
 
 --
@@ -39876,8 +43235,10 @@ SET NOCOUNT ON;
 --
 BEGIN
 	DECLARE @enableWaitStatistics bit;
+	DECLARE @ignoreAutoIndex bit;
 
 	SET @enableWaitStatistics = 0;
+	SET @ignoreAutoIndex = 0;
 END;
 
 --
@@ -39937,7 +43298,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.11.0'';
+		SET @version = ''2.12.0'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -40976,13 +44337,15 @@ ELSE BEGIN
 	-- Update dimensions based upon the fact tables
 	--
 	BEGIN
-		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmWaitStatistics'';
+		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmWaitStatistics'', @ignoreAutoIndex = @ignoreAutoIndex;
 	END;
 END;
 
 ';
 SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
+
+SET @stmt = REPLACE(@stmt, 'SET @ignoreAutoIndex = 0;',                'SET @ignoreAutoIndex = 1;');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
@@ -41017,7 +44380,7 @@ EXEC(@stmt);
 -- File part:WhoIsActive-001-AdamMachanic-12.00-sp_WhoIsActive.sql modified: 2025.02.17 18.45.42
 --
 SET @stmt = '
-USE [' + @fhSQLMonitorDatabase + '];
+USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
 SET NOCOUNT ON;
 
 --
@@ -46549,6 +49912,8 @@ END;
 SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
+SET @stmt = REPLACE(@stmt, 'SET @ignoreAutoIndex = 0;',                'SET @ignoreAutoIndex = 1;');
+
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
@@ -46579,10 +49944,10 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @ena
 EXEC(@stmt);
 
 --
--- File part:WhoIsActive-002.sql modified: 2025.09.14 09.38.25
+-- File part:WhoIsActive-002.sql modified: 2026.03.15 21.25.19
 --
 SET @stmt = '
-USE [' + @fhSQLMonitorDatabase + '];
+USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
 SET NOCOUNT ON;
 
 --
@@ -46590,8 +49955,10 @@ SET NOCOUNT ON;
 --
 BEGIN
 	DECLARE @enableWhoIsActive bit;
+	DECLARE @ignoreAutoIndex bit;
 
 	SET @enableWhoIsActive = 0;
+	SET @ignoreAutoIndex = 0;
 END;
 
 --
@@ -46651,7 +50018,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration(''PBISchema'');
-		SET @version = ''2.11.0'';
+		SET @version = ''2.12.0'';
 
 		SET @productVersion = CAST(SERVERPROPERTY(''ProductVersion'') AS nvarchar);
 		SET @productStartPos = 1;
@@ -46748,110 +50115,6 @@ ELSE BEGIN
 	--
 
 	--
-	-- Create views
-	--
-	BEGIN
-		--
-		-- Create fact view @pbiSchema.[Who is active]
-		--
-		BEGIN
-			SET @stmt = ''
-				IF OBJECT_ID('''''' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Who is active'') + '''''', ''''V'''') IS NULL
-				BEGIN
-					EXEC(''''CREATE VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Who is active'') + '' AS SELECT ''''''''dummy'''''''' AS Txt'''');
-				END;
-			'';
-			EXEC(@stmt);
-
-			SET @stmt = ''
-				ALTER VIEW  '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Who is active'') + ''
-				AS
-				SELECT
-					DATEDIFF(SECOND, a.collection_time, lastExecuted.Timestamp) AS SecondsSinceLastSeen
-					,a.collection_time AS CollectionTime
-					,a.login_time AS LoginTime
-					,DATEDIFF(MILLISECOND, a.start_time, a.collection_time) AS ElapsedTimeMS
-					,a.session_id AS SessionId
-					,CASE
-						WHEN LEN(a.sql_text) > '' + CAST(@maxSQLTextLength AS nvarchar) + '' THEN LEFT(a.sql_text, '' + CAST(@maxSQLTextLength AS nvarchar) + '') + CHAR(10) + ''''...Statement truncated''''
-						ELSE a.sql_text
-					END AS SQLText
-					,a.sql_command AS SQLCommand
-					,a.login_name AS LoginName
-					,a.wait_info AS WaitInfo
-					,a.tran_log_writes AS TransLogWrite
-					,a.CPU - a.FirstCPU AS CPU
-					,a.tempdb_allocations - a.FirstTempdbAllocations AS TempdbAllocations
-					,a.blocking_session_id AS BlockingSessionId
-					,a.reads - a.FirstReads AS Reads
-					,a.writes - a.FirstWrites AS Writes
-					,a.physical_reads - a.FirstPhysicalReads AS PhysicalReads
-					,a.used_memory AS UsedMemory
-					,a.status AS Status
-					,a.tran_start_time AS TranStartTime
-					,a.implicit_tran AS ImplicitTran
-					,a.open_tran_count AS OpenTranCount
-					,a.percent_complete AS PercentComplete
-					,a.host_name AS HostName
-					,a.program_name AS ProgramName
-					,ROW_NUMBER() OVER(ORDER BY a.collection_time, (a.reads - a.FirstReads), a.session_id DESC) AS SortOrder
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(a.database_name, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
-				FROM (
-					SELECT
-						ROW_NUMBER() OVER(PARTITION BY wia.session_id, wia.login_time, wia.start_time ORDER BY wia.collection_time DESC) AS _Rnk_
-						,wia.*
-						,firstWia.CPU AS FirstCPU
-						,firstWia.tempdb_allocations AS FirstTempdbAllocations
-						,firstWia.reads AS FirstReads
-						,firstWia.writes AS FirstWrites
-						,firstWia.physical_reads AS FirstPhysicalReads
-					FROM dbo.fhsmWhoIsActive AS wia
-					CROSS APPLY (
-						SELECT TOP (1)
-							fWia.CPU
-							,fWia.tempdb_allocations
-							,fWia.reads
-							,fWia.writes
-							,fWia.physical_reads
-						FROM dbo.fhsmWhoIsActive AS fWia
-						WHERE
-							(fWia.session_id = wia.session_id)
-							AND (fWia.login_time = wia.login_time)
-							AND (fWia.start_time = wia.start_time)
-						ORDER BY fWia.collection_time
-					) AS firstWia
-					WHERE (DATEDIFF(HOUR, wia.collection_time, (SELECT MAX(wia2.collection_time) FROM dbo.fhsmWhoIsActive AS wia2)) < 24)
-						AND (wia.sql_text <> ''''sp_server_diagnostics'''')
-						AND (wia.sql_text NOT LIKE ''''WAITFOR DELAY %'''')
-				) AS a
-				CROSS APPLY (
-					SELECT TOP 1 l.Timestamp
-					FROM dbo.fhsmLog AS l
-					WHERE (l.Name = ''''Who is active'''')
-					ORDER BY l.TimestampUTC DESC
-				) AS lastExecuted
-				WHERE (a._Rnk_ = 1);
-			'';
-			EXEC(@stmt);
-		END;
-
-		--
-		-- Register extended properties on fact view @pbiSchema.[Who is active]
-		--
-		BEGIN
-			SET @objectName = QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Who is active'');
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''View'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
-		END;
-	END;
-
-	--
 	-- Create stored procedures
 	--
 	BEGIN
@@ -46885,6 +50148,8 @@ ELSE BEGIN
 
 					SET @parameter = dbo.fhsmFNGetTaskParameter(@thisTask, @name);
 
+					SET @parameter = REPLACE(@parameter, ''''<FHSQLMonitorDatabase>'''', QUOTENAME(DB_NAME()));
+
 					SET @stmt = ''''EXEC dbo.sp_WhoIsActive '''' + @parameter;
 					EXEC(@stmt);
 
@@ -46892,21 +50157,408 @@ ELSE BEGIN
 				END;
 			'';
 			EXEC(@stmt);
+
+			--
+			-- Register extended properties on the stored procedure dbo.fhsmSPWhoIsActive
+			--
+			BEGIN
+				SET @objectName = ''dbo.fhsmSPWhoIsActive'';
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+			END;
 		END;
 
 		--
-		-- Register extended properties on the stored procedure dbo.fhsmSPIndexUsage
+		-- Create stored procedure dbo.fhsmSPControlWhoIsActive
 		--
 		BEGIN
-			SET @objectName = ''dbo.fhsmSPWhoIsActive'';
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
+			SET @stmt = ''
+				IF OBJECT_ID(''''dbo.fhsmSPControlWhoIsActive'''', ''''P'''') IS NULL
+				BEGIN
+					EXEC(''''CREATE PROC dbo.fhsmSPControlWhoIsActive AS SELECT ''''''''dummy'''''''' AS Txt'''');
+				END;
+			'';
+			EXEC(@stmt);
 
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+			SET @stmt = ''
+				ALTER PROC dbo.fhsmSPControlWhoIsActive (
+					@Type nvarchar(16)
+					,@Command nvarchar(16)
+					,@Name nvarchar(128) = NULL
+					,@Parameter nvarchar(max) = NULL
+					,@Task nvarchar(128) = NULL
+				)
+				AS
+				BEGIN
+					SET NOCOUNT ON;
+
+					DECLARE @message nvarchar(max);
+					DECLARE @parameterChanges TABLE(
+						Action nvarchar(10),
+						DeletedTask nvarchar(128),
+						DeletedName nvarchar(128),
+						DeletedParameter nvarchar(max),
+						InsertedTask nvarchar(128),
+						InsertedName nvarchar(128),
+						InsertedParameter nvarchar(max)
+					);
+					DECLARE @thisTask nvarchar(128);
+					DECLARE @version nvarchar(128);
+
+					SET @thisTask = OBJECT_NAME(@@PROCID);
+					SET @version = '''''' + @version + '''''';
+			'';
+			SET @stmt += ''
+					IF (@Type = ''''parameter'''')
+					BEGIN
+						IF (@Command = ''''set'''')
+						BEGIN
+							SET @Parameter = NULLIF(@Parameter, '''''''');
+
+							IF NOT EXISTS (
+								SELECT *
+								FROM dbo.fhsmSchedules AS s
+								WHERE (s.Task = @Task) AND (s.Name = @Name) AND (s.DeploymentStatus <> -1)
+							)
+							BEGIN
+								SET @message = ''''Invalid @Task:'''''''''''' + COALESCE(NULLIF(@Task, ''''''''), ''''<NULL>'''') + '''''''''''' and @Name:'''''''''''' + COALESCE(NULLIF(@Name, ''''''''), ''''<NULL>'''') + '''''''''''''''';
+								RAISERROR(@message, 0, 1) WITH NOWAIT;
+								RETURN -11;
+							END;
+
+							--
+							-- Register configuration changes
+							--
+							BEGIN
+								WITH
+								conf(Task, Name, Parameter) AS(
+									SELECT
+										@Task AS Task
+										,@Name AS Name
+										,@Parameter AS Parameter
+								)
+								MERGE dbo.fhsmSchedules AS tgt
+								USING conf AS src ON (src.[Task] = tgt.[Task] COLLATE SQL_Latin1_General_CP1_CI_AS) AND (src.[Name] = tgt.[Name] COLLATE SQL_Latin1_General_CP1_CI_AS)
+								-- Not testing for NULL as a NULL parameter is not allowed
+								WHEN MATCHED AND (tgt.Parameter <> src.Parameter)
+									THEN UPDATE
+										SET tgt.Parameter = src.Parameter
+								WHEN NOT MATCHED BY TARGET
+									THEN INSERT(Task, Name, Parameter)
+									VALUES(src.Task, src.Name, src.Parameter)
+								OUTPUT
+									$action,
+									deleted.Task,
+									deleted.Name,
+									deleted.Parameter,
+									inserted.Task,
+									inserted.Name,
+									inserted.Parameter
+								INTO @parameterChanges;
+
+								IF (@@ROWCOUNT <> 0)
+								BEGIN
+									SET @message = (
+										SELECT ''''Parameter is '''''''''''' + COALESCE(src.InsertedParameter, ''''<NULL>'''') + '''''''''''' - changed from '''''''''''' + COALESCE(src.DeletedParameter, ''''<NULL>'''') + ''''''''''''''''
+										FROM @parameterChanges AS src
+									);
+									IF (@message IS NOT NULL)
+									BEGIN
+										EXEC dbo.fhsmSPLog @name = @Name, @version = @version, @task = @thisTask, @type = ''''Info'''', @message = @message;
+									END;
+								END;
+							END;
+			'';
+			SET @stmt += ''
+						END
+						ELSE BEGIN
+							SET @message = ''''Illegal Combination of @Type:'''''''''''' + COALESCE(@Type, ''''<NULL>'''') + '''''''''''' and @Command:'''''''''''' + COALESCE(@Command, ''''<NULL>'''') + '''''''''''''''';
+							RAISERROR(@message, 0, 1) WITH NOWAIT;
+							RETURN -19;
+						END;
+					END
+			'';
+			SET @stmt += ''
+					ELSE IF (@Type = ''''uninstall'''')
+					BEGIN
+						--
+						-- Place holder
+						--
+						SET @Type = @Type;
+					END
+			'';
+			SET @stmt += ''
+					ELSE BEGIN
+						SET @message = ''''Illegal @Type:'''''''''''' + COALESCE(@Type, ''''<NULL>'''') + '''''''''''''''';
+						RAISERROR(@message, 0, 1) WITH NOWAIT;
+						RETURN -999;
+					END;
+
+					RETURN 0;
+				END;
+			'';
+			EXEC(@stmt);
+
+			--
+			-- Register extended properties on the stored procedure dbo.fhsmSPControlWhoIsActive
+			--
+			BEGIN
+				SET @objectName = ''dbo.fhsmSPControlWhoIsActive'';
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+			END;
+		END;
+
+		--
+		-- Create stored procedure dbo.fhsmSPViewsWhoIsActive
+		--
+		BEGIN
+			SET @stmt = ''
+				IF OBJECT_ID(''''dbo.fhsmSPViewsWhoIsActive'''', ''''P'''') IS NULL
+				BEGIN
+					EXEC(''''CREATE PROC dbo.fhsmSPViewsWhoIsActive AS SELECT ''''''''dummy'''''''' AS Txt'''');
+				END;
+			'';
+			EXEC(@stmt);
+
+			SET @stmt = ''
+				ALTER PROC dbo.fhsmSPViewsWhoIsActive (
+					@view nvarchar(128),
+					@version sql_variant,
+					@nowUTC datetime
+				)
+				AS
+				BEGIN
+					SET NOCOUNT ON;
+
+					DECLARE @defaultViewWhoIsActiveHours int;
+					DECLARE @defaultViewWhoIsActiveRows int;
+					DECLARE @hours int;
+					DECLARE @message nvarchar(max);
+					DECLARE @myUserName nvarchar(128);
+					DECLARE @noOfRows int;
+					DECLARE @nowUTCStr nvarchar(128);
+					DECLARE @objectName nvarchar(128);
+					DECLARE @pbiSchema nvarchar(128);
+					DECLARE @stmt nvarchar(max);
+
+					SET @myUserName = SUSER_NAME();
+
+					SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
+
+					SET @defaultViewWhoIsActiveHours = 24;
+					SET @defaultViewWhoIsActiveRows = 1000;
+
+					SET @pbiSchema = (
+						SELECT c.Value
+						FROM dbo.fhsmConfigurations AS c
+						WHERE (c.[Key] = ''''PBISchema'''')
+					);
+					IF (@pbiSchema IS NULL)
+					BEGIN
+						RAISERROR(''''The configuration key ''''''''PBISchema'''''''' could not be found'''', 0, 1) WITH NOWAIT;
+						RETURN -1;
+					END;
+			'';
+			SET @stmt += ''
+					IF (@view = ''''WhoIsActive'''')
+					BEGIN
+						SET @hours = (
+							SELECT c.Value
+							FROM dbo.fhsmConfigurations AS c
+							WHERE (c.[Key] = ''''View.WhoIsActive.Hours'''')
+						);
+						IF (@hours IS NULL)
+						BEGIN
+							INSERT INTO dbo.fhsmConfigurations([Key], Value)
+							VALUES(''''View.WhoIsActive.Hours'''', @defaultViewWhoIsActiveHours);
+
+							SET @hours = @defaultViewWhoIsActiveHours;
+						END;
+						SET @hours = ABS(@hours);
+
+						SET @noOfRows = (
+							SELECT c.Value
+							FROM dbo.fhsmConfigurations AS c
+							WHERE (c.[Key] = ''''View.WhoIsActive.Rows'''')
+						);
+						IF (@noOfRows IS NULL)
+						BEGIN
+							INSERT INTO dbo.fhsmConfigurations([Key], Value)
+							VALUES(''''View.WhoIsActive.Rows'''', @defaultViewWhoIsActiveRows);
+
+							SET @noOfRows = @defaultViewWhoIsActiveRows;
+						END;
+						SET @noOfRows = ABS(@noOfRows);
+			'';
+			SET @stmt += ''
+						--
+						-- Create fact view @pbiSchema.[Who is active]
+						--
+						BEGIN
+							BEGIN
+								SET @stmt = ''''
+									IF OBJECT_ID('''''''''''' + QUOTENAME(@pbiSchema) + ''''.'''' + QUOTENAME(''''Who is active'''') + '''''''''''', ''''''''V'''''''') IS NULL
+									BEGIN
+										RAISERROR(''''''''Creating stub view '''' + QUOTENAME(@pbiSchema) + ''''.'''' + QUOTENAME(''''Who is active'''') + '''''''''''', 0, 1) WITH NOWAIT;
+
+										EXEC(''''''''CREATE VIEW '''' + QUOTENAME(@pbiSchema) + ''''.'''' + QUOTENAME(''''Who is active'''') + '''' AS SELECT ''''''''''''''''dummy'''''''''''''''' AS Txt'''''''');
+									END;
+								'''';
+								EXEC(@stmt);
+			'';
+			SET @stmt += ''
+								SET @message = ''''Alter view '''' + QUOTENAME(@pbiSchema) + ''''.'''' + QUOTENAME(''''Who is active'''') + '''''''';
+								RAISERROR(@message, 0, 1) WITH NOWAIT;
+
+								SET @stmt = ''''
+									ALTER VIEW  '''' + QUOTENAME(@pbiSchema) + ''''.'''' + QUOTENAME(''''Who is active'''') + ''''
+									AS
+									SELECT
+										TOP ('''' + CAST(@noOfRows AS nvarchar) + '''')
+										DATEDIFF(SECOND, a.collection_time, lastExecuted.Timestamp) AS SecondsSinceLastSeen
+										,a.collection_time AS CollectionTime
+										,a.login_time AS LoginTime
+										,DATEDIFF(MILLISECOND, a.start_time, a.collection_time) AS ElapsedTimeMS
+										,a.session_id AS SessionId
+										,CASE
+											WHEN LEN(a.sql_text) > '' + CAST(@maxSQLTextLength AS nvarchar) + '' THEN LEFT(a.sql_text, '' + CAST(@maxSQLTextLength AS nvarchar) + '') + CHAR(10) + ''''''''...Statement truncated''''''''
+											ELSE a.sql_text
+										END AS SQLText
+										,a.sql_command AS SQLCommand
+										,a.login_name AS LoginName
+										,a.wait_info AS WaitInfo
+										,a.tran_log_writes AS TransLogWrite
+										,a.CPU - a.FirstCPU AS CPU
+										,a.tempdb_allocations - a.FirstTempdbAllocations AS TempdbAllocations
+										,a.blocking_session_id AS BlockingSessionId
+										,a.reads - a.FirstReads AS Reads
+										,a.writes - a.FirstWrites AS Writes
+										,a.physical_reads - a.FirstPhysicalReads AS PhysicalReads
+										,a.used_memory AS UsedMemory
+										,a.status AS Status
+										,a.tran_start_time AS TranStartTime
+										,a.implicit_tran AS ImplicitTran
+										,a.open_tran_count AS OpenTranCount
+										,a.percent_complete AS PercentComplete
+										,a.host_name AS HostName
+										,a.program_name AS ProgramName
+										,ROW_NUMBER() OVER(ORDER BY a.collection_time, (a.reads - a.FirstReads), a.session_id DESC) AS SortOrder
+										,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(a.database_name, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
+									FROM (
+										SELECT
+											ROW_NUMBER() OVER(PARTITION BY wia.session_id, wia.login_time, wia.start_time ORDER BY wia.collection_time DESC) AS _Rnk_
+											,wia.*
+											,firstWia.CPU AS FirstCPU
+											,firstWia.tempdb_allocations AS FirstTempdbAllocations
+											,firstWia.reads AS FirstReads
+											,firstWia.writes AS FirstWrites
+											,firstWia.physical_reads AS FirstPhysicalReads
+										FROM dbo.fhsmWhoIsActive AS wia
+										CROSS APPLY (
+											SELECT TOP (1)
+												fWia.CPU
+												,fWia.tempdb_allocations
+												,fWia.reads
+												,fWia.writes
+												,fWia.physical_reads
+											FROM dbo.fhsmWhoIsActive AS fWia
+											WHERE
+												(fWia.session_id = wia.session_id)
+												AND (fWia.login_time = wia.login_time)
+												AND (fWia.start_time = wia.start_time)
+											ORDER BY fWia.collection_time
+										) AS firstWia
+										WHERE (DATEDIFF(HOUR, wia.collection_time, (SELECT MAX(wia2.collection_time) FROM dbo.fhsmWhoIsActive AS wia2)) < '''' + CAST(@hours AS nvarchar) + '''')
+											AND (wia.sql_text <> ''''''''sp_server_diagnostics'''''''')
+											AND (wia.sql_text NOT LIKE ''''''''WAITFOR DELAY %'''''''')
+									) AS a
+									CROSS APPLY (
+										SELECT TOP 1 l.Timestamp
+										FROM dbo.fhsmLog AS l
+										WHERE (l.Name = ''''''''Who is active'''''''')
+										ORDER BY l.TimestampUTC DESC
+									) AS lastExecuted
+									WHERE (a._Rnk_ = 1)
+									ORDER BY a.collection_time DESC;
+								'''';
+								EXEC(@stmt);
+							END;
+			'';
+			SET @stmt += ''
+							--
+							-- Register extended properties on fact view @pbiSchema.[Who is active]
+							--
+							BEGIN
+								SET @objectName = QUOTENAME(@pbiSchema) + ''''.'''' + QUOTENAME(''''Who is active'''');
+
+								SET @stmt = ''''
+									DECLARE @objName nvarchar(128);
+									DECLARE @schName nvarchar(128);
+
+									SET @objName = PARSENAME(@objectName, 1);
+									SET @schName = PARSENAME(@objectName, 2);
+
+									EXEC dbo.fhsmSPExtendedProperties @objectType = ''''''''View'''''''', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''''''''FHSMVersion'''''''', @propertyValue = @version;
+									EXEC dbo.fhsmSPExtendedProperties @objectType = ''''''''View'''''''', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''''''''FHSMCreated'''''''', @propertyValue = @nowUTCStr;
+									EXEC dbo.fhsmSPExtendedProperties @objectType = ''''''''View'''''''', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''''''''FHSMCreatedBy'''''''', @propertyValue = @myUserName;
+									EXEC dbo.fhsmSPExtendedProperties @objectType = ''''''''View'''''''', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''''''''FHSMModified'''''''', @propertyValue = @nowUTCStr;
+									EXEC dbo.fhsmSPExtendedProperties @objectType = ''''''''View'''''''', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''''''''FHSMModifiedBy'''''''', @propertyValue = @myUserName;
+								'''';
+								EXEC sp_executesql
+									@stmt
+									,N''''@objectName nvarchar(128), @version sql_variant, @nowUTCStr sql_variant, @myUserName sql_variant''''
+									,@objectName = @objectName
+									,@version = @version
+									,@nowUTCStr = @nowUTCStr
+									,@myUserName = @myUserName;
+							END;
+						END;
+					END;
+
+					RETURN 0;
+				END;
+			'';
+			EXEC(@stmt);
+
+			--
+			-- Register extended properties on the stored procedure dbo.fhsmSPViewsWhoIsActive
+			--
+			BEGIN
+				SET @objectName = ''dbo.fhsmSPViewsWhoIsActive'';
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMVersion'', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreated'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''FHSMCreatedBy'', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModified'', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = ''Procedure'', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''FHSMModifiedBy'', @propertyValue = @myUserName;
+			END;
+		END;
+	END;
+
+	--
+	-- Create views
+	--
+	BEGIN
+		--
+		-- Create fact view @pbiSchema.[Who is active]
+		--
+		BEGIN
+			EXEC dbo.fhsmSPViewsWhoIsActive @view = ''WhoIsActive'', @version = @version, @nowUTC = @nowUTC;
 		END;
 	END;
 
@@ -46937,9 +50589,10 @@ ELSE BEGIN
 	--
 	BEGIN
 		WITH
-		schedules(Enabled, DeploymentStatus, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameter) AS(
+		schedules(Type, Enabled, DeploymentStatus, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameter) AS(
 			SELECT
-				@enableWhoIsActive								AS Enabled
+				1												AS Type
+				,@enableWhoIsActive								AS Enabled
 				,0												AS DeploymentStatus
 				,''Who is active''								AS Name
 				,PARSENAME(''dbo.fhsmSPWhoIsActive'', 1)			AS Task
@@ -46947,13 +50600,13 @@ ELSE BEGIN
 				,CAST(''1900-1-1T00:00:00.0000'' AS datetime2(0))	AS FromTime
 				,CAST(''1900-1-1T23:59:59.0000'' AS datetime2(0))	AS ToTime
 				,1, 1, 1, 1, 1, 1, 1							-- Monday..Sunday
-				,''@format_output = 0, @get_transaction_info = 1, @get_outer_command = 1, @get_plans = 1, @destination_table = '''''' + QUOTENAME(DB_NAME()) + ''.dbo.fhsmWhoIsActive''''''
+				,''@format_output = 0, @get_transaction_info = 1, @get_outer_command = 1, @get_plans = 1, @destination_table = ''''<FHSQLMonitorDatabase>.dbo.fhsmWhoIsActive''''''
 		)
 		MERGE dbo.fhsmSchedules AS tgt
 		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
 		WHEN NOT MATCHED BY TARGET
-			THEN INSERT(Enabled, DeploymentStatus, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameter)
-			VALUES(src.Enabled, src.DeploymentStatus, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameter);
+			THEN INSERT(Type, Enabled, DeploymentStatus, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameter)
+			VALUES(src.Type, src.Enabled, src.DeploymentStatus, src.Name, src.Task, src.ExecutionDelaySec, src.FromTime, src.ToTime, src.Monday, src.Tuesday, src.Wednesday, src.Thursday, src.Friday, src.Saturday, src.Sunday, src.Parameter);
 	END;
 
 	--
@@ -47007,13 +50660,15 @@ ELSE BEGIN
 	-- Update dimensions based upon the fact tables
 	--
 	BEGIN
-		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmWhoIsActive'';
+		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmWhoIsActive'', @ignoreAutoIndex = @ignoreAutoIndex;
 	END;
 END;
 
 ';
 SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
+
+SET @stmt = REPLACE(@stmt, 'SET @ignoreAutoIndex = 0;',                'SET @ignoreAutoIndex = 1;');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
@@ -47045,10 +50700,10 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @ena
 EXEC(@stmt);
 
 --
--- File part:_PostInstall-FHSQLMonitor-1.sql modified: 2025.06.12 06.55.08
+-- File part:_PostInstall-FHSQLMonitor-1.sql modified: 2025.11.23 00.19.06
 --
 SET @stmt = '
-USE [' + @fhSQLMonitorDatabase + '];
+USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
 SET NOCOUNT ON;
 
 --
@@ -47168,18 +50823,13 @@ ELSE BEGIN
 				,src.OutputColumn1, src.OutputColumn2, src.OutputColumn3, src.OutputColumn4
 			);
 	END;
-
-	--
-	-- Update dimensions based upon the fact table dbo.fhsmLog
-	--
-	BEGIN
-		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmLog'';
-	END;
 END;
 
 ';
 SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
+
+SET @stmt = REPLACE(@stmt, 'SET @ignoreAutoIndex = 0;',                'SET @ignoreAutoIndex = 1;');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
@@ -47211,10 +50861,10 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @ena
 EXEC(@stmt);
 
 --
--- File part:_PostInstall-FHSQLMonitor-2.sql modified: 2025.06.11 17.01.26
+-- File part:_PostInstall-FHSQLMonitor-2.sql modified: 2026.03.16 11.36.26
 --
 SET @stmt = '
-USE [' + @fhSQLMonitorDatabase + '];
+USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
 SET NOCOUNT ON;
 
 --
@@ -47305,16 +50955,47 @@ ELSE BEGIN
 	END;
 
 	--
-	-- Update dimensions based upon the fact table dbo.fhsmProcessing
+	-- Update parameter for fhsmSPInstanceState if it is the default
 	--
 	BEGIN
-		EXEC dbo.fhsmSPUpdateDimensions @table = ''dbo.fhsmProcessing'';
+		WITH
+		schedules(Name, Task, Parameter) AS(
+			SELECT
+				''Instance state''							AS Name
+				,PARSENAME(''dbo.fhsmSPInstanceState'', 1)	AS Task
+				,''@SeverityLevel = 17 ; @MessageIds = 833, 3197, 3198''
+		)
+		MERGE dbo.fhsmSchedules AS tgt
+		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
+		WHEN MATCHED AND (tgt.Parameter = ''@SeverityLevel = 17'')
+			THEN UPDATE SET
+				tgt.Parameter = src.Parameter;
+	END;
+
+	--
+	-- Update parameter for fhsmSPWhoIsActive if it is the default
+	--
+	BEGIN
+		WITH
+		schedules(Name, Task, Parameter) AS(
+			SELECT
+				''Who is active''							AS Name
+				,PARSENAME(''dbo.fhsmSPWhoIsActive'', 1)	AS Task
+				,''@format_output = 0, @get_transaction_info = 1, @get_outer_command = 1, @get_plans = 1, @destination_table = ''''<FHSQLMonitorDatabase>.dbo.fhsmWhoIsActive''''''
+		)
+		MERGE dbo.fhsmSchedules AS tgt
+		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
+		WHEN MATCHED AND (tgt.Parameter = ''@format_output = 0, @get_transaction_info = 1, @get_outer_command = 1, @get_plans = 1, @destination_table = '''''' + QUOTENAME(DB_NAME()) + ''.dbo.fhsmWhoIsActive'''''')
+			THEN UPDATE SET
+				tgt.Parameter = src.Parameter;
 	END;
 END;
 
 ';
 SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
+
+SET @stmt = REPLACE(@stmt, 'SET @ignoreAutoIndex = 0;',                'SET @ignoreAutoIndex = 1;');
 
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
@@ -47349,7 +51030,7 @@ EXEC(@stmt);
 -- File part:CleanupAfterInstallationAndUpgrade.sql modified: 2025.05.04 17.18.19
 --
 SET @stmt = '
-USE [' + @fhSQLMonitorDatabase + '];
+USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
 SET NOCOUNT ON;
 
 --
@@ -47431,6 +51112,8 @@ END;
 SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');
 SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');
 
+SET @stmt = REPLACE(@stmt, 'SET @ignoreAutoIndex = 0;',                'SET @ignoreAutoIndex = 1;');
+
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobs = 0;',                'SET @enableAgentJobs = '                + CAST(@enableAgentJobs AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgentJobsPerformance = 0;',     'SET @enableAgentJobsPerformance = '     + CAST(@enableAgentJobsPerformance AS nvarchar) + ';');
 SET @stmt = REPLACE(@stmt, 'SET @enableAgeOfStatistics = 0;',          'SET @enableAgeOfStatistics = '          + CAST(@enableAgeOfStatistics AS nvarchar) + ';');
@@ -47461,19 +51144,68 @@ SET @stmt = REPLACE(@stmt, 'SET @enableUpdateModifiedStatistics = 0;', 'SET @ena
 EXEC(@stmt);
 
 --
--- Enable job again if it was enabled when we started
+-- Creating auto indexes
 --
-IF (@installationJobStatus = 1)
 BEGIN
 	RAISERROR('', 0, 1) WITH NOWAIT;
-	SET @installationMsg = 'Enabling job ' + QUOTENAME(@fhsqlAgentJobName);
+	SET @installationMsg = 'Creating auto indexes';
 	RAISERROR(@installationMsg, 0, 1) WITH NOWAIT;
 
-	EXEC msdb.dbo.sp_update_job
-		@job_name = @fhsqlAgentJobName,
-		@enabled = 1;
+	SET @stmt = '
+		USE ' + QUOTENAME(@fhSQLMonitorDatabase) + ';
+
+		EXEC dbo.fhsmSPUpdateDimensions;
+	';
+	EXEC(@stmt);
+END;
+
+--
+-- Enable jobs again if they were enabled when we started
+--
+BEGIN
+	DECLARE jCur CURSOR LOCAL READ_ONLY FAST_FORWARD FOR
+	SELECT j.JobName, j.JobStatus
+	FROM @jobs AS j
+	ORDER BY j.JobName;
+
+	OPEN jCur;
+
+	WHILE (1 = 1)
+	BEGIN
+		FETCH NEXT FROM jCur
+		INTO @jobName, @jobStatus;
+
+		IF (@@FETCH_STATUS <> 0)
+		BEGIN
+			BREAK;
+		END;
+
+		IF (@jobName = 'FHSQLMonitor in FHSQLMonitor')
+			AND NOT EXISTS (
+				SELECT *
+				FROM msdb.dbo.sysjobs AS sj
+				WHERE (sj.name = 'FHSQLMonitor in FHSQLMonitor')
+			)
+		BEGIN
+			SET @jobName = 'FHSQLMonitor type 0 in FHSQLMonitor';
+		END;
+
+		IF (@jobStatus = 1)
+		BEGIN
+			RAISERROR('', 0, 1) WITH NOWAIT;
+			SET @installationMsg = 'Enabling job ' + QUOTENAME(@jobName);
+			RAISERROR(@installationMsg, 0, 1) WITH NOWAIT;
+
+			EXEC msdb.dbo.sp_update_job
+				@job_name = @jobName,
+				@enabled = 1;
+		END;
+	END;
+
+	CLOSE jCur;
+	DEALLOCATE jCur;
 END;
 
 RAISERROR('', 0, 1) WITH NOWAIT;
-SET @installationMsg = 'FHSQLMonitor in database ' + @fhSQLMonitorDatabase + ' on ' + @serverInfo + ' has been ' + CASE @installUpgradeFlag WHEN 1 THEN 'installed with' ELSE 'upgraded to' END + ' v2.11.1.1';
+SET @installationMsg = 'FHSQLMonitor in database ' + @fhSQLMonitorDatabase + ' on ' + @serverInfo + ' has been ' + CASE @installUpgradeFlag WHEN 1 THEN 'installed with' ELSE 'upgraded to' END + ' v2.12.0';
 RAISERROR(@installationMsg, 0, 1) WITH NOWAIT;

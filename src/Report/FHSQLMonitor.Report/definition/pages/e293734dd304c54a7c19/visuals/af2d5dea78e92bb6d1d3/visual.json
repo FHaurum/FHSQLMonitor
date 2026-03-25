@@ -1,5 +1,5 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.6.0/schema.json",
   "name": "af2d5dea78e92bb6d1d3",
   "position": {
     "x": 1760,
@@ -268,6 +268,20 @@
           ]
         },
         "howCreated": "User"
+      },
+      {
+        "name": "1e0160765c309d0b3b1c",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Log type"
+              }
+            },
+            "Property": "Type"
+          }
+        },
+        "type": "Categorical"
       }
     ]
   }

@@ -2,6 +2,14 @@
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/bookmarksMetadata/1.0.0/schema.json",
   "items": [
     {
+      "name": "55ad11e53c8ed7816403",
+      "displayName": "Agent jobs performance",
+      "children": [
+        "171fafe079eceab67b60",
+        "b5599a581834aaa1d101"
+      ]
+    },
+    {
       "name": "6624140b42a70e02ba0b",
       "displayName": "Agent jobs performance",
       "children": [

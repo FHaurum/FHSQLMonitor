@@ -57,6 +57,14 @@ table 'Database file'
 
 		annotation SummarizationSetBy = Automatic
 
+	column 'Physical file end'
+		dataType: string
+		lineageTag: 5532da53-ddf1-4521-8946-ef5755812c94
+		summarizeBy: none
+		sourceColumn: Physical file end
+
+		annotation SummarizationSetBy = Automatic
+
 	partition 'Database file' = m
 		mode: import
 		queryGroup: Dimensions
@@ -86,9 +94,19 @@ table 'Database file'
 				      {"Physical name", "Physical file"}, 
 				      {"Database name", "Database"}
 				    }
+				  ),
+				  addColumnPhysicalFileEnd = Table.AddColumn(
+				    renameColumns, 
+				    "Physical file end", 
+				    each Text.AfterDelimiter(
+				      [Physical file], 
+				      "\", 
+				      {0, RelativePosition.FromEnd}
+				    ), 
+				    type text
 				  )
 				in
-				  renameColumns
+				  addColumnPhysicalFileEnd
 				```
 
 	annotation PBI_ResultType = Table

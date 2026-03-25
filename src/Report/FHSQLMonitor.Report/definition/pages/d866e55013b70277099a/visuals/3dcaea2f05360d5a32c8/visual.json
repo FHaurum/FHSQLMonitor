@@ -1,12 +1,13 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.4.0/schema.json",
   "name": "3dcaea2f05360d5a32c8",
   "position": {
     "x": 10,
     "y": 80,
-    "z": 2000,
+    "z": 3000,
     "height": 455,
-    "width": 1900
+    "width": 1900,
+    "tabOrder": 7000
   },
   "visual": {
     "visualType": "tableEx",
@@ -19,14 +20,15 @@
                 "Column": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "Agent jobs - grid"
+                      "Entity": "Agent job"
                     }
                   },
-                  "Property": "Job"
+                  "Property": "Job name"
                 }
               },
-              "queryRef": "Agent jobs - grid.Job",
-              "nativeQueryRef": "Job"
+              "queryRef": "Agent job.Job name",
+              "nativeQueryRef": "Job",
+              "displayName": "Job"
             },
             {
               "field": {
@@ -461,10 +463,10 @@
               "Column": {
                 "Expression": {
                   "SourceRef": {
-                    "Entity": "Agent jobs - grid"
+                    "Entity": "Agent job"
                   }
                 },
-                "Property": "Job"
+                "Property": "Job name"
               }
             },
             "direction": "Ascending"
@@ -473,19 +475,124 @@
       }
     },
     "objects": {
-      "columnWidth": [
+      "values": [
         {
           "properties": {
-            "value": {
-              "expr": {
-                "Literal": {
-                  "Value": "287.443608688996D"
+            "backColor": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Conditional": {
+                      "Cases": [
+                        {
+                          "Condition": {
+                            "Comparison": {
+                              "ComparisonKind": 0,
+                              "Left": {
+                                "Measure": {
+                                  "Expression": {
+                                    "SourceRef": {
+                                      "Entity": "_Measures"
+                                    }
+                                  },
+                                  "Property": "Job enabled flag - Grid - Agent job configuration"
+                                }
+                              },
+                              "Right": {
+                                "Literal": {
+                                  "Value": "0D"
+                                }
+                              }
+                            }
+                          },
+                          "Value": {
+                            "Literal": {
+                              "Value": "'#fae99f'"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
                 }
               }
             }
           },
           "selector": {
-            "metadata": "Agent jobs - grid.Job"
+            "data": [
+              {
+                "dataViewWildcard": {
+                  "matchingOption": 1
+                }
+              }
+            ],
+            "metadata": "Agent jobs - grid.Job enabled"
+          }
+        },
+        {
+          "properties": {
+            "backColor": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Conditional": {
+                      "Cases": [
+                        {
+                          "Condition": {
+                            "Comparison": {
+                              "ComparisonKind": 0,
+                              "Left": {
+                                "Measure": {
+                                  "Expression": {
+                                    "SourceRef": {
+                                      "Entity": "_Measures"
+                                    }
+                                  },
+                                  "Property": "Schedule enabled flag - Grid - Agent job configuration"
+                                }
+                              },
+                              "Right": {
+                                "Literal": {
+                                  "Value": "0D"
+                                }
+                              }
+                            }
+                          },
+                          "Value": {
+                            "Literal": {
+                              "Value": "'#fae99f'"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "selector": {
+            "data": [
+              {
+                "dataViewWildcard": {
+                  "matchingOption": 1
+                }
+              }
+            ],
+            "metadata": "Agent jobs - grid.Schedule enabled"
+          }
+        }
+      ],
+      "total": [
+        {
+          "properties": {
+            "totals": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
           }
         }
       ]
@@ -519,5 +626,443 @@
       ]
     },
     "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "0a84245559d995bcf602",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Agent jobs - grid"
+              }
+            },
+            "Property": "Job enabled"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "ab301b5dff6fa4bfc94c",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Agent jobs - grid"
+              }
+            },
+            "Property": "Schedule enabled"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "c6cc643ad4d7960501a7",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Agent jobs - grid"
+              }
+            },
+            "Property": "0"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "0e9fbe94b219f6e850b1",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Agent jobs - grid"
+              }
+            },
+            "Property": "1"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "9ad3be2607673bee3b95",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Agent jobs - grid"
+              }
+            },
+            "Property": "2"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "1b2c1962c1c62394e219",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Agent jobs - grid"
+              }
+            },
+            "Property": "3"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "720554798b602f65cdf2",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Agent jobs - grid"
+              }
+            },
+            "Property": "4"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "1c8c01f0a83a3e6d98b7",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Agent jobs - grid"
+              }
+            },
+            "Property": "5"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "c1f0ba79d34e263000aa",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Agent jobs - grid"
+              }
+            },
+            "Property": "6"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "e2ede2e8d534e608f763",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Agent jobs - grid"
+              }
+            },
+            "Property": "7"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "e9f20c3f21e29fb1f254",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Agent jobs - grid"
+              }
+            },
+            "Property": "8"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "853dedbccc4aab354279",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Agent jobs - grid"
+              }
+            },
+            "Property": "9"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "419b9ac2672f5c7d0fba",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Agent jobs - grid"
+              }
+            },
+            "Property": "10"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "84ed42dfcf35410aab48",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Agent jobs - grid"
+              }
+            },
+            "Property": "11"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "61fa6170a1fd3820baa9",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Agent jobs - grid"
+              }
+            },
+            "Property": "12"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "bc36082ba4cc0a1aa9ec",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Agent jobs - grid"
+              }
+            },
+            "Property": "13"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "bad98616b121cd843232",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Agent jobs - grid"
+              }
+            },
+            "Property": "14"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "038f5fbe1c4ba6c33fb1",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Agent jobs - grid"
+              }
+            },
+            "Property": "15"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "cdfc75070efacba8692c",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Agent jobs - grid"
+              }
+            },
+            "Property": "16"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "bcb876d239f9b5aa5c9f",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Agent jobs - grid"
+              }
+            },
+            "Property": "17"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "95595ebbcae77af2b9a7",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Agent jobs - grid"
+              }
+            },
+            "Property": "18"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "2ae9808fafa4010085be",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Agent jobs - grid"
+              }
+            },
+            "Property": "19"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "670c5c6ea1b98a5cb00c",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Agent jobs - grid"
+              }
+            },
+            "Property": "20"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "cb39ae68ae330841c6c1",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Agent jobs - grid"
+              }
+            },
+            "Property": "21"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "ef224cf4d452aca93760",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Agent jobs - grid"
+              }
+            },
+            "Property": "22"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "32ad44dd3865f04d0973",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Agent jobs - grid"
+              }
+            },
+            "Property": "23"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "03e26fdf1c3419c8669a",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Agent jobs - grid"
+              }
+            },
+            "Property": "When"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "bcb3bb96dcbd6bd499e9",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Agent jobs - grid"
+              }
+            },
+            "Property": "When details"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "e90d5cfca3753057bef2",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Agent jobs - grid"
+              }
+            },
+            "Property": "Active"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "c122dd7e82a8f65495cf",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Agent jobs - grid"
+              }
+            },
+            "Property": "Schedule id"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "bb15ec5c4a80ca430e0d",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Agent job"
+              }
+            },
+            "Property": "Job name"
+          }
+        },
+        "type": "Categorical"
+      }
+    ]
   }
 }

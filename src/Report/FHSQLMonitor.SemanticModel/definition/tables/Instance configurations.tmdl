@@ -116,6 +116,14 @@ table 'Instance configurations'
 
 		annotation PBI_FormatHint = {"isCustom":true}
 
+	column Description
+		dataType: string
+		lineageTag: 722856fb-ee0d-49d3-a238-b74367550ffe
+		summarizeBy: none
+		sourceColumn: Description
+
+		annotation SummarizationSetBy = Automatic
+
 	partition 'Instance configurations' = m
 		mode: import
 		queryGroup: Facts

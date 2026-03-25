@@ -1,0 +1,161 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.7.0/schema.json",
+  "name": "ed13b9cd0b6e972cc52c",
+  "position": {
+    "x": 10,
+    "y": 404,
+    "z": 2500,
+    "height": 294,
+    "width": 1740,
+    "tabOrder": 8000
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Log messages"
+                    }
+                  },
+                  "Property": "Timestamp"
+                }
+              },
+              "queryRef": "Log messages.Timestamp",
+              "nativeQueryRef": "Timestamp1"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Log messages"
+                    }
+                  },
+                  "Property": "Message id"
+                }
+              },
+              "queryRef": "Log messages.Message id.",
+              "nativeQueryRef": "Message id"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Log messages"
+                    }
+                  },
+                  "Property": "Process info."
+                }
+              },
+              "queryRef": "Log messages.Process info.",
+              "nativeQueryRef": "Process info.1"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Log messages"
+                    }
+                  },
+                  "Property": "Text"
+                }
+              },
+              "queryRef": "Log messages.Text",
+              "nativeQueryRef": "Text1"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Log messages"
+                    }
+                  },
+                  "Property": "Id"
+                }
+              },
+              "queryRef": "Log messages.Id",
+              "nativeQueryRef": "Id1"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Log messages"
+                  }
+                },
+                "Property": "Id"
+              }
+            },
+            "direction": "Descending"
+          }
+        ]
+      }
+    },
+    "objects": {
+      "total": [
+        {
+          "properties": {
+            "totals": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Log messages'"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "visualTooltip": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            },
+            "section": {
+              "expr": {
+                "Literal": {
+                  "Value": "'180f79a413775d9b3a90'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

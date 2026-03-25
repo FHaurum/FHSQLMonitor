@@ -1,13 +1,13 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.5.0/schema.json",
   "name": "49a2f1f64a79dbac37ec",
   "position": {
     "x": 10,
     "y": 322,
     "z": 1500,
     "height": 212,
-    "width": 1900,
-    "tabOrder": 1000
+    "width": 1420,
+    "tabOrder": 0
   },
   "visual": {
     "visualType": "pivotTable",
@@ -53,12 +53,13 @@
                       "Entity": "Database file"
                     }
                   },
-                  "Property": "Physical file"
+                  "Property": "Physical file end"
                 }
               },
-              "queryRef": "Database file.Physical file",
+              "queryRef": "Database file.Physical file end",
               "nativeQueryRef": "Physical file",
-              "active": false
+              "active": false,
+              "displayName": "Physical file"
             }
           ]
         },
@@ -251,7 +252,7 @@
           },
           {
             "queryRefs": [
-              "Database file.Physical file"
+              "Database file.Physical file end"
             ],
             "isCollapsed": true,
             "isPinned": true

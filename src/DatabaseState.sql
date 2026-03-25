@@ -5,8 +5,10 @@ SET NOCOUNT ON;
 --
 BEGIN
 	DECLARE @enableDatabaseState bit;
+	DECLARE @ignoreAutoIndex bit;
 
 	SET @enableDatabaseState = 0;
+	SET @ignoreAutoIndex = 0;
 END;
 
 --
@@ -66,7 +68,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.11.0';
+		SET @version = '2.12.0';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -301,14 +303,14 @@ ELSE BEGIN
 							WHEN ''1'' THEN ''Yes''
 						END																AS IsSuspendedTxt
 						,dbo.fhsmFNConvertToDisplayTxt(pvt.suspend_reason_desc)			AS SuspendReason
-						,(SELECT MIN(aoState.Timestamp) FROM dbo.fhsmAlwaysOnState AS aoState WHERE (aoState.GroupA = pvt.GroupA) AND (aoState.GroupB = pvt.GroupB) AND (aoState.GroupC = pvt.GroupC) AND (aoState.Query = 6) AND (aoState.ValidTo = ''9999-12-31 23:59:59.000'')) AS MinTimestamp
-						,(SELECT MAX(aoState.Timestamp) FROM dbo.fhsmAlwaysOnState AS aoState WHERE (aoState.GroupA = pvt.GroupA) AND (aoState.GroupB = pvt.GroupB) AND (aoState.GroupC = pvt.GroupC) AND (aoState.Query = 6) AND (aoState.ValidTo = ''9999-12-31 23:59:59.000'')) AS MaxTimestamp
+						,(SELECT MIN(aoState.Timestamp) FROM dbo.fhsmAlwaysOnState AS aoState WHERE (aoState.GroupA = pvt.GroupA) AND (aoState.GroupB = pvt.GroupB) AND (aoState.GroupC = pvt.GroupC) AND (aoState.Query = 6) AND (aoState.ValidTo = ''9999-12-31T23:59:59'')) AS MinTimestamp
+						,(SELECT MAX(aoState.Timestamp) FROM dbo.fhsmAlwaysOnState AS aoState WHERE (aoState.GroupA = pvt.GroupA) AND (aoState.GroupB = pvt.GroupB) AND (aoState.GroupC = pvt.GroupC) AND (aoState.Query = 6) AND (aoState.ValidTo = ''9999-12-31T23:59:59'')) AS MaxTimestamp
 						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(pvt.GroupA, DEFAULT,    DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS AlwaysOnGroupKey
 						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(pvt.GroupA, pvt.GroupB, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS AlwaysOnGroupReplicaKey
 					FROM (
 						SELECT aoState.GroupA, aoState.GroupB, aoState.GroupC, aoState.[Key], aoState.Value AS _Value_
 						FROM dbo.fhsmAlwaysOnState AS aoState
-						WHERE (aoState.Query = 6) AND (aoState.ValidTo = ''9999-12-31 23:59:59.000'')
+						WHERE (aoState.Query = 6) AND (aoState.ValidTo = ''9999-12-31T23:59:59'')
 					) AS p
 					PIVOT (
 						MAX(_Value_)
@@ -357,14 +359,14 @@ ELSE BEGIN
 						,dbo.fhsmFNConvertToDisplayTxt(pvt.primary_recovery_health_desc)	AS PrimaryRecoveryHealth
 						,dbo.fhsmFNConvertToDisplayTxt(pvt.secondary_recovery_health_desc)	AS SecondaryRecoveryHealth
 						,dbo.fhsmFNConvertToDisplayTxt(pvt.synchronization_health_desc)		AS SynchronizationHealth
-						,(SELECT MIN(aoState.Timestamp) FROM dbo.fhsmAlwaysOnState AS aoState WHERE (aoState.GroupA = pvt.GroupA) AND (aoState.GroupB = pvt.GroupB) AND (aoState.Query = 3) AND (aoState.ValidTo = ''9999-12-31 23:59:59.000'')) AS MinTimestamp
-						,(SELECT MAX(aoState.Timestamp) FROM dbo.fhsmAlwaysOnState AS aoState WHERE (aoState.GroupA = pvt.GroupA) AND (aoState.GroupB = pvt.GroupB) AND (aoState.Query = 3) AND (aoState.ValidTo = ''9999-12-31 23:59:59.000'')) AS MaxTimestamp
+						,(SELECT MIN(aoState.Timestamp) FROM dbo.fhsmAlwaysOnState AS aoState WHERE (aoState.GroupA = pvt.GroupA) AND (aoState.GroupB = pvt.GroupB) AND (aoState.Query = 3) AND (aoState.ValidTo = ''9999-12-31T23:59:59'')) AS MinTimestamp
+						,(SELECT MAX(aoState.Timestamp) FROM dbo.fhsmAlwaysOnState AS aoState WHERE (aoState.GroupA = pvt.GroupA) AND (aoState.GroupB = pvt.GroupB) AND (aoState.Query = 3) AND (aoState.ValidTo = ''9999-12-31T23:59:59'')) AS MaxTimestamp
 						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(pvt.GroupA, DEFAULT,    DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS AlwaysOnGroupKey
 						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(pvt.GroupA, pvt.GroupB, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS AlwaysOnGroupReplicaKey
 					FROM (
 						SELECT aoState.GroupA, aoState.GroupB, aoState.[Key], aoState.Value AS _Value_
 						FROM dbo.fhsmAlwaysOnState AS aoState
-						WHERE (aoState.Query = 3) AND (aoState.ValidTo = ''9999-12-31 23:59:59.000'')
+						WHERE (aoState.Query = 3) AND (aoState.ValidTo = ''9999-12-31T23:59:59'')
 					) AS p
 					PIVOT (
 						MAX(_Value_)
@@ -414,14 +416,14 @@ ELSE BEGIN
 						,pvt.read_only_routing_url													AS ReadOnlyRoutingURL
 						,CAST(pvt.routing_priority AS int)											AS RoutingPriority
 						,dbo.fhsmFNConvertToDisplayTxt(pvt.secondary_role_allow_connections_desc)	AS SecondaryRoleAllowConnections
-						,(SELECT MIN(aoState.Timestamp) FROM dbo.fhsmAlwaysOnState AS aoState WHERE (aoState.GroupA = pvt.GroupA) AND (aoState.GroupB = pvt.GroupB) AND (aoState.GroupC = pvt.GroupC) AND (aoState.Query = 4) AND (aoState.ValidTo = ''9999-12-31 23:59:59.000'')) AS MinTimestamp
-						,(SELECT MAX(aoState.Timestamp) FROM dbo.fhsmAlwaysOnState AS aoState WHERE (aoState.GroupA = pvt.GroupA) AND (aoState.GroupB = pvt.GroupB) AND (aoState.GroupC = pvt.GroupC) AND (aoState.Query = 4) AND (aoState.ValidTo = ''9999-12-31 23:59:59.000'')) AS MaxTimestamp
+						,(SELECT MIN(aoState.Timestamp) FROM dbo.fhsmAlwaysOnState AS aoState WHERE (aoState.GroupA = pvt.GroupA) AND (aoState.GroupB = pvt.GroupB) AND (aoState.GroupC = pvt.GroupC) AND (aoState.Query = 4) AND (aoState.ValidTo = ''9999-12-31T23:59:59'')) AS MinTimestamp
+						,(SELECT MAX(aoState.Timestamp) FROM dbo.fhsmAlwaysOnState AS aoState WHERE (aoState.GroupA = pvt.GroupA) AND (aoState.GroupB = pvt.GroupB) AND (aoState.GroupC = pvt.GroupC) AND (aoState.Query = 4) AND (aoState.ValidTo = ''9999-12-31T23:59:59'')) AS MaxTimestamp
 						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(pvt.GroupA, DEFAULT,    DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS AlwaysOnGroupKey
 						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(pvt.GroupA, pvt.GroupB, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS AlwaysOnGroupReplicaKey
 					FROM (
 						SELECT aoState.GroupA, aoState.GroupB, aoState.GroupC, aoState.[Key], aoState.Value AS _Value_
 						FROM dbo.fhsmAlwaysOnState AS aoState
-						WHERE (aoState.Query = 4) AND (aoState.ValidTo = ''9999-12-31 23:59:59.000'')
+						WHERE (aoState.Query = 4) AND (aoState.ValidTo = ''9999-12-31T23:59:59'')
 					) AS p
 					PIVOT (
 						MAX(_Value_)
@@ -475,14 +477,14 @@ ELSE BEGIN
 						,CAST(pvt.backup_priority AS int)											AS BackupPriority
 						,pvt.read_only_routing_url													AS ReadOnlyRoutingURL
 						,pvt.read_write_routing_url													AS ReadWriteRoutingURL
-						,(SELECT MIN(aoState.Timestamp) FROM dbo.fhsmAlwaysOnState AS aoState WHERE (aoState.GroupA = pvt.GroupA) AND (aoState.GroupB = pvt.GroupB) AND (aoState.Query = 5) AND (aoState.ValidTo = ''9999-12-31 23:59:59.000'')) AS MinTimestamp
-						,(SELECT MAX(aoState.Timestamp) FROM dbo.fhsmAlwaysOnState AS aoState WHERE (aoState.GroupA = pvt.GroupA) AND (aoState.GroupB = pvt.GroupB) AND (aoState.Query = 5) AND (aoState.ValidTo = ''9999-12-31 23:59:59.000'')) AS MaxTimestamp
+						,(SELECT MIN(aoState.Timestamp) FROM dbo.fhsmAlwaysOnState AS aoState WHERE (aoState.GroupA = pvt.GroupA) AND (aoState.GroupB = pvt.GroupB) AND (aoState.Query = 5) AND (aoState.ValidTo = ''9999-12-31T23:59:59'')) AS MinTimestamp
+						,(SELECT MAX(aoState.Timestamp) FROM dbo.fhsmAlwaysOnState AS aoState WHERE (aoState.GroupA = pvt.GroupA) AND (aoState.GroupB = pvt.GroupB) AND (aoState.Query = 5) AND (aoState.ValidTo = ''9999-12-31T23:59:59'')) AS MaxTimestamp
 						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(pvt.GroupA, DEFAULT,    DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS AlwaysOnGroupKey
 						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(pvt.GroupA, pvt.GroupB, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS AlwaysOnGroupReplicaKey
 					FROM (
 						SELECT aoState.GroupA, aoState.GroupB, aoState.[Key], aoState.Value AS _Value_
 						FROM dbo.fhsmAlwaysOnState AS aoState
-						WHERE (aoState.Query = 5) AND (aoState.ValidTo = ''9999-12-31 23:59:59.000'')
+						WHERE (aoState.Query = 5) AND (aoState.ValidTo = ''9999-12-31T23:59:59'')
 					) AS p
 					PIVOT (
 						MAX(_Value_)
@@ -536,6 +538,7 @@ ELSE BEGIN
 							WHEN 2 THEN ''Forced''
 							ELSE ''?:'' + pvt.delayed_durability
 						END AS DelayedDurability
+						,pvt.database_owner AS DatabaseOwner
 						,CAST(pvt.is_auto_close_on AS bit) AS IsAutoCloseOn
 						,CASE CAST(pvt.is_auto_close_on AS bit)
 							WHEN 0 THEN ''No''
@@ -598,6 +601,12 @@ ELSE BEGIN
 							WHEN 1 THEN ''Yes''
 							ELSE ''N.A.''
 						END AS IsReadOnlyTxt
+						,CAST(pvt.is_trustworthy_on AS bit) AS IsTrustworthyOn
+						,CASE CAST(pvt.is_trustworthy_on AS bit)
+							WHEN 0 THEN ''No''
+							WHEN 1 THEN ''Yes''
+							ELSE ''N.A.''
+						END AS IsTrustworthyOnTxt
 						,CASE pvt.recovery_model
 							WHEN 1 THEN ''Full''
 							WHEN 2 THEN ''Bulk logged''
@@ -620,8 +629,8 @@ ELSE BEGIN
 						,pvt.replica_id AS ReplicaId
 						,pvt.AlwaysOnGroupName
 						,CAST(pvt.IsOnAlwaysOnPrimary AS int) AS IsOnAlwaysOnPrimary
-						,(SELECT MIN(dbState.Timestamp) FROM dbo.fhsmDatabaseState AS dbState WHERE (dbState.DatabaseName = pvt.DatabaseName) AND (dbState.Query = 31) AND (dbState.ValidTo = ''9999-12-31 23:59:59.000'')) AS MinTimestamp
-						,(SELECT MAX(dbState.Timestamp) FROM dbo.fhsmDatabaseState AS dbState WHERE (dbState.DatabaseName = pvt.DatabaseName) AND (dbState.Query = 31) AND (dbState.ValidTo = ''9999-12-31 23:59:59.000'')) AS MaxTimestamp
+						,(SELECT MIN(dbState.Timestamp) FROM dbo.fhsmDatabaseState AS dbState WHERE (dbState.DatabaseName = pvt.DatabaseName) AND (dbState.Query = 31) AND (dbState.ValidTo = ''9999-12-31T23:59:59'')) AS MinTimestamp
+						,(SELECT MAX(dbState.Timestamp) FROM dbo.fhsmDatabaseState AS dbState WHERE (dbState.DatabaseName = pvt.DatabaseName) AND (dbState.Query = 31) AND (dbState.ValidTo = ''9999-12-31T23:59:59'')) AS MaxTimestamp
 						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(pvt.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
 					FROM (
 						SELECT dbState.DatabaseName, dbState.[Key], dbState.Value AS _Value_
@@ -630,17 +639,18 @@ ELSE BEGIN
 							FROM dbo.fhsmDatabaseState AS dbState
 							WHERE
 								(dbState.Query = 31)
-								AND (dbState.ValidTo = ''9999-12-31 23:59:59.000'')
+								AND (dbState.ValidTo = ''9999-12-31T23:59:59'')
 						) AS toCheck
 						INNER JOIN dbo.fhsmDatabaseState AS dbState ON (dbState.DatabaseName = toCheck.DatabaseName)
-						WHERE (dbState.Query = 31) AND (dbState.ValidTo = ''9999-12-31 23:59:59.000'')
+						WHERE (dbState.Query = 31) AND (dbState.ValidTo = ''9999-12-31T23:59:59'')
 					) AS p
 					PIVOT (
 						MAX(_Value_)
 						FOR [Key] IN (
-							[collation_name], [compatibility_level], [delayed_durability]
+							[collation_name], [compatibility_level], [database_owner], [delayed_durability]
 							,[is_auto_close_on], [is_auto_shrink_on], [is_auto_update_stats_async_on], [is_encrypted], [is_in_standby]
 							,[is_mixed_page_allocation_on], [is_parameterization_forced], [is_read_committed_snapshot_on], [is_read_only]
+							,[is_trustworthy_on]
 							,[page_verify_option], [recovery_model], [state], [target_recovery_time_in_seconds], [replica_id]
 							,[AlwaysOnGroupName], [IsOnAlwaysOnPrimary])
 					) AS pvt;
@@ -693,14 +703,16 @@ ELSE BEGIN
 						FROM dbo.fhsmDatabaseState AS dbState
 						WHERE
 							(dbState.Query = 31)
-							AND (dbState.ValidTo = ''9999-12-31 23:59:59.000'')
+							AND (dbState.ValidTo = ''9999-12-31T23:59:59'')
 					) AS toCheck
 					INNER JOIN dbo.fhsmDatabaseState AS dbState ON (dbState.DatabaseName = toCheck.DatabaseName)
 					WHERE (dbState.Query = 31)
 						AND (dbState.[Key] IN (
-							''collation_name'', ''compatibility_level'', ''delayed_durability''
-							,''is_auto_close_on'', ''is_auto_shrink_on'', ''is_auto_update_stats_async_on'', ''is_encrypted'', ''is_mixed_page_allocation_on''
-							,''is_read_committed_snapshot_on'', ''page_verify_option'', ''recovery_model'', ''target_recovery_time_in_seconds''
+							''collation_name'', ''compatibility_level'', ''database_owner'', ''delayed_durability''
+							,''is_auto_close_on'', ''is_auto_shrink_on'', ''is_auto_update_stats_async_on'', ''is_encrypted'', ''is_in_standby''
+							,''is_mixed_page_allocation_on'', ''is_parameterization_forced'', ''is_read_committed_snapshot_on'', ''is_read_only''
+							,''is_trustworthy_on''
+							,''page_verify_option'', ''recovery_model'', ''state'', ''target_recovery_time_in_seconds''
 							,''AlwaysOnGroupName'', ''IsOnAlwaysOnPrimary''
 						))
 				)
@@ -713,78 +725,110 @@ ELSE BEGIN
 						,CASE a.[Key]
 							WHEN ''collation_name'' THEN ''Collation''
 							WHEN ''compatibility_level'' THEN ''Comp. level''
+							WHEN ''database_owner'' THEN ''Database owner''
 							WHEN ''delayed_durability'' THEN ''Delayed durability''
 							WHEN ''is_auto_close_on'' THEN ''Auto close''
 							WHEN ''is_auto_shrink_on'' THEN ''Auto shrink''
 							WHEN ''is_auto_update_stats_async_on'' THEN ''Auto update stats. async.''
 							WHEN ''is_encrypted'' THEN ''Encrypted''
+							WHEN ''is_in_standby'' THEN ''In standby''
 							WHEN ''is_mixed_page_allocation_on'' THEN ''Mixed page allocation''
+							WHEN ''is_parameterization_forced'' THEN ''Parameterization forced''
 							WHEN ''is_read_committed_snapshot_on'' THEN ''Is read committed snapshot on''
+							WHEN ''is_read_only'' THEN ''Read only''
+							WHEN ''is_trustworthy_on'' THEN ''Trustworthy''
 							WHEN ''page_verify_option'' THEN ''Page verify''
 							WHEN ''recovery_model'' THEN ''Recovery model''
+							WHEN ''state'' THEN ''State''
 							WHEN ''target_recovery_time_in_seconds'' THEN ''Target recovery time in sec.''
 							WHEN ''AlwaysOnGroupName'' THEN ''AlwaysOn group''
 							WHEN ''IsOnAlwaysOnPrimary'' THEN ''Is on AlwaysOn primary''
 							ELSE a.[Key]
 						END AS [Key]
 						,a.ValidFrom
-						,NULLIF(a.ValidTo, ''9999-12-31 23:59:59.000'') AS ValidTo
+						,NULLIF(a.ValidTo, ''9999-12-31T23:59:59'') AS ValidTo
+			';
+			SET @stmt += '
 						,CASE a.[Key]
 							WHEN ''delayed_durability''
 								THEN CASE a.Value
-									WHEN 0 THEN ''DISABLED''
-									WHEN 1 THEN ''ALLOWED''
-									WHEN 2 THEN ''FORCED''
+									WHEN 0 THEN ''Disabled''
+									WHEN 1 THEN ''Allowed''
+									WHEN 2 THEN ''Forced''
 									ELSE ''?:'' + a.Value
 								END
 							WHEN ''is_auto_close_on''
 								THEN CASE a.Value
-									WHEN 0 THEN ''False''
-									WHEN 1 THEN ''True''
+									WHEN 0 THEN ''No''
+									WHEN 1 THEN ''Yes''
 									ELSE ''?:'' + a.Value
 								END
 							WHEN ''is_auto_shrink_on''
 								THEN CASE a.Value
-									WHEN 0 THEN ''False''
-									WHEN 1 THEN ''True''
+									WHEN 0 THEN ''No''
+									WHEN 1 THEN ''Yes''
 									ELSE ''?:'' + a.Value
 								END
 							WHEN ''is_auto_update_stats_async_on''
 								THEN CASE a.Value
-									WHEN 0 THEN ''False''
-									WHEN 1 THEN ''True''
+									WHEN 0 THEN ''No''
+									WHEN 1 THEN ''Yes''
 									ELSE ''?:'' + a.Value
 								END
 							WHEN ''is_encrypted''
 								THEN CASE a.Value
-									WHEN 0 THEN ''False''
-									WHEN 1 THEN ''True''
+									WHEN 0 THEN ''No''
+									WHEN 1 THEN ''Yes''
+									ELSE ''?:'' + a.Value
+								END
+							WHEN ''is_in_standby''
+								THEN CASE a.Value
+									WHEN 0 THEN ''No''
+									WHEN 1 THEN ''Yes''
 									ELSE ''?:'' + a.Value
 								END
 							WHEN ''is_mixed_page_allocation_on''
 								THEN CASE a.Value
-									WHEN 0 THEN ''False''
-									WHEN 1 THEN ''True''
+									WHEN 0 THEN ''No''
+									WHEN 1 THEN ''Yes''
+									ELSE ''?:'' + a.Value
+								END
+							WHEN ''is_parameterization_forced''
+								THEN CASE a.Value
+									WHEN 0 THEN ''No''
+									WHEN 1 THEN ''Yes''
 									ELSE ''?:'' + a.Value
 								END
 							WHEN ''page_verify_option''
 								THEN CASE a.Value
-									WHEN 0 THEN ''NONE''
-									WHEN 1 THEN ''TORN_PAGE_DETECTION''
-									WHEN 2 THEN ''CHECKSUM''
+									WHEN 0 THEN ''None''
+									WHEN 1 THEN ''Torn page detection''
+									WHEN 2 THEN ''Checksum''
 									ELSE ''?:'' + a.Value
 								END
 							WHEN ''is_read_committed_snapshot_on''
 								THEN CASE a.Value
-									WHEN 0 THEN ''False''
-									WHEN 1 THEN ''True''
+									WHEN 0 THEN ''No''
+									WHEN 1 THEN ''Yes''
+									ELSE ''?:'' + a.Value
+								END
+							WHEN ''is_read_only''
+								THEN CASE a.Value
+									WHEN 0 THEN ''No''
+									WHEN 1 THEN ''Yes''
+									ELSE ''?:'' + a.Value
+								END
+							WHEN ''is_trustworthy_on''
+								THEN CASE a.Value
+									WHEN 0 THEN ''No''
+									WHEN 1 THEN ''Yes''
 									ELSE ''?:'' + a.Value
 								END
 							WHEN ''recovery_model''
 								THEN CASE a.Value
-									WHEN 1 THEN ''FULL''
-									WHEN 2 THEN ''BULK_LOGGED''
-									WHEN 3 THEN ''SIMPLE''
+									WHEN 1 THEN ''Full''
+									WHEN 2 THEN ''Bulk logged''
+									WHEN 3 THEN ''Simple''
 									ELSE ''?:'' + a.Value
 								END
 							WHEN ''IsOnAlwaysOnPrimary''
@@ -792,6 +836,19 @@ ELSE BEGIN
 									WHEN 1 THEN ''Yes''
 									WHEN 2 THEN ''No''
 									WHEN 3 THEN ''N.A.''
+									ELSE ''?:'' + a.Value
+								END
+							WHEN ''State''
+								THEN CASE a.Value
+									WHEN  0 THEN ''Online''
+									WHEN  1 THEN ''Restoring''
+									WHEN  2 THEN ''Recovering''
+									WHEN  3 THEN ''Recovery pending''
+									WHEN  4 THEN ''Suspect''
+									WHEN  5 THEN ''Emergency''
+									WHEN  6 THEN ''Offline''
+									WHEN  7 THEN ''Copying''
+									WHEN 10 THEN ''Offline secondary''
 									ELSE ''?:'' + a.Value
 								END
 							ELSE a.Value
@@ -826,14 +883,16 @@ ELSE BEGIN
 							FROM dbo.fhsmDatabaseState AS dbState
 							WHERE
 								(dbState.Query = 31)
-								AND (dbState.ValidTo = ''9999-12-31 23:59:59.000'')
+								AND (dbState.ValidTo = ''9999-12-31T23:59:59'')
 						) AS toCheck
 						INNER JOIN dbo.fhsmDatabaseState AS dbState ON (dbState.DatabaseName = toCheck.DatabaseName)
 						WHERE (dbState.Query = 31)
 							AND (dbState.[Key] IN (
-								''collation_name'', ''compatibility_level'', ''delayed_durability''
-								,''is_auto_close_on'', ''is_auto_shrink_on'', ''is_auto_update_stats_async_on'', ''is_encrypted'', ''is_mixed_page_allocation_on''
-								,''is_read_committed_snapshot_on'', ''page_verify_option'', ''recovery_model'', ''target_recovery_time_in_seconds''
+								''collation_name'', ''compatibility_level'', ''database_owner'', ''delayed_durability''
+								,''is_auto_close_on'', ''is_auto_shrink_on'', ''is_auto_update_stats_async_on'', ''is_encrypted'', ''is_in_standby''
+								,''is_mixed_page_allocation_on'', ''is_parameterization_forced'', ''is_read_committed_snapshot_on'', ''is_read_only''
+								,''is_trustworthy_on''
+								,''page_verify_option'', ''recovery_model'', ''state'', ''target_recovery_time_in_seconds''
 								,''AlwaysOnGroupName'', ''IsOnAlwaysOnPrimary''
 							))
 				';
@@ -854,7 +913,7 @@ ELSE BEGIN
 						,a.DatabaseName
 						,a.[Key]
 						,a.ValidFrom
-						,NULLIF(a.ValidTo, ''9999-12-31 23:59:59.000'') AS ValidTo
+						,NULLIF(a.ValidTo, ''9999-12-31T23:59:59'') AS ValidTo
 						,a.Value
 						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(a.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
 					FROM (
@@ -866,7 +925,7 @@ ELSE BEGIN
 							FROM dbo.fhsmDatabaseState AS dbState
 							WHERE
 								(dbState.Query = 60)
-								AND (dbState.ValidTo = ''9999-12-31 23:59:59.000'')
+								AND (dbState.ValidTo = ''9999-12-31T23:59:59'')
 						) AS toCheck
 						INNER JOIN dbo.fhsmDatabaseState AS dbState ON (dbState.DatabaseName = toCheck.DatabaseName)
 						WHERE (dbState.Query = 60)
@@ -891,7 +950,7 @@ ELSE BEGIN
 						,a.DatabaseName
 						,a.[Key]
 						,a.ValidFrom
-						,NULLIF(a.ValidTo, ''9999-12-31 23:59:59.000'') AS ValidTo
+						,NULLIF(a.ValidTo, ''9999-12-31T23:59:59'') AS ValidTo
 						,a.Value
 						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(a.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
 					FROM (
@@ -903,7 +962,7 @@ ELSE BEGIN
 							FROM dbo.fhsmDatabaseState AS dbState
 							WHERE
 								(dbState.Query = 1060)
-								AND (dbState.ValidTo = ''9999-12-31 23:59:59.000'')
+								AND (dbState.ValidTo = ''9999-12-31T23:59:59'')
 						) AS toCheck
 						INNER JOIN dbo.fhsmDatabaseState AS dbState ON (dbState.DatabaseName = toCheck.DatabaseName)
 						WHERE (dbState.Query = 1060)
@@ -1019,21 +1078,21 @@ ELSE BEGIN
 						FROM dbo.fhsmDatabaseState AS ds
 						WHERE
 							(ds.Query = 60)
-							AND (ds.ValidTo = ''9999-12-31 23:59:59.000'')
+							AND (ds.ValidTo = ''9999-12-31T23:59:59'')
 					) AS ds
 					LEFT OUTER JOIN (
 						SELECT ds.DatabaseName, ds.[Key], ds.Value
 						FROM dbo.fhsmDatabaseState AS ds
 						WHERE
 							(ds.Query = 1060)
-							AND (ds.ValidTo = ''9999-12-31 23:59:59.000'')
+							AND (ds.ValidTo = ''9999-12-31T23:59:59'')
 					) AS dsSecondary ON (dsSecondary.DatabaseName = ds.DatabaseName) AND (dsSecondary.[Key] = ds.[Key])
 					LEFT OUTER JOIN (
 						SELECT ds.DatabaseName, ds.[Key], ds.Value
 						FROM dbo.fhsmDatabaseState AS ds
 						WHERE
 							(ds.Query = 2060)
-							AND (ds.ValidTo = ''9999-12-31 23:59:59.000'')
+							AND (ds.ValidTo = ''9999-12-31T23:59:59'')
 					) AS dsDefault ON (dsDefault.DatabaseName = ds.DatabaseName) AND (dsDefault.[Key] = ds.[Key]);
 			';
 			EXEC(@stmt);
@@ -1075,12 +1134,12 @@ ELSE BEGIN
 						,dbo.fhsmFNConvertToDisplayTxt(pvt.member_state_desc)	AS MemberState
 						,CAST(pvt.number_of_quorum_votes AS int)				AS NumberOfQuorumVotes
 						,CAST(pvt.number_of_current_votes AS int)				AS NumberOfCurrentVotes
-						,(SELECT MIN(aoState.Timestamp) FROM dbo.fhsmAlwaysOnState AS aoState WHERE (aoState.GroupA = pvt.GroupA) AND (aoState.Query = 2) AND (aoState.ValidTo = ''9999-12-31 23:59:59.000'')) AS MinTimestamp
-						,(SELECT MAX(aoState.Timestamp) FROM dbo.fhsmAlwaysOnState AS aoState WHERE (aoState.GroupA = pvt.GroupA) AND (aoState.Query = 2) AND (aoState.ValidTo = ''9999-12-31 23:59:59.000'')) AS MaxTimestamp
+						,(SELECT MIN(aoState.Timestamp) FROM dbo.fhsmAlwaysOnState AS aoState WHERE (aoState.GroupA = pvt.GroupA) AND (aoState.Query = 2) AND (aoState.ValidTo = ''9999-12-31T23:59:59'')) AS MinTimestamp
+						,(SELECT MAX(aoState.Timestamp) FROM dbo.fhsmAlwaysOnState AS aoState WHERE (aoState.GroupA = pvt.GroupA) AND (aoState.Query = 2) AND (aoState.ValidTo = ''9999-12-31T23:59:59'')) AS MaxTimestamp
 					FROM (
 						SELECT aoState.GroupA, aoState.[Key], aoState.Value AS _Value_
 						FROM dbo.fhsmAlwaysOnState AS aoState
-						WHERE (aoState.Query = 2) AND (aoState.ValidTo = ''9999-12-31 23:59:59.000'')
+						WHERE (aoState.Query = 2) AND (aoState.ValidTo = ''9999-12-31T23:59:59'')
 					) AS p
 					PIVOT (
 						MAX(_Value_)
@@ -1127,12 +1186,12 @@ ELSE BEGIN
 						pvt.cluster_name										AS WSFCClusterName
 						,dbo.fhsmFNConvertToDisplayTxt(pvt.quorum_type_desc)	AS QuorumType
 						,dbo.fhsmFNConvertToDisplayTxt(pvt.quorum_state_desc)	AS QuorumState
-						,(SELECT MIN(aoState.Timestamp) FROM dbo.fhsmAlwaysOnState AS aoState WHERE (aoState.Query = 1) AND (aoState.ValidTo = ''9999-12-31 23:59:59.000'')) AS MinTimestamp
-						,(SELECT MAX(aoState.Timestamp) FROM dbo.fhsmAlwaysOnState AS aoState WHERE (aoState.Query = 1) AND (aoState.ValidTo = ''9999-12-31 23:59:59.000'')) AS MaxTimestamp
+						,(SELECT MIN(aoState.Timestamp) FROM dbo.fhsmAlwaysOnState AS aoState WHERE (aoState.Query = 1) AND (aoState.ValidTo = ''9999-12-31T23:59:59'')) AS MinTimestamp
+						,(SELECT MAX(aoState.Timestamp) FROM dbo.fhsmAlwaysOnState AS aoState WHERE (aoState.Query = 1) AND (aoState.ValidTo = ''9999-12-31T23:59:59'')) AS MaxTimestamp
 					FROM (
 						SELECT aoState.[Key], aoState.Value AS _Value_
 						FROM dbo.fhsmAlwaysOnState AS aoState
-						WHERE (aoState.Query = 1) AND (aoState.ValidTo = ''9999-12-31 23:59:59.000'')
+						WHERE (aoState.Query = 1) AND (aoState.ValidTo = ''9999-12-31T23:59:59'')
 					) AS p
 					PIVOT (
 						MAX(_Value_)
@@ -1494,7 +1553,7 @@ ELSE BEGIN
 									(
 										(src.Query IS NULL)
 										OR ((src.Value COLLATE DATABASE_DEFAULT <> tgt.Value) OR (src.Value IS NULL AND tgt.Value IS NOT NULL) OR (src.Value IS NOT NULL AND tgt.Value IS NULL))
-									) AND (tgt.ValidTo = ''9999-dec-31 23:59:59'');
+									) AND (tgt.ValidTo = ''9999-12-31T23:59:59'');
 							END;
 
 							--
@@ -1502,7 +1561,7 @@ ELSE BEGIN
 							--
 							BEGIN
 								INSERT INTO dbo.fhsmAlwaysOnState(Query, GroupA, GroupB, GroupC, [Key], Value, ValidFrom, ValidTo, TimestampUTC, Timestamp)
-								SELECT src.Query, src.GroupA, src.GroupB, src.GroupC, src.[Key], src.Value, @nowUTC AS ValidFrom, ''9999-dec-31 23:59:59'' AS ValidTo, @nowUTC, @now
+								SELECT src.Query, src.GroupA, src.GroupB, src.GroupC, src.[Key], src.Value, @nowUTC AS ValidFrom, ''9999-12-31T23:59:59'' AS ValidTo, @nowUTC, @now
 								FROM #alwaysOn AS src
 								WHERE NOT EXISTS (
 									SELECT *
@@ -1513,7 +1572,7 @@ ELSE BEGIN
 										AND (tgt.GroupB COLLATE DATABASE_DEFAULT = src.GroupB)
 										AND (tgt.GroupC COLLATE DATABASE_DEFAULT = src.GroupC)
 										AND (tgt.[Key] COLLATE DATABASE_DEFAULT = src.[Key])
-										AND ((tgt.Value COLLATE DATABASE_DEFAULT = src.Value) OR (tgt.Value IS NULL AND src.Value IS NULL)) AND (tgt.ValidTo = ''9999-dec-31 23:59:59'')
+										AND ((tgt.Value COLLATE DATABASE_DEFAULT = src.Value) OR (tgt.Value IS NULL AND src.Value IS NULL)) AND (tgt.ValidTo = ''9999-12-31T23:59:59'')
 								);
 							END;
 						END;
@@ -2417,7 +2476,7 @@ ELSE BEGIN
 									(
 										(src.Query IS NULL)
 										OR ((src.Value COLLATE DATABASE_DEFAULT <> tgt.Value) OR (src.Value IS NULL AND tgt.Value IS NOT NULL) OR (src.Value IS NOT NULL AND tgt.Value IS NULL))
-									) AND (tgt.ValidTo = ''9999-dec-31 23:59:59'');
+									) AND (tgt.ValidTo = ''9999-12-31T23:59:59'');
 							END;
 
 							--
@@ -2425,7 +2484,7 @@ ELSE BEGIN
 							--
 							BEGIN
 								INSERT INTO dbo.fhsmDatabaseState(Query, DatabaseName, [Key], Value, ValidFrom, ValidTo, TimestampUTC, Timestamp)
-								SELECT src.Query, src.DatabaseName, src.[Key], src.Value, @nowUTC AS ValidFrom, ''9999-dec-31 23:59:59'' AS ValidTo, @nowUTC, @now
+								SELECT src.Query, src.DatabaseName, src.[Key], src.Value, @nowUTC AS ValidFrom, ''9999-12-31T23:59:59'' AS ValidTo, @nowUTC, @now
 								FROM #inventory AS src
 								WHERE NOT EXISTS (
 									SELECT *
@@ -2434,7 +2493,7 @@ ELSE BEGIN
 										(tgt.Query = src.Query)
 										AND (tgt.DatabaseName COLLATE DATABASE_DEFAULT = src.DatabaseName)
 										AND (tgt.[Key] COLLATE DATABASE_DEFAULT = src.[Key])
-										AND ((tgt.Value COLLATE DATABASE_DEFAULT = src.Value) OR (tgt.Value IS NULL AND src.Value IS NULL)) AND (tgt.ValidTo = ''9999-dec-31 23:59:59'')
+										AND ((tgt.Value COLLATE DATABASE_DEFAULT = src.Value) OR (tgt.Value IS NULL AND src.Value IS NULL)) AND (tgt.ValidTo = ''9999-12-31T23:59:59'')
 								);
 							END;
 				';
@@ -2599,7 +2658,7 @@ ELSE BEGIN
 	-- Update dimensions based upon the fact tables
 	--
 	BEGIN
-		EXEC dbo.fhsmSPUpdateDimensions @table = 'dbo.fhsmAlwaysOnState';
-		EXEC dbo.fhsmSPUpdateDimensions @table = 'dbo.fhsmDatabaseState';
+		EXEC dbo.fhsmSPUpdateDimensions @table = 'dbo.fhsmAlwaysOnState', @ignoreAutoIndex = @ignoreAutoIndex;
+		EXEC dbo.fhsmSPUpdateDimensions @table = 'dbo.fhsmDatabaseState', @ignoreAutoIndex = @ignoreAutoIndex;
 	END;
 END;

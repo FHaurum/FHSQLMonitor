@@ -1,5 +1,5 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.3.0/schema.json",
   "name": "4fb8c6af430553a1c0d5",
   "position": {
     "x": 620,
@@ -7,7 +7,7 @@
     "z": 5500,
     "height": 60,
     "width": 130,
-    "tabOrder": 4000
+    "tabOrder": 3000
   },
   "visual": {
     "visualType": "actionButton",
@@ -93,7 +93,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Missing indexes'"
+                  "Value": "'Missing indexes Button'"
                 }
               }
             },

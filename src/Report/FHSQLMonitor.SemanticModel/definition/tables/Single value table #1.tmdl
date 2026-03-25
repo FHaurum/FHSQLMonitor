@@ -1,0 +1,21 @@
+table 'Single value table #1'
+	isHidden
+	lineageTag: fdf85afd-4a39-4120-82a8-b0e7b163036e
+
+	column State
+		isHidden
+		lineageTag: 2cc72465-3090-4e46-991b-d7c10d8a211e
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [State]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Single value table #1' = calculated
+		mode: import
+		source =
+				
+				DATATABLE ( "State", STRING, { { "A" } } )
+
+	annotation PBI_Id = 623cca07625841d0908de69db46df1b4
+

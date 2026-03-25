@@ -8,11 +8,13 @@ BEGIN
 	DECLARE @enableIndexReorganize bit;
 	DECLARE @enableUpdateAllStatistics bit;
 	DECLARE @enableUpdateModifiedStatistics bit;
+	DECLARE @ignoreAutoIndex bit;
 
 	SET @enableIndexRebuild = 0;
 	SET @enableIndexReorganize = 0;
 	SET @enableUpdateAllStatistics = 0;
 	SET @enableUpdateModifiedStatistics = 0;
+	SET @ignoreAutoIndex = 0;
 END;
 
 --
@@ -145,7 +147,7 @@ BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.11.0';
+		SET @version = '2.12.0';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -457,7 +459,7 @@ BEGIN
 					SET @version = ''' + @version + ''';
 			';
 			SET @stmt += '
-					IF (@Type = ''Parameter'')
+					IF (@Type = ''parameter'')
 					BEGIN
 						IF (@Command = ''set'')
 						BEGIN
@@ -527,7 +529,7 @@ BEGIN
 					END
 			';
 			SET @stmt += '
-					ELSE IF (@Type = ''Uninstall'')
+					ELSE IF (@Type = ''uninstall'')
 					BEGIN
 						--
 						-- Place holder
@@ -745,6 +747,6 @@ BEGIN
 	--
 	BEGIN
 		SET @stmt = COALESCE(QUOTENAME(@olaDatabase) + '.', '') + 'dbo.CommandLog';
-		EXEC dbo.fhsmSPUpdateDimensions @table = @stmt;
+		EXEC dbo.fhsmSPUpdateDimensions @table = @stmt, @ignoreAutoIndex = @ignoreAutoIndex;
 	END;
 END;

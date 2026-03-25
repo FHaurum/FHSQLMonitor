@@ -77,6 +77,18 @@ table 'Database size'
 
 		annotation SummarizationSetBy = Automatic
 
+	column MaxSize
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: fb6159ca-56c2-4fc0-b87a-bc86d74ec6de
+		summarizeBy: none
+		sourceColumn: MaxSize
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
 	partition 'Database size' = m
 		mode: import
 		queryGroup: Facts
@@ -96,6 +108,7 @@ table 'Database size'
 				    {
 				      "CurrentSize", 
 				      "UsedSize", 
+				      "MaxSize", 
 				      "Date", 
 				      "DatabaseFileKey", 
 				      "DiskKey", 

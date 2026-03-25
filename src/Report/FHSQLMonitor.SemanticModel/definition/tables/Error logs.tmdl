@@ -1,12 +1,12 @@
 table 'Error logs'
 	lineageTag: a1138e61-46f6-43ec-9dc7-d4a613f5b28c
 
-	column SetId
+	column 'Set id'
 		dataType: int64
 		formatString: #,0
 		lineageTag: b9f9bc13-8af0-4689-b7cd-295cb8cbd30c
 		summarizeBy: none
-		sourceColumn: SetId
+		sourceColumn: Set id
 
 		annotation SummarizationSetBy = User
 
@@ -87,7 +87,8 @@ table 'Error logs'
 				    datasetToUse, 
 				    {
 				      {"LogDate", "Timestamp"}, 
-				      {"ProcessInfo", "Process info."}
+				      {"ProcessInfo", "Process info."}, 
+				      {"SetId", "Set id"}
 				    }
 				  )
 				in

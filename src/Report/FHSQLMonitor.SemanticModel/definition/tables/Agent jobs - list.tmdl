@@ -42,6 +42,42 @@ table 'Agent jobs - list'
 
 		annotation SummarizationSetBy = Automatic
 
+	column JobEnabled
+		dataType: boolean
+		isHidden
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: d138c58c-b939-4de7-a82e-b801ca0ac591
+		summarizeBy: none
+		sourceColumn: JobEnabled
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column ScheduleEnabled
+		dataType: boolean
+		isHidden
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 60d698e3-da5f-4f4d-9db3-9d72603ca653
+		summarizeBy: none
+		sourceColumn: ScheduleEnabled
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column AgentJobKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 47dc1c11-ec98-426a-9148-4cfff52ea7e7
+		summarizeBy: none
+		sourceColumn: AgentJobKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
 	partition 'Agent jobs - list' = m
 		mode: import
 		queryGroup: Facts
@@ -59,11 +95,14 @@ table 'Agent jobs - list'
 				  selectColumns = Table.SelectColumns(
 				    datasetToUse, 
 				    {
+				      "JobEnabled", 
 				      "JobEnabledTxt", 
 				      "JobName", 
+				      "ScheduleEnabled", 
 				      "ScheduleEnabledTxt", 
 				      "Timestamp", 
-				      "TotalDesc"
+				      "TotalDesc",
+				      "AgentJobKey"
 				    }
 				  ), 
 				  renamedColumns = Table.RenameColumns(

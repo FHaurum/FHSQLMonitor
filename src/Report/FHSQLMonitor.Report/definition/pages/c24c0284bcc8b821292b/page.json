@@ -109,7 +109,7 @@
               "name": {
                 "expr": {
                   "Literal": {
-                    "Value": "'Background.png'"
+                    "Value": "'Background.svg'"
                   }
                 }
               },
@@ -118,7 +118,7 @@
                   "ResourcePackageItem": {
                     "PackageName": "RegisteredResources",
                     "PackageType": 1,
-                    "ItemName": "Background.png"
+                    "ItemName": "Background.svg"
                   }
                 }
               },

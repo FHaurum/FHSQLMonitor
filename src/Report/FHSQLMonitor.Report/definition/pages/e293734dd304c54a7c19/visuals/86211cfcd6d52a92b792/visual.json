@@ -1,5 +1,5 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.6.0/schema.json",
   "name": "86211cfcd6d52a92b792",
   "position": {
     "x": 10,
@@ -207,5 +207,107 @@
       ]
     },
     "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "a4b1128ac1e6a105e104",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Log"
+              }
+            },
+            "Property": "Timestamp"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "9b70f2246edd3c17b400",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Task name version"
+              }
+            },
+            "Property": "Name"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "5be6bf73c701d81a43ba",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Task name version"
+              }
+            },
+            "Property": "Task"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "52baf4d0b083402101ad",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Log"
+              }
+            },
+            "Property": "Type"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "63258601d8d9976a3150",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Log"
+              }
+            },
+            "Property": "Message"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "fbc0a04aede4081a51a0",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Task name version"
+              }
+            },
+            "Property": "Version"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "ccd0bb2080570b5b0424",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Log"
+              }
+            },
+            "Property": "Id"
+          }
+        },
+        "type": "Advanced"
+      }
+    ]
   }
 }

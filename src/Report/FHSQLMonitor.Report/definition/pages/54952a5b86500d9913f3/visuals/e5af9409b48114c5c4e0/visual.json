@@ -1,5 +1,5 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.3.0/schema.json",
   "name": "e5af9409b48114c5c4e0",
   "position": {
     "x": 10,
@@ -336,7 +336,7 @@
                                       "Entity": "_Measures"
                                     }
                                   },
-                                  "Property": "Is disabled - Triggers"
+                                  "Property": "Is disabled flag - Triggers"
                                 }
                               },
                               "Right": {
@@ -389,7 +389,7 @@
                                       "Entity": "_Measures"
                                     }
                                   },
-                                  "Property": "Is MS shipped - Triggers"
+                                  "Property": "Is MS shipped flag - Triggers"
                                 }
                               },
                               "Right": {
@@ -442,7 +442,7 @@
                                       "Entity": "_Measures"
                                     }
                                   },
-                                  "Property": "Is not for replication - Triggers"
+                                  "Property": "Is not for replication flag - Triggers"
                                 }
                               },
                               "Right": {

@@ -11,6 +11,29 @@
     "#4AC5BB"
   ],
   "visualStyles": {
+    "*": {
+      "*": {
+        "outspacePane": [
+          {
+            "backgroundColor": {
+              "solid": {
+                "color": "#E9F5FC"
+              }
+            },
+            "borderColor": {
+              "solid": {
+                "color": "#BCD9FF"
+              }
+            },
+            "inputBoxColor": {
+              "solid": {
+                "color": "#F0FFFF"
+              }
+            }
+          }
+        ]
+      }
+    },
     "actionButton": {
       "*": {
         "outline": [
@@ -780,6 +803,11 @@
             "left": 5,
             "right": 5,
             "top": 3
+          }
+        ],
+        "slicerSettings": [
+          {
+            "multiselect": true
           }
         ],
         "title": [

@@ -1,13 +1,13 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.4.0/schema.json",
   "name": "8120e6ce66d684c87dcd",
   "position": {
     "x": 10,
     "y": 565,
-    "z": 1000,
+    "z": 2000,
     "height": 455,
-    "width": 1900,
-    "tabOrder": 6000
+    "width": 1410,
+    "tabOrder": 5000
   },
   "visual": {
     "visualType": "tableEx",
@@ -20,14 +20,15 @@
                 "Column": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "Agent jobs - list"
+                      "Entity": "Agent job"
                     }
                   },
-                  "Property": "Job"
+                  "Property": "Job name"
                 }
               },
-              "queryRef": "Agent jobs - list.Job",
-              "nativeQueryRef": "Job"
+              "queryRef": "Agent job.Job name",
+              "nativeQueryRef": "Job",
+              "displayName": "Job"
             },
             {
               "field": {
@@ -83,10 +84,10 @@
               "Column": {
                 "Expression": {
                   "SourceRef": {
-                    "Entity": "Agent jobs - list"
+                    "Entity": "Agent job"
                   }
                 },
-                "Property": "Job"
+                "Property": "Job name"
               }
             },
             "direction": "Ascending"
@@ -101,27 +102,134 @@
             "value": {
               "expr": {
                 "Literal": {
-                  "Value": "287.09774436090225D"
-                }
-              }
-            }
-          },
-          "selector": {
-            "metadata": "Agent jobs - list.Job"
-          }
-        },
-        {
-          "properties": {
-            "value": {
-              "expr": {
-                "Literal": {
-                  "Value": "839.8345619801481D"
+                  "Value": "942.8800425225813D"
                 }
               }
             }
           },
           "selector": {
             "metadata": "Agent jobs - list.Description"
+          }
+        }
+      ],
+      "values": [
+        {
+          "properties": {
+            "backColor": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Conditional": {
+                      "Cases": [
+                        {
+                          "Condition": {
+                            "Comparison": {
+                              "ComparisonKind": 0,
+                              "Left": {
+                                "Measure": {
+                                  "Expression": {
+                                    "SourceRef": {
+                                      "Entity": "_Measures"
+                                    }
+                                  },
+                                  "Property": "Job enabled flag - List - Agent job configuration"
+                                }
+                              },
+                              "Right": {
+                                "Literal": {
+                                  "Value": "0D"
+                                }
+                              }
+                            }
+                          },
+                          "Value": {
+                            "Literal": {
+                              "Value": "'#fae99f'"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "selector": {
+            "data": [
+              {
+                "dataViewWildcard": {
+                  "matchingOption": 1
+                }
+              }
+            ],
+            "metadata": "Agent jobs - list.Job enabled"
+          }
+        },
+        {
+          "properties": {
+            "backColor": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Conditional": {
+                      "Cases": [
+                        {
+                          "Condition": {
+                            "Comparison": {
+                              "ComparisonKind": 0,
+                              "Left": {
+                                "Measure": {
+                                  "Expression": {
+                                    "SourceRef": {
+                                      "Entity": "_Measures"
+                                    }
+                                  },
+                                  "Property": "Schedule enabled flag - List - Agent job configuration"
+                                }
+                              },
+                              "Right": {
+                                "Literal": {
+                                  "Value": "0D"
+                                }
+                              }
+                            }
+                          },
+                          "Value": {
+                            "Literal": {
+                              "Value": "'#fae99f'"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "selector": {
+            "data": [
+              {
+                "dataViewWildcard": {
+                  "matchingOption": 1
+                }
+              }
+            ],
+            "metadata": "Agent jobs - list.Schedule enabled"
+          }
+        }
+      ],
+      "total": [
+        {
+          "properties": {
+            "totals": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
           }
         }
       ]
@@ -155,5 +263,65 @@
       ]
     },
     "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "a338b1b44026034c0399",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Agent jobs - list"
+              }
+            },
+            "Property": "Job enabled"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "2c4abe52ce7ea8bc0876",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Agent jobs - list"
+              }
+            },
+            "Property": "Schedule enabled"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "0eae90b55de2fc538bea",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Agent jobs - list"
+              }
+            },
+            "Property": "Description"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "e8839bc7cd0887e98c81",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Agent job"
+              }
+            },
+            "Property": "Job name"
+          }
+        },
+        "type": "Categorical"
+      }
+    ]
   }
 }

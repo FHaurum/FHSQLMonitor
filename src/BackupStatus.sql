@@ -5,8 +5,10 @@ SET NOCOUNT ON;
 --
 BEGIN
 	DECLARE @enableBackupStatus bit;
+	DECLARE @ignoreAutoIndex bit;
 
 	SET @enableBackupStatus = 0;
+	SET @ignoreAutoIndex = 0;
 END;
 
 --
@@ -66,7 +68,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.11.0';
+		SET @version = '2.12.0';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -262,7 +264,7 @@ ELSE BEGIN
 							FROM dbo.fhsmDatabaseState AS dbState
 							WHERE
 								(dbState.Query = 31)
-								AND (dbState.ValidTo = ''9999-12-31 23:59:59.000'')
+								AND (dbState.ValidTo = ''9999-12-31T23:59:59'')
 								AND (dbState.[Key] = ''recovery_model'')
 								AND (dbState.DatabaseName <> ''tempdb'')
 						) AS d
@@ -327,7 +329,6 @@ ELSE BEGIN
 					,bs.BackupStartDate
 					,bs.BackupFinishDate
 					,COALESCE(NULLIF(DATEDIFF(SECOND, bs.BackupStartDate, bs.BackupFinishDate), 0), 1) AS Duration		-- Duration of 0 sec. will always be 1 sec.
-					,bs.ExpirationDate
 					,CASE bs.Type
 						WHEN ''D'' THEN ''Database''
 						WHEN ''I'' THEN ''Differential database''
@@ -352,16 +353,27 @@ ELSE BEGIN
 						WHEN 1 THEN ''Yes''
 						ELSE ''N.A.''
 					END AS IsDamagedTxt
-					,bs.LogicalDeviceName
-					,bs.PhysicalDeviceName
-					,bs.BackupsetName
-					,bs.BackupsetDescription
 					,bs.Timestamp
 					,CAST(bs.Timestamp AS date) AS Date
 					,(DATEPART(HOUR, bs.Timestamp) * 60 * 60) + (DATEPART(MINUTE, bs.Timestamp) * 60) + (DATEPART(SECOND, bs.Timestamp)) AS TimeKey
 					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(bs.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
 					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(1, bs.Type, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS BackupTypeJunkDimensionKey
-				FROM dbo.fhsmBackupStatus AS bs;
+				FROM (
+					SELECT
+						bs.DatabaseName, bs.Type
+						,bs.BackupStartDate, bs.BackupFinishDate
+						,bs.BackupSize, bs.CompressedBackupSize
+						,bs.IsCopyOnly, bs.IsDamaged
+						,bs.Timestamp
+						,COUNT(*) AS NumberOfPhysicalFiles
+					FROM dbo.fhsmBackupStatus AS bs
+					GROUP BY
+						bs.DatabaseName, bs.Type
+						,bs.BackupStartDate, bs.BackupFinishDate
+						,bs.BackupSize, bs.CompressedBackupSize
+						,bs.IsCopyOnly, bs.IsDamaged
+						,bs.Timestamp
+				) AS bs;
 			';
 			EXEC(@stmt);
 		END;
@@ -595,6 +607,6 @@ ELSE BEGIN
 	-- Update dimensions based upon the fact tables
 	--
 	BEGIN
-		EXEC dbo.fhsmSPUpdateDimensions @table = 'dbo.fhsmBackupStatus';
+		EXEC dbo.fhsmSPUpdateDimensions @table = 'dbo.fhsmBackupStatus', @ignoreAutoIndex = @ignoreAutoIndex;
 	END;
 END;

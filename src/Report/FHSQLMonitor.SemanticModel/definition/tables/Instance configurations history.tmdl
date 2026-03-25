@@ -49,6 +49,14 @@ table 'Instance configurations history'
 
 		annotation SummarizationSetBy = User
 
+	column Description
+		dataType: string
+		lineageTag: 0c90de29-e791-41d2-bd92-f65936375ca9
+		summarizeBy: none
+		sourceColumn: Description
+
+		annotation SummarizationSetBy = Automatic
+
 	partition 'Instance configurations history' = m
 		mode: import
 		queryGroup: Facts

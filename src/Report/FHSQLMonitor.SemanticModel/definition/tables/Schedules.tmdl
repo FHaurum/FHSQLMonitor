@@ -154,6 +154,15 @@ table Schedules
 
 		annotation SummarizationSetBy = User
 
+	column Type
+		dataType: int64
+		formatString: 0
+		lineageTag: fad4751a-647b-4963-a422-8295dc60862a
+		summarizeBy: none
+		sourceColumn: Type
+
+		annotation SummarizationSetBy = User
+
 	partition Schedules = m
 		mode: import
 		queryGroup: Framework
@@ -165,6 +174,7 @@ table Schedules
 				  selectColumns = Table.SelectColumns(
 				    table,
 				    {
+				      "Type", 
 				      "EnabledTxt", 
 				      "ExecutionDelaySec", 
 				      "FromTime", 

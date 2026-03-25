@@ -5,8 +5,10 @@ SET NOCOUNT ON;
 --
 BEGIN
 	DECLARE @enablePerformanceStatistics bit;
+	DECLARE @ignoreAutoIndex bit;
 
 	SET @enablePerformanceStatistics = 0;
+	SET @ignoreAutoIndex = 0;
 END;
 
 --
@@ -72,7 +74,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.11.0';
+		SET @version = '2.12.0';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -385,6 +387,261 @@ ELSE BEGIN
 	--
 
 	--
+	-- Create stored procedures
+	--
+	BEGIN
+		--
+		-- Create stored procedure dbo.fhsmSPViewsPerformanceStatistics
+		--
+		BEGIN
+			SET @stmt = '
+				IF OBJECT_ID(''dbo.fhsmSPViewsPerformanceStatistics'', ''P'') IS NULL
+				BEGIN
+					EXEC(''CREATE PROC dbo.fhsmSPViewsPerformanceStatistics AS SELECT ''''dummy'''' AS Txt'');
+				END;
+			';
+			EXEC(@stmt);
+
+			SET @stmt = '
+				ALTER PROC dbo.fhsmSPViewsPerformanceStatistics (
+					@view nvarchar(128),
+					@version sql_variant,
+					@nowUTC datetime
+				)
+				AS
+				BEGIN
+					SET NOCOUNT ON;
+
+					DECLARE @defaultViewMemoryGrantsPendingRows int;
+					DECLARE @message nvarchar(max);
+					DECLARE @myUserName nvarchar(128);
+					DECLARE @noOfRows int;
+					DECLARE @nowUTCStr nvarchar(128);
+					DECLARE @objectName nvarchar(128);
+					DECLARE @pbiSchema nvarchar(128);
+					DECLARE @stmt nvarchar(max);
+
+					SET @myUserName = SUSER_NAME();
+
+					SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
+
+					SET @defaultViewMemoryGrantsPendingRows = 25;
+
+					SET @pbiSchema = (
+						SELECT c.Value
+						FROM dbo.fhsmConfigurations AS c
+						WHERE (c.[Key] = ''PBISchema'')
+					);
+					IF (@pbiSchema IS NULL)
+					BEGIN
+						RAISERROR(''The configuration key ''''PBISchema'''' could not be found'', 0, 1) WITH NOWAIT;
+						RETURN -1;
+					END;
+			';
+			SET @stmt += '
+					IF (@view = ''MemoryGrantsPending'')
+					BEGIN
+						SET @noOfRows = (
+							SELECT c.Value
+							FROM dbo.fhsmConfigurations AS c
+							WHERE (c.[Key] = ''View.MemoryGrantsPending.Rows'')
+						);
+						IF (@noOfRows IS NULL)
+						BEGIN
+							INSERT INTO dbo.fhsmConfigurations([Key], Value)
+							VALUES(''View.MemoryGrantsPending.Rows'', @defaultViewMemoryGrantsPendingRows);
+
+							SET @noOfRows = @defaultViewMemoryGrantsPendingRows;
+						END;
+						SET @noOfRows = ABS(@noOfRows);
+			';
+			SET @stmt += '
+						--
+						-- Create fact view @pbiSchema.[Memory grants pending]
+						--
+						BEGIN
+							BEGIN
+								SET @stmt = ''
+									IF OBJECT_ID('''''' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Memory grants pending'') + '''''', ''''V'''') IS NULL
+									BEGIN
+										RAISERROR(''''Creating stub view '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Memory grants pending'') + '''''', 0, 1) WITH NOWAIT;
+
+										EXEC(''''CREATE VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Memory grants pending'') + '' AS SELECT ''''''''dummy'''''''' AS Txt'''');
+									END;
+								'';
+								EXEC(@stmt);
+			';
+			SET @stmt += '
+								SET @message = ''Alter view '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Memory grants pending'') + '''';
+								RAISERROR(@message, 0, 1) WITH NOWAIT;
+
+								SET @stmt = ''
+									ALTER VIEW  '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Memory grants pending'') + ''
+									AS
+									SELECT
+										TOP ('' + CAST(@noOfRows AS nvarchar) + '')
+										psa.CounterValue
+										,psa.Timestamp
+										,CAST(psa.Timestamp AS date) AS Date
+										,(DATEPART(HOUR, psa.Timestamp) * 60 * 60) + (DATEPART(MINUTE, psa.Timestamp) * 60) + (DATEPART(SECOND, psa.Timestamp)) AS TimeKey
+									FROM dbo.fhsmPerformStatisticsActual AS psa
+									WHERE ((psa.ObjectName LIKE ''''%:Memory Manager'''') AND (psa.CounterName = ''''Memory Grants Pending''''))
+										AND (psa.CounterValue <> 0)
+									ORDER BY psa.TimestampUTC DESC;
+								'';
+								EXEC(@stmt);
+							END;
+			';
+			SET @stmt += '
+							--
+							-- Register extended properties on fact view @pbiSchema.[Memory grants pending]
+							--
+							BEGIN
+								SET @objectName = QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Memory grants pending'');
+
+								SET @stmt = ''
+									DECLARE @objName nvarchar(128);
+									DECLARE @schName nvarchar(128);
+
+									SET @objName = PARSENAME(@objectName, 1);
+									SET @schName = PARSENAME(@objectName, 2);
+
+									EXEC dbo.fhsmSPExtendedProperties @objectType = ''''View'''', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''''FHSMVersion'''', @propertyValue = @version;
+									EXEC dbo.fhsmSPExtendedProperties @objectType = ''''View'''', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''''FHSMCreated'''', @propertyValue = @nowUTCStr;
+									EXEC dbo.fhsmSPExtendedProperties @objectType = ''''View'''', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''''FHSMCreatedBy'''', @propertyValue = @myUserName;
+									EXEC dbo.fhsmSPExtendedProperties @objectType = ''''View'''', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''''FHSMModified'''', @propertyValue = @nowUTCStr;
+									EXEC dbo.fhsmSPExtendedProperties @objectType = ''''View'''', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''''FHSMModifiedBy'''', @propertyValue = @myUserName;
+								'';
+								EXEC sp_executesql
+									@stmt
+									,N''@objectName nvarchar(128), @version sql_variant, @nowUTCStr sql_variant, @myUserName sql_variant''
+									,@objectName = @objectName
+									,@version = @version
+									,@nowUTCStr = @nowUTCStr
+									,@myUserName = @myUserName;
+							END;
+						END;
+					END;
+
+					RETURN 0;
+				END;
+			';
+			EXEC(@stmt);
+
+			--
+			-- Register extended properties on the stored procedure dbo.fhsmSPViewsPerformanceStatistics
+			--
+			BEGIN
+				SET @objectName = 'dbo.fhsmSPViewsPerformanceStatistics';
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+			END;
+		END;
+
+		--
+		-- Create stored procedure dbo.fhsmSPPerfmonStatistics
+		--
+		BEGIN
+			SET @stmt = '
+				IF OBJECT_ID(''dbo.fhsmSPPerfmonStatistics'', ''P'') IS NULL
+				BEGIN
+					EXEC(''CREATE PROC dbo.fhsmSPPerfmonStatistics AS SELECT ''''dummy'''' AS Txt'');
+				END;
+			';
+			EXEC(@stmt);
+
+			SET @stmt = '
+				ALTER PROC dbo.fhsmSPPerfmonStatistics (
+					@name nvarchar(128)
+					,@version nvarchar(128) OUTPUT
+				)
+				AS
+				BEGIN
+					SET NOCOUNT ON;
+
+					DECLARE @now datetime;
+					DECLARE @nowUTC datetime;
+					DECLARE @parameter nvarchar(max);
+					DECLARE @stmt nvarchar(max);
+					DECLARE @thisTask nvarchar(128);
+
+					SET @thisTask = OBJECT_NAME(@@PROCID);
+					SET @version = ''' + @version + ''';
+
+					--
+					-- Get the parameter for the command
+					--
+					BEGIN
+						SET @parameter = dbo.fhsmFNGetTaskParameter(@thisTask, @name);
+					END;
+
+					--
+					-- Collect data
+					--
+					BEGIN
+						SELECT
+							@now = SYSDATETIME()
+							,@nowUTC = SYSUTCDATETIME();
+
+						SET @stmt = ''
+							SELECT
+								RTRIM(dopc.object_name) AS ObjectName
+								,RTRIM(dopc.counter_name) AS CounterName
+								,RTRIM(dopc.instance_name) AS InstanceName
+								,dopc.cntr_value AS CounterValue
+								,dopc.cntr_type AS CounterType
+								,(SELECT d.create_date FROM sys.databases AS d WITH (NOLOCK) WHERE (d.name = ''''tempdb'''')) AS LastSQLServiceRestart
+								,@nowUTC, @now
+							FROM dbo.fhsmPerfmonCounters AS pc
+							INNER JOIN sys.dm_os_performance_counters AS dopc WITH (NOLOCK)
+								ON (RTRIM(dopc.counter_name) COLLATE DATABASE_DEFAULT = pc.CounterName)
+								AND (RTRIM(dopc.[object_name]) COLLATE DATABASE_DEFAULT = pc.ObjectName)
+								AND (
+									(pc.InstanceName IS NULL)
+									OR (RTRIM(dopc.[instance_name]) COLLATE DATABASE_DEFAULT = pc.InstanceName)
+								);
+						'';
+						INSERT INTO dbo.fhsmPerfmonStatistics(
+							ObjectName, CounterName, InstanceName
+							,CounterValue, CounterType
+							,LastSQLServiceRestart
+							,TimestampUTC, Timestamp
+						)
+						EXEC sp_executesql
+							@stmt
+							,N''@now datetime, @nowUTC datetime''
+							,@now = @now, @nowUTC = @nowUTC;
+					END;
+
+					RETURN 0;
+				END;
+			';
+			EXEC(@stmt);
+
+			--
+			-- Register extended properties on the stored procedure dbo.fhsmSPPerfmonStatistics
+			--
+			BEGIN
+				SET @objectName = 'dbo.fhsmSPPerfmonStatistics';
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+			END;
+		END;
+	END;
+
+	--
 	-- Create views
 	--
 	BEGIN
@@ -691,6 +948,13 @@ ELSE BEGIN
 		END;
 
 		--
+		-- Create fact view @pbiSchema.[Memory grants pending]
+		--
+		BEGIN
+			EXEC dbo.fhsmSPViewsPerformanceStatistics @view = 'MemoryGrantsPending', @version = @version, @nowUTC = @nowUTC;
+		END;
+
+		--
 		-- Create fact view @pbiSchema.[Performance statistics]
 		--
 		BEGIN
@@ -740,107 +1004,6 @@ ELSE BEGIN
 				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
 				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
 			END;
-		END;
-	END;
-
-	--
-	-- Create stored procedures
-	--
-	BEGIN
-		--
-		-- Create stored procedure dbo.fhsmSPPerfmonStatistics
-		--
-		BEGIN
-			SET @stmt = '
-				IF OBJECT_ID(''dbo.fhsmSPPerfmonStatistics'', ''P'') IS NULL
-				BEGIN
-					EXEC(''CREATE PROC dbo.fhsmSPPerfmonStatistics AS SELECT ''''dummy'''' AS Txt'');
-				END;
-			';
-			EXEC(@stmt);
-
-			SET @stmt = '
-				ALTER PROC dbo.fhsmSPPerfmonStatistics (
-					@name nvarchar(128)
-					,@version nvarchar(128) OUTPUT
-				)
-				AS
-				BEGIN
-					SET NOCOUNT ON;
-
-					DECLARE @now datetime;
-					DECLARE @nowUTC datetime;
-					DECLARE @parameter nvarchar(max);
-					DECLARE @stmt nvarchar(max);
-					DECLARE @thisTask nvarchar(128);
-
-					SET @thisTask = OBJECT_NAME(@@PROCID);
-					SET @version = ''' + @version + ''';
-
-					--
-					-- Get the parameter for the command
-					--
-					BEGIN
-						SET @parameter = dbo.fhsmFNGetTaskParameter(@thisTask, @name);
-					END;
-
-					--
-					-- Collect data
-					--
-					BEGIN
-						SELECT
-							@now = SYSDATETIME()
-							,@nowUTC = SYSUTCDATETIME();
-
-						SET @stmt = ''
-							SELECT
-								RTRIM(dopc.object_name) AS ObjectName
-								,RTRIM(dopc.counter_name) AS CounterName
-								,RTRIM(dopc.instance_name) AS InstanceName
-								,dopc.cntr_value AS CounterValue
-								,dopc.cntr_type AS CounterType
-								,(SELECT d.create_date FROM sys.databases AS d WITH (NOLOCK) WHERE (d.name = ''''tempdb'''')) AS LastSQLServiceRestart
-								,@nowUTC, @now
-							FROM dbo.fhsmPerfmonCounters AS pc
-							INNER JOIN sys.dm_os_performance_counters AS dopc WITH (NOLOCK)
-								ON (RTRIM(dopc.counter_name) COLLATE DATABASE_DEFAULT = pc.CounterName)
-								AND (RTRIM(dopc.[object_name]) COLLATE DATABASE_DEFAULT = pc.ObjectName)
-								AND (
-									(pc.InstanceName IS NULL)
-									OR (RTRIM(dopc.[instance_name]) COLLATE DATABASE_DEFAULT = pc.InstanceName)
-								);
-						'';
-						INSERT INTO dbo.fhsmPerfmonStatistics(
-							ObjectName, CounterName, InstanceName
-							,CounterValue, CounterType
-							,LastSQLServiceRestart
-							,TimestampUTC, Timestamp
-						)
-						EXEC sp_executesql
-							@stmt
-							,N''@now datetime, @nowUTC datetime''
-							,@now = @now, @nowUTC = @nowUTC;
-					END;
-
-					RETURN 0;
-				END;
-			';
-			EXEC(@stmt);
-		END;
-
-		--
-		-- Register extended properties on the stored procedure dbo.fhsmSPPerfmonStatistics
-		--
-		BEGIN
-			SET @objectName = 'dbo.fhsmSPPerfmonStatistics';
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
-
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
 		END;
 	END;
 
@@ -964,6 +1127,6 @@ ELSE BEGIN
 	-- Update dimensions based upon the fact tables
 	--
 	BEGIN
-		EXEC dbo.fhsmSPUpdateDimensions @table = 'dbo.fhsmPerfmonStatistics';
+		EXEC dbo.fhsmSPUpdateDimensions @table = 'dbo.fhsmPerfmonStatistics', @ignoreAutoIndex = @ignoreAutoIndex;
 	END;
 END;

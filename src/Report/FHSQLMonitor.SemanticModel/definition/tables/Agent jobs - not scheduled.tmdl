@@ -1,0 +1,90 @@
+table 'Agent jobs - not scheduled'
+	lineageTag: 41269c56-108f-4e04-8162-d156be192557
+
+	column 'Job enabled'
+		dataType: string
+		lineageTag: 3f5071f1-3447-4fc5-9c46-8d5cc4bbbbd3
+		summarizeBy: none
+		sourceColumn: Job enabled
+
+		annotation SummarizationSetBy = Automatic
+
+	column Job
+		dataType: string
+		lineageTag: b3d68769-d227-4728-9e71-db00984a7397
+		summarizeBy: none
+		sourceColumn: Job
+
+		annotation SummarizationSetBy = Automatic
+
+	column Timestamp
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: c74655fa-c429-4d64-80b1-08e03a8a4f44
+		summarizeBy: none
+		sourceColumn: Timestamp
+
+		annotation SummarizationSetBy = Automatic
+
+	column JobEnabled
+		dataType: boolean
+		isHidden
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: aa161731-efc9-4c7b-80a6-299614c26dcc
+		summarizeBy: none
+		sourceColumn: JobEnabled
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column AgentJobKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 33bc65f0-db0b-4398-9246-17eb6cda57da
+		summarizeBy: none
+		sourceColumn: AgentJobKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Agent jobs - not scheduled' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Agent jobs configuration")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db     = dbList{[Name = #"Database name"]}[Data], 
+				  table  = db{[Schema = #"Schema name", Item = "Agent jobs - not scheduled"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  selectColumns = Table.SelectColumns(
+				    datasetToUse, {
+				      "JobEnabled", 
+				      "JobEnabledTxt", 
+				      "JobName", 
+				      "Timestamp",
+				      "AgentJobKey"
+				    }
+				  ), 
+				  renamedColumns = Table.RenameColumns(
+				    selectColumns, 
+				    {
+				      {"JobEnabledTxt", "Job enabled"}, 
+				      {"JobName", "Job"}
+				    }
+				  )
+				in
+				  renamedColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

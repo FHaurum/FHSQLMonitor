@@ -1,13 +1,13 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.4.0/schema.json",
   "name": "e2c0f558026c005702cb",
   "position": {
-    "x": 1770,
-    "y": 645,
-    "z": 2000,
+    "x": 0,
+    "y": 0,
+    "z": 0,
     "height": 60,
     "width": 140,
-    "tabOrder": 250
+    "tabOrder": 0
   },
   "visual": {
     "visualType": "card",
@@ -115,5 +115,24 @@
       ]
     },
     "drillFilterOtherVisuals": true
+  },
+  "parentGroupName": "40a4c00800373b40805e",
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "d3f15fa8c75b20d4a930",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "_Measures"
+              }
+            },
+            "Property": "Copy only backups # - Backup status"
+          }
+        },
+        "type": "Advanced"
+      }
+    ]
   }
 }

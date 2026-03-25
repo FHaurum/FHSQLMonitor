@@ -1,0 +1,103 @@
+<svg width="1920" height="1080" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" overflow="hidden">
+<defs>
+	<!-- 1 row of buttons - width:770 height:115 -->
+	<g id="b1row">
+		<path d="
+			M   0  10
+			C   0   5   5   0  10   0
+			L 760   0
+			C 765   0 770   5 770  10
+			L 770 105
+			C 770 110 765 115 760 115
+			L  10 115
+			C   5 115   0 110   0 105
+			Z"
+		/>
+	</g>
+
+	<!-- 2 rows of buttons - width:770 height:190 -->
+	<g id="b2rows">
+		<path d="
+			M   0  10
+			C   0   5   5   0  10   0
+			L 760   0
+			C 765   0 770   5 770  10
+			L 770 180
+			C 770 185 765 190 760 190
+			L  10 190
+			C   5 190   0 185   0 180
+			Z"
+		/>
+	</g>
+
+	<!-- 3 rows of buttons - width:770 height:265 -->
+	<g id="b3rows">
+		<path d="
+			M   0  10
+			C   0   5   5   0  10   0
+			L 760   0
+			C 765   0 770   5 770  10
+			L 770 255
+			C 770 260 765 265 760 265
+			L  10 265
+			C   5 265   0 260   0 255
+			Z"
+		/>
+	</g>
+
+	<!-- Placeholder - width:1110 height:955 -->
+	<g id="placeholder">
+		<path d="
+			M    0  10
+			C    0   5    5   0   10   0
+			L 1100   0
+			C 1105   0 1110   5 1110  10
+			L 1110 945
+			C 1110 950 1105 955 1100 955
+			L   10 955
+			C    5 955    0 950    0 945
+			Z"
+		/>
+	</g>
+</defs>
+<g>
+	<!-- background -->
+	<rect x="0" y="0" width="1920" height="1080" fill="#F2F7FF"/>
+</g>
+<g>
+	<!-- Capacity -->
+	<svg class="capacityBox">
+		<use xlink:href="#b1row" fill="#E9F5FC" stroke="#BCD9FF" stroke-width="1" transform="matrix(1.0 0 0 1 10 10)"/>
+	</svg>
+</g>
+<g>
+	<!-- Configuration -->
+	<svg class="configurationBox">
+		<use xlink:href="#b2rows" fill="#F3F1F9" stroke="#BCD9FF" stroke-width="1" transform="matrix(1.0 0 0 1 10 145)"/>
+	</svg>
+</g>
+<g>
+	<!-- Performance -->
+	<svg class="performanceBox">
+		<use xlink:href="#b3rows" fill="#F1F5FC" stroke="#BCD9FF" stroke-width="1" transform="matrix(1.0 0 0 1 10 355)"/>
+	</svg>
+</g>
+<g>
+	<!-- Status -->
+	<svg class="statusBox">
+		<use xlink:href="#b2rows" fill="#F3F6F5" stroke="#BCD9FF" stroke-width="1" transform="matrix(1.0 0 0 1 10 640)"/>
+	</svg>
+</g>
+<g>
+	<!-- Tool -->
+	<svg class="toolBox">
+		<use xlink:href="#b1row" fill="#EEF3FA" stroke="#BCD9FF" stroke-width="1" transform="matrix(1.0 0 0 1 10 850)"/>
+	</svg>
+</g>
+<g>
+	<!-- Placeholder -->
+	<svg class="placeholder">
+		<use xlink:href="#placeholder" fill="#F1F5FC" stroke="#BCD9FF" stroke-width="1" transform="matrix(1.0 0 0 1 800 10)"/>
+	</svg>
+</g>
+</svg>

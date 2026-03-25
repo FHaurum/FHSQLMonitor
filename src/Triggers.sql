@@ -5,8 +5,10 @@ SET NOCOUNT ON;
 --
 BEGIN
 	DECLARE @enableTriggers bit;
+	DECLARE @ignoreAutoIndex bit;
 
 	SET @enableTriggers = 0;
+	SET @ignoreAutoIndex = 0;
 END;
 
 --
@@ -66,7 +68,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.11.0';
+		SET @version = '2.12.0';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -215,6 +217,7 @@ ELSE BEGIN
 					CASE t.ParentClass
 						WHEN 0 THEN ''Database''
 						WHEN 1 THEN ''Object/Column''
+						WHEN 100 THEN ''Server''
 						ELSE ''ParentClass:'' + CAST(t.ParentClass AS nvarchar)
 					END AS ParentClass
 					,QUOTENAME(t.ParentSchema) + ''.'' + QUOTENAME(t.ParentObject) AS ParentObject
@@ -238,16 +241,27 @@ ELSE BEGIN
 						WHEN 1 THEN ''Yes''
 						ELSE ''N.A.''
 					END AS IsDisabledTxt
-					,t.IsNotForReplication
-					,CASE t.IsNotForReplication
-						WHEN 0 THEN ''No''
-						WHEN 1 THEN ''Yes''
-						ELSE ''N.A.''
+					,CASE t.ParentClass
+						WHEN 100 THEN NULL
+						ELSE t.IsNotForReplication
+					END AS IsNotForReplication
+					,CASE t.ParentClass
+						WHEN 100 THEN ''N.A''
+						ELSE 
+							CASE t.IsNotForReplication
+								WHEN 0 THEN ''No''
+								WHEN 1 THEN ''Yes''
+								ELSE ''N.A.''
+							END
 					END AS IsNotForReplicationTxt
-					,CASE t.IsInsteadOfTrigger
-						WHEN 0 THEN ''After trigger''
-						ELSE ''Instead of trigger''
-					END TriggerType
+					,CASE t.ParentClass
+						WHEN 100 THEN ''N.A''
+						ELSE
+							CASE t.IsInsteadOfTrigger
+								WHEN 0 THEN ''After trigger''
+								ELSE ''Instead of trigger''
+							END
+					END AS TriggerType
 					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(t.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
 				FROM dbo.fhsmTriggers AS t
 				WHERE (t.TimestampUTC = (
@@ -342,7 +356,41 @@ ELSE BEGIN
 					END;
 			';
 			SET @stmt += '
+					SELECT
+						@now = SYSDATETIME()
+						,@nowUTC = SYSUTCDATETIME();
+			';
+			SET @stmt += '
 
+					--
+					-- Collect data for instance
+					--
+					BEGIN
+						INSERT INTO dbo.fhsmTriggers(
+							DatabaseName
+							,ParentClass, ParentSchema, ParentObject, Name, Type
+							,CreateDate, ModifyDate
+							,IsMsShipped, IsDisabled, IsNotForReplication, IsInsteadOfTrigger
+							,TimestampUTC, Timestamp
+						)
+						SELECT
+							''<Instance>'' AS DatabaseName
+							,t.parent_class AS ParentClass
+							,NULL AS ParentSchema
+							,NULL AS ParentObject
+							,t.name AS Name
+							,t.type AS Type
+							,t.create_date AS CreateDate
+							,t.modify_date AS ModifyDate
+							,t.is_ms_shipped AS IsMsShipped
+							,t.is_disabled AS IsDisabled
+							,0 AS IsNotForReplication
+							,0 AS IsInsteadOfTrigger
+							,@nowUTC, @now
+						FROM sys.server_triggers AS t;
+					END;
+			';
+			SET @stmt += '
 					--
 					-- Get the list of databases to process
 					--
@@ -353,13 +401,9 @@ ELSE BEGIN
 					END;
 
 					--
-					-- Collect data
+					-- Collect data for databases
 					--
 					BEGIN
-						SELECT
-							@now = SYSDATETIME()
-							,@nowUTC = SYSUTCDATETIME();
-
 						DECLARE dCur CURSOR LOCAL READ_ONLY FAST_FORWARD FOR
 						SELECT dl.DatabaseName, ' + CASE WHEN (@productVersion1 <= 10) THEN 'NULL' ELSE 'd.replica_id' END + ' AS replica_id
 						FROM #dbList AS dl
@@ -520,7 +564,7 @@ ELSE BEGIN
 					SET @version = ''' + @version + ''';
 			';
 			SET @stmt += '
-					IF (@Type = ''Parameter'')
+					IF (@Type = ''parameter'')
 					BEGIN
 						IF (@Command = ''set'')
 						BEGIN
@@ -590,7 +634,7 @@ ELSE BEGIN
 					END
 			';
 			SET @stmt += '
-					ELSE IF (@Type = ''Uninstall'')
+					ELSE IF (@Type = ''uninstall'')
 					BEGIN
 						--
 						-- Place holder
@@ -730,6 +774,6 @@ ELSE BEGIN
 	-- Update dimensions based upon the fact tables
 	--
 	BEGIN
-		EXEC dbo.fhsmSPUpdateDimensions @table = 'dbo.fhsmTriggers';
+		EXEC dbo.fhsmSPUpdateDimensions @table = 'dbo.fhsmTriggers', @ignoreAutoIndex = @ignoreAutoIndex;
 	END;
 END;

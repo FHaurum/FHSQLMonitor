@@ -1,0 +1,45 @@
+function _toggleButton = ```
+		(
+		    side:string,
+		    circleColor:string
+		) => 
+		VAR _circleStartXPos =
+		    IF (side = "Left", 1, 19)
+		VAR _result =
+		"data:image/svg+xml;utf8,
+		<svg xmlns=""http://www.w3.org/2000/svg"" xmlns:xlink=""http://www.w3.org/1999/xlink"" overflow=""hidden"">
+		<defs>
+			<!-- Base shape - width:40 height:20 -->
+			<g id=""base"">
+				<path d=""
+					M   0   8
+					C   0   4   4   0   8   0
+					L  32   0
+					C  36   0  40   4  40   8
+					L  40  12
+					C  40  16  36  20  32  20
+					L   8  20
+					C   4  20   0  16   0  12
+					Z""
+				/>
+			</g>
+			<!-- circle -->
+			<g id=""circle"">
+				<circle cx=""10"" cy=""10"" r=""8"" />
+			</g>
+			<g id=""switch"">
+				<use xlink:href=""#base""   fill=""#E9F5FC""             stroke=""#BCD9FF"" stroke-width=""1""/>
+				<use xlink:href=""#circle"" fill=""" & circleColor & """ stroke=""#BCD9FF"" stroke-width=""1"" transform=""matrix(1.0 0 0 1 " & _circleStartXPos & " 0)""/>
+			</g>
+		</defs>
+		<g>
+			<svg>
+				<use xlink:href=""#switch"" transform=""matrix(1.0 0 0 1 1 1)""/>
+			</svg>
+		</g>
+		</svg>
+		"
+		RETURN _result
+		```
+	lineageTag: 7baffed2-8ee9-4e5c-9945-9396c0c90345
+
