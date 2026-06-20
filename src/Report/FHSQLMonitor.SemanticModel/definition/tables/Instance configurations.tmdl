@@ -46,12 +46,13 @@ table 'Instance configurations'
 			
 			IF (
 			    'Instance configurations'[State] = 0,
-			    UNICHAR ( 128993 ),
-			    UNICHAR ( 128994 )
+			    _indicatorCircle ( _indicatorWarningColor1 () ),
+			    _indicatorCircle ( _indicatorOKColor2 () )
 			)
 			
 			```
 		lineageTag: 819dea8a-d030-4e39-a407-8ae3305c2cb3
+		dataCategory: ImageUrl
 		summarizeBy: none
 
 		annotation SummarizationSetBy = Automatic
@@ -93,12 +94,13 @@ table 'Instance configurations'
 			
 			IF (
 			    'Instance configurations'[DefaultState] = 0,
-			    UNICHAR ( 128993 ),
-			    UNICHAR ( 128994 )
+			    _indicatorCircle ( _indicatorWarningColor1 () ),
+			    _indicatorCircle ( _indicatorOKColor2 () )
 			)
 			
 			```
 		lineageTag: 221e4bd4-7a06-4b53-b6be-e109725ec60b
+		dataCategory: ImageUrl
 		summarizeBy: none
 
 		annotation SummarizationSetBy = Automatic

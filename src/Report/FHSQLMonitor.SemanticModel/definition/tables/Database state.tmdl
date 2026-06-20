@@ -95,8 +95,6 @@ table 'Database state'
 
 		changedProperty = IsHidden
 
-		changedProperty = DataType
-
 		annotation SummarizationSetBy = User
 
 	column 'Always On group'

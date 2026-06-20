@@ -1,5 +1,5 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.9.0/schema.json",
   "name": "cd6154533424c0c0e07e",
   "position": {
     "x": 1670,
@@ -67,7 +67,21 @@
   "filterConfig": {
     "filters": [
       {
-        "name": "ec7fd8f6571bd4002386",
+        "name": "23e683a0031ce0076eaa",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Date"
+              }
+            },
+            "Property": "Year"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "62c205836a424e009ad4",
         "field": {
           "Measure": {
             "Expression": {
@@ -75,7 +89,7 @@
                 "Entity": "_Measures"
               }
             },
-            "Property": "VLF Filter - Instance status"
+            "Property": "VLF Filter - Log shipping status"
           }
         },
         "type": "Advanced",
@@ -102,7 +116,7 @@
                               "Source": "_"
                             }
                           },
-                          "Property": "VLF Filter - Instance status"
+                          "Property": "VLF Filter - Log shipping status"
                         }
                       },
                       "Right": {

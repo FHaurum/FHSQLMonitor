@@ -43,11 +43,12 @@ table Lifecycle
 			
 			SWITCH (
 			    'Lifecycle'[State],
-			    0, UNICHAR ( 128994 ),
-			    1, UNICHAR ( 128993 ),
-			    UNICHAR ( 128992 )
+			    0, _indicatorCircle ( _indicatorOKColor2 () ),
+			    1, _indicatorCircle ( _indicatorWarningColor1 () ),
+			    _indicatorCircle ( _indicatorErrorColor1 () )
 			)
 		lineageTag: 925f28bf-67da-4532-844b-32575f76faca
+		dataCategory: ImageUrl
 		summarizeBy: none
 
 		annotation SummarizationSetBy = Automatic

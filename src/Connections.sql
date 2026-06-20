@@ -68,7 +68,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.12.0';
+		SET @version = '2.13.0';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -102,6 +102,136 @@ ELSE BEGIN
 	END;
 
 	--
+	-- Rename 2.12.0 Connections objects to Sessions
+	--
+	BEGIN
+		IF
+			EXISTS (
+				SELECT *
+				FROM sys.schemas AS sch
+				INNER JOIN sys.objects AS o ON (sch.schema_id = o.schema_id)
+				WHERE (sch.name = 'dbo') AND (o.name = 'fhsmConnections') AND (o.type = 'U')
+			)
+			AND NOT EXISTS (
+				SELECT *
+				FROM sys.schemas AS sch
+				INNER JOIN sys.objects AS o ON (sch.schema_id = o.schema_id)
+				WHERE (sch.name = 'dbo') AND (o.name = 'fhsmSessions') AND (o.type = 'U')
+			)
+		BEGIN
+			--
+			-- Drop @pbiSchema view
+			--
+			IF EXISTS (
+				SELECT *
+				FROM sys.schemas AS sch
+				INNER JOIN sys.objects AS o ON (sch.schema_id = o.schema_id)
+				WHERE (sch.name = @pbiSchema) AND (o.name = 'Connections') AND (o.type = 'V')
+			)
+			BEGIN
+				SET @stmt = 'DROP VIEW ' + QUOTENAME(@pbiSchema) + '.Connections;';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Rename primary key
+			--
+			IF EXISTS (
+				SELECT *
+				FROM sys.schemas AS sch
+				INNER JOIN sys.objects AS o ON (sch.schema_id = o.schema_id)
+				WHERE (sch.name = 'dbo') AND (o.name = 'PK_Connections') AND (o.type = 'PK')
+			)
+			BEGIN
+				SET @stmt = 'EXEC sp_rename ''dbo.fhsmConnections.PK_Connections'', ''PK_Sessions'';';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Rename non-clustered index NC_fhsmConnections_Timestamp
+			--
+			IF EXISTS (
+				SELECT *
+				FROM sys.schemas AS sch
+				INNER JOIN sys.objects AS o ON (sch.schema_id = o.schema_id)
+				INNER JOIN sys.indexes AS i ON (o.object_id = i.object_id)
+				WHERE (sch.name = 'dbo') AND (o.name = 'fhsmConnections') AND (i.name = 'NC_fhsmConnections_Timestamp')
+			)
+			BEGIN
+				SET @stmt = 'EXEC sp_rename ''dbo.fhsmConnections.NC_fhsmConnections_Timestamp'', ''NC_fhsmSessions_Timestamp'', ''INDEX'';';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Rename non-clustered index NC_fhsmConnections_TimestampUTC
+			--
+			IF EXISTS (
+				SELECT *
+				FROM sys.schemas AS sch
+				INNER JOIN sys.objects AS o ON (sch.schema_id = o.schema_id)
+				INNER JOIN sys.indexes AS i ON (o.object_id = i.object_id)
+				WHERE (sch.name = 'dbo') AND (o.name = 'fhsmConnections') AND (i.name = 'NC_fhsmConnections_TimestampUTC')
+			)
+			BEGIN
+				SET @stmt = 'EXEC sp_rename ''dbo.fhsmConnections.NC_fhsmConnections_TimestampUTC'', ''NC_fhsmSessions_TimestampUTC'', ''INDEX'';';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Rename non-clustered index NCAuto_fhsmConnections_DatabaseName_HostName_ProgramName_ClientInterfaceName
+			--
+			IF EXISTS (
+				SELECT *
+				FROM sys.schemas AS sch
+				INNER JOIN sys.objects AS o ON (sch.schema_id = o.schema_id)
+				INNER JOIN sys.indexes AS i ON (o.object_id = i.object_id)
+				WHERE (sch.name = 'dbo') AND (o.name = 'fhsmConnections') AND (i.name = 'NCAuto_fhsmConnections_DatabaseName_HostName_ProgramName_ClientInterfaceName')
+			)
+			BEGIN
+				SET @stmt = 'EXEC sp_rename ''dbo.fhsmConnections.NCAuto_fhsmConnections_DatabaseName_HostName_ProgramName_ClientInterfaceName'', ''NCAuto_fhsmSessions_DatabaseName_HostName_ProgramName_ClientInterfaceName'', ''INDEX'';';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Rename table fhsmConnections
+			--
+			IF EXISTS (
+				SELECT *
+				FROM sys.schemas AS sch
+				INNER JOIN sys.objects AS o ON (sch.schema_id = o.schema_id)
+				WHERE (sch.name = 'dbo') AND (o.name = 'fhsmConnections') AND (o.type = 'U')
+			)
+			BEGIN
+				SET @stmt = 'EXEC sp_rename ''dbo.fhsmConnections'', ''fhsmSessions'';';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Rename retention settings for fhsmConnections
+			--
+			BEGIN
+				UPDATE r
+				SET r.TableName = 'dbo.fhsmSessions'
+				FROM dbo.fhsmRetentions AS r
+				WHERE (r.TableName = 'dbo.fhsmConnections');
+			END;
+
+			--
+			-- Update dimensions for dbo.fhsmConnections
+			--
+			BEGIN
+				UPDATE d
+				SET
+					d.DimensionName = CASE WHEN (d.DimensionName = 'Connection info')   THEN 'Session info'   ELSE d.DimensionName END,
+					d.DimensionKey  = CASE WHEN (d.DimensionKey  = 'ConnectionInfoKey') THEN 'SessionInfoKey' ELSE d.DimensionKey  END,
+					d.SrcTable      = 'dbo.fhsmSessions'
+				FROM dbo.fhsmDimensions AS d
+				WHERE (d.SrcTable = 'dbo.fhsmConnections');
+			END;
+		END;
+	END;
+
+	--
 	-- Create tables
 	--
 	BEGIN
@@ -115,12 +245,9 @@ ELSE BEGIN
 			SET @stmt = '
 				CREATE TABLE dbo.fhsmConnections(
 					Id int identity(1,1) NOT NULL
-					,DatabaseName nvarchar(128) NOT NULL
-					,HostName nvarchar(128) NULL
-					,ProgramName nvarchar(128) NULL
-					,ClientInterfaceName nvarchar(32) NULL
-					,IsUserProcess bit NOT NULL
-					,ConnectionCount int NOT NULL
+					,ProtocolType nvarchar(40) NULL
+					,AuthScheme nvarchar(40) NOT NULL
+					,NumberOfConnections int NOT NULL
 					,TimestampUTC datetime NOT NULL
 					,Timestamp datetime NOT NULL
 					,CONSTRAINT PK_Connections PRIMARY KEY(Id)' + @tableCompressionStmt + '
@@ -163,6 +290,65 @@ ELSE BEGIN
 			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
 			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
 		END;
+
+		--
+		-- Create table dbo.fhsmSessions and indexes if they not already exists
+		--
+		IF OBJECT_ID('dbo.fhsmSessions', 'U') IS NULL
+		BEGIN
+			RAISERROR('Creating table dbo.fhsmSessions', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
+				CREATE TABLE dbo.fhsmSessions(
+					Id int identity(1,1) NOT NULL
+					,DatabaseName nvarchar(128) NOT NULL
+					,HostName nvarchar(128) NULL
+					,ProgramName nvarchar(128) NULL
+					,ClientInterfaceName nvarchar(32) NULL
+					,IsUserProcess bit NOT NULL
+					,ConnectionCount int NOT NULL
+					,TimestampUTC datetime NOT NULL
+					,Timestamp datetime NOT NULL
+					,CONSTRAINT PK_Sessions PRIMARY KEY(Id)' + @tableCompressionStmt + '
+				);
+			';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmSessions')) AND (i.name = 'NC_fhsmSessions_TimestampUTC'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmSessions_TimestampUTC] to table dbo.fhsmSessions', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
+				CREATE NONCLUSTERED INDEX NC_fhsmSessions_TimestampUTC ON dbo.fhsmSessions(TimestampUTC)' + @tableCompressionStmt + ';
+			';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmSessions')) AND (i.name = 'NC_fhsmSessions_Timestamp'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmSessions_Timestamp] to table dbo.fhsmSessions', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
+				CREATE NONCLUSTERED INDEX NC_fhsmSessions_Timestamp ON dbo.fhsmSessions(Timestamp)' + @tableCompressionStmt + ';
+			';
+			EXEC(@stmt);
+		END;
+
+		--
+		-- Register extended properties on the table dbo.fhsmSessions
+		--
+		BEGIN
+			SET @objectName = 'dbo.fhsmSessions';
+			SET @objName = PARSENAME(@objectName, 1);
+			SET @schName = PARSENAME(@objectName, 2);
+
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+		END;
 	END;
 
 	--
@@ -173,6 +359,46 @@ ELSE BEGIN
 	-- Create views
 	--
 	BEGIN
+		--
+		-- Create dimension view @pbiSchema.[Connection info]
+		--
+		BEGIN
+			SET @stmt = '
+				IF OBJECT_ID(''' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Connection info') + ''', ''V'') IS NULL
+				BEGIN
+					EXEC(''CREATE VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Connection info') + ' AS SELECT ''''dummy'''' AS Txt'');
+				END;
+			';
+			EXEC(@stmt);
+
+			SET @stmt = '
+				ALTER VIEW  ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Connection info') + '
+				AS
+				SELECT
+					c.AuthType
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(c.AuthType, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS ConnectionInfoKey
+				FROM (
+					SELECT DISTINCT CASE WHEN (c.ProtocolType = ''Database Mirroring'') THEN ''Database Mirroring Endpoint communication'' ELSE c.AuthScheme END AS AuthType
+					FROM dbo.fhsmConnections AS c
+				) AS c;
+			';
+			EXEC(@stmt);
+		END;
+
+		--
+		-- Register extended properties on fact view @pbiSchema.[Connection info]
+		--
+		BEGIN
+			SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Connection info');
+			SET @objName = PARSENAME(@objectName, 1);
+			SET @schName = PARSENAME(@objectName, 2);
+
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+		END;
 
 		--
 		-- Create fact view @pbiSchema.[Connections]
@@ -190,13 +416,14 @@ ELSE BEGIN
 				ALTER VIEW  ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Connections') + '
 				AS
 				SELECT
-					c.IsUserProcess
-					,c.ConnectionCount
+					c.NumberOfConnections
 					,c.Timestamp
 					,CAST(c.Timestamp AS date) AS Date
 					,(DATEPART(HOUR, c.Timestamp) * 60 * 60) + (DATEPART(MINUTE, c.Timestamp) * 60) + (DATEPART(SECOND, c.Timestamp)) AS TimeKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(c.DatabaseName, DEFAULT,    DEFAULT,       DEFAULT,               DEFAULT, DEFAULT) AS k) AS DatabaseKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(c.DatabaseName, c.HostName, c.ProgramName, c.ClientInterfaceName, DEFAULT, DEFAULT) AS k) AS ConnectionInfoKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(
+						CASE WHEN (c.ProtocolType = ''Database Mirroring'') THEN ''Database Mirroring Endpoint communication'' ELSE c.AuthScheme END,
+						DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k
+					) AS ConnectionInfoKey
 				FROM dbo.fhsmConnections AS c;
 			';
 			EXEC(@stmt);
@@ -207,6 +434,49 @@ ELSE BEGIN
 		--
 		BEGIN
 			SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Connections');
+			SET @objName = PARSENAME(@objectName, 1);
+			SET @schName = PARSENAME(@objectName, 2);
+
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+		END;
+
+		--
+		-- Create fact view @pbiSchema.[Sessions]
+		--
+		BEGIN
+			SET @stmt = '
+				IF OBJECT_ID(''' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Sessions') + ''', ''V'') IS NULL
+				BEGIN
+					EXEC(''CREATE VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Sessions') + ' AS SELECT ''''dummy'''' AS Txt'');
+				END;
+			';
+			EXEC(@stmt);
+
+			SET @stmt = '
+				ALTER VIEW  ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Sessions') + '
+				AS
+				SELECT
+					s.IsUserProcess
+					,s.ConnectionCount
+					,s.Timestamp
+					,CAST(s.Timestamp AS date) AS Date
+					,(DATEPART(HOUR, s.Timestamp) * 60 * 60) + (DATEPART(MINUTE, s.Timestamp) * 60) + (DATEPART(SECOND, s.Timestamp)) AS TimeKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(s.DatabaseName, DEFAULT,    DEFAULT,       DEFAULT,               DEFAULT, DEFAULT) AS k) AS DatabaseKey
+					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(s.DatabaseName, s.HostName, s.ProgramName, s.ClientInterfaceName, DEFAULT, DEFAULT) AS k) AS SessionInfoKey
+				FROM dbo.fhsmSessions AS s;
+			';
+			EXEC(@stmt);
+		END;
+
+		--
+		-- Register extended properties on fact view @pbiSchema.[Sessions]
+		--
+		BEGIN
+			SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Sessions');
 			SET @objName = PARSENAME(@objectName, 1);
 			SET @schName = PARSENAME(@objectName, 2);
 
@@ -295,9 +565,30 @@ ELSE BEGIN
 						SELECT
 							@now = SYSDATETIME()
 							,@nowUTC = SYSUTCDATETIME();
-
+			';
+			SET @stmt += '
 						SET @stmt = ''
 							INSERT INTO dbo.fhsmConnections(
+								ProtocolType, AuthScheme
+								,NumberOfConnections
+								,TimestampUTC, Timestamp
+							)
+							SELECT
+								dec.protocol_type AS ProtocolType,
+								dec.auth_scheme AS AuthScheme,
+								COUNT(*) AS NumberOfConnections,
+								@nowUTC, @now
+							FROM sys.dm_exec_connections AS dec
+							GROUP BY dec.protocol_type, dec.auth_scheme;
+						'';
+						EXEC sp_executesql
+							@stmt
+							,N''@nowUTC datetime, @now datetime''
+							,@nowUTC = @nowUTC, @now = @now;
+			';
+			SET @stmt += '
+						SET @stmt = ''
+							INSERT INTO dbo.fhsmSessions(
 								DatabaseName, HostName, ProgramName, ClientInterfaceName
 								,IsUserProcess, ConnectionCount
 								,TimestampUTC, Timestamp
@@ -324,6 +615,8 @@ ELSE BEGIN
 							@stmt
 							,N''@nowUTC datetime, @now datetime''
 							,@nowUTC = @nowUTC, @now = @now;
+			';
+			SET @stmt += '
 					END;
 
 					RETURN 0;
@@ -357,6 +650,17 @@ ELSE BEGIN
 			SELECT
 				1
 				,'dbo.fhsmConnections'
+				,1
+				,'TimestampUTC'
+				,1
+				,30
+				,NULL
+
+			UNION ALL
+
+			SELECT
+				1
+				,'dbo.fhsmSessions'
 				,1
 				,'TimestampUTC'
 				,1
@@ -408,7 +712,7 @@ ELSE BEGIN
 			SELECT
 				'Database' AS DimensionName
 				,'DatabaseKey' AS DimensionKey
-				,'dbo.fhsmConnections' AS SrcTable
+				,'dbo.fhsmSessions' AS SrcTable
 				,'src' AS SrcAlias
 				,NULL AS SrcWhere
 				,'src.[Timestamp]' AS SrcDateColumn
@@ -418,9 +722,9 @@ ELSE BEGIN
 			UNION ALL
 
 			SELECT
-				'Connection info' AS DimensionName
-				,'ConnectionInfoKey' AS DimensionKey
-				,'dbo.fhsmConnections' AS SrcTable
+				'Session info' AS DimensionName
+				,'SessionInfoKey' AS DimensionKey
+				,'dbo.fhsmSessions' AS SrcTable
 				,'src' AS SrcAlias
 				,NULL AS SrcWhere
 				,'src.[Timestamp]' AS SrcDateColumn
@@ -463,6 +767,6 @@ ELSE BEGIN
 	-- Update dimensions based upon the fact tables
 	--
 	BEGIN
-		EXEC dbo.fhsmSPUpdateDimensions @table = 'dbo.fhsmConnections', @ignoreAutoIndex = @ignoreAutoIndex;
+		EXEC dbo.fhsmSPUpdateDimensions @table = 'dbo.fhsmSessions', @ignoreAutoIndex = @ignoreAutoIndex;
 	END;
 END;

@@ -1,13 +1,13 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.3.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.9.0/schema.json",
   "name": "7e60835123335d52a6ca",
   "position": {
     "x": 10,
     "y": 640,
     "z": 2000,
     "height": 170,
-    "width": 770,
-    "tabOrder": 5000
+    "width": 920,
+    "tabOrder": 4000
   },
   "visualGroup": {
     "displayName": "Status",

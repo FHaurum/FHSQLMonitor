@@ -68,7 +68,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.12.0';
+		SET @version = '2.13.0';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -637,55 +637,13 @@ ELSE BEGIN
 			END;
 
 			--
-			-- Test if index on msdb.dbo.sysjobhistory with index columns [job_id], [instance_id] and [run_status] exists
+			-- Test if index NC_sysjobhistory_job_id_instance_id_run_status exists on msdb.dbo.sysjobhistory - if so drop it
 			--
-			IF NOT EXISTS (
-				SELECT *
-				FROM msdb.sys.indexes AS i
-				WHERE (i.object_id = OBJECT_ID('msdb.dbo.sysjobhistory'))
-					AND EXISTS (	-- Test for [job_id] AS index column #1
-						SELECT *
-						FROM msdb.sys.index_columns AS ic
-						INNER JOIN msdb.sys.columns AS c ON (c.object_id = ic.object_id) AND (c.column_id = ic.column_id)
-						WHERE (1 = 1)
-							AND (ic.object_id = i.object_id)
-							AND (ic.index_id = i.index_id)
-							AND (ic.index_column_id = 1)
-							AND (ic.is_included_column = 0)
-							AND (c.name = 'job_id')
-					)
-					AND EXISTS (	-- Test for [instance_id] AS index column #2
-						SELECT *
-						FROM msdb.sys.index_columns AS ic
-						INNER JOIN msdb.sys.columns AS c ON (c.object_id = ic.object_id) AND (c.column_id = ic.column_id)
-						WHERE (1 = 1)
-							AND (ic.object_id = i.object_id)
-							AND (ic.index_id = i.index_id)
-							AND (ic.index_column_id = 2)
-							AND (ic.is_included_column = 0)
-							AND (c.name = 'instance_id')
-					)
-					AND EXISTS (	-- Test for [run_status] AS index column #3
-						SELECT *
-						FROM msdb.sys.index_columns AS ic
-						INNER JOIN msdb.sys.columns AS c ON (c.object_id = ic.object_id) AND (c.column_id = ic.column_id)
-						WHERE (1 = 1)
-							AND (ic.object_id = i.object_id)
-							AND (ic.index_id = i.index_id)
-							AND (ic.index_column_id = 3)
-							AND (ic.is_included_column = 0)
-							AND (c.name = 'run_status')
-					)
-			)
+			IF EXISTS (SELECT * FROM msdb.sys.indexes AS i WHERE (i.object_id = OBJECT_ID('msdb.dbo.sysjobhistory')) AND (i.name = 'NC_sysjobhistory_job_id_instance_id_run_status'))
 			BEGIN
-				RAISERROR('Adding index [NC_sysjobhistory_job_id_instance_id_run_status] to table msdb.dbo.sysjobhistory', 0, 1) WITH NOWAIT;
+				RAISERROR('Dropping index [NC_sysjobhistory_job_id_instance_id_run_status] on table msdb.dbo.sysjobhistory', 0, 1) WITH NOWAIT;
 
-				SET @stmt = '
-					USE [msdb];
-					CREATE NONCLUSTERED INDEX NC_sysjobhistory_job_id_instance_id_run_status ON dbo.sysjobhistory(job_id, instance_id, run_status)
-					' + @tableCompressionStmt + ';
-				';
-				EXEC(@stmt);
+				DROP INDEX NC_sysjobhistory_job_id_instance_id_run_status ON msdb.dbo.sysjobhistory;
 			END;
 		END;
 	END;
@@ -1261,7 +1219,7 @@ ELSE BEGIN
 								,sjh.[run_status] AS RunStatus
 								,ajt.StartDateTime
 								,ajt.DurationSeconds
-								,job.run_duration AS JobDurationSeconds
+								,job.DurationSeconds AS JobDurationSeconds
 								,sjh.sql_message_id AS MessageId
 								,sjh.sql_severity AS Severity
 								,sjh.message AS Message
@@ -1271,10 +1229,14 @@ ELSE BEGIN
 							INNER JOIN msdb.dbo.sysjobhistory AS sjh ON (sj.job_id = sjh.job_id)
 							CROSS APPLY dbo.fhsmFNAgentJobTime(sjh.run_date, sjh.run_time, sjh.run_duration) AS ajt
 							CROSS APPLY (
-								SELECT TOP 1 job.run_duration
-								FROM msdb.dbo.sysjobhistory AS job
-								WHERE (job.job_id = sj.job_id) AND (job.step_id = 0) AND (((job.run_date = sjh.run_date) AND (job.run_time <= sjh.run_time)) OR (job.run_date < sjh.run_date))
-								ORDER BY job.run_date DESC, job.run_time DESC
+								SELECT ajt.DurationSeconds
+								FROM (
+									SELECT TOP 1 job.run_date, job.run_time, job.run_duration
+									FROM msdb.dbo.sysjobhistory AS job
+									WHERE (job.job_id = sj.job_id) AND (job.step_id = 0) AND ((job.instance_id < sjh.instance_id))
+									ORDER BY job.run_date DESC, job.run_time DESC
+								) AS a
+								CROSS APPLY dbo.fhsmFNAgentJobTime(a.run_date, a.run_time, a.run_duration) AS ajt
 							) AS job
 							WHERE (1 = 1)
 								AND (sjh.run_status NOT IN (1, 4))	-- Ignore 1:Succeeded and 4:In progress

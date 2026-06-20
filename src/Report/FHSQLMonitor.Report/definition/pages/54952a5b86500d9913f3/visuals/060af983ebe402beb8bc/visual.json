@@ -1,12 +1,13 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.9.0/schema.json",
   "name": "060af983ebe402beb8bc",
   "position": {
     "x": 0,
     "y": 0,
     "z": 2000,
     "height": 30,
-    "width": 380
+    "width": 380,
+    "tabOrder": 3000
   },
   "visual": {
     "visualType": "card",
@@ -66,7 +67,7 @@
                           "Entity": "_Measures"
                         }
                       },
-                      "Property": "Report pages fill color - Info"
+                      "Property": "Fill color - Info - Report pages"
                     }
                   }
                 }

@@ -654,7 +654,8 @@
         ],
         "selection": [
           {
-            "selectAllCheckboxEnabled": true
+            "selectAllCheckboxEnabled": true,
+            "singleSelect": false
           }
         ],
         "visualHeader": [

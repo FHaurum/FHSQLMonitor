@@ -1,5 +1,5 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.9.0/schema.json",
   "name": "a1a297a60100d5e0b0dc",
   "position": {
     "x": 10,
@@ -7,7 +7,7 @@
     "z": 2000,
     "height": 250,
     "width": 940,
-    "tabOrder": 11000
+    "tabOrder": 10000
   },
   "visual": {
     "visualType": "tableEx",
@@ -117,13 +117,27 @@
             "value": {
               "expr": {
                 "Literal": {
-                  "Value": "483.1912955198794D"
+                  "Value": "475D"
                 }
               }
             }
           },
           "selector": {
             "metadata": "Agent alerts.Description"
+          }
+        },
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "175D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Agent alerts.Timestamp"
           }
         }
       ],
@@ -153,6 +167,24 @@
           },
           "selector": {
             "metadata": "Agent alerts.Indicator"
+          }
+        }
+      ],
+      "columnHeaders": [
+        {
+          "properties": {}
+        }
+      ],
+      "grid": [
+        {
+          "properties": {
+            "imageHeight": {
+              "expr": {
+                "Literal": {
+                  "Value": "20D"
+                }
+              }
+            }
           }
         }
       ]

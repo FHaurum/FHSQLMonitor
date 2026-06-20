@@ -1,5 +1,5 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.9.0/schema.json",
   "name": "d283cfc9ca5a2d81f8b9",
   "position": {
     "x": 10,
@@ -122,5 +122,79 @@
       ]
     },
     "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "fe6afe1f27cd6901a80a",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Log shipping monitor history details"
+              }
+            },
+            "Property": "Log time"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "9bef78180869c096d190",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Log shipping monitor history details"
+              }
+            },
+            "Property": "Agent type"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "3c03ceeb8a60760e7a0e",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Log shipping monitor history details"
+              }
+            },
+            "Property": "Session id."
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "abf819c81e448eddd568",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Log shipping monitor history details"
+              }
+            },
+            "Property": "Session status"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "a031eb31ab5c0cd4c50e",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Log shipping monitor history details"
+              }
+            },
+            "Property": "Message"
+          }
+        },
+        "type": "Categorical"
+      }
+    ]
   }
 }

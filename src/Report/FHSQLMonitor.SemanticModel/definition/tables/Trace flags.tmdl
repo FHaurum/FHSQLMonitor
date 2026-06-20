@@ -43,12 +43,13 @@ table 'Trace flags'
 			
 			IF (
 			    'Trace flags'[TraceFlagExists] = 0,
-			    UNICHAR ( 128993 ),
-			    UNICHAR ( 128994 )
+			    _indicatorCircle ( _indicatorWarningColor1 () ),
+			    _indicatorCircle ( _indicatorOKColor2 () )
 			)
 			
 			```
 		lineageTag: f012a9f5-4906-43c6-a3e3-542528b2a3ee
+		dataCategory: ImageUrl
 		summarizeBy: none
 
 		annotation SummarizationSetBy = Automatic

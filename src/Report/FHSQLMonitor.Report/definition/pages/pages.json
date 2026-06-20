@@ -1,5 +1,5 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/pagesMetadata/1.0.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/pagesMetadata/1.1.0/schema.json",
   "pageOrder": [
     "3ae07d71c5b643e63770",
     "d866e55013b70277099a",
@@ -24,6 +24,7 @@
     "b421d8fd338759803ff1",
     "2c56fdd6b0643008a03c",
     "3b57376862ac030011ec",
+    "13436e3249da9ee5d367",
     "5d4867a34e6b9021a37c",
     "d2cbe46e4e30341f6a7b",
     "e293734dd304c54a7c19",
@@ -36,6 +37,7 @@
     "811c7dfda65388c8e834",
     "f3600be45bbe17061005",
     "e077c54aaa7af827aa42",
+    "ec22a0e0c204ed106723",
     "7bfc743e3c9983aa1661",
     "54952a5b86500d9913f3",
     "d9ef245030d31b8c0157",
@@ -53,5 +55,6 @@
     "95353a251200b36ea257",
     "a015925e4e98f54c733d"
   ],
-  "activePageName": "3ae07d71c5b643e63770"
+  "activePageName": "3ae07d71c5b643e63770",
+  "landingPageName": "3ae07d71c5b643e63770"
 }

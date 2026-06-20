@@ -1,5 +1,5 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.9.0/schema.json",
   "name": "e8b35cd04755b40b5bcb",
   "position": {
     "x": 970,
@@ -188,7 +188,7 @@
                   "color": {
                     "expr": {
                       "Literal": {
-                        "Value": "'#01B8AA'"
+                        "Value": "'#99e3dd'"
                       }
                     }
                   }
@@ -258,6 +258,11 @@
           "selector": {
             "metadata": "Database.Database"
           }
+        }
+      ],
+      "columnHeaders": [
+        {
+          "properties": {}
         }
       ]
     },

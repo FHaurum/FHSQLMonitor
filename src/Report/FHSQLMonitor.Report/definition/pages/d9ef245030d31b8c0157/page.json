@@ -1,5 +1,5 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/page/2.0.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/page/2.1.0/schema.json",
   "name": "d9ef245030d31b8c0157",
   "displayName": "Wait statistics",
   "displayOption": "FitToPage",
@@ -13,7 +13,7 @@
           "Column": {
             "Expression": {
               "SourceRef": {
-                "Entity": "Documentation - report pages"
+                "Entity": "Report pages"
               }
             },
             "Property": "Page"
@@ -25,7 +25,7 @@
           "From": [
             {
               "Name": "d",
-              "Entity": "Documentation - report pages",
+              "Entity": "Report pages",
               "Type": 0
             }
           ],
@@ -91,7 +91,7 @@
           "Column": {
             "Expression": {
               "SourceRef": {
-                "Entity": "Documentation - report pages"
+                "Entity": "Report pages"
               }
             },
             "Property": "Page"

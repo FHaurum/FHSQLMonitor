@@ -1,5 +1,5 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/page/2.0.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/page/2.1.0/schema.json",
   "name": "3ae07d71c5b643e63770",
   "displayName": "Front page",
   "displayOption": "FitToPage",
@@ -23,7 +23,7 @@
                   "ResourcePackageItem": {
                     "PackageName": "RegisteredResources",
                     "PackageType": 1,
-                    "ItemName": "Background-FrontPage47826618397815934.svg"
+                    "ItemName": "Background-FrontPage3908259055121347.svg"
                   }
                 }
               },

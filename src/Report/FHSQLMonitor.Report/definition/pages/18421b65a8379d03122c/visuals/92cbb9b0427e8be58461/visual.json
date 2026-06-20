@@ -1,12 +1,13 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.9.0/schema.json",
   "name": "92cbb9b0427e8be58461",
   "position": {
     "x": 970,
     "y": 565,
     "z": 3000,
     "height": 212,
-    "width": 940
+    "width": 940,
+    "tabOrder": 12000
   },
   "visual": {
     "visualType": "tableEx",
@@ -127,13 +128,41 @@
             "value": {
               "expr": {
                 "Literal": {
-                  "Value": "561.3257599700419D"
+                  "Value": "430D"
                 }
               }
             }
           },
           "selector": {
             "metadata": "Trace flags.Description"
+          }
+        },
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "170D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Trace flags.Timestamp"
+          }
+        },
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "180D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Trace flags.Link"
           }
         }
       ],
@@ -163,6 +192,24 @@
           },
           "selector": {
             "metadata": "Trace flags.Indicator"
+          }
+        }
+      ],
+      "columnHeaders": [
+        {
+          "properties": {}
+        }
+      ],
+      "grid": [
+        {
+          "properties": {
+            "imageHeight": {
+              "expr": {
+                "Literal": {
+                  "Value": "20D"
+                }
+              }
+            }
           }
         }
       ]

@@ -1,5 +1,5 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.9.0/schema.json",
   "name": "ee6aae0a16ae231c265c",
   "position": {
     "x": 10,
@@ -225,6 +225,11 @@
             "metadata": "Index.Object"
           }
         }
+      ],
+      "columnHeaders": [
+        {
+          "properties": {}
+        }
       ]
     },
     "visualContainerObjects": {
@@ -241,7 +246,7 @@
             "text": {
               "expr": {
                 "Literal": {
-                  "Value": "'Statistics age'"
+                  "Value": "'Statistics age - days'"
                 }
               }
             }

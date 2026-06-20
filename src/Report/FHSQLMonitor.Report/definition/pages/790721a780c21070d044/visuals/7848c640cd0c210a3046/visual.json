@@ -1,5 +1,5 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.4.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.9.0/schema.json",
   "name": "7848c640cd0c210a3046",
   "position": {
     "x": 10,
@@ -96,7 +96,7 @@
                       "Entity": "_Measures"
                     }
                   },
-                  "Property": "Home button tooltip text"
+                  "Property": "Home button tooltip text - Report pages"
                 }
               }
             }

@@ -1,5 +1,5 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.6.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.9.0/schema.json",
   "name": "7e175693946e59f25054",
   "position": {
     "x": 10,
@@ -153,7 +153,7 @@
             "value": {
               "expr": {
                 "Literal": {
-                  "Value": "1075.0471184419612D"
+                  "Value": "890D"
                 }
               }
             }
@@ -161,6 +161,95 @@
           "selector": {
             "metadata": "LogNonDebugInfo.Message"
           }
+        },
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "165D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "LogNonDebugInfo.Timestamp"
+          }
+        },
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "185D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Task name version.Name"
+          }
+        },
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "225D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Task name version.Task"
+          }
+        },
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "75D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "LogNonDebugInfo.Type"
+          }
+        },
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "70D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Task name version.Version"
+          }
+        },
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "90D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "LogNonDebugInfo.Id"
+          }
+        }
+      ],
+      "columnHeaders": [
+        {
+          "properties": {}
         }
       ]
     },
@@ -204,7 +293,7 @@
                 "Entity": "_Measures"
               }
             },
-            "Property": "Type selected - Monitor status"
+            "Property": "Type selected flag - Monitor status"
           }
         },
         "type": "Advanced",
@@ -229,7 +318,7 @@
                           "Source": "_"
                         }
                       },
-                      "Property": "Type selected - Monitor status"
+                      "Property": "Type selected flag - Monitor status"
                     }
                   },
                   "Right": {

@@ -1,13 +1,13 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.3.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.9.0/schema.json",
   "name": "d07e8611c7acaf02753c",
   "position": {
     "x": 10,
     "y": 145,
     "z": 4000,
     "height": 170,
-    "width": 770,
-    "tabOrder": 1000
+    "width": 920,
+    "tabOrder": 0
   },
   "visualGroup": {
     "displayName": "Configuration",

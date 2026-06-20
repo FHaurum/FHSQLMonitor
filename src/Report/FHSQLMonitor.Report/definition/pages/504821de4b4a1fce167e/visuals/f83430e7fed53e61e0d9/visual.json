@@ -1,5 +1,5 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.4.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.9.0/schema.json",
   "name": "f83430e7fed53e61e0d9",
   "position": {
     "x": 60,
@@ -7,7 +7,7 @@
     "z": 0,
     "height": 40,
     "width": 40,
-    "tabOrder": 1000
+    "tabOrder": 0
   },
   "visual": {
     "visualType": "actionButton",
@@ -80,8 +80,13 @@
               "solid": {
                 "color": {
                   "expr": {
-                    "Literal": {
-                      "Value": "'#F2F7FF'"
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "_Measures"
+                        }
+                      },
+                      "Property": "Standard fill color"
                     }
                   }
                 }
@@ -140,7 +145,7 @@
                       "Entity": "_Measures"
                     }
                   },
-                  "Property": "Open filter button tooltip - Index usage"
+                  "Property": "Open filter button tooltip"
                 }
               }
             },

@@ -3,6 +3,16 @@ You can try the [live demo](https://tinyurl.com/yc6tc7c2), and then continue to 
 
 Have fun :-)
 <p>
+<b>June 20, 2026: Version 2.13.0</b> with:</br>
+<li>Added the "Memory" service and the report "Memory".</li>
+<li>Updated Connection service to also collect information about connections - previously it was only sessions data that was collected.</li>
+<li>Updated InstanceState service to also collect information about extended events.</li>
+<li>Updated QueryStatistics service to also collect stored procedure query statistics and adding the "Stored procedures" report page.</li>
+<li>Updated slicers to allow multi-select without having to use the Control key.</li>
+</br>
+<li>Restructure of the way the filter panels are configured and structured.</li>
+</p>
+<p>
 <b>March 25, 2026: Version 2.12.0</b> with:</br>
 <li>The tool is now using 2 agent jobs, to enable the services LogShipping and WhoIsActive to execute at the configured schedules, even if the tool is executing other services that takes longer time.</li>
 <li>Added the stored procedure dbo.fhsmSPControl to enable users with an interface to easily set or change configurations, parameters, schedules and retensions.</li>

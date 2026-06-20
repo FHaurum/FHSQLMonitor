@@ -1,12 +1,13 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.3.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.9.0/schema.json",
   "name": "3857d9ce0a9caa119bb9",
   "position": {
     "x": 0,
     "y": 0,
     "z": 2000,
     "height": 90,
-    "width": 400
+    "width": 400,
+    "tabOrder": 2000
   },
   "visual": {
     "visualType": "card",
@@ -22,11 +23,11 @@
                       "Entity": "_Measures"
                     }
                   },
-                  "Property": "Front page parameters text"
+                  "Property": "Parameters text - Front page"
                 }
               },
               "queryRef": "_Measures.Front page parameters text",
-              "nativeQueryRef": "Front page parameters text1"
+              "nativeQueryRef": "Parameters text - Front page"
             }
           ]
         }
@@ -94,17 +95,6 @@
               "expr": {
                 "Literal": {
                   "Value": "10D"
-                }
-              }
-            },
-            "color": {
-              "solid": {
-                "color": {
-                  "expr": {
-                    "Literal": {
-                      "Value": "'#BCD9FF'"
-                    }
-                  }
                 }
               }
             }

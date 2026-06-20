@@ -18,6 +18,7 @@ IndexPhysical.sql
 IndexUsage.sql
 InstanceState.sql
 LogShipping.sql
+Memory.sql
 MissingIndexes.sql
 PerformanceStatistics.sql
 PlanCacheUsage.sql
@@ -29,4 +30,6 @@ WhoIsActive-001-AdamMachanic-12.00-sp_WhoIsActive.sql
 WhoIsActive-002.sql
 _PostInstall-FHSQLMonitor-1.sql
 _PostInstall-FHSQLMonitor-2.sql
+_PostInstall-FHSQLMonitor-3.sql
+_PostInstall-FHSQLMonitor-4.sql
 CleanupAfterInstallationAndUpgrade.sql

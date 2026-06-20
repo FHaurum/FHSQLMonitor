@@ -1,13 +1,13 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.3.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.9.0/schema.json",
   "name": "31ea7d32de1d84a2c4c3",
   "position": {
     "x": 10,
     "y": 850,
     "z": 1750,
     "height": 95,
-    "width": 770,
-    "tabOrder": 2000
+    "width": 920,
+    "tabOrder": 1000
   },
   "visualGroup": {
     "displayName": "FHSQLMonitor",

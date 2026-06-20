@@ -1,5 +1,5 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.4.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.9.0/schema.json",
   "name": "330b1e230d596ece4aa5",
   "position": {
     "x": 60,
@@ -79,8 +79,13 @@
               "solid": {
                 "color": {
                   "expr": {
-                    "Literal": {
-                      "Value": "'#F2F7FF'"
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "_Measures"
+                        }
+                      },
+                      "Property": "Standard fill color"
                     }
                   }
                 }
@@ -127,7 +132,7 @@
             "bookmark": {
               "expr": {
                 "Literal": {
-                  "Value": "'51305957e08e43eb0b2e'"
+                  "Value": "'46762f255213c09991df'"
                 }
               }
             },
@@ -139,7 +144,7 @@
                       "Entity": "_Measures"
                     }
                   },
-                  "Property": "Open filter button tooltip - Instance status"
+                  "Property": "Open filter button tooltip"
                 }
               }
             },

@@ -1,5 +1,5 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.9.0/schema.json",
   "name": "fc9a2632b3ea694a1975",
   "position": {
     "x": 1470,
@@ -7,7 +7,7 @@
     "z": 9000,
     "height": 80,
     "width": 420,
-    "tabOrder": 9000
+    "tabOrder": 8000
   },
   "visual": {
     "visualType": "slicer",
@@ -46,6 +46,11 @@
               }
             }
           }
+        }
+      ],
+      "data": [
+        {
+          "properties": {}
         }
       ]
     },
@@ -121,6 +126,20 @@
           ]
         },
         "howCreated": "User"
+      },
+      {
+        "name": "0db6977d3c4e87a3719c",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Index"
+              }
+            },
+            "Property": "Database"
+          }
+        },
+        "type": "Categorical"
       }
     ]
   }

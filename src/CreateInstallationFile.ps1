@@ -1,6 +1,6 @@
 ﻿$outputFile = "..\build\FHSQLMonitor.sql"
 
-$versionNumber = "v2.12.0"
+$versionNumber = "v2.13.0"
 
 $buildTimeStr = (Get-Date).ToString("yyyy:MM:dd HH:mm:ss")
 
@@ -47,6 +47,7 @@ Add-Content $outputFile "	DECLARE @enableIndexOperational         bit = 1;"
 Add-Content $outputFile "	DECLARE @enableIndexPhysical            bit = 1;"
 Add-Content $outputFile "	DECLARE @enableIndexUsage               bit = 1;"
 Add-Content $outputFile "	DECLARE @enableInstanceState            bit = 1;"
+Add-Content $outputFile "	DECLARE @enableMemory                   bit = 1;"
 Add-Content $outputFile "	DECLARE @enableMissingIndexes           bit = 1;"
 Add-Content $outputFile "	DECLARE @enablePerformanceStatistics    bit = 1;"
 Add-Content $outputFile "	DECLARE @enablePlanCacheUsage           bit = 1;"
@@ -384,8 +385,8 @@ foreach ($file in $filenames) {
         Add-Content $outputFile "SET @stmt = REPLACE(@stmt, 'SET @pbiSchema = ''FHSM'';',                                 'SET @pbiSchema = ''' + @pbiSchema + ''';');"
         Add-Content $outputFile "SET @stmt = REPLACE(@stmt, 'SET @buildTimeStr = ''YYYY-MM-DD HH:MM:SS'';',               'SET @buildTimeStr = ''$buildTimeStr'';');"
     } else {
-        Add-Content $outputFile "SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar) + '''', 'NULL') + ';');"
-        Add-Content $outputFile "SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar) + '''', 'NULL') + ';');"
+        Add-Content $outputFile "SET @stmt = REPLACE(@stmt, 'SET @blocksAndDeadlocksFilePath = NULL;', 'SET @blocksAndDeadlocksFilePath = ' + COALESCE('''' + CAST(@blocksAndDeadlocksFilePath AS nvarchar(260)) + '''', 'NULL') + ';');"
+        Add-Content $outputFile "SET @stmt = REPLACE(@stmt, 'SET @olaDatabase = NULL;', 'SET @olaDatabase = ' + COALESCE('''' + CAST(@olaDatabase AS nvarchar(128)) + '''', 'NULL') + ';');"
         Add-Content $outputFile ""
         Add-Content $outputFile "SET @stmt = REPLACE(@stmt, 'SET @ignoreAutoIndex = 0;',                'SET @ignoreAutoIndex = 1;');"
         Add-Content $outputFile ""
@@ -404,6 +405,7 @@ foreach ($file in $filenames) {
         Add-Content $outputFile "SET @stmt = REPLACE(@stmt, 'SET @enableIndexUsage = 0;',               'SET @enableIndexUsage = '               + CAST(@enableIndexUsage AS nvarchar) + ';');"
         Add-Content $outputFile "SET @stmt = REPLACE(@stmt, 'SET @enableInstanceState = 0;',            'SET @enableInstanceState = '            + CAST(@enableInstanceState AS nvarchar) + ';');"
         Add-Content $outputFile "SET @stmt = REPLACE(@stmt, 'SET @enableLogShipping = 0;',              'SET @enableLogShipping = '              + CAST(@enableLogShipping AS nvarchar) + ';');"
+        Add-Content $outputFile "SET @stmt = REPLACE(@stmt, 'SET @enableMemory = 0;',                   'SET @enableMemory = '                   + CAST(@enableMemory AS nvarchar) + ';');"
         Add-Content $outputFile "SET @stmt = REPLACE(@stmt, 'SET @enableMissingIndexes = 0;',           'SET @enableMissingIndexes = '           + CAST(@enableMissingIndexes AS nvarchar) + ';');"
         Add-Content $outputFile "SET @stmt = REPLACE(@stmt, 'SET @enablePerformanceStatistics = 0;',    'SET @enablePerformanceStatistics = '    + CAST(@enablePerformanceStatistics AS nvarchar) + ';');"
         Add-Content $outputFile "SET @stmt = REPLACE(@stmt, 'SET @enablePlanCacheUsage = 0;',           'SET @enablePlanCacheUsage = '           + CAST(@enablePlanCacheUsage AS nvarchar) + ';');"

@@ -122,20 +122,6 @@
         },
         {
           "location": {
-            "x": 0,
-            "y": 224
-          },
-          "nodeIndex": "Connections",
-          "nodeLineageTag": "216132ac-6fa1-4eb0-aa30-4b09dda2fb1a",
-          "size": {
-            "height": 152,
-            "width": 234
-          },
-          "zIndex": 107,
-          "expandedHeight": 210
-        },
-        {
-          "location": {
             "x": 296,
             "y": 0
           },
@@ -146,20 +132,6 @@
             "width": 234
           },
           "zIndex": 125,
-          "expandedHeight": 176
-        },
-        {
-          "location": {
-            "x": 0,
-            "y": 446.25
-          },
-          "nodeIndex": "Connection info",
-          "nodeLineageTag": "27a7a02d-fedb-4f30-8e5c-fe57888bc236",
-          "size": {
-            "height": 104,
-            "width": 234
-          },
-          "zIndex": 108,
           "expandedHeight": 176
         },
         {
@@ -1377,34 +1349,6 @@
         },
         {
           "location": {
-            "x": 3037.0196701941095,
-            "y": 0
-          },
-          "nodeIndex": "Documentation - report pages",
-          "nodeLineageTag": "ef66ca5e-9ef9-41ed-ab26-4e097d6c992d",
-          "size": {
-            "height": 72,
-            "width": 314.9075767669874
-          },
-          "zIndex": 46,
-          "expandedHeight": 128
-        },
-        {
-          "location": {
-            "x": 3035.901033343051,
-            "y": 90.243066393947672
-          },
-          "nodeIndex": "Documentation - hidden pages",
-          "nodeLineageTag": "dacd82b7-5467-4e9f-9f36-76144f129ed8",
-          "size": {
-            "height": 72,
-            "width": 314.90757676698786
-          },
-          "zIndex": 47,
-          "expandedHeight": 128
-        },
-        {
-          "location": {
             "x": 912.75532176965135,
             "y": 1353.2206435884498
           },
@@ -1983,10 +1927,160 @@
           },
           "zIndex": 0,
           "expandedHeight": 248
+        },
+        {
+          "location": {
+            "x": 3702.4512396284308,
+            "y": 0
+          },
+          "nodeIndex": "Buffer pool usage",
+          "nodeLineageTag": "dc04c55c-330b-449b-8d09-d6931992bcdd",
+          "size": {
+            "height": 152,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 176
+        },
+        {
+          "location": {
+            "x": 3692.9557137799452,
+            "y": 187.6567558919046
+          },
+          "nodeIndex": "Memory clerk type",
+          "nodeLineageTag": "7317bd22-e769-4251-9699-c1635dd1551b",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 128
+        },
+        {
+          "location": {
+            "x": 3695.3451880568973,
+            "y": 340.92510217190204
+          },
+          "nodeIndex": "Memory clerks",
+          "nodeLineageTag": "13d545f6-951b-41e2-af50-3fd82cfb737a",
+          "size": {
+            "height": 152,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 176
+        },
+        {
+          "location": {
+            "x": 0,
+            "y": 224
+          },
+          "nodeIndex": "Sessions",
+          "size": {
+            "height": 152,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 210
+        },
+        {
+          "location": {
+            "x": 0,
+            "y": 446.25
+          },
+          "nodeIndex": "Session info",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 176
+        },
+        {
+          "location": {
+            "x": 4035.226914900898,
+            "y": 309.28661953970436
+          },
+          "nodeIndex": "Connection info",
+          "nodeLineageTag": "14a7fe02-81d6-46aa-88c2-cde8f014870a",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 128
+        },
+        {
+          "location": {
+            "x": 3986.4512396284308,
+            "y": 0
+          },
+          "nodeIndex": "Connections",
+          "nodeLineageTag": "c86da079-3b10-41e9-82ca-fbc2568a8f86",
+          "size": {
+            "height": 152,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 176
+        },
+        {
+          "location": {
+            "x": 3686.4834672961588,
+            "y": 534.96582538128
+          },
+          "nodeIndex": "Instance extended events",
+          "nodeLineageTag": "87e6321d-609c-4de8-9e7f-59ef336f0815",
+          "size": {
+            "height": 72,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 152
+        },
+        {
+          "location": {
+            "x": 4027.8944694540951,
+            "y": 491.18485820759457
+          },
+          "nodeIndex": "Query statistics stored procedures",
+          "nodeLineageTag": "4aa4f88b-4389-4657-820d-326cbd83be29",
+          "size": {
+            "height": 152,
+            "width": 234
+          },
+          "zIndex": 0,
+          "expandedHeight": 200
+        },
+        {
+          "location": {
+            "x": 3037.0196701941095,
+            "y": 0
+          },
+          "nodeIndex": "Report pages",
+          "size": {
+            "height": 72,
+            "width": 314.9075767669874
+          },
+          "zIndex": 0,
+          "expandedHeight": 128
+        },
+        {
+          "location": {
+            "x": 3035.901033343051,
+            "y": 90.243066393947672
+          },
+          "nodeIndex": "Hidden pages",
+          "size": {
+            "height": 72,
+            "width": 314.90757676698786
+          },
+          "zIndex": 0,
+          "expandedHeight": 128
         }
       ],
       "name": "All tables",
-      "zoomValue": 58.145347877582367,
+      "zoomValue": 55.416932580275059,
       "pinKeyFieldsToTop": false,
       "showExtraHeaderInfo": false,
       "hideKeyFieldsWhenCollapsed": false,
@@ -2567,20 +2661,6 @@
       "nodes": [
         {
           "location": {
-            "x": 286.16420851286546,
-            "y": 208.19779705671817
-          },
-          "nodeIndex": "Connections",
-          "nodeLineageTag": "216132ac-6fa1-4eb0-aa30-4b09dda2fb1a",
-          "size": {
-            "height": 152,
-            "width": 234
-          },
-          "zIndex": 0,
-          "expandedHeight": 272
-        },
-        {
-          "location": {
             "x": 0,
             "y": 0
           },
@@ -2590,7 +2670,7 @@
             "height": 104,
             "width": 234
           },
-          "zIndex": 0,
+          "zIndex": 5,
           "expandedHeight": 224
         },
         {
@@ -2604,21 +2684,7 @@
             "height": 104,
             "width": 234
           },
-          "zIndex": 0,
-          "expandedHeight": 176
-        },
-        {
-          "location": {
-            "x": 577,
-            "y": 0
-          },
-          "nodeIndex": "Connection info",
-          "nodeLineageTag": "27a7a02d-fedb-4f30-8e5c-fe57888bc236",
-          "size": {
-            "height": 104,
-            "width": 234
-          },
-          "zIndex": 0,
+          "zIndex": 6,
           "expandedHeight": 176
         },
         {
@@ -2632,8 +2698,64 @@
             "height": 72,
             "width": 298
           },
-          "zIndex": 0,
+          "zIndex": 7,
           "expandedHeight": 200
+        },
+        {
+          "location": {
+            "x": 859.16420851286546,
+            "y": 210.19779705671817
+          },
+          "nodeIndex": "Sessions",
+          "nodeLineageTag": "216132ac-6fa1-4eb0-aa30-4b09dda2fb1a",
+          "size": {
+            "height": 152,
+            "width": 234
+          },
+          "zIndex": 3,
+          "expandedHeight": 272
+        },
+        {
+          "location": {
+            "x": 861,
+            "y": 0
+          },
+          "nodeIndex": "Session info",
+          "nodeLineageTag": "27a7a02d-fedb-4f30-8e5c-fe57888bc236",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 4,
+          "expandedHeight": 176
+        },
+        {
+          "location": {
+            "x": 577,
+            "y": 207
+          },
+          "nodeIndex": "Connections",
+          "nodeLineageTag": "c86da079-3b10-41e9-82ca-fbc2568a8f86",
+          "size": {
+            "height": 152,
+            "width": 234
+          },
+          "zIndex": 1,
+          "expandedHeight": 176
+        },
+        {
+          "location": {
+            "x": 577,
+            "y": 0
+          },
+          "nodeIndex": "Connection info",
+          "nodeLineageTag": "14a7fe02-81d6-46aa-88c2-cde8f014870a",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 2,
+          "expandedHeight": 128
         }
       ],
       "name": "Connections",
@@ -4146,6 +4268,105 @@
       "nodes": [
         {
           "location": {
+            "x": 0,
+            "y": 336
+          },
+          "nodeIndex": "Buffer pool usage",
+          "nodeLineageTag": "dc04c55c-330b-449b-8d09-d6931992bcdd",
+          "size": {
+            "height": 152,
+            "width": 234
+          },
+          "zIndex": 3,
+          "expandedHeight": 176
+        },
+        {
+          "location": {
+            "x": 0,
+            "y": 0
+          },
+          "nodeIndex": "Database",
+          "nodeLineageTag": "afa4b2f5-6362-4b41-9da5-56394d652976",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 2,
+          "expandedHeight": 176
+        },
+        {
+          "location": {
+            "x": 842,
+            "y": 0
+          },
+          "nodeIndex": "Memory clerk type",
+          "nodeLineageTag": "7317bd22-e769-4251-9699-c1635dd1551b",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 4,
+          "expandedHeight": 128
+        },
+        {
+          "location": {
+            "x": 840,
+            "y": 334
+          },
+          "nodeIndex": "Memory clerks",
+          "nodeLineageTag": "13d545f6-951b-41e2-af50-3fd82cfb737a",
+          "size": {
+            "height": 152,
+            "width": 234
+          },
+          "zIndex": 1,
+          "expandedHeight": 176
+        },
+        {
+          "location": {
+            "x": 277,
+            "y": 0
+          },
+          "nodeIndex": "Date",
+          "nodeLineageTag": "66406d91-b832-4567-b6e4-a3786a0597bb",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 5,
+          "expandedHeight": 224
+        },
+        {
+          "location": {
+            "x": 556,
+            "y": 0
+          },
+          "nodeIndex": "Time",
+          "nodeLineageTag": "544922c4-f043-457f-b0e4-e98e212a0454",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 6,
+          "expandedHeight": 200
+        }
+      ],
+      "name": "Memory",
+      "zoomValue": 100,
+      "pinKeyFieldsToTop": false,
+      "showExtraHeaderInfo": false,
+      "hideKeyFieldsWhenCollapsed": false,
+      "tablesLocked": false
+    },
+    {
+      "ordinal": 21,
+      "scrollPosition": {
+        "x": 0,
+        "y": 0
+      },
+      "nodes": [
+        {
+          "location": {
             "x": 262,
             "y": 237
           },
@@ -4237,7 +4458,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 21,
+      "ordinal": 22,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -4336,7 +4557,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 22,
+      "ordinal": 23,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -4393,7 +4614,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 23,
+      "ordinal": 24,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -4506,7 +4727,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 24,
+      "ordinal": 25,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -4563,7 +4784,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 25,
+      "ordinal": 26,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -4606,7 +4827,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 26,
+      "ordinal": 27,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -4623,7 +4844,7 @@
             "height": 104,
             "width": 234
           },
-          "zIndex": 0,
+          "zIndex": 1,
           "expandedHeight": 128
         },
         {
@@ -4637,7 +4858,7 @@
             "height": 104,
             "width": 234
           },
-          "zIndex": 0,
+          "zIndex": 2,
           "expandedHeight": 128
         },
         {
@@ -4651,7 +4872,7 @@
             "height": 152,
             "width": 234
           },
-          "zIndex": 0,
+          "zIndex": 3,
           "expandedHeight": 300
         },
         {
@@ -4665,7 +4886,7 @@
             "height": 104,
             "width": 234
           },
-          "zIndex": 0,
+          "zIndex": 5,
           "expandedHeight": 224
         },
         {
@@ -4679,8 +4900,36 @@
             "height": 104,
             "width": 234
           },
-          "zIndex": 0,
+          "zIndex": 6,
           "expandedHeight": 176
+        },
+        {
+          "location": {
+            "x": 1155,
+            "y": 283
+          },
+          "nodeIndex": "Query statistics stored procedures",
+          "nodeLineageTag": "4aa4f88b-4389-4657-820d-326cbd83be29",
+          "size": {
+            "height": 152,
+            "width": 234
+          },
+          "zIndex": 4,
+          "expandedHeight": 200
+        },
+        {
+          "location": {
+            "x": 1156,
+            "y": 0
+          },
+          "nodeIndex": "Object",
+          "nodeLineageTag": "0967b613-1669-445a-b063-2ed7d2c8f212",
+          "size": {
+            "height": 104,
+            "width": 234
+          },
+          "zIndex": 7,
+          "expandedHeight": 248
         }
       ],
       "name": "Query statistics",
@@ -4691,7 +4940,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 27,
+      "ordinal": 28,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -4762,7 +5011,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 28,
+      "ordinal": 29,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -4805,7 +5054,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 29,
+      "ordinal": 30,
       "scrollPosition": {
         "x": 0,
         "y": 0
@@ -4890,7 +5139,7 @@
       "tablesLocked": false
     },
     {
-      "ordinal": 30,
+      "ordinal": 31,
       "scrollPosition": {
         "x": 0,
         "y": 0

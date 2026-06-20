@@ -1,0 +1,72 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.9.0/schema.json",
+  "name": "5b60f50a590a70521d5b",
+  "position": {
+    "x": 1540,
+    "y": 0,
+    "z": 3000,
+    "height": 30,
+    "width": 360,
+    "tabOrder": 1000
+  },
+  "visual": {
+    "visualType": "card",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Last refresh - Report pages"
+                }
+              },
+              "queryRef": "_Measures.Last Data Refresh",
+              "nativeQueryRef": "Last Data Refresh"
+            }
+          ]
+        }
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Last refresh'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  },
+  "parentGroupName": "e097b2c60076da44d482",
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "f4f798953eeb92b9b5a3",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "_Measures"
+              }
+            },
+            "Property": "Last refresh - Report pages"
+          }
+        },
+        "type": "Advanced"
+      }
+    ]
+  }
+}

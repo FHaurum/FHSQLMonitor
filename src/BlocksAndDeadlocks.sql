@@ -86,7 +86,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.12.0';
+		SET @version = '2.13.0';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -110,233 +110,6 @@ ELSE BEGIN
 		RAISERROR('!!!', 0, 1) WITH NOWAIT;
 
 		--
-		-- We have to install empty PBI views in order to satisfy the Power BI report
-		--
-		BEGIN
-			--
-			-- Create fact view @pbiSchema.[Blocked process]
-			--
-			BEGIN
-				SET @stmt = '
-					IF OBJECT_ID(''' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Blocked process') + ''', ''V'') IS NULL
-					BEGIN
-						EXEC(''CREATE VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Blocked process') + ' AS SELECT ''''dummy'''' AS Txt'');
-					END;
-				';
-				EXEC(@stmt);
-
-				SET @stmt = '
-					ALTER VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Blocked process') + '
-					AS
-					SELECT
-						TOP (0)
-						CAST(NULL AS nvarchar(16)) AS Type
-						,CAST(NULL AS int) AS SPID
-						,CAST(NULL AS nvarchar(max)) AS Statement
-						,CAST(NULL AS int) AS DataSet
-						,CAST(NULL AS datetime2(3)) AS EventTimestampUTC
-						,CAST(NULL AS date) AS Date
-						,CAST(NULL AS int) AS TimeKey
-						,CAST(NULL AS bigint) AS BlocksAndDeadlocksKey
-						,CAST(NULL AS bigint) AS DatabaseKey;
-				';
-				EXEC(@stmt);
-			END;
-
-			--
-			-- Register extended properties on fact view @pbiSchema.[Blocked process]
-			--
-			BEGIN
-				SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Blocked process');
-				SET @objName = PARSENAME(@objectName, 1);
-				SET @schName = PARSENAME(@objectName, 2);
-
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
-			END;
-
-			--
-			-- Create fact view @pbiSchema.[Deadlock]
-			--
-			BEGIN
-				SET @stmt = '
-					IF OBJECT_ID(''' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Deadlock') + ''', ''V'') IS NULL
-					BEGIN
-						EXEC(''CREATE VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Deadlock') + ' AS SELECT ''''dummy'''' AS Txt'');
-					END;
-				';
-				EXEC(@stmt);
-
-				SET @stmt = '
-					ALTER VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Deadlock') + '
-					AS
-					SELECT
-						TOP (0)
-						CAST(NULL AS int) AS SPID
-						,CAST(NULL AS nvarchar(max)) AS InputbufStatement
-						,CAST(NULL AS nvarchar(max)) AS FrameStatement
-						,CAST(NULL AS int) AS DataSet
-						,CAST(NULL AS datetime2(3)) AS EventTimestampUTC
-						,CAST(NULL AS date) AS Date
-						,CAST(NULL AS int) AS TimeKey
-						,CAST(NULL AS bigint) AS BlocksAndDeadlocksKey
-						,CAST(NULL AS bigint) AS DatabaseKey;
-				';
-				EXEC(@stmt);
-			END;
-
-			--
-			-- Register extended properties on fact view @pbiSchema.[Deadlock]
-			--
-			BEGIN
-				SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Deadlock');
-				SET @objName = PARSENAME(@objectName, 1);
-				SET @schName = PARSENAME(@objectName, 2);
-
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
-			END;
-
-			--
-			-- Create fact view @pbiSchema.[Blocks and deadlocks]
-			--
-			BEGIN
-				SET @stmt = '
-					IF OBJECT_ID(''' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Blocks and deadlocks') + ''', ''V'') IS NULL
-					BEGIN
-						EXEC(''CREATE VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Blocks and deadlocks') + ' AS SELECT ''''dummy'''' AS Txt'');
-					END;
-				';
-				EXEC(@stmt);
-
-				SET @stmt = '
-					ALTER VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Blocks and deadlocks') + '
-					AS
-					SELECT
-						TOP (0)
-						CAST(NULL AS nvarchar(max)) AS ClientApp
-						,CAST(NULL AS nvarchar(max)) AS HostName
-						,CAST(NULL AS nvarchar(max)) AS LoginName
-						,CAST(NULL AS bigint) AS BlocksAndDeadlocksKey;
-				';
-				EXEC(@stmt);
-			END;
-
-			--
-			-- Register extended properties on fact view @pbiSchema.[Blocks and deadlocks]
-			--
-			BEGIN
-				SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Blocks and deadlocks');
-				SET @objName = PARSENAME(@objectName, 1);
-				SET @schName = PARSENAME(@objectName, 2);
-
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
-			END;
-		END;
-
-		--
-		-- We have to install empty Info views in order to satisfy the documentation
-		--
-		BEGIN
-			--
-			-- Create info view dbo.fhsmInfoBlocks
-			--
-			BEGIN
-				SET @stmt = '
-					IF OBJECT_ID(''dbo.fhsmInfoBlocks'', ''V'') IS NULL
-					BEGIN
-						EXEC(''CREATE VIEW dbo.fhsmInfoBlocks AS SELECT ''''dummy'''' AS Txt'');
-					END;
-				';
-				EXEC(@stmt);
-
-				SET @stmt = '
-					ALTER VIEW dbo.fhsmInfoBlocks
-					AS
-					SELECT
-						TOP (0)
-						CAST(NULL AS XML) AS BlockXML,
-						CAST(NULL AS datetime2(3)) AS EventTimestampUTC,
-						CAST(NULL AS datetime) AS Timestamp,
-						CAST(NULL AS datetime) AS TimestampUTC,
-						CAST(NULL AS nvarchar(260)) AS FileName,
-						CAST(NULL AS bigint) AS FileOffset,
-						CAST(NULL AS int) AS Id;
-				';
-				EXEC(@stmt);
-			END;
-
-			--
-			-- Register extended properties on info view dbo.fhsmInfoBlocks
-			--
-			BEGIN
-				SET @objectName = 'dbo.fhsmInfoBlocks';
-				SET @objName = PARSENAME(@objectName, 1);
-				SET @schName = PARSENAME(@objectName, 2);
-
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
-			END;
-
-			--
-			-- Create info view dbo.fhsmInfoDeadlocks
-			--
-			BEGIN
-				SET @stmt = '
-					IF OBJECT_ID(''dbo.fhsmInfoDeadlocks'', ''V'') IS NULL
-					BEGIN
-						EXEC(''CREATE VIEW dbo.fhsmInfoDeadlocks AS SELECT ''''dummy'''' AS Txt'');
-					END;
-				';
-				EXEC(@stmt);
-
-				SET @stmt = '
-					ALTER VIEW dbo.fhsmInfoDeadlocks
-					AS
-					SELECT
-						TOP (0)
-						CAST(NULL AS XML) AS DeadlockXML,
-						CAST(NULL AS XML) AS DeadlockGraph,
-						CAST(NULL AS datetime2(3)) AS EventTimestampUTC,
-						CAST(NULL AS datetime) AS Timestamp,
-						CAST(NULL AS datetime) AS TimestampUTC,
-						CAST(NULL AS nvarchar(260)) AS FileName,
-						CAST(NULL AS bigint) AS FileOffset,
-						CAST(NULL AS int) AS Id;
-				';
-				EXEC(@stmt);
-			END;
-
-			--
-			-- Register extended properties on info view dbo.fhsmInfoDeadlocks
-			--
-			BEGIN
-				SET @objectName = 'dbo.fhsmInfoDeadlocks';
-				SET @objName = PARSENAME(@objectName, 1);
-				SET @schName = PARSENAME(@objectName, 2);
-
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
-			END;
-		END;
-
-		--
 		-- We have to install empty control stored procedure in order to satisfy the documentation
 		--
 		BEGIN
@@ -344,23 +117,72 @@ ELSE BEGIN
 			-- Create stored procedure dbo.fhsmSPControlBlocksAndDeadlocks
 			--
 			BEGIN
+				BEGIN
+					SET @stmt = '
+						IF OBJECT_ID(''dbo.fhsmSPControlBlocksAndDeadlocks'', ''P'') IS NULL
+						BEGIN
+							EXEC(''CREATE PROC dbo.fhsmSPControlBlocksAndDeadlocks AS SELECT ''''dummy'''' AS Txt'');
+						END;
+					';
+					EXEC(@stmt);
+
+					SET @stmt = '
+						ALTER PROC dbo.fhsmSPControlBlocksAndDeadlocks (
+							@Type nvarchar(16)
+							,@Command nvarchar(16)
+							,@Key nvarchar(128) = NULL
+							,@Name nvarchar(128) = NULL
+							,@Parameter nvarchar(max) = NULL
+							,@Task nvarchar(128) = NULL
+							,@Value nvarchar(128) = NULL
+						)
+						AS
+						BEGIN
+							SET NOCOUNT ON;
+
+							RAISERROR(''!!!'', 0, 1) WITH NOWAIT;
+							RAISERROR(''!!! Can not configure BlocksAndDeadlocks on SQL versions lower than SQL2012'', 0, 1) WITH NOWAIT;
+							RAISERROR(''!!!'', 0, 1) WITH NOWAIT;
+
+							RETURN 0;
+						END;
+					';
+					EXEC(@stmt);
+				END;
+
+				--
+				-- Register extended properties on the stored procedure dbo.fhsmSPControlBlocksAndDeadlocks
+				--
+				BEGIN
+					SET @objectName = 'dbo.fhsmSPControlBlocksAndDeadlocks';
+					SET @objName = PARSENAME(@objectName, 1);
+					SET @schName = PARSENAME(@objectName, 2);
+
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+				END;
+			END;
+
+			--
+			-- Create stored procedure dbo.fhsmSPViewsBlocksAndDeadlocks
+			--
+			BEGIN
 				SET @stmt = '
-					IF OBJECT_ID(''dbo.fhsmSPControlBlocksAndDeadlocks'', ''P'') IS NULL
+					IF OBJECT_ID(''dbo.fhsmSPViewsBlocksAndDeadlocks'', ''P'') IS NULL
 					BEGIN
-						EXEC(''CREATE PROC dbo.fhsmSPControlBlocksAndDeadlocks AS SELECT ''''dummy'''' AS Txt'');
+						EXEC(''CREATE PROC dbo.fhsmSPViewsBlocksAndDeadlocks AS SELECT ''''dummy'''' AS Txt'');
 					END;
 				';
 				EXEC(@stmt);
 
 				SET @stmt = '
-					ALTER PROC dbo.fhsmSPControlBlocksAndDeadlocks (
-						@Type nvarchar(16)
-						,@Command nvarchar(16)
-						,@Key nvarchar(128) = NULL
-						,@Name nvarchar(128) = NULL
-						,@Parameter nvarchar(max) = NULL
-						,@Task nvarchar(128) = NULL
-						,@Value nvarchar(128) = NULL
+					ALTER PROC dbo.fhsmSPViewsBlocksAndDeadlocks (
+						@view nvarchar(128),
+						@version sql_variant,
+						@nowUTC datetime
 					)
 					AS
 					BEGIN
@@ -374,21 +196,258 @@ ELSE BEGIN
 					END;
 				';
 				EXEC(@stmt);
+
+				--
+				-- Register extended properties on the stored procedure dbo.fhsmSPViewsBlocksAndDeadlocks
+				--
+				BEGIN
+					SET @objectName = 'dbo.fhsmSPViewsBlocksAndDeadlocks';
+					SET @objName = PARSENAME(@objectName, 1);
+					SET @schName = PARSENAME(@objectName, 2);
+
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+				END;
+			END;
+		END;
+
+		--
+		-- We have to install empty PBI views in order to satisfy the Power BI report
+		--
+		BEGIN
+			--
+			-- Create fact view @pbiSchema.[Blocked process]
+			--
+			BEGIN
+				BEGIN
+					SET @stmt = '
+						IF OBJECT_ID(''' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Blocked process') + ''', ''V'') IS NULL
+						BEGIN
+							EXEC(''CREATE VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Blocked process') + ' AS SELECT ''''dummy'''' AS Txt'');
+						END;
+					';
+					EXEC(@stmt);
+
+					SET @stmt = '
+						ALTER VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Blocked process') + '
+						AS
+						SELECT
+							TOP (0)
+							CAST(NULL AS nvarchar(16)) AS Type
+							,CAST(NULL AS int) AS SPID
+							,CAST(NULL AS nvarchar(max)) AS Statement
+							,CAST(NULL AS int) AS DataSet
+							,CAST(NULL AS datetime2(3)) AS EventTimestampUTC
+							,CAST(NULL AS date) AS Date
+							,CAST(NULL AS int) AS TimeKey
+							,CAST(NULL AS bigint) AS BlocksAndDeadlocksKey
+							,CAST(NULL AS bigint) AS DatabaseKey;
+					';
+					EXEC(@stmt);
+				END;
+
+				--
+				-- Register extended properties on fact view @pbiSchema.[Blocked process]
+				--
+				BEGIN
+					SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Blocked process');
+					SET @objName = PARSENAME(@objectName, 1);
+					SET @schName = PARSENAME(@objectName, 2);
+
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+				END;
 			END;
 
 			--
-			-- Register extended properties on the stored procedure dbo.fhsmSPControlBlocksAndDeadlocks
+			-- Create fact view @pbiSchema.[Deadlock]
 			--
 			BEGIN
-				SET @objectName = 'dbo.fhsmSPControlBlocksAndDeadlocks';
-				SET @objName = PARSENAME(@objectName, 1);
-				SET @schName = PARSENAME(@objectName, 2);
+				BEGIN
+					SET @stmt = '
+						IF OBJECT_ID(''' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Deadlock') + ''', ''V'') IS NULL
+						BEGIN
+							EXEC(''CREATE VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Deadlock') + ' AS SELECT ''''dummy'''' AS Txt'');
+						END;
+					';
+					EXEC(@stmt);
 
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+					SET @stmt = '
+						ALTER VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Deadlock') + '
+						AS
+						SELECT
+							TOP (0)
+							CAST(NULL AS int) AS SPID
+							,CAST(NULL AS nvarchar(max)) AS InputbufStatement
+							,CAST(NULL AS nvarchar(max)) AS FrameStatement
+							,CAST(NULL AS int) AS DataSet
+							,CAST(NULL AS datetime2(3)) AS EventTimestampUTC
+							,CAST(NULL AS date) AS Date
+							,CAST(NULL AS int) AS TimeKey
+							,CAST(NULL AS bigint) AS BlocksAndDeadlocksKey
+							,CAST(NULL AS bigint) AS DatabaseKey;
+					';
+					EXEC(@stmt);
+				END;
+
+				--
+				-- Register extended properties on fact view @pbiSchema.[Deadlock]
+				--
+				BEGIN
+					SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Deadlock');
+					SET @objName = PARSENAME(@objectName, 1);
+					SET @schName = PARSENAME(@objectName, 2);
+
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+				END;
+			END;
+
+			--
+			-- Create fact view @pbiSchema.[Blocks and deadlocks]
+			--
+			BEGIN
+				BEGIN
+					SET @stmt = '
+						IF OBJECT_ID(''' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Blocks and deadlocks') + ''', ''V'') IS NULL
+						BEGIN
+							EXEC(''CREATE VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Blocks and deadlocks') + ' AS SELECT ''''dummy'''' AS Txt'');
+						END;
+					';
+					EXEC(@stmt);
+
+					SET @stmt = '
+						ALTER VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Blocks and deadlocks') + '
+						AS
+						SELECT
+							TOP (0)
+							CAST(NULL AS nvarchar(max)) AS ClientApp
+							,CAST(NULL AS nvarchar(max)) AS HostName
+							,CAST(NULL AS nvarchar(max)) AS LoginName
+							,CAST(NULL AS bigint) AS BlocksAndDeadlocksKey;
+					';
+					EXEC(@stmt);
+				END;
+
+				--
+				-- Register extended properties on fact view @pbiSchema.[Blocks and deadlocks]
+				--
+				BEGIN
+					SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Blocks and deadlocks');
+					SET @objName = PARSENAME(@objectName, 1);
+					SET @schName = PARSENAME(@objectName, 2);
+
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+				END;
+			END;
+		END;
+
+		--
+		-- We have to install empty Info views in order to satisfy the documentation
+		--
+		BEGIN
+			--
+			-- Create info view dbo.fhsmInfoBlocks
+			--
+			BEGIN
+				BEGIN
+					SET @stmt = '
+						IF OBJECT_ID(''dbo.fhsmInfoBlocks'', ''V'') IS NULL
+						BEGIN
+							EXEC(''CREATE VIEW dbo.fhsmInfoBlocks AS SELECT ''''dummy'''' AS Txt'');
+						END;
+					';
+					EXEC(@stmt);
+
+					SET @stmt = '
+						ALTER VIEW dbo.fhsmInfoBlocks
+						AS
+						SELECT
+							TOP (0)
+							CAST(NULL AS XML) AS BlockXML,
+							CAST(NULL AS datetime2(3)) AS EventTimestampUTC,
+							CAST(NULL AS datetime) AS Timestamp,
+							CAST(NULL AS datetime) AS TimestampUTC,
+							CAST(NULL AS nvarchar(260)) AS FileName,
+							CAST(NULL AS bigint) AS FileOffset,
+							CAST(NULL AS int) AS Id;
+					';
+					EXEC(@stmt);
+				END;
+
+				--
+				-- Register extended properties on info view dbo.fhsmInfoBlocks
+				--
+				BEGIN
+					SET @objectName = 'dbo.fhsmInfoBlocks';
+					SET @objName = PARSENAME(@objectName, 1);
+					SET @schName = PARSENAME(@objectName, 2);
+
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+				END;
+			END;
+
+			--
+			-- Create info view dbo.fhsmInfoDeadlocks
+			--
+			BEGIN
+				BEGIN
+					SET @stmt = '
+						IF OBJECT_ID(''dbo.fhsmInfoDeadlocks'', ''V'') IS NULL
+						BEGIN
+							EXEC(''CREATE VIEW dbo.fhsmInfoDeadlocks AS SELECT ''''dummy'''' AS Txt'');
+						END;
+					';
+					EXEC(@stmt);
+
+					SET @stmt = '
+						ALTER VIEW dbo.fhsmInfoDeadlocks
+						AS
+						SELECT
+							TOP (0)
+							CAST(NULL AS XML) AS DeadlockXML,
+							CAST(NULL AS XML) AS DeadlockGraph,
+							CAST(NULL AS datetime2(3)) AS EventTimestampUTC,
+							CAST(NULL AS datetime) AS Timestamp,
+							CAST(NULL AS datetime) AS TimestampUTC,
+							CAST(NULL AS nvarchar(260)) AS FileName,
+							CAST(NULL AS bigint) AS FileOffset,
+							CAST(NULL AS int) AS Id;
+					';
+					EXEC(@stmt);
+				END;
+
+				--
+				-- Register extended properties on info view dbo.fhsmInfoDeadlocks
+				--
+				BEGIN
+					SET @objectName = 'dbo.fhsmInfoDeadlocks';
+					SET @objName = PARSENAME(@objectName, 1);
+					SET @schName = PARSENAME(@objectName, 2);
+
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+				END;
 			END;
 		END;
 	END
@@ -596,6 +655,1097 @@ ELSE BEGIN
 		--
 
 		--
+		-- Create stored procedures
+		--
+		BEGIN
+			--
+			-- Create stored procedure dbo.fhsmSPBlocksAndDeadlocks
+			--
+			BEGIN
+				BEGIN
+					SET @stmt = '
+						IF OBJECT_ID(''dbo.fhsmSPBlocksAndDeadlocks'', ''P'') IS NULL
+						BEGIN
+							EXEC(''CREATE PROC dbo.fhsmSPBlocksAndDeadlocks AS SELECT ''''dummy'''' AS Txt'');
+						END;
+					';
+					EXEC(@stmt);
+
+					SET @stmt = '
+						ALTER PROC dbo.fhsmSPBlocksAndDeadlocks (
+							@name nvarchar(128)
+							,@version nvarchar(128) OUTPUT
+						)
+						AS
+						BEGIN
+							SET NOCOUNT ON;
+
+							DECLARE @blockedProcessThreshold int;
+							DECLARE @blockedProcessThresholdChanges TABLE(
+								Action nvarchar(10),
+								DeletedKey nvarchar(128),
+								DeletedValue nvarchar(128),
+								InsertedKey nvarchar(128),
+								InsertedValue nvarchar(128)
+							);
+							DECLARE @errorMsg nvarchar(max);
+							DECLARE @fileName nvarchar(260);
+							DECLARE @fileOffset bigint;
+							DECLARE @filePath nvarchar(260);
+							DECLARE @filePathEvent nvarchar(260);
+							DECLARE @message nvarchar(max);
+							DECLARE @now datetime;
+							DECLARE @nowUTC datetime;
+							DECLARE @parameter nvarchar(max);
+							DECLARE @parameterTable TABLE([Key] nvarchar(128) NOT NULL, Value nvarchar(128) NULL);
+							DECLARE @runningFilePath nvarchar(260);
+							DECLARE @sessionName nvarchar(128);
+							DECLARE @sessionNameOldStyle nvarchar(128);
+							DECLARE @stmt nvarchar(max);
+							DECLARE @testFileName nvarchar(260);
+							DECLARE @thisTask nvarchar(128);
+
+							SET @thisTask = OBJECT_NAME(@@PROCID);
+							SET @version = ''' + @version + ''';
+
+							--
+							-- Get the parameter for the command
+							--
+							BEGIN
+								SET @parameter = dbo.fhsmFNGetTaskParameter(@thisTask, @name);
+
+								INSERT INTO @parameterTable([Key], Value)
+								SELECT
+									(SELECT s.Txt FROM dbo.fhsmFNSplitString(p.Txt, ''='') AS s WHERE (s.Part = 1)) AS [Key]
+									,(SELECT s.Txt FROM dbo.fhsmFNSplitString(p.Txt, ''='') AS s WHERE (s.Part = 2)) AS Value
+								FROM dbo.fhsmFNSplitString(@parameter, '';'') AS p;
+
+								SET @filePath = (SELECT pt.Value FROM @parameterTable AS pt WHERE (pt.[Key] = ''@FilePath''));
+								SET @filePath = NULLIF(REPLACE(@filePath, '''''''', ''''), '''');
+							END;
+
+							--
+							-- Initialize variables
+							--
+							BEGIN
+								SET @sessionName = DB_NAME() + ''BlocksAndDeadlocks'';
+								SET @sessionNameOldStyle = ''FHSMBlocksAndDeadlocks'';
+								SET @filePathEvent = COALESCE(@filePath + ''\'', '''') + @sessionName + ''.xel'';
+								SET @filePath = REPLACE(@filePathEvent, ''.xel'', ''*.xel'');
+							END;
+
+							--
+							-- Delete session with old name
+							--
+							IF (@sessionName <> @sessionNameOldStyle)
+								AND EXISTS(
+									SELECT *
+									FROM sys.server_event_sessions AS ses
+									WHERE (ses.name = @sessionNameOldStyle)
+								)
+							BEGIN
+								SET @stmt = ''DROP EVENT SESSION '' + QUOTENAME(@sessionNameOldStyle) + '' ON SERVER;'';
+								EXEC(@stmt);
+							END;
+					';
+					SET @stmt += '
+							--
+							-- Register configuration changes
+							--
+							BEGIN
+								SET @blockedProcessThreshold = (
+									SELECT CAST(c.value_in_use AS int)
+									FROM sys.configurations AS c
+									WHERE (c.configuration_id = 1569)
+								);
+
+								WITH
+								conf([Key], Value) AS(
+									SELECT
+										''BlockedProcessThreshold'' AS [Key]
+										,CAST(@blockedProcessThreshold AS nvarchar) AS Value
+								)
+								MERGE dbo.fhsmConfigurations AS tgt
+								USING conf AS src ON (src.[Key] = tgt.[Key] COLLATE SQL_Latin1_General_CP1_CI_AS)
+								-- Not testing for NULL as a NULL parameter is not allowed
+								WHEN MATCHED AND (tgt.Value <> src.Value)
+									THEN UPDATE
+										SET tgt.Value = src.Value
+								WHEN NOT MATCHED BY TARGET
+									THEN INSERT([Key], Value)
+									VALUES(src.[Key], src.Value)
+								OUTPUT
+									$action,
+									deleted.[Key],
+									deleted.Value,
+									inserted.[Key],
+									inserted.Value
+								INTO @blockedProcessThresholdChanges;
+
+								IF (@@ROWCOUNT <> 0)
+								BEGIN
+									SET @message = (
+										SELECT ''Blocked process reporting threshold is '''''' + src.InsertedValue + '''''''' + COALESCE('' - changed from '''''' + src.DeletedValue + '''''''', '''')
+										FROM @blockedProcessThresholdChanges AS src
+									);
+									IF (@message IS NOT NULL)
+									BEGIN
+										EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''Info'', @message = @message;
+									END;
+								END;
+							END;
+					';
+					SET @stmt += '
+							--
+							-- Setup or change event session if @filePath is not configured or the same
+							--
+							BEGIN
+								SET @runningFilePath = (
+									SELECT CAST(sesf.value AS nvarchar(260))
+									FROM sys.server_event_sessions AS ses
+									INNER JOIN sys.server_event_session_fields AS sesf ON (sesf.event_session_id = ses.event_session_id)
+									WHERE (ses.name = @sessionName) AND (sesf.name = ''FILENAME'')
+								);
+
+								IF (@runningFilePath <> @filePathEvent) OR (@runningFilePath IS NULL)
+								BEGIN
+									IF EXISTS(
+										SELECT *
+										FROM sys.server_event_sessions AS ses
+										WHERE (ses.name = @sessionName)
+									)
+									BEGIN
+										SET @stmt = ''DROP EVENT SESSION '' + QUOTENAME(@sessionName) + '' ON SERVER;'';
+										EXEC(@stmt);
+									END;
+
+									SET @stmt = ''
+										CREATE EVENT SESSION '' + QUOTENAME(@sessionName) + '' ON SERVER
+										ADD EVENT sqlserver.blocked_process_report(
+											ACTION(
+												sqlserver.client_app_name,
+												sqlserver.client_hostname,
+												sqlserver.database_name
+											)
+										),
+										ADD EVENT sqlserver.xml_deadlock_report(
+											ACTION(
+												sqlserver.client_app_name,
+												sqlserver.client_hostname,
+												sqlserver.database_name
+											)
+										)
+										ADD TARGET package0.asynchronous_file_target(
+											SET
+											filename = N''''<FILENAME>'''',
+											max_file_size = (10),
+											max_rollover_files = 2
+										)
+										WITH (
+											EVENT_RETENTION_MODE = ALLOW_SINGLE_EVENT_LOSS,
+											MAX_DISPATCH_LATENCY = 15 SECONDS,
+											STARTUP_STATE = ON
+										);
+									'';
+
+									SET @stmt = REPLACE(@stmt, ''<FILENAME>'', @filePathEvent);
+									EXEC(@stmt);
+
+									SET @stmt = ''ALTER EVENT SESSION '' + QUOTENAME(@sessionName) + '' ON SERVER STATE = START;'';
+									EXEC(@stmt);
+								END;
+							END;
+					';
+					SET @stmt += '
+							--
+							-- Get latest file name and offset
+							--
+							BEGIN
+								SELECT TOP (1)
+									@fileName = f.FileName
+									,@fileOffset = f.FileOffset
+								FROM dbo.fhsmBlocksAndDeadlocks AS f
+								ORDER BY f.Id DESC;
+
+								BEGIN TRY
+									SET @testFileName = (
+										SELECT TOP (1) f.file_name
+										FROM sys.fn_xe_file_target_read_file(@filePath, NULL, @fileName, @fileOffset) AS f
+									);
+								END TRY
+								BEGIN CATCH
+									SET @fileName = NULL;
+									SET @fileOffset = NULL;
+								END CATCH;
+							END;
+					';
+					SET @stmt += '
+							--
+							-- Collect data
+							--
+							BEGIN
+								SELECT
+									@now = SYSDATETIME()
+									,@nowUTC = SYSUTCDATETIME();
+
+								BEGIN TRY
+									INSERT INTO dbo.fhsmBlocksAndDeadlocks(EventTimestampUTC, FileName, FileOffset, EventData, TimestampUTC, Timestamp)
+									SELECT a.EventTimestampUTC, a.FileName, a.FileOffset, a.EventData, a.TimestampUTC, a.Timestamp
+									FROM (
+										SELECT
+											' + CASE WHEN (@productVersion1 <= 13) THEN '@nowUTC' ELSE 'f.timestamp_utc' END + ' AS EventTimestampUTC
+											,f.file_name AS FileName
+											,f.file_offset AS FileOffset
+											,CAST(f.event_data AS varchar(max)) AS EventData
+											,@nowUTC AS TimestampUTC
+											,@now AS Timestamp
+										FROM sys.fn_xe_file_target_read_file(@filePath, NULL, @fileName, @fileOffset) AS f
+									) AS a
+									WHERE NOT EXISTS(
+										SELECT *
+										FROM dbo.fhsmBlocksAndDeadlocks AS t
+										WHERE (t.EventTimestampUTC = a.EventTimestampUTC)
+									)
+									ORDER BY
+										' + CASE WHEN (@productVersion1 <= 13) THEN '' ELSE 'a.EventTimestampUTC,' END + '
+										a.FileName,
+										a.FileOffset;
+								END TRY
+								BEGIN CATCH
+									SET @errorMsg = ERROR_MESSAGE();
+
+									SET @message = ''Failed due to - '' + @errorMsg;
+									EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''Warning'', @message = @message;
+								END CATCH;
+							END;
+
+							RETURN 0;
+						END;
+					';
+					EXEC(@stmt);
+				END;
+
+				--
+				-- Register extended properties on the stored procedure dbo.fhsmSPBlocksAndDeadlocks
+				--
+				BEGIN
+					SET @objectName = 'dbo.fhsmSPBlocksAndDeadlocks';
+					SET @objName = PARSENAME(@objectName, 1);
+					SET @schName = PARSENAME(@objectName, 2);
+
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+				END;
+			END;
+
+			--
+			-- Create stored procedure dbo.fhsmSPControlBlocksAndDeadlocks
+			--
+			BEGIN
+				BEGIN
+					SET @stmt = '
+						IF OBJECT_ID(''dbo.fhsmSPControlBlocksAndDeadlocks'', ''P'') IS NULL
+						BEGIN
+							EXEC(''CREATE PROC dbo.fhsmSPControlBlocksAndDeadlocks AS SELECT ''''dummy'''' AS Txt'');
+						END;
+					';
+					EXEC(@stmt);
+
+					SET @stmt = '
+						ALTER PROC dbo.fhsmSPControlBlocksAndDeadlocks (
+							@Type nvarchar(16)
+							,@Command nvarchar(16)
+							,@Key nvarchar(128) = NULL
+							,@Name nvarchar(128) = NULL
+							,@Parameter nvarchar(max) = NULL
+							,@Task nvarchar(128) = NULL
+							,@Value nvarchar(128) = NULL
+						)
+						AS
+						BEGIN
+							SET NOCOUNT ON;
+
+							DECLARE @blockedProcessThreshold int;
+							DECLARE @blockedProcessThresholdChanges TABLE(
+								Action nvarchar(10),
+								DeletedKey nvarchar(128),
+								DeletedValue nvarchar(128),
+								InsertedKey nvarchar(128),
+								InsertedValue nvarchar(128)
+							);
+							DECLARE @filePath nvarchar(260);
+							DECLARE @filePathEvent nvarchar(260);
+							DECLARE @jobName nvarchar(128);
+							DECLARE @jobStatus int;
+							DECLARE @jobStatuses TABLE(
+								JobName nvarchar(128),
+								JobStatus int
+							);
+							DECLARE @message nvarchar(max);
+							DECLARE @parameterChanges TABLE(
+								Action nvarchar(10),
+								DeletedTask nvarchar(128),
+								DeletedName nvarchar(128),
+								DeletedParameter nvarchar(max),
+								InsertedTask nvarchar(128),
+								InsertedName nvarchar(128),
+								InsertedParameter nvarchar(max)
+							);
+							DECLARE @parameterTable TABLE([Key] nvarchar(128) NOT NULL, Value nvarchar(128) NULL);
+							DECLARE @runningFilePath nvarchar(260);
+							DECLARE @sessionName nvarchar(128);
+							DECLARE @showAdvancedOptions int;
+							DECLARE @stmt nvarchar(max);
+							DECLARE @thisTask nvarchar(128);
+							DECLARE @valueInt int;
+							DECLARE @version nvarchar(128);
+
+							SET @thisTask = OBJECT_NAME(@@PROCID);
+							SET @version = ''' + @version + ''';
+					';
+					SET @stmt += '
+							IF (@Type = ''configuration'')
+							BEGIN
+								IF (@Command = ''set'') AND (@Key = ''BlockedProcessThreshold'')
+								BEGIN
+									SET @valueInt = dbo.fhsmFNTryParseAsInt(@Value);
+
+									IF (@valueInt IS NULL)
+									BEGIN
+										SET @message = ''Illegal @Value:'''''' + COALESCE(@Value, ''<NULL>'') + '''''''';
+										RAISERROR(@message, 0, 1) WITH NOWAIT;
+										RETURN -1;
+									END
+
+									SET @blockedProcessThreshold = (
+										SELECT CAST(c.value_in_use AS int)
+										FROM sys.configurations AS c
+										WHERE (c.configuration_id = 1569)
+									);
+
+									SET @showAdvancedOptions = (
+										SELECT CAST(c.value_in_use AS int)
+										FROM sys.configurations AS c
+										WHERE (c.configuration_id = 518)
+									);
+
+									IF (@blockedProcessThreshold <> @valueInt)
+									BEGIN
+										IF (@showAdvancedOptions = 0)
+										BEGIN
+											SET @stmt = ''
+												EXEC sp_configure ''''show advanced options'''', 1;
+												RECONFIGURE;
+											'';
+											EXEC(@stmt);
+										END
+
+										SET @stmt = ''
+											EXEC sp_configure ''''blocked process threshold'''', '' + @Value + '';
+											RECONFIGURE;
+										'';
+										EXEC(@stmt);
+
+										IF (@showAdvancedOptions = 0)
+										BEGIN
+											SET @stmt = ''
+												EXEC sp_configure ''''show advanced options'''', 0;
+												RECONFIGURE;
+											'';
+											EXEC(@stmt);
+										END;
+
+										--
+										-- Register configuration changes
+										--
+										BEGIN
+											SET @blockedProcessThreshold = (
+												SELECT CAST(c.value_in_use AS int)
+												FROM sys.configurations AS c
+												WHERE (c.configuration_id = 1569)
+											);
+
+											WITH
+											conf([Key], Value) AS(
+												SELECT
+													''BlockedProcessThreshold'' AS [Key]
+													,CAST(@blockedProcessThreshold AS nvarchar) AS Value
+											)
+											MERGE dbo.fhsmConfigurations AS tgt
+											USING conf AS src ON (src.[Key] = tgt.[Key] COLLATE SQL_Latin1_General_CP1_CI_AS)
+											-- Not testing for NULL as a NULL parameter is not allowed
+											WHEN MATCHED AND (tgt.Value <> src.Value)
+												THEN UPDATE
+													SET tgt.Value = src.Value
+											WHEN NOT MATCHED BY TARGET
+												THEN INSERT([Key], Value)
+												VALUES(src.[Key], src.Value)
+											OUTPUT
+												$action,
+												deleted.[Key],
+												deleted.Value,
+												inserted.[Key],
+												inserted.Value
+											INTO @blockedProcessThresholdChanges;
+
+											IF (@@ROWCOUNT <> 0)
+											BEGIN
+												SET @message = (
+													SELECT ''Blocked process reporting threshold is '''''' + src.InsertedValue + '''''''' + COALESCE('' - changed from '''''' + src.DeletedValue + '''''''', '''')
+													FROM @blockedProcessThresholdChanges AS src
+												);
+												IF (@message IS NOT NULL)
+												BEGIN
+													EXEC dbo.fhsmSPLog @name = @thisTask, @version = @version, @task = @thisTask, @type = ''Info'', @message = @message;
+												END;
+											END;
+										END;
+									END
+								END
+								ELSE BEGIN
+									SET @message = ''Illegal Combination of @Type:'''''' + COALESCE(@Type, ''<NULL>'') + '''''', @Command:'''''' + COALESCE(@Command, ''<NULL>'') + '''''' and @Key:'''''' + COALESCE(@Key, ''<NULL>'') + '''''''';
+									RAISERROR(@message, 0, 1) WITH NOWAIT;
+									RETURN -9;
+								END;
+							END
+					';
+					SET @stmt += '
+							ELSE IF (@Type = ''parameter'')
+							BEGIN
+								IF (@Command = ''set'')
+								BEGIN
+									SET @Parameter = NULLIF(@Parameter, '''');
+
+									IF NOT EXISTS (
+										SELECT *
+										FROM dbo.fhsmSchedules AS s
+										WHERE (s.Task = @Task) AND (s.Name = @Name) AND (s.DeploymentStatus <> -1)
+									)
+									BEGIN
+										SET @message = ''Invalid @Task:'''''' + COALESCE(NULLIF(@Task, ''''), ''<NULL>'') + '''''' and @Name:'''''' + COALESCE(NULLIF(@Name, ''''), ''<NULL>'') + '''''''';
+										RAISERROR(@message, 0, 1) WITH NOWAIT;
+										RETURN -11;
+									END;
+					';
+					SET @stmt += '
+									--
+									-- Disable all agent jobs
+									--
+									BEGIN
+										DECLARE jCur CURSOR LOCAL READ_ONLY FAST_FORWARD FOR
+										SELECT c.Value AS JobName
+										FROM dbo.fhsmConfigurations AS c
+										WHERE (c.[Key] LIKE ''AgentJobName[01]'')
+										ORDER BY c.[Key];
+
+										OPEN jCur;
+
+										WHILE (1 = 1)
+										BEGIN
+											FETCH NEXT FROM jCur
+											INTO @jobName;
+
+											IF (@@FETCH_STATUS <> 0)
+											BEGIN
+												BREAK;
+											END;
+
+											EXEC dbo.fhsmSPAgentJobControl @jobName = @jobName, @command = ''Disable'', @jobStatus = @jobStatus OUTPUT;
+
+											INSERT INTO @jobStatuses(JobName, JobStatus)
+											SELECT @jobName, @jobStatus;
+										END;
+
+										CLOSE jCur;
+										DEALLOCATE jCur;
+									END;
+					';
+					SET @stmt += '
+									--
+									-- Register configuration changes
+									--
+									BEGIN
+										WITH
+										conf(Task, Name, Parameter) AS(
+											SELECT
+												@Task AS Task
+												,@Name AS Name
+												,@Parameter AS Parameter
+										)
+										MERGE dbo.fhsmSchedules AS tgt
+										USING conf AS src ON (src.[Task] = tgt.[Task] COLLATE SQL_Latin1_General_CP1_CI_AS) AND (src.[Name] = tgt.[Name] COLLATE SQL_Latin1_General_CP1_CI_AS)
+										-- Not testing for NULL as a NULL parameter is not allowed
+										WHEN MATCHED AND (tgt.Parameter <> src.Parameter)
+											THEN UPDATE
+												SET tgt.Parameter = src.Parameter
+										WHEN NOT MATCHED BY TARGET
+											THEN INSERT(Task, Name, Parameter)
+											VALUES(src.Task, src.Name, src.Parameter)
+										OUTPUT
+											$action,
+											deleted.Task,
+											deleted.Name,
+											deleted.Parameter,
+											inserted.Task,
+											inserted.Name,
+											inserted.Parameter
+										INTO @parameterChanges;
+
+										IF (@@ROWCOUNT <> 0)
+										BEGIN
+											SET @message = (
+												SELECT ''Parameter is '''''' + COALESCE(src.InsertedParameter, ''<NULL>'') + '''''' - changed from '''''' + COALESCE(src.DeletedParameter, ''<NULL>'') + ''''''''
+												FROM @parameterChanges AS src
+											);
+											IF (@message IS NOT NULL)
+											BEGIN
+												EXEC dbo.fhsmSPLog @name = @Name, @version = @version, @task = @thisTask, @type = ''Info'', @message = @message;
+											END;
+										END;
+									END;
+					';
+					SET @stmt += '
+									--
+									-- Setup or change event session if @filePath is not configured or the same
+									--
+									BEGIN
+										--
+										-- Get the parameter for the command
+										--
+										BEGIN
+											SET @Parameter = dbo.fhsmFNGetTaskParameter(@Task, @Name);
+
+											INSERT INTO @parameterTable([Key], Value)
+											SELECT
+												(SELECT s.Txt FROM dbo.fhsmFNSplitString(p.Txt, ''='') AS s WHERE (s.Part = 1)) AS [Key]
+												,(SELECT s.Txt FROM dbo.fhsmFNSplitString(p.Txt, ''='') AS s WHERE (s.Part = 2)) AS Value
+											FROM dbo.fhsmFNSplitString(@Parameter, '';'') AS p;
+
+											SET @filePath = (SELECT pt.Value FROM @parameterTable AS pt WHERE (pt.[Key] = ''@FilePath''));
+											SET @filePath = NULLIF(REPLACE(@filePath, '''''''', ''''), '''');
+										END;
+
+										--
+										-- Initialize variables
+										--
+										BEGIN
+											SET @sessionName = DB_NAME() + ''BlocksAndDeadlocks'';
+											SET @filePathEvent = COALESCE(@filePath + ''\'', '''') + @sessionName + ''.xel'';
+											SET @filePath = REPLACE(@filePathEvent, ''.xel'', ''*.xel'');
+										END;
+
+										SET @runningFilePath = (
+											SELECT CAST(sesf.value AS nvarchar(260))
+											FROM sys.server_event_sessions AS ses
+											INNER JOIN sys.server_event_session_fields AS sesf ON (sesf.event_session_id = ses.event_session_id)
+											WHERE (ses.name = @sessionName) AND (sesf.name = ''FILENAME'')
+										);
+					';
+					SET @stmt += '
+										IF (@runningFilePath <> @filePathEvent) OR (@runningFilePath IS NULL)
+										BEGIN
+											IF EXISTS(
+												SELECT *
+												FROM sys.server_event_sessions AS ses
+												WHERE (ses.name = @sessionName)
+											)
+											BEGIN
+												SET @stmt = ''DROP EVENT SESSION '' + QUOTENAME(@sessionName) + '' ON SERVER;'';
+												EXEC(@stmt);
+											END;
+
+											SET @stmt = ''
+												CREATE EVENT SESSION '' + QUOTENAME(@sessionName) + '' ON SERVER
+												ADD EVENT sqlserver.blocked_process_report(
+													ACTION(
+														sqlserver.client_app_name,
+														sqlserver.client_hostname,
+														sqlserver.database_name
+													)
+												),
+												ADD EVENT sqlserver.xml_deadlock_report(
+													ACTION(
+														sqlserver.client_app_name,
+														sqlserver.client_hostname,
+														sqlserver.database_name
+													)
+												)
+												ADD TARGET package0.asynchronous_file_target(
+													SET
+													filename = N''''<FILENAME>'''',
+													max_file_size = (10),
+													max_rollover_files = 2
+												)
+												WITH (
+													EVENT_RETENTION_MODE = ALLOW_SINGLE_EVENT_LOSS,
+													MAX_DISPATCH_LATENCY = 15 SECONDS,
+													STARTUP_STATE = ON
+												);
+											'';
+
+											SET @stmt = REPLACE(@stmt, ''<FILENAME>'', @filePathEvent);
+											EXEC(@stmt);
+
+											SET @stmt = ''ALTER EVENT SESSION '' + QUOTENAME(@sessionName) + '' ON SERVER STATE = START;'';
+											EXEC(@stmt);
+										END;
+									END;
+					';
+					SET @stmt += '
+									--
+									-- Enable all agent jobs that was enable when starting
+									--
+									BEGIN
+										DECLARE jCur CURSOR LOCAL READ_ONLY FAST_FORWARD FOR
+										SELECT js.JobName, js.JobStatus
+										FROM @jobStatuses AS js
+										ORDER BY js.JobName;
+
+										OPEN jCur;
+
+										WHILE (1 = 1)
+										BEGIN
+											FETCH NEXT FROM jCur
+											INTO @jobName, @jobStatus;
+
+											IF (@@FETCH_STATUS <> 0)
+											BEGIN
+												BREAK;
+											END;
+
+											IF (@jobStatus = 1)
+											BEGIN
+												EXEC dbo.fhsmSPAgentJobControl @jobName = @jobName, @command = ''Enable'', @jobStatus = @jobStatus OUTPUT;
+											END;
+										END;
+
+										CLOSE jCur;
+										DEALLOCATE jCur;
+									END;
+								END
+								ELSE BEGIN
+									SET @message = ''Illegal Combination of @Type:'''''' + COALESCE(@Type, ''<NULL>'') + '''''' and @Command:'''''' + COALESCE(@Command, ''<NULL>'') + '''''''';
+									RAISERROR(@message, 0, 1) WITH NOWAIT;
+									RETURN -19;
+								END;
+							END
+					';
+					SET @stmt += '
+							ELSE IF (@Type = ''uninstall'')
+							BEGIN
+								--
+								-- Initialize variables
+								--
+								BEGIN
+									SET @sessionName = DB_NAME() + ''BlocksAndDeadlocks'';
+								END;
+
+								--
+								-- Disable task
+								--
+								BEGIN
+									UPDATE s
+									SET s.Enabled = 0
+									FROM dbo.fhsmSchedules AS s
+									WHERE (s.Task = @Task) AND (s.Name = @Name);
+
+									SET @message = ''Disabling schedule'';
+									EXEC dbo.fhsmSPLog @name = @Name, @version = @version, @task = @thisTask, @type = ''Info'', @message = @message;
+								END;
+
+								--
+								-- Delete extended event
+								--
+								BEGIN
+									IF EXISTS(
+										SELECT *
+										FROM sys.server_event_sessions AS ses
+										WHERE (ses.name = @sessionName)
+									)
+									BEGIN
+										SET @stmt = ''DROP EVENT SESSION '' + QUOTENAME(@sessionName) + '' ON SERVER;'';
+										EXEC(@stmt);
+
+										SET @message = ''Dropping extended event session:'''''' + @sessionName + '''''''';
+										EXEC dbo.fhsmSPLog @name = @Name, @version = @version, @task = @thisTask, @type = ''Info'', @message = @message;
+									END;
+								END;
+							END
+					';
+					SET @stmt += '
+							ELSE BEGIN
+								SET @message = ''Illegal @Type:'''''' + COALESCE(@Type, ''<NULL>'') + '''''''';
+								RAISERROR(@message, 0, 1) WITH NOWAIT;
+								RETURN -999;
+							END;
+
+							RETURN 0;
+						END;
+					';
+					EXEC(@stmt);
+				END;
+
+				--
+				-- Register extended properties on the stored procedure dbo.fhsmSPControlBlocksAndDeadlocks
+				--
+				BEGIN
+					SET @objectName = 'dbo.fhsmSPControlBlocksAndDeadlocks';
+					SET @objName = PARSENAME(@objectName, 1);
+					SET @schName = PARSENAME(@objectName, 2);
+
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+				END;
+			END;
+
+			--
+			-- Create stored procedure dbo.fhsmSPViewsBlocksAndDeadlocks
+			--
+			BEGIN
+				SET @stmt = '
+					IF OBJECT_ID(''dbo.fhsmSPViewsBlocksAndDeadlocks'', ''P'') IS NULL
+					BEGIN
+						EXEC(''CREATE PROC dbo.fhsmSPViewsBlocksAndDeadlocks AS SELECT ''''dummy'''' AS Txt'');
+					END;
+				';
+				EXEC(@stmt);
+
+				SET @stmt = '
+					ALTER PROC dbo.fhsmSPViewsBlocksAndDeadlocks (
+						@view nvarchar(128),
+						@version sql_variant,
+						@nowUTC datetime
+					)
+					AS
+					BEGIN
+						SET NOCOUNT ON;
+
+						DECLARE @days int;
+						DECLARE @defaultViewBlockedProcessDays int;
+						DECLARE @defaultViewBlockedProcessSets int;
+						DECLARE @defaultViewDeadlockDays int;
+						DECLARE @defaultViewDeadlockSets int;
+						DECLARE @message nvarchar(max);
+						DECLARE @myUserName nvarchar(128);
+						DECLARE @noOfSets int;
+						DECLARE @nowUTCStr nvarchar(128);
+						DECLARE @objectName nvarchar(128);
+						DECLARE @pbiSchema nvarchar(128);
+						DECLARE @stmt nvarchar(max);
+
+						SET @myUserName = SUSER_NAME();
+
+						SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
+
+						SET @defaultViewBlockedProcessDays = 7;
+						SET @defaultViewBlockedProcessSets = 500;
+						SET @defaultViewDeadlockDays = 7;
+						SET @defaultViewDeadlockSets = 500;
+
+						SET @pbiSchema = (
+							SELECT c.Value
+							FROM dbo.fhsmConfigurations AS c
+							WHERE (c.[Key] = ''PBISchema'')
+						);
+						IF (@pbiSchema IS NULL)
+						BEGIN
+							RAISERROR(''The configuration key ''''PBISchema'''' could not be found'', 0, 1) WITH NOWAIT;
+							RETURN -1;
+						END;
+				';
+				SET @stmt += '
+						IF (@view = ''BlockedProcess'')
+						BEGIN
+							SET @days = (
+								SELECT c.Value
+								FROM dbo.fhsmConfigurations AS c
+								WHERE (c.[Key] = ''View.BlockedProcess.Days'')
+							);
+							IF (@days IS NULL)
+							BEGIN
+								INSERT INTO dbo.fhsmConfigurations([Key], Value)
+								VALUES(''View.BlockedProcess.Days'', @defaultViewBlockedProcessDays);
+
+								SET @days = @defaultViewBlockedProcessDays;
+							END;
+							SET @days = ABS(@days);
+
+							SET @noOfSets = (
+								SELECT c.Value
+								FROM dbo.fhsmConfigurations AS c
+								WHERE (c.[Key] = ''View.BlockedProcess.Sets'')
+							);
+							IF (@noOfSets IS NULL)
+							BEGIN
+								INSERT INTO dbo.fhsmConfigurations([Key], Value)
+								VALUES(''View.BlockedProcess.Sets'', @defaultViewBlockedProcessSets);
+
+								SET @noOfSets = @defaultViewBlockedProcessSets;
+							END;
+							SET @noOfSets = ABS(@noOfSets);
+				';
+				SET @stmt += '
+							--
+							-- Create fact view @pbiSchema.[Blocked process]
+							--
+							BEGIN
+								BEGIN
+									SET @stmt = ''
+										IF OBJECT_ID('''''' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Blocked process'') + '''''', ''''V'''') IS NULL
+										BEGIN
+											EXEC(''''CREATE VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Blocked process'') + '' AS SELECT ''''''''dummy'''''''' AS Txt'''');
+										END;
+									'';
+									EXEC(@stmt);
+
+									SET @message = ''Alter view '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Blocked process'') + '''';
+									RAISERROR(@message, 0, 1) WITH NOWAIT;
+
+									SET @stmt = ''
+										ALTER VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Blocked process'') + ''
+										AS
+											SELECT
+												CAST(a.Type AS nvarchar(16)) AS Type
+												,a.SPID
+												,CASE WHEN ASCII(LEFT(a.Statement, 1)) = 10 THEN SUBSTRING(a.Statement, 2, LEN(a.Statement)) ELSE a.Statement END AS Statement
+												,a.Id AS DataSet
+												,a.EventTimestampUTC
+												,CAST(a.EventTimestampUTC AS date) AS Date
+												,(DATEPART(HOUR, a.EventTimestampUTC) * 60 * 60) + (DATEPART(MINUTE, a.EventTimestampUTC) * 60) + (DATEPART(SECOND, a.EventTimestampUTC)) AS TimeKey
+												,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(a.ClientApp, a.HostName, a.LoginName, DEFAULT, DEFAULT, DEFAULT) AS k) AS BlocksAndDeadlocksKey
+												,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(a.CurrentDBName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
+											FROM (
+												SELECT
+													CASE b.rootData.value(''''local-name(/*[1])'''', ''''nvarchar(max)'''')
+														WHEN ''''blocking-process'''' THEN ''''Blocking''''
+														WHEN ''''blocked-process'''' THEN ''''Blocked''''
+													END AS Type
+													,b.rootData.value(''''(*/process/@hostname)[1]'''', ''''nvarchar(max)'''') AS HostName
+													,b.rootData.value(''''(*/process/@clientapp)[1]'''', ''''nvarchar(max)'''') AS ClientApp
+													,b.rootData.value(''''(*/process/@loginname)[1]'''', ''''nvarchar(max)'''') AS LoginName
+													,b.rootData.value(''''(*/process/@currentdbname)[1]'''', ''''nvarchar(max)'''') AS CurrentDBName
+													,CAST(b.rootData.value(''''(*/process/@spid)[1]'''', ''''nvarchar(max)'''') AS int) AS SPID
+													,b.rootData.value(''''(*/process/inputbuf/text())[1]'''', ''''nvarchar(max)'''') AS Statement
+													,b.Id
+													,b.EventTimestampUTC
+												FROM (
+													SELECT
+														t.c.query(''''(.)[1]'''') AS rootData
+														,f.Id
+														,f.EventTimestampUTC
+													FROM (
+														SELECT
+															TOP ('' + CAST(@noOfSets AS nvarchar) + '')
+															b.EventTimestampUTC
+															,b.EventData
+															,b.Id
+														FROM dbo.fhsmBlocksAndDeadlocks AS b
+														WHERE (b.EventData.value(''''(event/@name)[1]'''', ''''nvarchar(max)'''') = ''''blocked_process_report'''')
+															AND (
+																b.EventData.query(''''(event/data[@name="blocked_process"]/value/blocked-process-report/blocked-process/process)[1]'''').value(''''(process/@spid)[1]'''', ''''nvarchar(max)'''')
+																<>
+																b.EventData.query(''''(event/data[@name="blocked_process"]/value/blocked-process-report/blocking-process/process)[1]'''').value(''''(process/@spid)[1]'''', ''''nvarchar(max)'''')
+															)
+															AND (DATEDIFF(DAY, b.EventTimestampUTC, (SELECT MAX(b2.EventTimestampUTC) FROM dbo.fhsmBlocksAndDeadlocks AS b2)) < '' + CAST(@days AS nvarchar) + '')
+														ORDER BY b.EventTimestampUTC DESC
+													) AS f
+													CROSS APPLY f.EventData.nodes(''''/event/data[@name="blocked_process"]/value/blocked-process-report/*'''') AS t(c)
+												) AS b
+											) AS a;
+									'';
+									EXEC(@stmt);
+								END;
+				';
+				SET @stmt += '
+								--
+								-- Register extended properties on fact view @pbiSchema.[Blocked process]
+								--
+								BEGIN
+									SET @objectName = QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Blocked process'');
+
+									SET @stmt = ''
+										DECLARE @objName nvarchar(128);
+										DECLARE @schName nvarchar(128);
+
+										SET @objName = PARSENAME(@objectName, 1);
+										SET @schName = PARSENAME(@objectName, 2);
+
+										EXEC dbo.fhsmSPExtendedProperties @objectType = ''''View'''', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''''FHSMVersion'''', @propertyValue = @version;
+										EXEC dbo.fhsmSPExtendedProperties @objectType = ''''View'''', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''''FHSMCreated'''', @propertyValue = @nowUTCStr;
+										EXEC dbo.fhsmSPExtendedProperties @objectType = ''''View'''', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''''FHSMCreatedBy'''', @propertyValue = @myUserName;
+										EXEC dbo.fhsmSPExtendedProperties @objectType = ''''View'''', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''''FHSMModified'''', @propertyValue = @nowUTCStr;
+										EXEC dbo.fhsmSPExtendedProperties @objectType = ''''View'''', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''''FHSMModifiedBy'''', @propertyValue = @myUserName;
+									'';
+									EXEC sp_executesql
+										@stmt
+										,N''@objectName nvarchar(128), @version sql_variant, @nowUTCStr sql_variant, @myUserName sql_variant''
+										,@objectName = @objectName
+										,@version = @version
+										,@nowUTCStr = @nowUTCStr
+										,@myUserName = @myUserName;
+								END;
+							END;
+						END
+				';
+				SET @stmt += '
+						ELSE IF (@view = ''Deadlock'')
+						BEGIN
+							SET @days = (
+								SELECT c.Value
+								FROM dbo.fhsmConfigurations AS c
+								WHERE (c.[Key] = ''View.Deadlock.Days'')
+							);
+							IF (@days IS NULL)
+							BEGIN
+								INSERT INTO dbo.fhsmConfigurations([Key], Value)
+								VALUES(''View.Deadlock.Days'', @defaultViewDeadlockDays);
+
+								SET @days = @defaultViewDeadlockDays;
+							END;
+							SET @days = ABS(@days);
+
+							SET @noOfSets = (
+								SELECT c.Value
+								FROM dbo.fhsmConfigurations AS c
+								WHERE (c.[Key] = ''View.Deadlock.Sets'')
+							);
+							IF (@noOfSets IS NULL)
+							BEGIN
+								INSERT INTO dbo.fhsmConfigurations([Key], Value)
+								VALUES(''View.Deadlock.Sets'', @defaultViewDeadlockSets);
+
+								SET @noOfSets = @defaultViewDeadlockSets;
+							END;
+							SET @noOfSets = ABS(@noOfSets);
+				';
+				SET @stmt += '
+							--
+							-- Create fact view @pbiSchema.[Deadlock]
+							--
+							BEGIN
+								BEGIN
+									SET @stmt = ''
+										IF OBJECT_ID('''''' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Deadlock'') + '''''', ''''V'''') IS NULL
+										BEGIN
+											EXEC(''''CREATE VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Deadlock'') + '' AS SELECT ''''''''dummy'''''''' AS Txt'''');
+										END;
+									'';
+									EXEC(@stmt);
+
+									SET @message = ''Alter view '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Deadlock'') + '''';
+									RAISERROR(@message, 0, 1) WITH NOWAIT;
+
+									SET @stmt = ''
+										ALTER VIEW '' + QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Deadlock'') + ''
+										AS
+											SELECT
+												a.SPID
+												,CASE WHEN ASCII(LEFT(a.InputbufStatement, 1)) = 10 THEN SUBSTRING(a.InputbufStatement, 2, LEN(a.InputbufStatement)) ELSE a.InputbufStatement END AS InputbufStatement
+												,CASE WHEN ASCII(LEFT(a.FrameStatement,    1)) = 10 THEN SUBSTRING(a.FrameStatement,    2, LEN(a.FrameStatement))    ELSE a.FrameStatement    END AS FrameStatement
+												,a.Id AS DataSet
+												,a.EventTimestampUTC
+												,CAST(a.EventTimestampUTC AS date) AS Date
+												,(DATEPART(HOUR, a.EventTimestampUTC) * 60 * 60) + (DATEPART(MINUTE, a.EventTimestampUTC) * 60) + (DATEPART(SECOND, a.EventTimestampUTC)) AS TimeKey
+												,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(a.ClientApp, a.HostName, a.LoginName, DEFAULT, DEFAULT, DEFAULT) AS k) AS BlocksAndDeadlocksKey
+												,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(a.CurrentDBName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
+											FROM (
+												SELECT
+													b.rootData.value(''''(process/@hostname)[1]'''', ''''nvarchar(max)'''') AS HostName
+													,b.rootData.value(''''(process/@clientapp)[1]'''', ''''nvarchar(max)'''') AS ClientApp
+													,b.rootData.value(''''(process/@loginname)[1]'''', ''''nvarchar(max)'''') AS LoginName
+													,b.rootData.value(''''(process/@currentdbname)[1]'''', ''''nvarchar(max)'''') AS CurrentDBName
+													,CAST(b.rootData.value(''''(process/@spid)[1]'''', ''''nvarchar(max)'''') AS int) AS SPID
+													,b.inputbufData.value(''''(inputbuf/text())[1]'''', ''''nvarchar(max)'''') AS InputbufStatement
+													,b.frameData.value(''''(frame/text())[1]'''', ''''nvarchar(max)'''') AS FrameStatement
+													,b.Id
+													,b.EventTimestampUTC
+												FROM (
+													SELECT
+														t.c.query(''''(.)[1]'''') AS rootData
+														,t.c.query(''''(inputbuf)[1]'''') AS inputbufData
+														,t.c.query(''''(executionStack/frame)[1]'''') AS frameData
+														,f.Id
+														,f.EventTimestampUTC
+													FROM (
+														SELECT
+															TOP ('' + CAST(@noOfSets AS nvarchar) + '')
+															dl.EventTimestampUTC
+															,dl.FileName
+															,dl.FileOffset
+															,dl.EventData
+															,dl.Id
+														FROM dbo.fhsmBlocksAndDeadlocks AS dl
+														WHERE (dl.EventData.value(''''(event/@name)[1]'''', ''''nvarchar(max)'''') = ''''xml_deadlock_report'''')
+															AND (DATEDIFF(DAY, dl.EventTimestampUTC, (SELECT MAX(dl2.EventTimestampUTC) FROM dbo.fhsmBlocksAndDeadlocks AS dl2)) < '' + CAST(@days AS nvarchar) + '')
+														ORDER BY dl.EventTimestampUTC DESC
+													) AS f
+													CROSS APPLY f.EventData.nodes(''''/event/data/value/deadlock/process-list/process'''') AS t(c)
+												) AS b
+											) AS a;
+									'';
+									EXEC(@stmt);
+								END;
+				';
+				SET @stmt += '
+								--
+								-- Register extended properties on fact view @pbiSchema.[Deadlock]
+								--
+								BEGIN
+									SET @objectName = QUOTENAME(@pbiSchema) + ''.'' + QUOTENAME(''Deadlock'');
+
+									SET @stmt = ''
+										DECLARE @objName nvarchar(128);
+										DECLARE @schName nvarchar(128);
+
+										SET @objName = PARSENAME(@objectName, 1);
+										SET @schName = PARSENAME(@objectName, 2);
+
+										EXEC dbo.fhsmSPExtendedProperties @objectType = ''''View'''', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''''FHSMVersion'''', @propertyValue = @version;
+										EXEC dbo.fhsmSPExtendedProperties @objectType = ''''View'''', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''''FHSMCreated'''', @propertyValue = @nowUTCStr;
+										EXEC dbo.fhsmSPExtendedProperties @objectType = ''''View'''', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = ''''FHSMCreatedBy'''', @propertyValue = @myUserName;
+										EXEC dbo.fhsmSPExtendedProperties @objectType = ''''View'''', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''''FHSMModified'''', @propertyValue = @nowUTCStr;
+										EXEC dbo.fhsmSPExtendedProperties @objectType = ''''View'''', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = ''''FHSMModifiedBy'''', @propertyValue = @myUserName;
+									'';
+									EXEC sp_executesql
+										@stmt
+										,N''@objectName nvarchar(128), @version sql_variant, @nowUTCStr sql_variant, @myUserName sql_variant''
+										,@objectName = @objectName
+										,@version = @version
+										,@nowUTCStr = @nowUTCStr
+										,@myUserName = @myUserName;
+								END;
+							END;
+						END;
+
+						RETURN 0;
+					END;
+				';
+				EXEC(@stmt);
+
+				--
+				-- Register extended properties on the stored procedure dbo.fhsmSPViewsBlocksAndDeadlocks
+				--
+				BEGIN
+					SET @objectName = 'dbo.fhsmSPViewsBlocksAndDeadlocks';
+					SET @objName = PARSENAME(@objectName, 1);
+					SET @schName = PARSENAME(@objectName, 2);
+
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+				END;
+			END;
+		END;
+
+		--
 		-- Create PBI views
 		--
 		BEGIN
@@ -603,226 +1753,88 @@ ELSE BEGIN
 			-- Create fact view @pbiSchema.[Blocked process]
 			--
 			BEGIN
-				SET @stmt = '
-					IF OBJECT_ID(''' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Blocked process') + ''', ''V'') IS NULL
-					BEGIN
-						EXEC(''CREATE VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Blocked process') + ' AS SELECT ''''dummy'''' AS Txt'');
-					END;
-				';
-				EXEC(@stmt);
-
-				SET @stmt = '
-					ALTER VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Blocked process') + '
-					AS
-					SELECT
-						CAST(a.Type AS nvarchar(16)) AS Type
-						,a.SPID
-						,CASE WHEN ASCII(LEFT(a.Statement, 1)) = 10 THEN SUBSTRING(a.Statement, 2, LEN(a.Statement)) ELSE a.Statement END AS Statement
-						,a.Id AS DataSet
-						,a.EventTimestampUTC
-						,CAST(a.EventTimestampUTC AS date) AS Date
-						,(DATEPART(HOUR, a.EventTimestampUTC) * 60 * 60) + (DATEPART(MINUTE, a.EventTimestampUTC) * 60) + (DATEPART(SECOND, a.EventTimestampUTC)) AS TimeKey
-						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(a.ClientApp, a.HostName, a.LoginName, DEFAULT, DEFAULT, DEFAULT) AS k) AS BlocksAndDeadlocksKey
-						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(a.CurrentDBName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
-					FROM (
-						SELECT
-							CASE b.rootData.value(''local-name(/*[1])'', ''nvarchar(max)'')
-								WHEN ''blocking-process'' THEN ''Blocking''
-								WHEN ''blocked-process'' THEN ''Blocked''
-							END AS Type
-							,b.rootData.value(''(*/process/@hostname)[1]'', ''nvarchar(max)'') AS HostName
-							,b.rootData.value(''(*/process/@clientapp)[1]'', ''nvarchar(max)'') AS ClientApp
-							,b.rootData.value(''(*/process/@loginname)[1]'', ''nvarchar(max)'') AS LoginName
-							,b.rootData.value(''(*/process/@currentdbname)[1]'', ''nvarchar(max)'') AS CurrentDBName
-							,CAST(b.rootData.value(''(*/process/@spid)[1]'', ''nvarchar(max)'') AS int) AS SPID
-							,b.rootData.value(''(*/process/inputbuf/text())[1]'', ''nvarchar(max)'') AS Statement
-							,b.Id
-							,b.EventTimestampUTC
-						FROM (
-							SELECT
-								t.c.query(''(.)[1]'') AS rootData
-								,f.Id
-								,f.EventTimestampUTC
-							FROM (
-								SELECT
-									b.EventTimestampUTC
-									,b.EventData
-									,b.Id
-								FROM dbo.fhsmBlocksAndDeadlocks AS b
-								WHERE (b.EventData.value(''(event/@name)[1]'', ''nvarchar(max)'') = ''blocked_process_report'')
-									AND (
-										b.EventData.query(''(event/data[@name="blocked_process"]/value/blocked-process-report/blocked-process/process)[1]'').value(''(process/@spid)[1]'', ''nvarchar(max)'')
-										<>
-										b.EventData.query(''(event/data[@name="blocked_process"]/value/blocked-process-report/blocking-process/process)[1]'').value(''(process/@spid)[1]'', ''nvarchar(max)'')
-									)
-							) AS f
-							CROSS APPLY f.EventData.nodes(''/event/data[@name="blocked_process"]/value/blocked-process-report/*'') AS t(c)
-						) AS b
-					) AS a
-				';
-				EXEC(@stmt);
-			END;
-
-			--
-			-- Register extended properties on fact view @pbiSchema.[Blocked process]
-			--
-			BEGIN
-				SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Blocked process');
-				SET @objName = PARSENAME(@objectName, 1);
-				SET @schName = PARSENAME(@objectName, 2);
-
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPViewsBlocksAndDeadlocks @view = 'BlockedProcess', @version = @version, @nowUTC = @nowUTC;
 			END;
 
 			--
 			-- Create fact view @pbiSchema.[Deadlock]
 			--
 			BEGIN
-				SET @stmt = '
-					IF OBJECT_ID(''' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Deadlock') + ''', ''V'') IS NULL
-					BEGIN
-						EXEC(''CREATE VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Deadlock') + ' AS SELECT ''''dummy'''' AS Txt'');
-					END;
-				';
-				EXEC(@stmt);
-
-				SET @stmt = '
-					ALTER VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Deadlock') + '
-					AS
-					SELECT
-						a.SPID
-						,CASE WHEN ASCII(LEFT(a.InputbufStatement, 1)) = 10 THEN SUBSTRING(a.InputbufStatement, 2, LEN(a.InputbufStatement)) ELSE a.InputbufStatement END AS InputbufStatement
-						,CASE WHEN ASCII(LEFT(a.FrameStatement,    1)) = 10 THEN SUBSTRING(a.FrameStatement,    2, LEN(a.FrameStatement))    ELSE a.FrameStatement    END AS FrameStatement
-						,a.Id AS DataSet
-						,a.EventTimestampUTC
-						,CAST(a.EventTimestampUTC AS date) AS Date
-						,(DATEPART(HOUR, a.EventTimestampUTC) * 60 * 60) + (DATEPART(MINUTE, a.EventTimestampUTC) * 60) + (DATEPART(SECOND, a.EventTimestampUTC)) AS TimeKey
-						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(a.ClientApp, a.HostName, a.LoginName, DEFAULT, DEFAULT, DEFAULT) AS k) AS BlocksAndDeadlocksKey
-						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(a.CurrentDBName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
-					FROM (
-						SELECT
-							b.rootData.value(''(process/@hostname)[1]'', ''nvarchar(max)'') AS HostName
-							,b.rootData.value(''(process/@clientapp)[1]'', ''nvarchar(max)'') AS ClientApp
-							,b.rootData.value(''(process/@loginname)[1]'', ''nvarchar(max)'') AS LoginName
-							,b.rootData.value(''(process/@currentdbname)[1]'', ''nvarchar(max)'') AS CurrentDBName
-							,CAST(b.rootData.value(''(process/@spid)[1]'', ''nvarchar(max)'') AS int) AS SPID
-							,b.inputbufData.value(''(inputbuf/text())[1]'', ''nvarchar(max)'') AS InputbufStatement
-							,b.frameData.value(''(frame/text())[1]'', ''nvarchar(max)'') AS FrameStatement
-							,b.Id
-							,b.EventTimestampUTC
-						FROM (
-							SELECT
-								t.c.query(''(.)[1]'') AS rootData
-								,t.c.query(''(inputbuf)[1]'') AS inputbufData
-								,t.c.query(''(executionStack/frame)[1]'') AS frameData
-								,f.Id
-								,f.EventTimestampUTC
-							FROM (
-								SELECT
-									dl.EventTimestampUTC
-									,dl.FileName
-									,dl.FileOffset
-									,dl.EventData
-									,dl.Id
-								FROM dbo.fhsmBlocksAndDeadlocks AS dl
-								WHERE (dl.EventData.value(''(event/@name)[1]'', ''nvarchar(max)'') = ''xml_deadlock_report'')
-							) AS f
-							CROSS APPLY f.EventData.nodes(''/event/data/value/deadlock/process-list/process'') AS t(c)
-						) AS b
-					) AS a;
-				';
-				EXEC(@stmt);
-			END;
-
-			--
-			-- Register extended properties on fact view @pbiSchema.[Deadlock]
-			--
-			BEGIN
-				SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Deadlock');
-				SET @objName = PARSENAME(@objectName, 1);
-				SET @schName = PARSENAME(@objectName, 2);
-
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPViewsBlocksAndDeadlocks @view = 'Deadlock', @version = @version, @nowUTC = @nowUTC;
 			END;
 
 			--
 			-- Create dimension view @pbiSchema.[Blocks and deadlocks]
 			--
 			BEGIN
-				SET @stmt = '
-					IF OBJECT_ID(''' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Blocks and deadlocks') + ''', ''V'') IS NULL
-					BEGIN
-						EXEC(''CREATE VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Blocks and deadlocks') + ' AS SELECT ''''dummy'''' AS Txt'');
-					END;
-				';
-				EXEC(@stmt);
+				BEGIN
+					SET @stmt = '
+						IF OBJECT_ID(''' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Blocks and deadlocks') + ''', ''V'') IS NULL
+						BEGIN
+							EXEC(''CREATE VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Blocks and deadlocks') + ' AS SELECT ''''dummy'''' AS Txt'');
+						END;
+					';
+					EXEC(@stmt);
 
-				SET @stmt = '
-					ALTER VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Blocks and deadlocks') + '
-					AS
-					SELECT
-						a.ClientApp
-						,a.HostName
-						,a.LoginName
-						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(a.ClientApp, a.HostName, a.LoginName, DEFAULT, DEFAULT, DEFAULT) AS k) AS BlocksAndDeadlocksKey
-					FROM (
+					SET @stmt = '
+						ALTER VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Blocks and deadlocks') + '
+						AS
 						SELECT
-							DISTINCT
-							b.blockedProcessData.value(''(process/@hostname)[1]'', ''nvarchar(max)'') AS HostName
-							,b.blockedProcessData.value(''(process/@clientapp)[1]'', ''nvarchar(max)'') AS ClientApp
-							,b.blockedProcessData.value(''(process/@loginname)[1]'', ''nvarchar(max)'') AS LoginName
+							a.ClientApp
+							,a.HostName
+							,a.LoginName
+							,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(a.ClientApp, a.HostName, a.LoginName, DEFAULT, DEFAULT, DEFAULT) AS k) AS BlocksAndDeadlocksKey
 						FROM (
 							SELECT
-								f.EventData.query(''(event/data[@name="blocked_process"]/value/blocked-process-report/blocked-process/process)[1]'') AS blockedProcessData
-								,f.EventData.query(''(event/data[@name="blocked_process"]/value/blocked-process-report/blocking-process/process)[1]'') AS blockingProcessData
-							FROM dbo.fhsmBlocksAndDeadlocks AS f
-							WHERE (f.EventData.value(''(event/@name)[1]'', ''nvarchar(max)'') = ''blocked_process_report'')
-						) AS b
-						WHERE CAST(b.blockedProcessData.value(''(process/@spid)[1]'', ''nvarchar(max)'') AS int) <> CAST(b.blockingProcessData.value(''(process/@spid)[1]'', ''nvarchar(max)'') AS int)
-
-						UNION
-
-						SELECT
-							DISTINCT
-							b.rootData.value(''(process/@hostname)[1]'', ''nvarchar(max)'') AS HostName
-							,b.rootData.value(''(process/@clientapp)[1]'', ''nvarchar(max)'') AS ClientApp
-							,b.rootData.value(''(process/@loginname)[1]'', ''nvarchar(max)'') AS LoginName
-						FROM (
-							SELECT
-								t.c.query(''(.)[1]'') AS rootData
+								DISTINCT
+								b.blockedProcessData.value(''(process/@hostname)[1]'', ''nvarchar(max)'') AS HostName
+								,b.blockedProcessData.value(''(process/@clientapp)[1]'', ''nvarchar(max)'') AS ClientApp
+								,b.blockedProcessData.value(''(process/@loginname)[1]'', ''nvarchar(max)'') AS LoginName
 							FROM (
-								SELECT dl.EventData
-								FROM dbo.fhsmBlocksAndDeadlocks AS dl
-								WHERE (dl.EventData.value(''(event/@name)[1]'', ''nvarchar(max)'') = ''xml_deadlock_report'')
-							) AS f
-							CROSS APPLY f.EventData.nodes(''/event/data/value/deadlock/process-list/process'') AS t(c)
-						) AS b
-					) AS a;
-				';
-				EXEC(@stmt);
-			END;
+								SELECT
+									f.EventData.query(''(event/data[@name="blocked_process"]/value/blocked-process-report/blocked-process/process)[1]'') AS blockedProcessData
+									,f.EventData.query(''(event/data[@name="blocked_process"]/value/blocked-process-report/blocking-process/process)[1]'') AS blockingProcessData
+								FROM dbo.fhsmBlocksAndDeadlocks AS f
+								WHERE (f.EventData.value(''(event/@name)[1]'', ''nvarchar(max)'') = ''blocked_process_report'')
+							) AS b
+							WHERE CAST(b.blockedProcessData.value(''(process/@spid)[1]'', ''nvarchar(max)'') AS int) <> CAST(b.blockingProcessData.value(''(process/@spid)[1]'', ''nvarchar(max)'') AS int)
 
-			--
-			-- Register extended properties on dimension view @pbiSchema.[Blocks and deadlocks]
-			--
-			BEGIN
-				SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Blocks and deadlocks');
-				SET @objName = PARSENAME(@objectName, 1);
-				SET @schName = PARSENAME(@objectName, 2);
+							UNION
 
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+							SELECT
+								DISTINCT
+								b.rootData.value(''(process/@hostname)[1]'', ''nvarchar(max)'') AS HostName
+								,b.rootData.value(''(process/@clientapp)[1]'', ''nvarchar(max)'') AS ClientApp
+								,b.rootData.value(''(process/@loginname)[1]'', ''nvarchar(max)'') AS LoginName
+							FROM (
+								SELECT
+									t.c.query(''(.)[1]'') AS rootData
+								FROM (
+									SELECT dl.EventData
+									FROM dbo.fhsmBlocksAndDeadlocks AS dl
+									WHERE (dl.EventData.value(''(event/@name)[1]'', ''nvarchar(max)'') = ''xml_deadlock_report'')
+								) AS f
+								CROSS APPLY f.EventData.nodes(''/event/data/value/deadlock/process-list/process'') AS t(c)
+							) AS b
+						) AS a;
+					';
+					EXEC(@stmt);
+				END;
+
+				--
+				-- Register extended properties on dimension view @pbiSchema.[Blocks and deadlocks]
+				--
+				BEGIN
+					SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Blocks and deadlocks');
+					SET @objName = PARSENAME(@objectName, 1);
+					SET @schName = PARSENAME(@objectName, 2);
+
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+				END;
 			END;
 		END;
 
@@ -834,836 +1846,93 @@ ELSE BEGIN
 			-- Create info view dbo.fhsmInfoBlocks
 			--
 			BEGIN
-				SET @stmt = '
-					IF OBJECT_ID(''dbo.fhsmInfoBlocks'', ''V'') IS NULL
-					BEGIN
-						EXEC(''CREATE VIEW dbo.fhsmInfoBlocks AS SELECT ''''dummy'''' AS Txt'');
-					END;
-				';
-				EXEC(@stmt);
+				BEGIN
+					SET @stmt = '
+						IF OBJECT_ID(''dbo.fhsmInfoBlocks'', ''V'') IS NULL
+						BEGIN
+							EXEC(''CREATE VIEW dbo.fhsmInfoBlocks AS SELECT ''''dummy'''' AS Txt'');
+						END;
+					';
+					EXEC(@stmt);
 
-				SET @stmt = '
-					ALTER VIEW dbo.fhsmInfoBlocks
-					AS
-					SELECT
-						EventData AS BlockXML,
-						EventTimestampUTC,
-						Timestamp,
-						TimestampUTC,
-						FileName,
-						FileOffset,
-						Id
-					FROM dbo.fhsmBlocksAndDeadlocks
-					WHERE (EventData.value(''(event/@name)[1]'', ''nvarchar(max)'') = ''blocked_process_report'');
-				';
-				EXEC(@stmt);
-			END;
+					SET @stmt = '
+						ALTER VIEW dbo.fhsmInfoBlocks
+						AS
+						SELECT
+							EventData AS BlockXML,
+							EventTimestampUTC,
+							Timestamp,
+							TimestampUTC,
+							FileName,
+							FileOffset,
+							Id
+						FROM dbo.fhsmBlocksAndDeadlocks
+						WHERE (EventData.value(''(event/@name)[1]'', ''nvarchar(max)'') = ''blocked_process_report'');
+					';
+					EXEC(@stmt);
+				END;
 
-			--
-			-- Register extended properties on info view dbo.fhsmInfoBlocks
-			--
-			BEGIN
-				SET @objectName = 'dbo.fhsmInfoBlocks';
-				SET @objName = PARSENAME(@objectName, 1);
-				SET @schName = PARSENAME(@objectName, 2);
+				--
+				-- Register extended properties on info view dbo.fhsmInfoBlocks
+				--
+				BEGIN
+					SET @objectName = 'dbo.fhsmInfoBlocks';
+					SET @objName = PARSENAME(@objectName, 1);
+					SET @schName = PARSENAME(@objectName, 2);
 
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+				END;
 			END;
 
 			--
 			-- Create info view dbo.fhsmInfoDeadlocks
 			--
 			BEGIN
-				SET @stmt = '
-					IF OBJECT_ID(''dbo.fhsmInfoDeadlocks'', ''V'') IS NULL
-					BEGIN
-						EXEC(''CREATE VIEW dbo.fhsmInfoDeadlocks AS SELECT ''''dummy'''' AS Txt'');
-					END;
-				';
-				EXEC(@stmt);
-
-				SET @stmt = '
-					ALTER VIEW dbo.fhsmInfoDeadlocks
-					AS
-					SELECT
-						EventData AS DeadlockXML,
-						EventData.query(''(event/data/value/deadlock)[1]'') AS DeadlockGraph,
-						EventTimestampUTC,
-						Timestamp,
-						TimestampUTC,
-						FileName,
-						FileOffset,
-						Id
-					FROM dbo.fhsmBlocksAndDeadlocks
-					WHERE (EventData.value(''(event/@name)[1]'', ''nvarchar(max)'') = ''xml_deadlock_report'');
-				';
-				EXEC(@stmt);
-			END;
-
-			--
-			-- Register extended properties on info view dbo.fhsmInfoDeadlocks
-			--
-			BEGIN
-				SET @objectName = 'dbo.fhsmInfoDeadlocks';
-				SET @objName = PARSENAME(@objectName, 1);
-				SET @schName = PARSENAME(@objectName, 2);
-
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
-			END;
-		END;
-
-		--
-		-- Create stored procedures
-		--
-		BEGIN
-			--
-			-- Create stored procedure dbo.fhsmSPBlocksAndDeadlocks
-			--
-			BEGIN
-				SET @stmt = '
-					IF OBJECT_ID(''dbo.fhsmSPBlocksAndDeadlocks'', ''P'') IS NULL
-					BEGIN
-						EXEC(''CREATE PROC dbo.fhsmSPBlocksAndDeadlocks AS SELECT ''''dummy'''' AS Txt'');
-					END;
-				';
-				EXEC(@stmt);
-
-				SET @stmt = '
-					ALTER PROC dbo.fhsmSPBlocksAndDeadlocks (
-						@name nvarchar(128)
-						,@version nvarchar(128) OUTPUT
-					)
-					AS
-					BEGIN
-						SET NOCOUNT ON;
-
-						DECLARE @blockedProcessThreshold int;
-						DECLARE @blockedProcessThresholdChanges TABLE(
-							Action nvarchar(10),
-							DeletedKey nvarchar(128),
-							DeletedValue nvarchar(128),
-							InsertedKey nvarchar(128),
-							InsertedValue nvarchar(128)
-						);
-						DECLARE @errorMsg nvarchar(max);
-						DECLARE @fileName nvarchar(260);
-						DECLARE @fileOffset bigint;
-						DECLARE @filePath nvarchar(260);
-						DECLARE @filePathEvent nvarchar(260);
-						DECLARE @message nvarchar(max);
-						DECLARE @now datetime;
-						DECLARE @nowUTC datetime;
-						DECLARE @parameter nvarchar(max);
-						DECLARE @parameterTable TABLE([Key] nvarchar(128) NOT NULL, Value nvarchar(128) NULL);
-						DECLARE @runningFilePath nvarchar(260);
-						DECLARE @sessionName nvarchar(128);
-						DECLARE @sessionNameOldStyle nvarchar(128);
-						DECLARE @stmt nvarchar(max);
-						DECLARE @testFileName nvarchar(260);
-						DECLARE @thisTask nvarchar(128);
-
-						SET @thisTask = OBJECT_NAME(@@PROCID);
-						SET @version = ''' + @version + ''';
-
-						--
-						-- Get the parameter for the command
-						--
+				BEGIN
+					SET @stmt = '
+						IF OBJECT_ID(''dbo.fhsmInfoDeadlocks'', ''V'') IS NULL
 						BEGIN
-							SET @parameter = dbo.fhsmFNGetTaskParameter(@thisTask, @name);
-
-							INSERT INTO @parameterTable([Key], Value)
-							SELECT
-								(SELECT s.Txt FROM dbo.fhsmFNSplitString(p.Txt, ''='') AS s WHERE (s.Part = 1)) AS [Key]
-								,(SELECT s.Txt FROM dbo.fhsmFNSplitString(p.Txt, ''='') AS s WHERE (s.Part = 2)) AS Value
-							FROM dbo.fhsmFNSplitString(@parameter, '';'') AS p;
-
-							SET @filePath = (SELECT pt.Value FROM @parameterTable AS pt WHERE (pt.[Key] = ''@FilePath''));
-							SET @filePath = NULLIF(REPLACE(@filePath, '''''''', ''''), '''');
+							EXEC(''CREATE VIEW dbo.fhsmInfoDeadlocks AS SELECT ''''dummy'''' AS Txt'');
 						END;
+					';
+					EXEC(@stmt);
 
-						--
-						-- Initialize variables
-						--
-						BEGIN
-							SET @sessionName = DB_NAME() + ''BlocksAndDeadlocks'';
-							SET @sessionNameOldStyle = ''FHSMBlocksAndDeadlocks'';
-							SET @filePathEvent = COALESCE(@filePath + ''\'', '''') + @sessionName + ''.xel'';
-							SET @filePath = REPLACE(@filePathEvent, ''.xel'', ''*.xel'');
-						END;
+					SET @stmt = '
+						ALTER VIEW dbo.fhsmInfoDeadlocks
+						AS
+						SELECT
+							EventData AS DeadlockXML,
+							EventData.query(''(event/data/value/deadlock)[1]'') AS DeadlockGraph,
+							EventTimestampUTC,
+							Timestamp,
+							TimestampUTC,
+							FileName,
+							FileOffset,
+							Id
+						FROM dbo.fhsmBlocksAndDeadlocks
+						WHERE (EventData.value(''(event/@name)[1]'', ''nvarchar(max)'') = ''xml_deadlock_report'');
+					';
+					EXEC(@stmt);
+				END;
 
-						--
-						-- Delete session with old name
-						--
-						IF (@sessionName <> @sessionNameOldStyle)
-							AND EXISTS(
-								SELECT *
-								FROM sys.server_event_sessions AS ses
-								WHERE (ses.name = @sessionNameOldStyle)
-							)
-						BEGIN
-							SET @stmt = ''DROP EVENT SESSION '' + QUOTENAME(@sessionNameOldStyle) + '' ON SERVER;'';
-							EXEC(@stmt);
-						END;
-				';
-				SET @stmt += '
-						--
-						-- Register configuration changes
-						--
-						BEGIN
-							SET @blockedProcessThreshold = (
-								SELECT CAST(c.value_in_use AS int)
-								FROM sys.configurations AS c
-								WHERE (c.configuration_id = 1569)
-							);
+				--
+				-- Register extended properties on info view dbo.fhsmInfoDeadlocks
+				--
+				BEGIN
+					SET @objectName = 'dbo.fhsmInfoDeadlocks';
+					SET @objName = PARSENAME(@objectName, 1);
+					SET @schName = PARSENAME(@objectName, 2);
 
-							WITH
-							conf([Key], Value) AS(
-								SELECT
-									''BlockedProcessThreshold'' AS [Key]
-									,CAST(@blockedProcessThreshold AS nvarchar) AS Value
-							)
-							MERGE dbo.fhsmConfigurations AS tgt
-							USING conf AS src ON (src.[Key] = tgt.[Key] COLLATE SQL_Latin1_General_CP1_CI_AS)
-							-- Not testing for NULL as a NULL parameter is not allowed
-							WHEN MATCHED AND (tgt.Value <> src.Value)
-								THEN UPDATE
-									SET tgt.Value = src.Value
-							WHEN NOT MATCHED BY TARGET
-								THEN INSERT([Key], Value)
-								VALUES(src.[Key], src.Value)
-							OUTPUT
-								$action,
-								deleted.[Key],
-								deleted.Value,
-								inserted.[Key],
-								inserted.Value
-							INTO @blockedProcessThresholdChanges;
-
-							IF (@@ROWCOUNT <> 0)
-							BEGIN
-								SET @message = (
-									SELECT ''Blocked process reporting threshold is '''''' + src.InsertedValue + '''''''' + COALESCE('' - changed from '''''' + src.DeletedValue + '''''''', '''')
-									FROM @blockedProcessThresholdChanges AS src
-								);
-								IF (@message IS NOT NULL)
-								BEGIN
-									EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''Info'', @message = @message;
-								END;
-							END;
-						END;
-				';
-				SET @stmt += '
-						--
-						-- Setup or change event session if @filePath is not configured or the same
-						--
-						BEGIN
-							SET @runningFilePath = (
-								SELECT CAST(sesf.value AS nvarchar(260))
-								FROM sys.server_event_sessions AS ses
-								INNER JOIN sys.server_event_session_fields AS sesf ON (sesf.event_session_id = ses.event_session_id)
-								WHERE (ses.name = @sessionName) AND (sesf.name = ''FILENAME'')
-							);
-
-							IF (@runningFilePath <> @filePathEvent) OR (@runningFilePath IS NULL)
-							BEGIN
-								IF EXISTS(
-									SELECT *
-									FROM sys.server_event_sessions AS ses
-									WHERE (ses.name = @sessionName)
-								)
-								BEGIN
-									SET @stmt = ''DROP EVENT SESSION '' + QUOTENAME(@sessionName) + '' ON SERVER;'';
-									EXEC(@stmt);
-								END;
-
-								SET @stmt = ''
-									CREATE EVENT SESSION '' + QUOTENAME(@sessionName) + '' ON SERVER
-									ADD EVENT sqlserver.blocked_process_report(
-										ACTION(
-											sqlserver.client_app_name,
-											sqlserver.client_hostname,
-											sqlserver.database_name
-										)
-									),
-									ADD EVENT sqlserver.xml_deadlock_report(
-										ACTION(
-											sqlserver.client_app_name,
-											sqlserver.client_hostname,
-											sqlserver.database_name
-										)
-									)
-									ADD TARGET package0.asynchronous_file_target(
-										SET
-										filename = N''''<FILENAME>'''',
-										max_file_size = (10),
-										max_rollover_files = 2
-									)
-									WITH (
-										EVENT_RETENTION_MODE = ALLOW_SINGLE_EVENT_LOSS,
-										MAX_DISPATCH_LATENCY = 15 SECONDS,
-										STARTUP_STATE = ON
-									);
-								'';
-
-								SET @stmt = REPLACE(@stmt, ''<FILENAME>'', @filePathEvent);
-								EXEC(@stmt);
-
-								SET @stmt = ''ALTER EVENT SESSION '' + QUOTENAME(@sessionName) + '' ON SERVER STATE = START;'';
-								EXEC(@stmt);
-							END;
-						END;
-				';
-				SET @stmt += '
-						--
-						-- Get latest file name and offset
-						--
-						BEGIN
-							SELECT TOP (1)
-								@fileName = f.FileName
-								,@fileOffset = f.FileOffset
-							FROM dbo.fhsmBlocksAndDeadlocks AS f
-							ORDER BY f.Id DESC;
-
-							BEGIN TRY
-								SET @testFileName = (
-									SELECT TOP (1) f.file_name
-									FROM sys.fn_xe_file_target_read_file(@filePath, NULL, @fileName, @fileOffset) AS f
-								);
-							END TRY
-							BEGIN CATCH
-								SET @fileName = NULL;
-								SET @fileOffset = NULL;
-							END CATCH;
-						END;
-				';
-				SET @stmt += '
-						--
-						-- Collect data
-						--
-						BEGIN
-							SELECT
-								@now = SYSDATETIME()
-								,@nowUTC = SYSUTCDATETIME();
-
-							BEGIN TRY
-								INSERT INTO dbo.fhsmBlocksAndDeadlocks(EventTimestampUTC, FileName, FileOffset, EventData, TimestampUTC, Timestamp)
-								SELECT a.EventTimestampUTC, a.FileName, a.FileOffset, a.EventData, a.TimestampUTC, a.Timestamp
-								FROM (
-									SELECT
-										' + CASE WHEN (@productVersion1 <= 13) THEN '@nowUTC' ELSE 'f.timestamp_utc' END + ' AS EventTimestampUTC
-										,f.file_name AS FileName
-										,f.file_offset AS FileOffset
-										,CAST(f.event_data AS varchar(max)) AS EventData
-										,@nowUTC AS TimestampUTC
-										,@now AS Timestamp
-									FROM sys.fn_xe_file_target_read_file(@filePath, NULL, @fileName, @fileOffset) AS f
-								) AS a
-								WHERE NOT EXISTS(
-									SELECT *
-									FROM dbo.fhsmBlocksAndDeadlocks AS t
-									WHERE (t.EventTimestampUTC = a.EventTimestampUTC)
-								)
-								ORDER BY
-									' + CASE WHEN (@productVersion1 <= 13) THEN '' ELSE 'a.EventTimestampUTC,' END + '
-									a.FileName,
-									a.FileOffset;
-							END TRY
-							BEGIN CATCH
-								SET @errorMsg = ERROR_MESSAGE();
-
-								SET @message = ''Failed due to - '' + @errorMsg;
-								EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''Warning'', @message = @message;
-							END CATCH;
-						END;
-
-						RETURN 0;
-					END;
-				';
-				EXEC(@stmt);
-			END;
-
-			--
-			-- Register extended properties on the stored procedure dbo.fhsmSPBlocksAndDeadlocks
-			--
-			BEGIN
-				SET @objectName = 'dbo.fhsmSPBlocksAndDeadlocks';
-				SET @objName = PARSENAME(@objectName, 1);
-				SET @schName = PARSENAME(@objectName, 2);
-
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
-			END;
-
-			--
-			-- Create stored procedure dbo.fhsmSPControlBlocksAndDeadlocks
-			--
-			BEGIN
-				SET @stmt = '
-					IF OBJECT_ID(''dbo.fhsmSPControlBlocksAndDeadlocks'', ''P'') IS NULL
-					BEGIN
-						EXEC(''CREATE PROC dbo.fhsmSPControlBlocksAndDeadlocks AS SELECT ''''dummy'''' AS Txt'');
-					END;
-				';
-				EXEC(@stmt);
-
-				SET @stmt = '
-					ALTER PROC dbo.fhsmSPControlBlocksAndDeadlocks (
-						@Type nvarchar(16)
-						,@Command nvarchar(16)
-						,@Key nvarchar(128) = NULL
-						,@Name nvarchar(128) = NULL
-						,@Parameter nvarchar(max) = NULL
-						,@Task nvarchar(128) = NULL
-						,@Value nvarchar(128) = NULL
-					)
-					AS
-					BEGIN
-						SET NOCOUNT ON;
-
-						DECLARE @blockedProcessThreshold int;
-						DECLARE @blockedProcessThresholdChanges TABLE(
-							Action nvarchar(10),
-							DeletedKey nvarchar(128),
-							DeletedValue nvarchar(128),
-							InsertedKey nvarchar(128),
-							InsertedValue nvarchar(128)
-						);
-						DECLARE @filePath nvarchar(260);
-						DECLARE @filePathEvent nvarchar(260);
-						DECLARE @jobName nvarchar(128);
-						DECLARE @jobStatus int;
-						DECLARE @jobStatuses TABLE(
-							JobName nvarchar(128),
-							JobStatus int
-						);
-						DECLARE @message nvarchar(max);
-						DECLARE @parameterChanges TABLE(
-							Action nvarchar(10),
-							DeletedTask nvarchar(128),
-							DeletedName nvarchar(128),
-							DeletedParameter nvarchar(max),
-							InsertedTask nvarchar(128),
-							InsertedName nvarchar(128),
-							InsertedParameter nvarchar(max)
-						);
-						DECLARE @parameterTable TABLE([Key] nvarchar(128) NOT NULL, Value nvarchar(128) NULL);
-						DECLARE @runningFilePath nvarchar(260);
-						DECLARE @sessionName nvarchar(128);
-						DECLARE @showAdvancedOptions int;
-						DECLARE @stmt nvarchar(max);
-						DECLARE @thisTask nvarchar(128);
-						DECLARE @valueInt int;
-						DECLARE @version nvarchar(128);
-
-						SET @thisTask = OBJECT_NAME(@@PROCID);
-						SET @version = ''' + @version + ''';
-				';
-				SET @stmt += '
-						IF (@Type = ''configuration'')
-						BEGIN
-							IF (@Command = ''set'') AND (@Key = ''BlockedProcessThreshold'')
-							BEGIN
-								SET @valueInt = dbo.fhsmFNTryParseAsInt(@Value);
-
-								IF (@valueInt IS NULL)
-								BEGIN
-									SET @message = ''Illegal @Value:'''''' + COALESCE(@Value, ''<NULL>'') + '''''''';
-									RAISERROR(@message, 0, 1) WITH NOWAIT;
-									RETURN -1;
-								END
-
-								SET @blockedProcessThreshold = (
-									SELECT CAST(c.value_in_use AS int)
-									FROM sys.configurations AS c
-									WHERE (c.configuration_id = 1569)
-								);
-
-								SET @showAdvancedOptions = (
-									SELECT CAST(c.value_in_use AS int)
-									FROM sys.configurations AS c
-									WHERE (c.configuration_id = 518)
-								);
-
-								IF (@blockedProcessThreshold <> @valueInt)
-								BEGIN
-									IF (@showAdvancedOptions = 0)
-									BEGIN
-										SET @stmt = ''
-											EXEC sp_configure ''''show advanced options'''', 1;
-											RECONFIGURE;
-										'';
-										EXEC(@stmt);
-									END
-
-									SET @stmt = ''
-										EXEC sp_configure ''''blocked process threshold'''', '' + @Value + '';
-										RECONFIGURE;
-									'';
-									EXEC(@stmt);
-
-									IF (@showAdvancedOptions = 0)
-									BEGIN
-										SET @stmt = ''
-											EXEC sp_configure ''''show advanced options'''', 0;
-											RECONFIGURE;
-										'';
-										EXEC(@stmt);
-									END;
-
-									--
-									-- Register configuration changes
-									--
-									BEGIN
-										SET @blockedProcessThreshold = (
-											SELECT CAST(c.value_in_use AS int)
-											FROM sys.configurations AS c
-											WHERE (c.configuration_id = 1569)
-										);
-
-										WITH
-										conf([Key], Value) AS(
-											SELECT
-												''BlockedProcessThreshold'' AS [Key]
-												,CAST(@blockedProcessThreshold AS nvarchar) AS Value
-										)
-										MERGE dbo.fhsmConfigurations AS tgt
-										USING conf AS src ON (src.[Key] = tgt.[Key] COLLATE SQL_Latin1_General_CP1_CI_AS)
-										-- Not testing for NULL as a NULL parameter is not allowed
-										WHEN MATCHED AND (tgt.Value <> src.Value)
-											THEN UPDATE
-												SET tgt.Value = src.Value
-										WHEN NOT MATCHED BY TARGET
-											THEN INSERT([Key], Value)
-											VALUES(src.[Key], src.Value)
-										OUTPUT
-											$action,
-											deleted.[Key],
-											deleted.Value,
-											inserted.[Key],
-											inserted.Value
-										INTO @blockedProcessThresholdChanges;
-
-										IF (@@ROWCOUNT <> 0)
-										BEGIN
-											SET @message = (
-												SELECT ''Blocked process reporting threshold is '''''' + src.InsertedValue + '''''''' + COALESCE('' - changed from '''''' + src.DeletedValue + '''''''', '''')
-												FROM @blockedProcessThresholdChanges AS src
-											);
-											IF (@message IS NOT NULL)
-											BEGIN
-												EXEC dbo.fhsmSPLog @name = @thisTask, @version = @version, @task = @thisTask, @type = ''Info'', @message = @message;
-											END;
-										END;
-									END;
-								END
-							END
-							ELSE BEGIN
-								SET @message = ''Illegal Combination of @Type:'''''' + COALESCE(@Type, ''<NULL>'') + '''''', @Command:'''''' + COALESCE(@Command, ''<NULL>'') + '''''' and @Key:'''''' + COALESCE(@Key, ''<NULL>'') + '''''''';
-								RAISERROR(@message, 0, 1) WITH NOWAIT;
-								RETURN -9;
-							END;
-						END
-				';
-				SET @stmt += '
-						ELSE IF (@Type = ''parameter'')
-						BEGIN
-							IF (@Command = ''set'')
-							BEGIN
-								SET @Parameter = NULLIF(@Parameter, '''');
-
-								IF NOT EXISTS (
-									SELECT *
-									FROM dbo.fhsmSchedules AS s
-									WHERE (s.Task = @Task) AND (s.Name = @Name) AND (s.DeploymentStatus <> -1)
-								)
-								BEGIN
-									SET @message = ''Invalid @Task:'''''' + COALESCE(NULLIF(@Task, ''''), ''<NULL>'') + '''''' and @Name:'''''' + COALESCE(NULLIF(@Name, ''''), ''<NULL>'') + '''''''';
-									RAISERROR(@message, 0, 1) WITH NOWAIT;
-									RETURN -11;
-								END;
-				';
-				SET @stmt += '
-								--
-								-- Disable all agent jobs
-								--
-								BEGIN
-									DECLARE jCur CURSOR LOCAL READ_ONLY FAST_FORWARD FOR
-									SELECT c.Value AS JobName
-									FROM dbo.fhsmConfigurations AS c
-									WHERE (c.[Key] LIKE ''AgentJobName[01]'')
-									ORDER BY c.[Key];
-
-									OPEN jCur;
-
-									WHILE (1 = 1)
-									BEGIN
-										FETCH NEXT FROM jCur
-										INTO @jobName;
-
-										IF (@@FETCH_STATUS <> 0)
-										BEGIN
-											BREAK;
-										END;
-
-										EXEC dbo.fhsmSPAgentJobControl @jobName = @jobName, @command = ''Disable'', @jobStatus = @jobStatus OUTPUT;
-
-										INSERT INTO @jobStatuses(JobName, JobStatus)
-										SELECT @jobName, @jobStatus;
-									END;
-
-									CLOSE jCur;
-									DEALLOCATE jCur;
-								END;
-				';
-				SET @stmt += '
-								--
-								-- Register configuration changes
-								--
-								BEGIN
-									WITH
-									conf(Task, Name, Parameter) AS(
-										SELECT
-											@Task AS Task
-											,@Name AS Name
-											,@Parameter AS Parameter
-									)
-									MERGE dbo.fhsmSchedules AS tgt
-									USING conf AS src ON (src.[Task] = tgt.[Task] COLLATE SQL_Latin1_General_CP1_CI_AS) AND (src.[Name] = tgt.[Name] COLLATE SQL_Latin1_General_CP1_CI_AS)
-									-- Not testing for NULL as a NULL parameter is not allowed
-									WHEN MATCHED AND (tgt.Parameter <> src.Parameter)
-										THEN UPDATE
-											SET tgt.Parameter = src.Parameter
-									WHEN NOT MATCHED BY TARGET
-										THEN INSERT(Task, Name, Parameter)
-										VALUES(src.Task, src.Name, src.Parameter)
-									OUTPUT
-										$action,
-										deleted.Task,
-										deleted.Name,
-										deleted.Parameter,
-										inserted.Task,
-										inserted.Name,
-										inserted.Parameter
-									INTO @parameterChanges;
-
-									IF (@@ROWCOUNT <> 0)
-									BEGIN
-										SET @message = (
-											SELECT ''Parameter is '''''' + COALESCE(src.InsertedParameter, ''<NULL>'') + '''''' - changed from '''''' + COALESCE(src.DeletedParameter, ''<NULL>'') + ''''''''
-											FROM @parameterChanges AS src
-										);
-										IF (@message IS NOT NULL)
-										BEGIN
-											EXEC dbo.fhsmSPLog @name = @Name, @version = @version, @task = @thisTask, @type = ''Info'', @message = @message;
-										END;
-									END;
-								END;
-				';
-				SET @stmt += '
-								--
-								-- Setup or change event session if @filePath is not configured or the same
-								--
-								BEGIN
-									--
-									-- Get the parameter for the command
-									--
-									BEGIN
-										SET @Parameter = dbo.fhsmFNGetTaskParameter(@Task, @Name);
-
-										INSERT INTO @parameterTable([Key], Value)
-										SELECT
-											(SELECT s.Txt FROM dbo.fhsmFNSplitString(p.Txt, ''='') AS s WHERE (s.Part = 1)) AS [Key]
-											,(SELECT s.Txt FROM dbo.fhsmFNSplitString(p.Txt, ''='') AS s WHERE (s.Part = 2)) AS Value
-										FROM dbo.fhsmFNSplitString(@Parameter, '';'') AS p;
-
-										SET @filePath = (SELECT pt.Value FROM @parameterTable AS pt WHERE (pt.[Key] = ''@FilePath''));
-										SET @filePath = NULLIF(REPLACE(@filePath, '''''''', ''''), '''');
-									END;
-
-									--
-									-- Initialize variables
-									--
-									BEGIN
-										SET @sessionName = DB_NAME() + ''BlocksAndDeadlocks'';
-										SET @filePathEvent = COALESCE(@filePath + ''\'', '''') + @sessionName + ''.xel'';
-										SET @filePath = REPLACE(@filePathEvent, ''.xel'', ''*.xel'');
-									END;
-
-									SET @runningFilePath = (
-										SELECT CAST(sesf.value AS nvarchar(260))
-										FROM sys.server_event_sessions AS ses
-										INNER JOIN sys.server_event_session_fields AS sesf ON (sesf.event_session_id = ses.event_session_id)
-										WHERE (ses.name = @sessionName) AND (sesf.name = ''FILENAME'')
-									);
-				';
-				SET @stmt += '
-									IF (@runningFilePath <> @filePathEvent) OR (@runningFilePath IS NULL)
-									BEGIN
-										IF EXISTS(
-											SELECT *
-											FROM sys.server_event_sessions AS ses
-											WHERE (ses.name = @sessionName)
-										)
-										BEGIN
-											SET @stmt = ''DROP EVENT SESSION '' + QUOTENAME(@sessionName) + '' ON SERVER;'';
-											EXEC(@stmt);
-										END;
-
-										SET @stmt = ''
-											CREATE EVENT SESSION '' + QUOTENAME(@sessionName) + '' ON SERVER
-											ADD EVENT sqlserver.blocked_process_report(
-												ACTION(
-													sqlserver.client_app_name,
-													sqlserver.client_hostname,
-													sqlserver.database_name
-												)
-											),
-											ADD EVENT sqlserver.xml_deadlock_report(
-												ACTION(
-													sqlserver.client_app_name,
-													sqlserver.client_hostname,
-													sqlserver.database_name
-												)
-											)
-											ADD TARGET package0.asynchronous_file_target(
-												SET
-												filename = N''''<FILENAME>'''',
-												max_file_size = (10),
-												max_rollover_files = 2
-											)
-											WITH (
-												EVENT_RETENTION_MODE = ALLOW_SINGLE_EVENT_LOSS,
-												MAX_DISPATCH_LATENCY = 15 SECONDS,
-												STARTUP_STATE = ON
-											);
-										'';
-
-										SET @stmt = REPLACE(@stmt, ''<FILENAME>'', @filePathEvent);
-										EXEC(@stmt);
-
-										SET @stmt = ''ALTER EVENT SESSION '' + QUOTENAME(@sessionName) + '' ON SERVER STATE = START;'';
-										EXEC(@stmt);
-									END;
-								END;
-				';
-				SET @stmt += '
-								--
-								-- Enable all agent jobs that was enable when starting
-								--
-								BEGIN
-									DECLARE jCur CURSOR LOCAL READ_ONLY FAST_FORWARD FOR
-									SELECT js.JobName, js.JobStatus
-									FROM @jobStatuses AS js
-									ORDER BY js.JobName;
-
-									OPEN jCur;
-
-									WHILE (1 = 1)
-									BEGIN
-										FETCH NEXT FROM jCur
-										INTO @jobName, @jobStatus;
-
-										IF (@@FETCH_STATUS <> 0)
-										BEGIN
-											BREAK;
-										END;
-
-										IF (@jobStatus = 1)
-										BEGIN
-											EXEC dbo.fhsmSPAgentJobControl @jobName = @jobName, @command = ''Enable'', @jobStatus = @jobStatus OUTPUT;
-										END;
-									END;
-
-									CLOSE jCur;
-									DEALLOCATE jCur;
-								END;
-							END
-							ELSE BEGIN
-								SET @message = ''Illegal Combination of @Type:'''''' + COALESCE(@Type, ''<NULL>'') + '''''' and @Command:'''''' + COALESCE(@Command, ''<NULL>'') + '''''''';
-								RAISERROR(@message, 0, 1) WITH NOWAIT;
-								RETURN -19;
-							END;
-						END
-				';
-				SET @stmt += '
-						ELSE IF (@Type = ''uninstall'')
-						BEGIN
-							--
-							-- Initialize variables
-							--
-							BEGIN
-								SET @sessionName = DB_NAME() + ''BlocksAndDeadlocks'';
-							END;
-
-							--
-							-- Disable task
-							--
-							BEGIN
-								UPDATE s
-								SET s.Enabled = 0
-								FROM dbo.fhsmSchedules AS s
-								WHERE (s.Task = @Task) AND (s.Name = @Name);
-
-								SET @message = ''Disabling schedule'';
-								EXEC dbo.fhsmSPLog @name = @Name, @version = @version, @task = @thisTask, @type = ''Info'', @message = @message;
-							END;
-
-							--
-							-- Delete extended event
-							--
-							BEGIN
-								IF EXISTS(
-									SELECT *
-									FROM sys.server_event_sessions AS ses
-									WHERE (ses.name = @sessionName)
-								)
-								BEGIN
-									SET @stmt = ''DROP EVENT SESSION '' + QUOTENAME(@sessionName) + '' ON SERVER;'';
-									EXEC(@stmt);
-
-									SET @message = ''Dropping extended event session:'''''' + @sessionName + '''''''';
-									EXEC dbo.fhsmSPLog @name = @Name, @version = @version, @task = @thisTask, @type = ''Info'', @message = @message;
-								END;
-							END;
-						END
-				';
-				SET @stmt += '
-						ELSE BEGIN
-							SET @message = ''Illegal @Type:'''''' + COALESCE(@Type, ''<NULL>'') + '''''''';
-							RAISERROR(@message, 0, 1) WITH NOWAIT;
-							RETURN -999;
-						END;
-
-						RETURN 0;
-					END;
-				';
-				EXEC(@stmt);
-			END;
-
-			--
-			-- Register extended properties on the stored procedure dbo.fhsmSPControlBlocksAndDeadlocks
-			--
-			BEGIN
-				SET @objectName = 'dbo.fhsmSPControlBlocksAndDeadlocks';
-				SET @objName = PARSENAME(@objectName, 1);
-				SET @schName = PARSENAME(@objectName, 2);
-
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
-				EXEC dbo.fhsmSPExtendedProperties @objectType = 'Procedure', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+					EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+				END;
 			END;
 		END;
 

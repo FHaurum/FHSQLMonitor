@@ -1,5 +1,5 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.6.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.9.0/schema.json",
   "name": "69662287741d0dd50bb0",
   "position": {
     "x": 60,
@@ -80,8 +80,13 @@
               "solid": {
                 "color": {
                   "expr": {
-                    "Literal": {
-                      "Value": "'#F2F7FF'"
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "_Measures"
+                        }
+                      },
+                      "Property": "Standard fill color"
                     }
                   }
                 }
@@ -140,7 +145,7 @@
                       "Entity": "_Measures"
                     }
                   },
-                  "Property": "Open filter button tooltip - Instance status"
+                  "Property": "Open filter button tooltip"
                 }
               }
             },

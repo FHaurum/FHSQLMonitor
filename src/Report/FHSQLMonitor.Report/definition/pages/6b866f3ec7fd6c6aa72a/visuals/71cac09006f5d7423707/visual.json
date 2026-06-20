@@ -1,13 +1,13 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.9.0/schema.json",
   "name": "71cac09006f5d7423707",
   "position": {
     "x": 10,
     "y": 80,
     "z": 500,
     "height": 940,
-    "width": 1730,
-    "tabOrder": 2000
+    "width": 1740,
+    "tabOrder": 3000
   },
   "visual": {
     "visualType": "tableEx",
@@ -149,11 +149,11 @@
                       "Entity": "Plan guides"
                     }
                   },
-                  "Property": "Message"
+                  "Property": "Error message"
                 }
               },
-              "queryRef": "Plan guides.Message",
-              "nativeQueryRef": "Message"
+              "queryRef": "Plan guides.Error message",
+              "nativeQueryRef": "Error message"
             },
             {
               "field": {
@@ -306,7 +306,7 @@
             "value": {
               "expr": {
                 "Literal": {
-                  "Value": "148.53229749195248D"
+                  "Value": "159D"
                 }
               }
             }
@@ -323,36 +323,13 @@
               "solid": {
                 "color": {
                   "expr": {
-                    "Conditional": {
-                      "Cases": [
-                        {
-                          "Condition": {
-                            "Comparison": {
-                              "ComparisonKind": 0,
-                              "Left": {
-                                "Measure": {
-                                  "Expression": {
-                                    "SourceRef": {
-                                      "Entity": "_Measures"
-                                    }
-                                  },
-                                  "Property": "Is disabled - Plan guides"
-                                }
-                              },
-                              "Right": {
-                                "Literal": {
-                                  "Value": "1D"
-                                }
-                              }
-                            }
-                          },
-                          "Value": {
-                            "Literal": {
-                              "Value": "'#fec0bf'"
-                            }
-                          }
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "_Measures"
                         }
-                      ]
+                      },
+                      "Property": "Is disabled - Background color - Plan guides"
                     }
                   }
                 }
@@ -376,49 +353,13 @@
               "solid": {
                 "color": {
                   "expr": {
-                    "Conditional": {
-                      "Cases": [
-                        {
-                          "Condition": {
-                            "Not": {
-                              "Expression": {
-                                "Comparison": {
-                                  "ComparisonKind": 0,
-                                  "Left": {
-                                    "Aggregation": {
-                                      "Expression": {
-                                        "Column": {
-                                          "Expression": {
-                                            "SourceRef": {
-                                              "Entity": "Plan guides"
-                                            }
-                                          },
-                                          "Property": "Message"
-                                        }
-                                      },
-                                      "Function": 3
-                                    }
-                                  },
-                                  "Right": {
-                                    "Literal": {
-                                      "Value": "null"
-                                    }
-                                  }
-                                },
-                                "Annotations": {
-                                  "PowerBI.SQExprEvaluationKind": 1,
-                                  "PowerBI.SQExprTextOperatorOption": 10
-                                }
-                              }
-                            }
-                          },
-                          "Value": {
-                            "Literal": {
-                              "Value": "'#fec0bf'"
-                            }
-                          }
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "_Measures"
                         }
-                      ]
+                      },
+                      "Property": "Error message - Background color - Plan guides"
                     }
                   }
                 }
@@ -433,8 +374,13 @@
                 }
               }
             ],
-            "metadata": "Plan guides.Message"
+            "metadata": "Plan guides.Error message"
           }
+        }
+      ],
+      "columnHeaders": [
+        {
+          "properties": {}
         }
       ]
     },
@@ -451,8 +397,13 @@
             },
             "text": {
               "expr": {
-                "Literal": {
-                  "Value": "'Plan guides'"
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Title - Plan guides"
                 }
               }
             }
@@ -461,5 +412,286 @@
       ]
     },
     "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "6404fdcf4e6bbabb2b39",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Database"
+              }
+            },
+            "Property": "Database"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "58dd2a4109200bcc909e",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Plan guides"
+              }
+            },
+            "Property": "Scoped object"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "01857a498aa70ec47017",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Plan guides"
+              }
+            },
+            "Property": "Name"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "f4af97944290c2306b1e",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Plan guides"
+              }
+            },
+            "Property": "Query text"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "68f4d0cfc1116d00c22e",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Plan guides"
+              }
+            },
+            "Property": "Scope type"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "b42ea7848d5ca3c00068",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Plan guides"
+              }
+            },
+            "Property": "Scope batch"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "87ca198b057145770c63",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Plan guides"
+              }
+            },
+            "Property": "Hints"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "ab4a4f6993b401c4ae1a",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Plan guides"
+              }
+            },
+            "Property": "Parameters"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "d86f8b59eb3165961b49",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Plan guides"
+              }
+            },
+            "Property": "Is disabled"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "db8088141d9897a19ba9",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Plan guides"
+              }
+            },
+            "Property": "Msg. no."
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "04d9408f0a944e684e94",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Plan guides"
+              }
+            },
+            "Property": "Severity"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "bd454093d292b3826d30",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Plan guides"
+              }
+            },
+            "Property": "State"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "1493b77160bc6d08ec04",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Plan guides"
+              }
+            },
+            "Property": "Plan guide id"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "68bfa244849c7ab1d63e",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Plan guides"
+              }
+            },
+            "Property": "Created date"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "a89e60c8e00150bbd403",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Plan guides"
+              }
+            },
+            "Property": "Modified date"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "ab9721af4c3cb7e65335",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Plan guides"
+              }
+            },
+            "Property": "Error message"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "94f09f1038a0a23d7000",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "_Measures"
+              }
+            },
+            "Property": "VLF - Plan guides"
+          }
+        },
+        "type": "Advanced",
+        "filter": {
+          "Version": 2,
+          "From": [
+            {
+              "Name": "_",
+              "Entity": "_Measures",
+              "Type": 0
+            }
+          ],
+          "Where": [
+            {
+              "Condition": {
+                "Not": {
+                  "Expression": {
+                    "Comparison": {
+                      "ComparisonKind": 0,
+                      "Left": {
+                        "Measure": {
+                          "Expression": {
+                            "SourceRef": {
+                              "Source": "_"
+                            }
+                          },
+                          "Property": "VLF - Plan guides"
+                        }
+                      },
+                      "Right": {
+                        "Literal": {
+                          "Value": "null"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "howCreated": "User"
+      }
+    ]
   }
 }

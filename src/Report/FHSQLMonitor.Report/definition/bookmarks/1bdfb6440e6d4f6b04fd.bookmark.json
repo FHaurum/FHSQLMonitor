@@ -1,5 +1,5 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/bookmark/1.4.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/bookmark/2.1.0/schema.json",
   "displayName": "Filter panel opened - Plan guides",
   "name": "1bdfb6440e6d4f6b04fd",
   "options": {
@@ -38,7 +38,7 @@
                           "Entity": "_Measures"
                         }
                       },
-                      "Property": "Info last refresh"
+                      "Property": "Last refresh - Report pages"
                     }
                   },
                   "howCreated": 0
@@ -285,46 +285,6 @@
                 },
                 {
                   "name": "f02a7ab53c24ec051165",
-                  "type": "Advanced",
-                  "expression": {
-                    "Measure": {
-                      "Expression": {
-                        "SourceRef": {
-                          "Entity": "_Measures"
-                        }
-                      },
-                      "Property": "Plan guides # - Plan guides"
-                    }
-                  },
-                  "howCreated": 0
-                }
-              ]
-            },
-            "singleVisual": {
-              "visualType": "card",
-              "objects": {},
-              "orderBy": [
-                {
-                  "Direction": 2,
-                  "Expression": {
-                    "Measure": {
-                      "Expression": {
-                        "SourceRef": {
-                          "Entity": "_Measures"
-                        }
-                      },
-                      "Property": "Plan guides # - Plan guides"
-                    }
-                  }
-                }
-              ]
-            }
-          },
-          "604a4811fbc142472555": {
-            "filters": {
-              "byExpr": [
-                {
-                  "name": "3d726583220a00dd7ed8",
                   "type": "Advanced",
                   "expression": {
                     "Measure": {

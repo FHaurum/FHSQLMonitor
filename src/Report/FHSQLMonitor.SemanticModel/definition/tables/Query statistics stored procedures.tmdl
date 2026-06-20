@@ -1,0 +1,98 @@
+table 'Query statistics stored procedures'
+	lineageTag: 4aa4f88b-4389-4657-820d-326cbd83be29
+
+	column ExecutionCount
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 4a436522-d0e1-4c66-af2f-1454af8db8a5
+		summarizeBy: sum
+		sourceColumn: ExecutionCount
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column ElapsedTimeMS
+		dataType: double
+		isHidden
+		lineageTag: bf6ef9b4-0156-4d1c-a300-b6155a4e4dea
+		summarizeBy: sum
+		sourceColumn: ElapsedTimeMS
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column Date
+		dataType: dateTime
+		isHidden
+		formatString: Long Date
+		lineageTag: c976c6bf-e32c-437c-b5de-b017e9d3e074
+		summarizeBy: none
+		sourceColumn: Date
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column TimeKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 295107e3-5dc0-4bcd-9a36-f824d05e3b3e
+		summarizeBy: none
+		sourceColumn: TimeKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column ObjectKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: da65816f-2431-4830-a342-9e2b32b2afb1
+		summarizeBy: none
+		sourceColumn: ObjectKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Query statistics stored procedures' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Query statistics")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db     = dbList{[Name = #"Database name"]}[Data], 
+				  table  = db{[Schema = #"Schema name", Item = "Query statistics stored procedures"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  selectColumns = Table.SelectColumns(
+				    datasetToUse, 
+				    {
+				      "ExecutionCount", 
+				      "ElapsedTimeMS", 
+				      "Date", 
+				      "TimeKey", 
+				      "ObjectKey"
+				    }
+				  )
+				in
+				  selectColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

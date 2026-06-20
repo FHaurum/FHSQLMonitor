@@ -1,13 +1,13 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.3.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.9.0/schema.json",
   "name": "e5af9409b48114c5c4e0",
   "position": {
     "x": 10,
     "y": 80,
-    "z": 500,
+    "z": 4000,
     "height": 940,
-    "width": 1730,
-    "tabOrder": 4000
+    "width": 1740,
+    "tabOrder": 5000
   },
   "visual": {
     "visualType": "tableEx",
@@ -152,11 +152,11 @@
                       "Entity": "Triggers"
                     }
                   },
-                  "Property": "Created date"
+                  "Property": "Modified date"
                 }
               },
-              "queryRef": "Triggers.Created date",
-              "nativeQueryRef": "Created date"
+              "queryRef": "Triggers.Modified date",
+              "nativeQueryRef": "Modified date"
             },
             {
               "field": {
@@ -166,11 +166,11 @@
                       "Entity": "Triggers"
                     }
                   },
-                  "Property": "Modified date"
+                  "Property": "Created date"
                 }
               },
-              "queryRef": "Triggers.Modified date",
-              "nativeQueryRef": "Modified date"
+              "queryRef": "Triggers.Created date",
+              "nativeQueryRef": "Created date"
             }
           ]
         }
@@ -252,7 +252,7 @@
             "value": {
               "expr": {
                 "Literal": {
-                  "Value": "461.0307108642455D"
+                  "Value": "275D"
                 }
               }
             }
@@ -262,57 +262,143 @@
           }
         },
         {
-          "properties": {},
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "135D"
+                }
+              }
+            }
+          },
           "selector": {
             "metadata": "Triggers.Trigger type"
           }
         },
         {
-          "properties": {},
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "320D"
+                }
+              }
+            }
+          },
           "selector": {
             "metadata": "Database.Database"
           }
         },
         {
-          "properties": {},
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "170D"
+                }
+              }
+            }
+          },
           "selector": {
             "metadata": "Triggers.Created date"
           }
         },
         {
-          "properties": {},
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "170D"
+                }
+              }
+            }
+          },
           "selector": {
             "metadata": "Triggers.Modified date"
           }
         },
         {
-          "properties": {},
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "120D"
+                }
+              }
+            }
+          },
           "selector": {
             "metadata": "Triggers.Parent class"
           }
         },
         {
-          "properties": {},
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "95D"
+                }
+              }
+            }
+          },
           "selector": {
             "metadata": "Triggers.Type"
           }
         },
         {
-          "properties": {},
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "105D"
+                }
+              }
+            }
+          },
           "selector": {
             "metadata": "Triggers.Is disabled"
           }
         },
         {
-          "properties": {},
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "105D"
+                }
+              }
+            }
+          },
           "selector": {
             "metadata": "Triggers.Is ms shipped"
           }
         },
         {
-          "properties": {},
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "105D"
+                }
+              }
+            }
+          },
           "selector": {
             "metadata": "Triggers.Is not for replication"
+          }
+        },
+        {
+          "properties": {
+            "value": {
+              "expr": {
+                "Literal": {
+                  "Value": "275D"
+                }
+              }
+            }
+          },
+          "selector": {
+            "metadata": "Triggers.Trigger name"
           }
         }
       ],
@@ -323,36 +409,13 @@
               "solid": {
                 "color": {
                   "expr": {
-                    "Conditional": {
-                      "Cases": [
-                        {
-                          "Condition": {
-                            "Comparison": {
-                              "ComparisonKind": 0,
-                              "Left": {
-                                "Measure": {
-                                  "Expression": {
-                                    "SourceRef": {
-                                      "Entity": "_Measures"
-                                    }
-                                  },
-                                  "Property": "Is disabled flag - Triggers"
-                                }
-                              },
-                              "Right": {
-                                "Literal": {
-                                  "Value": "1D"
-                                }
-                              }
-                            }
-                          },
-                          "Value": {
-                            "Literal": {
-                              "Value": "'#fec0bf'"
-                            }
-                          }
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "_Measures"
                         }
-                      ]
+                      },
+                      "Property": "Is disabled - Background color - Triggers"
                     }
                   }
                 }
@@ -376,36 +439,13 @@
               "solid": {
                 "color": {
                   "expr": {
-                    "Conditional": {
-                      "Cases": [
-                        {
-                          "Condition": {
-                            "Comparison": {
-                              "ComparisonKind": 0,
-                              "Left": {
-                                "Measure": {
-                                  "Expression": {
-                                    "SourceRef": {
-                                      "Entity": "_Measures"
-                                    }
-                                  },
-                                  "Property": "Is MS shipped flag - Triggers"
-                                }
-                              },
-                              "Right": {
-                                "Literal": {
-                                  "Value": "1D"
-                                }
-                              }
-                            }
-                          },
-                          "Value": {
-                            "Literal": {
-                              "Value": "'#99e3dd'"
-                            }
-                          }
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "_Measures"
                         }
-                      ]
+                      },
+                      "Property": "Is MS shipped - Background color - Triggers"
                     }
                   }
                 }
@@ -429,36 +469,13 @@
               "solid": {
                 "color": {
                   "expr": {
-                    "Conditional": {
-                      "Cases": [
-                        {
-                          "Condition": {
-                            "Comparison": {
-                              "ComparisonKind": 0,
-                              "Left": {
-                                "Measure": {
-                                  "Expression": {
-                                    "SourceRef": {
-                                      "Entity": "_Measures"
-                                    }
-                                  },
-                                  "Property": "Is not for replication flag - Triggers"
-                                }
-                              },
-                              "Right": {
-                                "Literal": {
-                                  "Value": "1D"
-                                }
-                              }
-                            }
-                          },
-                          "Value": {
-                            "Literal": {
-                              "Value": "'#fec0bf'"
-                            }
-                          }
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "_Measures"
                         }
-                      ]
+                      },
+                      "Property": "Is not for replication - Background color - Triggers"
                     }
                   }
                 }
@@ -504,8 +521,13 @@
             },
             "text": {
               "expr": {
-                "Literal": {
-                  "Value": "'Triggers'"
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Title - Triggers"
                 }
               }
             }
@@ -514,5 +536,216 @@
       ]
     },
     "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "c3a28825106ae205e205",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Database"
+              }
+            },
+            "Property": "Database"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "4eddbb951580211ad8e3",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Triggers"
+              }
+            },
+            "Property": "Parent class"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "932a92fb2321d05a04dd",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Triggers"
+              }
+            },
+            "Property": "Parent object"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "a5d4b3b83c9350865dde",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Triggers"
+              }
+            },
+            "Property": "Trigger name"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "9d4ad84aac401ca54667",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Triggers"
+              }
+            },
+            "Property": "Type"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "a88250d5a24566100602",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Triggers"
+              }
+            },
+            "Property": "Trigger type"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "09679a7157107edeb64b",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Triggers"
+              }
+            },
+            "Property": "Is disabled"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "200c276c1a771747eb77",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Triggers"
+              }
+            },
+            "Property": "Is MS shipped"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "ab280bdc80d69b6a0c18",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Triggers"
+              }
+            },
+            "Property": "Is not for replication"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "f7ff98bcb409973a6ac8",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Triggers"
+              }
+            },
+            "Property": "Created date"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "48291cc3c9e34e9bb6ac",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Triggers"
+              }
+            },
+            "Property": "Modified date"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "9a321b38e648ea800a71",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "_Measures"
+              }
+            },
+            "Property": "VLF - Triggers"
+          }
+        },
+        "type": "Advanced",
+        "filter": {
+          "Version": 2,
+          "From": [
+            {
+              "Name": "_",
+              "Entity": "_Measures",
+              "Type": 0
+            }
+          ],
+          "Where": [
+            {
+              "Condition": {
+                "Not": {
+                  "Expression": {
+                    "Comparison": {
+                      "ComparisonKind": 0,
+                      "Left": {
+                        "Measure": {
+                          "Expression": {
+                            "SourceRef": {
+                              "Source": "_"
+                            }
+                          },
+                          "Property": "VLF - Triggers"
+                        }
+                      },
+                      "Right": {
+                        "Literal": {
+                          "Value": "null"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "howCreated": "User"
+      }
+    ]
   }
 }

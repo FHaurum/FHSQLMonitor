@@ -1,0 +1,72 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.9.0/schema.json",
+  "name": "1fbb3adbbd305199c506",
+  "position": {
+    "x": 640,
+    "y": 0,
+    "z": 3125,
+    "height": 30,
+    "width": 620,
+    "tabOrder": 2000
+  },
+  "visual": {
+    "visualType": "card",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Data range - Memory"
+                }
+              },
+              "queryRef": "_Measures.Data range - Memory",
+              "nativeQueryRef": "Data range - Memory"
+            }
+          ]
+        }
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Data range'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  },
+  "parentGroupName": "e097b2c60076da44d482",
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "658dbb1c2744589dca68",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "_Measures"
+              }
+            },
+            "Property": "Data range - Memory"
+          }
+        },
+        "type": "Advanced"
+      }
+    ]
+  }
+}

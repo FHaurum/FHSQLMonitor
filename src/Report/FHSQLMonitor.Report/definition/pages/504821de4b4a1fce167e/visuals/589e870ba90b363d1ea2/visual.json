@@ -1,12 +1,13 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.9.0/schema.json",
   "name": "589e870ba90b363d1ea2",
   "position": {
     "x": 1450,
     "y": 60,
     "z": 3000,
     "height": 830,
-    "width": 460
+    "width": 460,
+    "tabOrder": 13000
   },
   "visual": {
     "visualType": "shape",
@@ -51,8 +52,13 @@
               "solid": {
                 "color": {
                   "expr": {
-                    "Literal": {
-                      "Value": "'#BCD9FF'"
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "_Measures"
+                        }
+                      },
+                      "Property": "Filter panel fill color"
                     }
                   }
                 }

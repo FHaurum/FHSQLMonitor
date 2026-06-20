@@ -1,5 +1,5 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.9.0/schema.json",
   "name": "85db5fb6d329f823788e",
   "position": {
     "x": 10,
@@ -7,7 +7,7 @@
     "z": 1000,
     "height": 293,
     "width": 1730,
-    "tabOrder": 3000
+    "tabOrder": 2000
   },
   "visual": {
     "visualType": "pivotTable",
@@ -420,6 +420,11 @@
           "selector": {
             "metadata": "_Measures.Sort value - Index usage"
           }
+        }
+      ],
+      "columnHeaders": [
+        {
+          "properties": {}
         }
       ]
     },

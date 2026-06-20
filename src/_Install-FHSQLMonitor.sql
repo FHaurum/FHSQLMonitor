@@ -49,7 +49,7 @@ BEGIN
 	SET @myUserName = SUSER_NAME();
 	SET @nowUTC = SYSUTCDATETIME();
 	SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
-	SET @version = '2.12.0';
+	SET @version = '2.13.0';
 END;
 
 --
@@ -3095,13 +3095,59 @@ ELSE BEGIN
 									END
 			';
 			SET @stmt += '
-									ELSE IF (@Key IN (''''View.ErrorLogs.Days'''', ''''View.ErrorLogs.Rows'''', ''''View.LogMessages.Days'''', ''''View.LogMessages.Rows''''))
+									ELSE IF (@Key IN (''''View.BlockedProcess.Days'''', ''''View.BlockedProcess.Sets'''', ''''View.Deadlock.Days'''', ''''View.Deadlock.Sets''''))
 									BEGIN
 										IF (@Value IS NOT NULL) AND (dbo.fhsmFNTryParseAsInt(@Value) IS NULL)
 										BEGIN
 											SET @message = ''''Invalid  @Value:'''''''''''' + COALESCE(@Value, ''''<NULL>'''') + '''''''''''''''';
 											RAISERROR(@message, 0, 1) WITH NOWAIT;
 											RETURN -17;
+										END;
+
+										WITH
+										cfg([Key], Value) AS(
+											SELECT
+												@Key
+												,@Value
+										)
+										MERGE dbo.fhsmConfigurations AS tgt
+										USING cfg AS src ON (src.[Key] = tgt.[Key])
+										WHEN MATCHED AND (src.Value IS NOT NULL)
+											THEN UPDATE
+												SET tgt.Value = src.Value
+										WHEN MATCHED AND (src.Value IS NULL)
+											THEN DELETE
+										WHEN NOT MATCHED BY TARGET AND (src.Value IS NOT NULL)
+											THEN INSERT([Key], Value)
+											VALUES(src.[Key], src.Value);
+
+										IF (@Value IS NULL)
+										BEGIN
+											SET @message = ''''Configuration key:'''' + @Key + '''' removed'''';
+										END
+										ELSE BEGIN
+											SET @message = ''''Configuration key:'''' + @Key + '''' set to '''''''''''' + @Value + '''''''''''''''';
+										END;
+										EXEC dbo.fhsmSPLog @name = @thisTask, @version = @version, @task = @thisTask, @type = ''''Info'''', @message = @message;
+
+										IF (@Key IN (''''View.BlockedProcess.Days'''', ''''View.BlockedProcess.Sets''''))
+										BEGIN
+											EXEC dbo.fhsmSPViewsBlocksAndDeadlocks @view = ''''BlockedProcess'''', @version = @version, @nowUTC = @nowUTC;
+										END
+										ELSE IF (@Key IN (''''View.Deadlock.Days'''', ''''View.Deadlock.Sets''''))
+										BEGIN
+											EXEC dbo.fhsmSPViewsBlocksAndDeadlocks @view = ''''Deadlock'''', @version = @version, @nowUTC = @nowUTC;
+										END;
+									END
+			';
+			SET @stmt += '
+									ELSE IF (@Key IN (''''View.ErrorLogs.Days'''', ''''View.ErrorLogs.Rows'''', ''''View.LogMessages.Days'''', ''''View.LogMessages.Rows''''))
+									BEGIN
+										IF (@Value IS NOT NULL) AND (dbo.fhsmFNTryParseAsInt(@Value) IS NULL)
+										BEGIN
+											SET @message = ''''Invalid  @Value:'''''''''''' + COALESCE(@Value, ''''<NULL>'''') + '''''''''''''''';
+											RAISERROR(@message, 0, 1) WITH NOWAIT;
+											RETURN -18;
 										END;
 
 										WITH
@@ -3147,7 +3193,7 @@ ELSE BEGIN
 										BEGIN
 											SET @message = ''''Invalid  @Value:'''''''''''' + COALESCE(@Value, ''''<NULL>'''') + '''''''''''''''';
 											RAISERROR(@message, 0, 1) WITH NOWAIT;
-											RETURN -18;
+											RETURN -19;
 										END;
 
 										WITH
@@ -3186,7 +3232,7 @@ ELSE BEGIN
 										BEGIN
 											SET @message = ''''Invalid  @Value:'''''''''''' + COALESCE(@Value, ''''<NULL>'''') + '''''''''''''''';
 											RAISERROR(@message, 0, 1) WITH NOWAIT;
-											RETURN -19;
+											RETURN -20;
 										END;
 
 										WITH
@@ -3225,7 +3271,7 @@ ELSE BEGIN
 										BEGIN
 											SET @message = ''''Invalid  @Value:'''''''''''' + COALESCE(@Value, ''''<NULL>'''') + '''''''''''''''';
 											RAISERROR(@message, 0, 1) WITH NOWAIT;
-											RETURN -20;
+											RETURN -21;
 										END;
 
 										WITH
@@ -3264,7 +3310,7 @@ ELSE BEGIN
 										BEGIN
 											SET @message = ''''Invalid  @Value:'''''''''''' + COALESCE(@Value, ''''<NULL>'''') + '''''''''''''''';
 											RAISERROR(@message, 0, 1) WITH NOWAIT;
-											RETURN -21;
+											RETURN -22;
 										END;
 
 										WITH
@@ -4389,6 +4435,7 @@ ELSE BEGIN
 							DECLARE @averageProcessingDuration int;
 							DECLARE @DEFAULT_SAMPLE_CNT int;
 							DECLARE @DEFAULT_THRESHOLD_FACTOR int;
+							DECLARE @DEFAULT_THRESHOLD_TIME int;
 							DECLARE @dbId int;
 							DECLARE @enabled bit;
 							DECLARE @errorMsg nvarchar(max);
@@ -4416,6 +4463,8 @@ ELSE BEGIN
 							DECLARE @task nvarchar(128);
 							DECLARE @thisTask nvarchar(128);
 							DECLARE @thresholdFactor int;
+							DECLARE @thresholdTime int;
+							DECLARE @thresholdTimeMSec int;
 							DECLARE @toTime time(0);
 							DECLARE @valueStr nvarchar(128);
 							DECLARE @version nvarchar(128);
@@ -4426,7 +4475,8 @@ ELSE BEGIN
 							SET @dbId = DB_ID();
 
 							SET @DEFAULT_SAMPLE_CNT = 10;
-							SET @DEFAULT_THRESHOLD_FACTOR = 50;
+							SET @DEFAULT_THRESHOLD_FACTOR = 10;
+							SET @DEFAULT_THRESHOLD_TIME = 60;
 			';
 			SET @stmt += '
 							--
@@ -4454,6 +4504,14 @@ ELSE BEGIN
 								BEGIN
 									SET @thresholdFactor = @DEFAULT_THRESHOLD_FACTOR;
 								END;
+
+								SET @valueStr = (SELECT pt.Value FROM @parameterTable AS pt WHERE (pt.[Key] = ''''@ThresholdTime''''));
+								SET @thresholdTime = dbo.fhsmFNTryParseAsInt(@valueStr);
+								IF (@thresholdTime <= 0) OR (@thresholdTime IS NULL)
+								BEGIN
+									SET @thresholdTime = @DEFAULT_THRESHOLD_TIME;
+								END;
+								SET @thresholdTimeMSec = @thresholdTime * 1000;
 							END;
 
 							DECLARE sCur CURSOR LOCAL READ_ONLY FAST_FORWARD FOR
@@ -4590,8 +4648,31 @@ ELSE BEGIN
 											BEGIN
 												SET @processingThreshold = @averageProcessingDuration * @thresholdFactor;
 
-												IF (@processingDuration <= @processingThreshold)
+												IF (@processingDuration > @processingThreshold) AND (@processingDuration > @thresholdTimeMSec)
 												BEGIN
+													--
+													-- Insert Warning message
+													--
+													SET @message =
+														''''Plan cache clearned '''' +
+														@thisTask + CASE WHEN (@test = 1) THEN '''' TEST'''' ELSE '''''''' END + '''' type '''' + CAST(@type AS nvarchar) +
+														'''' processing duration '''' + CAST(@processingDuration AS nvarchar) + '''' mSec.'''' +
+														'''' execeeded threshold'''' +
+														'''' @actualSampleCnt:'''' + CAST(@actualSampleCnt AS nvarchar) + '''','''' +
+														'''' @averageProcessingDuration:'''' + CAST(@averageProcessingDuration AS nvarchar) + '''','''' +
+														'''' @thresholdFactor:'''' + CAST(@thresholdFactor AS nvarchar) + '''','''' +
+														'''' @thresholdTime:'''' + CAST(@thresholdTimeMSec AS nvarchar) + '''','''' +
+														'''' @processingThreshold:'''' + CAST(@processingThreshold AS nvarchar) + '''','''' +
+														'''' by '''' + @task + '''' - '''' + @name + COALESCE('''' - '''' + @parameter, '''''''');
+													EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @task, @type = ''''Warning'''', @message = @message;
+
+													SET @stmt = ''''DBCC FLUSHPROCINDB (@dbId);'''';
+													EXEC sp_executesql
+														@stmt,
+														N''''@dbId int'''',
+														@dbId = @dbId
+												END
+												ELSE BEGIN
 													--
 													-- Insert Debug message
 													--
@@ -4602,31 +4683,10 @@ ELSE BEGIN
 														'''' @actualSampleCnt:'''' + CAST(@actualSampleCnt AS nvarchar) + '''','''' +
 														'''' @averageProcessingDuration:'''' + CAST(@averageProcessingDuration AS nvarchar) + '''','''' +
 														'''' @thresholdFactor:'''' + CAST(@thresholdFactor AS nvarchar) + '''','''' +
+														'''' @thresholdTime:'''' + CAST(@thresholdTimeMSec AS nvarchar) + '''','''' +
 														'''' @processingThreshold:'''' + CAST(@processingThreshold AS nvarchar) + '''','''' +
 														'''' by '''' + @task + '''' - '''' + @name + COALESCE('''' - '''' + @parameter, '''''''');
 													EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @task, @type = ''''Debug'''', @message = @message;
-												END
-												ELSE BEGIN
-													--
-													-- Insert Info message
-													--
-													SET @message =
-														''''Plan cache clearned '''' +
-														@thisTask + CASE WHEN (@test = 1) THEN '''' TEST'''' ELSE '''''''' END + '''' type '''' + CAST(@type AS nvarchar) +
-														'''' processing duration '''' + CAST(@processingDuration AS nvarchar) + '''' mSec.'''' +
-														'''' execeeded threshold'''' +
-														'''' @actualSampleCnt:'''' + CAST(@actualSampleCnt AS nvarchar) + '''','''' +
-														'''' @averageProcessingDuration:'''' + CAST(@averageProcessingDuration AS nvarchar) + '''','''' +
-														'''' @thresholdFactor:'''' + CAST(@thresholdFactor AS nvarchar) + '''','''' +
-														'''' @processingThreshold:'''' + CAST(@processingThreshold AS nvarchar) + '''','''' +
-														'''' by '''' + @task + '''' - '''' + @name + COALESCE('''' - '''' + @parameter, '''''''');
-													EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @task, @type = ''''Warning'''', @message = @message;
-
-													SET @stmt = ''''DBCC FLUSHPROCINDB (@dbId);'''';
-													EXEC sp_executesql
-														@stmt,
-														N''''@dbId int'''',
-														@dbId = @dbId
 												END;
 											END;
 										END;
@@ -4699,15 +4759,15 @@ ELSE BEGIN
 				WITH
 				schedules(Enabled, DeploymentStatus, Name, Task, ExecutionDelaySec, FromTime, ToTime, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday, Parameter) AS(
 					SELECT
-						0													AS Enabled
-						,0													AS DeploymentStatus
-						,''Schedules''										AS Name
-						,PARSENAME(''dbo.fhsmSPSchedules'', 1)				AS Task
-						,0													AS ExecutionDelaySec
-						,CAST(''1900-1-1T00:00:00.0000'' AS datetime2(0))	AS FromTime
-						,CAST(''1900-1-1T23:59:59.0000'' AS datetime2(0))	AS ToTime
-						,1, 1, 1, 1, 1, 1, 1								-- Monday..Sunday
-						,''@SampleCnt = 10 ; @ThresholdFactor = 50''		AS Parameter
+						0																	AS Enabled
+						,0																	AS DeploymentStatus
+						,''Schedules''														AS Name
+						,PARSENAME(''dbo.fhsmSPSchedules'', 1)								AS Task
+						,0																	AS ExecutionDelaySec
+						,CAST(''1900-1-1T00:00:00.0000'' AS datetime2(0))					AS FromTime
+						,CAST(''1900-1-1T23:59:59.0000'' AS datetime2(0))					AS ToTime
+						,1, 1, 1, 1, 1, 1, 1												-- Monday..Sunday
+						,''@SampleCnt = 10; @ThresholdFactor = 10; @ThresholdTime = 60''	AS Parameter
 				)
 				MERGE dbo.fhsmSchedules AS tgt
 				USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
@@ -4810,14 +4870,15 @@ ELSE BEGIN
 									IF EXISTS (
 										SELECT *
 										FROM @parameterTable AS pt
-										WHERE (pt.[Key] NOT IN (''''@SampleCnt'''', ''''@ThresholdFactor''''))
+										WHERE (pt.[Key] NOT IN (''''@SampleCnt'''', ''''@ThresholdFactor'''', ''''@ThresholdTime''''))
 									)
 									BEGIN
 										SET @message = ''''Invalid parameter keys specified for @Task:'''''''''''' + COALESCE(NULLIF(@Task, ''''''''), ''''<NULL>'''') + '''''''''''' and @Name:'''''''''''' + COALESCE(NULLIF(@Name, ''''''''), ''''<NULL>'''') + '''''''''''''''';
 										RAISERROR(@message, 0, 1) WITH NOWAIT;
 										RETURN -12;
 									END;
-
+		'
+		SET @stmt += '
 									IF EXISTS (SELECT * FROM @parameterTable AS pt WHERE (pt.[Key] = ''''@SampleCnt''''))
 									BEGIN
 										SET @testStr = (SELECT pt.Value FROM @parameterTable AS pt WHERE (pt.[Key] = ''''@SampleCnt''''));
@@ -4844,6 +4905,22 @@ ELSE BEGIN
 											RETURN -13;
 										END;
 									END;
+		'
+		SET @stmt += '
+									IF EXISTS (SELECT * FROM @parameterTable AS pt WHERE (pt.[Key] = ''''@ThresholdTime''''))
+									BEGIN
+										SET @testStr = (SELECT pt.Value FROM @parameterTable AS pt WHERE (pt.[Key] = ''''@ThresholdTime''''));
+										SET @testValue = dbo.fhsmFNTryParseAsInt(@testStr);
+
+										IF (@testValue < 1) OR (@testValue IS NULL)
+										BEGIN
+											SET @message = ''''Invalid value for parameter @ThresholdTime specified for @Task:'''''''''''' + COALESCE(NULLIF(@Task, ''''''''), ''''<NULL>'''') + '''''''''''' and @Name:'''''''''''' + COALESCE(NULLIF(@Name, ''''''''), ''''<NULL>'''') + '''''''''''''''';
+											RAISERROR(@message, 0, 1) WITH NOWAIT;
+											RETURN -13;
+										END;
+									END;
+		'
+		SET @stmt += '
 								END;
 				'';
 				SET @stmt += ''
@@ -5999,7 +6076,7 @@ ELSE BEGIN
 							,s.LastExecutedUTC
 							,s.LastErrorMessage
 						FROM dbo.fhsmSchedules AS s
-						WHERE (s.DeploymentStatus = 0);
+						WHERE (s.DeploymentStatus = 0) AND (s.Task <> ''''fhsmSPSchedules'''');
 					'';
 					EXEC(@stmt);
 				';

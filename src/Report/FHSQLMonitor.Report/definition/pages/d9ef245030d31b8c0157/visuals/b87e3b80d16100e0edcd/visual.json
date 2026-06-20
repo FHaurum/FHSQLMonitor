@@ -1,5 +1,5 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.9.0/schema.json",
   "name": "b87e3b80d16100e0edcd",
   "position": {
     "x": 10,
@@ -567,6 +567,11 @@
           "selector": {
             "metadata": "_Measures.Signal wait time mS ratio since past - Wait statistics"
           }
+        }
+      ],
+      "columnHeaders": [
+        {
+          "properties": {}
         }
       ]
     },

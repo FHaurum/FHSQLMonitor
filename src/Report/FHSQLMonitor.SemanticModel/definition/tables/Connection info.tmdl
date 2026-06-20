@@ -1,27 +1,11 @@
 table 'Connection info'
-	lineageTag: 27a7a02d-fedb-4f30-8e5c-fe57888bc236
+	lineageTag: 14a7fe02-81d6-46aa-88c2-cde8f014870a
 
-	column Database
+	column 'Auth. type'
 		dataType: string
-		lineageTag: 1788a4a7-ebf5-4238-8f30-7660ca562eff
+		lineageTag: 7755e90a-17b5-4096-b101-7c624df72310
 		summarizeBy: none
-		sourceColumn: Database
-
-		annotation SummarizationSetBy = Automatic
-
-	column Host
-		dataType: string
-		lineageTag: 33c70f7c-c06f-4572-b1c5-53a5d0df9f24
-		summarizeBy: none
-		sourceColumn: Host
-
-		annotation SummarizationSetBy = Automatic
-
-	column Program
-		dataType: string
-		lineageTag: dcb6279e-ef6b-4795-9d1b-867641f52944
-		summarizeBy: none
-		sourceColumn: Program
+		sourceColumn: Auth. type
 
 		annotation SummarizationSetBy = Automatic
 
@@ -29,7 +13,7 @@ table 'Connection info'
 		dataType: int64
 		isHidden
 		formatString: 0
-		lineageTag: 2141f307-48f3-4327-ab4e-a387a56facb4
+		lineageTag: d38ada65-0f5e-474e-894e-f687df1e8768
 		summarizeBy: none
 		sourceColumn: ConnectionInfoKey
 
@@ -58,20 +42,17 @@ table 'Connection info'
 				  table  = db{[Schema = #"Schema name", Item = "Connection info"]}[Data], 
 				  emptyDataset = Table.FirstN(table, 0), 
 				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset,
-				  selectColumns = Table.SelectColumns(
-				    datasetToUse,
+				  renameColumns = Table.RenameColumns(
+				    datasetToUse, 
 				    {
-				      "Database", 
-				      "Host", 
-				      "Program", 
-				      "ConnectionInfoKey"
+				      {"AuthType", "Auth. type"}
 				    }
 				  )
 				in
-				  selectColumns
+				  renameColumns
 				```
 
-	annotation PBI_ResultType = Table
-
 	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
 

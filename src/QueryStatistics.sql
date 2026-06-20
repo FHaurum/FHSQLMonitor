@@ -68,7 +68,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.12.0';
+		SET @version = '2.13.0';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -398,6 +398,150 @@ ELSE BEGIN
 			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
 			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
 		END;
+
+		--
+		-- Create table dbo.fhsmQueryStatisticsStoredProcedures and indexes if they not already exists
+		--
+		IF OBJECT_ID('dbo.fhsmQueryStatisticsStoredProcedures', 'U') IS NULL
+		BEGIN
+			RAISERROR('Creating table dbo.fhsmQueryStatisticsStoredProcedures', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
+				CREATE TABLE dbo.fhsmQueryStatisticsStoredProcedures(
+					Id int identity(1,1) NOT NULL
+					,DatabaseName nvarchar(128) NULL
+					,SchemaName nvarchar(128) NULL
+					,ObjectName nvarchar(128) NULL
+					,ExecutionCount bigint NOT NULL
+					,MinElapsedTime bigint NOT NULL
+					,MaxElapsedTime bigint NOT NULL
+					,LastElapsedTime bigint NOT NULL
+					,TotalElapsedTime bigint NOT NULL
+					,SampleAvgElapsedTime bigint NOT NULL
+					,CachedTime datetime NOT NULL
+					,LastExecutionTime datetime NOT NULL
+					,ExecutionsPerMinute bigint NOT NULL
+					,PlanHandle varbinary(64) NOT NULL
+					,LastSQLServiceRestart datetime NOT NULL
+					,TimestampUTC datetime NOT NULL
+					,Timestamp datetime NOT NULL
+				);
+
+				CREATE CLUSTERED INDEX CL_fhsmQueryStatisticsStoredProcedures_TimestampUTC ON dbo.fhsmQueryStatisticsStoredProcedures(TimestampUTC)' + @tableCompressionStmt + ';
+				ALTER TABLE dbo.fhsmQueryStatisticsStoredProcedures ADD CONSTRAINT NCPK_fhsmQueryStatisticsStoredProcedures PRIMARY KEY NONCLUSTERED(Id)' + @tableCompressionStmt + ';
+			';
+			EXEC(@stmt);
+		END;
+
+		IF NOT EXISTS (SELECT * FROM sys.indexes AS i WHERE (i.object_id = OBJECT_ID('dbo.fhsmQueryStatisticsStoredProcedures')) AND (i.name = 'NC_fhsmQueryStatisticsStoredProcedures_Timestamp'))
+		BEGIN
+			RAISERROR('Adding index [NC_fhsmQueryStatisticsStoredProcedures_Timestamp] to table dbo.fhsmQueryStatisticsStoredProcedures', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
+				CREATE NONCLUSTERED INDEX NC_fhsmQueryStatisticsStoredProcedures_Timestamp ON dbo.fhsmQueryStatisticsStoredProcedures(Timestamp)' + @tableCompressionStmt + ';
+			';
+			EXEC(@stmt);
+		END;
+
+		--
+		-- Register extended properties on the table dbo.fhsmQueryStatisticsStoredProcedures
+		--
+		BEGIN
+			SET @objectName = 'dbo.fhsmQueryStatisticsStoredProcedures';
+			SET @objName = PARSENAME(@objectName, 1);
+			SET @schName = PARSENAME(@objectName, 2);
+
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+		END;
+
+		--
+		-- Create table dbo.fhsmQueryStatisticsStoredProceduresReport if it not already exists
+		--
+		IF OBJECT_ID('dbo.fhsmQueryStatisticsStoredProceduresReport', 'U') IS NULL
+		BEGIN
+			RAISERROR('Creating table dbo.fhsmQueryStatisticsStoredProceduresReport', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
+				CREATE TABLE dbo.fhsmQueryStatisticsStoredProceduresReport(
+					Id int identity(1,1) NOT NULL
+					,ExecutionCount bigint NOT NULL
+					,ElapsedTime bigint NOT NULL
+					,TimestampUTC datetime NOT NULL
+					,Timestamp datetime NOT NULL
+					,DatabaseName nvarchar(128) NULL
+					,SchemaName nvarchar(128) NULL
+					,ObjectName nvarchar(128) NULL
+					,PlanHandle varbinary(64) NOT NULL
+					,Date date NOT NULL
+					,TimeKey int NOT NULL
+					,ObjectKey bigint NOT NULL
+					,CONSTRAINT NCPK_fhsmQueryStatisticsStoredProceduresReport PRIMARY KEY NONCLUSTERED(Id)' + @tableCompressionStmt + '
+				);
+
+				CREATE CLUSTERED INDEX CL_fhsmQueryStatisticsStoredProceduresReport ON dbo.fhsmQueryStatisticsStoredProceduresReport(TimestampUTC)' + @tableCompressionStmt + ';
+			';
+			EXEC(@stmt);
+		END;
+
+		--
+		-- Register extended properties on the table dbo.fhsmQueryStatisticsStoredProceduresReport
+		--
+		BEGIN
+			SET @objectName = 'dbo.fhsmQueryStatisticsStoredProceduresReport';
+			SET @objName = PARSENAME(@objectName, 1);
+			SET @schName = PARSENAME(@objectName, 2);
+
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+		END;
+
+		--
+		-- Create table dbo.fhsmQueryStatisticsStoredProceduresReportTemp if it not already exists
+		--
+		IF OBJECT_ID('dbo.fhsmQueryStatisticsStoredProceduresReportTemp', 'U') IS NULL
+		BEGIN
+			RAISERROR('Creating table dbo.fhsmQueryStatisticsStoredProceduresReportTemp', 0, 1) WITH NOWAIT;
+
+			SET @stmt = '
+				CREATE TABLE dbo.fhsmQueryStatisticsStoredProceduresReportTemp(
+					DatabaseName nvarchar(128) NULL
+					,SchemaName nvarchar(128) NULL
+					,ObjectName nvarchar(128) NULL
+					,PlanHandle varbinary(64) NOT NULL
+					,LastSQLServiceRestart datetime NOT NULL
+					,TimestampUTC datetime NOT NULL
+					,Timestamp datetime NOT NULL
+					,ExecutionCount bigint NOT NULL
+					,TotalElapsedTime bigint NOT NULL
+				);
+
+				CREATE CLUSTERED INDEX CL_fhsmQueryStatisticsStoredProceduresReportTemp ON dbo.fhsmQueryStatisticsStoredProceduresReportTemp(TimestampUTC, DatabaseName, SchemaName, ObjectName, PlanHandle)' + @tableCompressionStmt + ';
+			';
+			EXEC(@stmt);
+		END;
+
+		--
+		-- Register extended properties on the table dbo.fhsmQueryStatisticsStoredProceduresReportTemp
+		--
+		BEGIN
+			SET @objectName = 'dbo.fhsmQueryStatisticsStoredProceduresReportTemp';
+			SET @objName = PARSENAME(@objectName, 1);
+			SET @schName = PARSENAME(@objectName, 2);
+
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+			EXEC dbo.fhsmSPExtendedProperties @objectType = 'Table', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+		END;
+
 	END;
 
 	--
@@ -412,97 +556,144 @@ ELSE BEGIN
 		-- Create fact view @pbiSchema.[Query statements]
 		--
 		BEGIN
-			SET @stmt = '
-				IF OBJECT_ID(''' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Query statements') + ''', ''V'') IS NULL
-				BEGIN
-					EXEC(''CREATE VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Query statements') + ' AS SELECT ''''dummy'''' AS Txt'');
-				END;
-			';
-			EXEC(@stmt);
+			BEGIN
+				SET @stmt = '
+					IF OBJECT_ID(''' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Query statements') + ''', ''V'') IS NULL
+					BEGIN
+						EXEC(''CREATE VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Query statements') + ' AS SELECT ''''dummy'''' AS Txt'');
+					END;
+				';
+				EXEC(@stmt);
 
-			SET @stmt = '
-				ALTER VIEW  ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Query statements') + '
-				AS
-				SELECT
-					CONVERT(nvarchar(18), qs.QueryHash, 1) AS [Query hash]
-					,qs.CreationTime
-					,qs.LastExecutionTime
-					,CASE
-						WHEN LEN(qs.Statement) > ' + CAST(@maxStatementLength AS nvarchar) + ' THEN LEFT(qs.Statement, ' + CAST(@maxStatementLength AS nvarchar) + ') + CHAR(10) + ''...Statement truncated''
-						ELSE qs.Statement
-					END AS Statement
-					,qs.Encrypted
-					,CAST(qs.Timestamp AS date) AS Date
-					,(DATEPART(HOUR, qs.Timestamp) * 60 * 60) + (DATEPART(MINUTE, qs.Timestamp) * 60) + (DATEPART(SECOND, qs.Timestamp)) AS TimeKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(qs.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
-					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(qs.DatabaseName, CONVERT(nvarchar(18), qs.QueryHash, 1), DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS QueryStatisticKey
-				FROM dbo.fhsmQueryStatement AS qs;
-			';
-			EXEC(@stmt);
-		END;
+				SET @stmt = '
+					ALTER VIEW  ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Query statements') + '
+					AS
+					SELECT
+						CONVERT(nvarchar(18), qs.QueryHash, 1) AS [Query hash]
+						,qs.CreationTime
+						,qs.LastExecutionTime
+						,CASE
+							WHEN LEN(qs.Statement) > ' + CAST(@maxStatementLength AS nvarchar) + ' THEN LEFT(qs.Statement, ' + CAST(@maxStatementLength AS nvarchar) + ') + CHAR(10) + ''...Statement truncated''
+							ELSE qs.Statement
+						END AS Statement
+						,qs.Encrypted
+						,CAST(qs.Timestamp AS date) AS Date
+						,(DATEPART(HOUR, qs.Timestamp) * 60 * 60) + (DATEPART(MINUTE, qs.Timestamp) * 60) + (DATEPART(SECOND, qs.Timestamp)) AS TimeKey
+						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(qs.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
+						,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(qs.DatabaseName, CONVERT(nvarchar(18), qs.QueryHash, 1), DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS QueryStatisticKey
+					FROM dbo.fhsmQueryStatement AS qs;
+				';
+				EXEC(@stmt);
+			END;
 
-		--
-		-- Register extended properties on fact view @pbiSchema.[Query statements]
-		--
-		BEGIN
-			SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Query statements');
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
+			--
+			-- Register extended properties on fact view @pbiSchema.[Query statements]
+			--
+			BEGIN
+				SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Query statements');
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
 
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+			END;
 		END;
 
 		--
 		-- Create fact view @pbiSchema.[Query statistics]
 		--
 		BEGIN
-			SET @stmt = '
-				IF OBJECT_ID(''' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Query statistics') + ''', ''V'') IS NULL
-				BEGIN
-					EXEC(''CREATE VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Query statistics') + ' AS SELECT ''''dummy'''' AS Txt'');
-				END;
-			';
-			EXEC(@stmt);
+			BEGIN
+				SET @stmt = '
+					IF OBJECT_ID(''' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Query statistics') + ''', ''V'') IS NULL
+					BEGIN
+						EXEC(''CREATE VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Query statistics') + ' AS SELECT ''''dummy'''' AS Txt'');
+					END;
+				';
+				EXEC(@stmt);
 
-			SET @stmt = '
-				ALTER VIEW  ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Query statistics') + '
-				AS
-				SELECT
-					qsr.ExecutionCount
-					,qsr.WorkerTimeMS
-					,qsr.PhysicalReads
-					,qsr.LogicalWrites
-					,qsr.LogicalReads
-					,qsr.ClrTimeMS
-					,qsr.ElapsedTimeMS
-					,qsr.Rows
-					,qsr.Spills
-					,qsr.Date
-					,qsr.TimeKey
-					,qsr.DatabaseKey
-					,qsr.QueryStatisticKey
-				FROM dbo.fhsmQueryStatisticsReport AS qsr;
-			';
-			EXEC(@stmt);
+				SET @stmt = '
+					ALTER VIEW  ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Query statistics') + '
+					AS
+					SELECT
+						qsr.ExecutionCount
+						,qsr.WorkerTimeMS
+						,qsr.PhysicalReads
+						,qsr.LogicalWrites
+						,qsr.LogicalReads
+						,qsr.ClrTimeMS
+						,qsr.ElapsedTimeMS
+						,qsr.Rows
+						,qsr.Spills
+						,qsr.Date
+						,qsr.TimeKey
+						,qsr.DatabaseKey
+						,qsr.QueryStatisticKey
+					FROM dbo.fhsmQueryStatisticsReport AS qsr;
+				';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Register extended properties on fact view @pbiSchema.[Query statistics]
+			--
+			BEGIN
+				SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Query statistics');
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+			END;
 		END;
 
 		--
-		-- Register extended properties on fact view @pbiSchema.[Query statistics]
+		-- Create fact view @pbiSchema.[Query statistics stored procedures]
 		--
 		BEGIN
-			SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Query statistics');
-			SET @objName = PARSENAME(@objectName, 1);
-			SET @schName = PARSENAME(@objectName, 2);
+			BEGIN
+				SET @stmt = '
+					IF OBJECT_ID(''' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Query statistics stored procedures') + ''', ''V'') IS NULL
+					BEGIN
+						EXEC(''CREATE VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Query statistics stored procedures') + ' AS SELECT ''''dummy'''' AS Txt'');
+					END;
+				';
+				EXEC(@stmt);
 
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
-			EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+				SET @stmt = '
+					ALTER VIEW  ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Query statistics stored procedures') + '
+					AS
+					SELECT
+						qsr.ExecutionCount
+						,qsr.ElapsedTime / 1000.0 AS ElapsedTimeMS
+						,qsr.Date
+						,qsr.TimeKey
+						,qsr.ObjectKey
+					FROM dbo.fhsmQueryStatisticsStoredProceduresReport AS qsr;
+				';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Register extended properties on fact view @pbiSchema.[Query statistics stored procedures]
+			--
+			BEGIN
+				SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Query statistics stored procedures');
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+			END;
 		END;
 	END;
 
@@ -531,10 +722,13 @@ ELSE BEGIN
 				BEGIN
 					SET NOCOUNT ON;
 
+					DECLARE @databases nvarchar(max);
 					DECLARE @now datetime;
 					DECLARE @nowUTC datetime;
 					DECLARE @numberOfRows int;
 					DECLARE @numberOfRowsStr nvarchar(128);
+					DECLARE @numberOfStoredProcedures int;
+					DECLARE @numberOfStoredProceduresStr nvarchar(128);
 					DECLARE @parameter nvarchar(max);
 					DECLARE @parameterTable TABLE([Key] nvarchar(128) NOT NULL, Value nvarchar(128) NULL);
 					DECLARE @stmt nvarchar(max);
@@ -557,8 +751,24 @@ ELSE BEGIN
 							,(SELECT s.Txt FROM dbo.fhsmFNSplitString(p.Txt, ''='') AS s WHERE (s.Part = 2)) AS Value
 						FROM dbo.fhsmFNSplitString(@parameter, '';'') AS p;
 
+						SET @databases = (SELECT pt.Value FROM @parameterTable AS pt WHERE (pt.[Key] = ''@Databases''));
+
+						--
+						-- Trim @databases if Ola Hallengren style has been chosen
+						--
+						BEGIN
+							SET @databases = LTRIM(RTRIM(@databases));
+							WHILE (LEFT(@databases, 1) = '''''''') AND (LEFT(@databases, 1) = '''''''')
+							BEGIN
+								SET @databases = SUBSTRING(@databases, 2, LEN(@databases) - 2);
+							END;
+						END;
+
 						SET @numberOfRowsStr = (SELECT pt.Value FROM @parameterTable AS pt WHERE (pt.[Key] = ''@NumberOfRows''));
 						SET @numberOfRows = dbo.fhsmFNTryParseAsInt(@numberOfRowsStr);
+
+						SET @numberOfStoredProceduresStr = (SELECT pt.Value FROM @parameterTable AS pt WHERE (pt.[Key] = ''@NumberOfStoredProcedures''));
+						SET @numberOfStoredProcedures = dbo.fhsmFNTryParseAsInt(@numberOfStoredProceduresStr);
 					END;
 
 					--
@@ -607,170 +817,493 @@ ELSE BEGIN
 
 						SET @stmt = ''
 							DECLARE @curUTC datetime;
+							DECLARE @database nvarchar(128);
+							DECLARE @errorMsg nvarchar(max);
+							DECLARE @message nvarchar(max);
 							DECLARE @prevUTC datetime;
+							DECLARE @replicaId uniqueidentifier;
+							DECLARE @stmt nvarchar(max);
 
 							--
-							-- Collect DMV data
+							-- Collect general query statistics DMV data
 							--
 							BEGIN
-								TRUNCATE TABLE dbo.fhsmQueryStatisticsTemp;
+								--
+								-- Collect DMV data
+								--
+								BEGIN
+									TRUNCATE TABLE dbo.fhsmQueryStatisticsTemp;
 
-								INSERT INTO dbo.fhsmQueryStatisticsTemp
-								SELECT '' + CASE WHEN @numberOfRows > 0 THEN ''TOP ('' + CAST(@numberOfRows AS nvarchar) + '')'' ELSE '''' END + ''
-									COALESCE(DB_NAME(dest.dbid), ''''DbId:'''' + CAST(dest.dbid AS nvarchar), ''''Ad hoc / prepared'''') AS DatabaseName
-									,deqs.query_hash AS QueryHash
-									,deqs.plan_handle AS PlanHandle
-									,deqs.creation_time AS CreationTime
-									,deqs.last_execution_time AS LastExecutionTime
-									,deqs.execution_count AS ExecutionCount
-									,(deqs.total_worker_time / 1000.0) AS TotalWorkerTimeMS
-									,deqs.total_physical_reads AS TotalPhysicalReads
-									,deqs.total_logical_writes AS TotalLogicalWrites
-									,deqs.total_logical_reads AS TotalLogicalReads
-									,(deqs.total_clr_time / 1000.0) AS TotalClrTimeMS
-									,(deqs.total_elapsed_time / 1000.0) AS TotalElapsedTimeMS
-									,'' + @totalRowsStmt + '' AS TotalRows
-									,'' + @totalSpillsStmt + '' AS TotalSpills
-									,CASE
-										WHEN deqs.statement_start_offset > 0 THEN
-											--The start of the active command is not at the beginning of the full command text
-											CASE deqs.statement_end_offset
-												WHEN -1 THEN
-													--The end of the full command is also the end of the active statement
-													SUBSTRING(dest.text, (deqs.statement_start_offset / 2) + 1, 2147483647)
-												ELSE
-													--The end of the active statement is not at the end of the full command
-													SUBSTRING(dest.text, (deqs.statement_start_offset / 2) + 1, ((deqs.statement_end_offset - deqs.statement_start_offset) / 2) + 1)
-											END
-										ELSE
-											--1st part of full command is running
-											CASE deqs.statement_end_offset
-												WHEN -1 THEN
-													--The end of the full command is also the end of the active statement
-													LTRIM(RTRIM(dest.text))
-												ELSE
-													--The end of the active statement is not at the end of the full command
-													LEFT(dest.text, (deqs.statement_end_offset / 2) + 1)
-											END
-									END AS Statement
-									,ROW_NUMBER() OVER(PARTITION BY dest.dbid, deqs.query_hash ORDER BY deqs.last_execution_time DESC, deqs.creation_time DESC) AS _Rnk_
-								FROM sys.dm_exec_query_stats AS deqs WITH (NOLOCK)
-								OUTER APPLY sys.dm_exec_sql_text(deqs.sql_handle) AS dest
-								'' + CASE WHEN @numberOfRows > 0 THEN ''ORDER BY TotalLogicalReads DESC'' ELSE '''' END + '';
+									INSERT INTO dbo.fhsmQueryStatisticsTemp
+									SELECT '' + CASE WHEN @numberOfRows > 0 THEN ''TOP ('' + CAST(@numberOfRows AS nvarchar) + '')'' ELSE '''' END + ''
+										COALESCE(DB_NAME(dest.dbid), ''''DbId:'''' + CAST(dest.dbid AS nvarchar), ''''Ad hoc / prepared'''') AS DatabaseName
+										,deqs.query_hash AS QueryHash
+										,deqs.plan_handle AS PlanHandle
+										,deqs.creation_time AS CreationTime
+										,deqs.last_execution_time AS LastExecutionTime
+										,deqs.execution_count AS ExecutionCount
+										,(deqs.total_worker_time / 1000.0) AS TotalWorkerTimeMS
+										,deqs.total_physical_reads AS TotalPhysicalReads
+										,deqs.total_logical_writes AS TotalLogicalWrites
+										,deqs.total_logical_reads AS TotalLogicalReads
+										,(deqs.total_clr_time / 1000.0) AS TotalClrTimeMS
+										,(deqs.total_elapsed_time / 1000.0) AS TotalElapsedTimeMS
+										,'' + @totalRowsStmt + '' AS TotalRows
+										,'' + @totalSpillsStmt + '' AS TotalSpills
+										,CASE
+											WHEN deqs.statement_start_offset > 0 THEN
+												--The start of the active command is not at the beginning of the full command text
+												CASE deqs.statement_end_offset
+													WHEN -1 THEN
+														--The end of the full command is also the end of the active statement
+														SUBSTRING(dest.text, (deqs.statement_start_offset / 2) + 1, 2147483647)
+													ELSE
+														--The end of the active statement is not at the end of the full command
+														SUBSTRING(dest.text, (deqs.statement_start_offset / 2) + 1, ((deqs.statement_end_offset - deqs.statement_start_offset) / 2) + 1)
+												END
+											ELSE
+												--1st part of full command is running
+												CASE deqs.statement_end_offset
+													WHEN -1 THEN
+														--The end of the full command is also the end of the active statement
+														LTRIM(RTRIM(dest.text))
+													ELSE
+														--The end of the active statement is not at the end of the full command
+														LEFT(dest.text, (deqs.statement_end_offset / 2) + 1)
+												END
+										END AS Statement
+										,ROW_NUMBER() OVER(PARTITION BY dest.dbid, deqs.query_hash ORDER BY deqs.last_execution_time DESC, deqs.creation_time DESC) AS _Rnk_
+									FROM sys.dm_exec_query_stats AS deqs WITH (NOLOCK)
+									OUTER APPLY sys.dm_exec_sql_text(deqs.sql_handle) AS dest
+									'' + CASE WHEN @numberOfRows > 0 THEN ''ORDER BY TotalLogicalReads DESC'' ELSE '''' END + '';
+								END;
+						'';
+						SET @stmt += ''
+								--
+								-- Insert records into QueryStatistics
+								--
+								BEGIN
+									INSERT INTO dbo.fhsmQueryStatistics(
+										DatabaseName, QueryHash, PlanHandle, CreationTime, LastExecutionTime
+										,ExecutionCount, TotalWorkerTimeMS, TotalPhysicalReads, TotalLogicalWrites, TotalLogicalReads, TotalClrTimeMS, TotalElapsedTimeMS, TotalRows, TotalSpills
+										,LastSQLServiceRestart
+										,TimestampUTC, Timestamp)
+									SELECT
+										src.DatabaseName, src.QueryHash, src.PlanHandle, src.CreationTime, src.LastExecutionTime
+										,src.ExecutionCount, src.TotalWorkerTimeMS, src.TotalPhysicalReads, src.TotalLogicalWrites, src.TotalLogicalReads, src.TotalClrTimeMS, src.TotalElapsedTimeMS, src.TotalRows, src.TotalSpills
+										,(SELECT d.create_date FROM sys.databases AS d WITH (NOLOCK) WHERE (d.name = ''''tempdb'''')) AS LastSQLServiceRestart
+										,@nowUTC, @now
+									FROM dbo.fhsmQueryStatisticsTemp AS src;
+								END;
+						'';
+						SET @stmt += ''
+								--
+								-- Insert records into fhsmQueryStatisticsReport
+								--
+								BEGIN
+									SET @curUTC = (SELECT TOP (1) qs.TimestampUTC FROM dbo.fhsmQueryStatistics AS qs ORDER BY qs.TimestampUTC DESC);
+									SET @prevUTC = (SELECT TOP (1) qs.TimestampUTC FROM dbo.fhsmQueryStatistics AS qs WHERE (qs.TimestampUTC < @curUTC) ORDER BY qs.TimestampUTC DESC);
+
+									--
+									-- Delete if already processed
+									--
+									BEGIN
+										DELETE qsr
+										FROM dbo.fhsmQueryStatisticsReport AS qsr WHERE (qsr.TimestampUTC = @curUTC);
+									END;
+
+									--
+									-- Load base data
+									--
+									BEGIN
+										TRUNCATE TABLE dbo.fhsmQueryStatisticsReportTemp;
+
+										WITH
+										summarizedQS AS (
+											SELECT
+												qs.DatabaseName
+												,qs.QueryHash
+												,qs.PlanHandle
+												,qs.CreationTime
+												,qs.TimestampUTC
+												,qs.Timestamp
+												,qs.LastSQLServiceRestart
+												,SUM(qs.ExecutionCount) AS ExecutionCount
+												,SUM(qs.TotalWorkerTimeMS) AS TotalWorkerTimeMS
+												,SUM(qs.TotalPhysicalReads) AS TotalPhysicalReads
+												,SUM(qs.TotalLogicalWrites) AS TotalLogicalWrites
+												,SUM(qs.TotalLogicalReads) AS TotalLogicalReads
+												,SUM(qs.TotalClrTimeMS) AS TotalClrTimeMS
+												,SUM(qs.TotalElapsedTimeMS) AS TotalElapsedTimeMS
+												,SUM(qs.TotalRows) AS TotalRows
+												,SUM(qs.TotalSpills) AS TotalSpills
+											FROM dbo.fhsmQueryStatistics AS qs
+											WHERE (qs.TimestampUTC IN (@curUTC, @prevUTC))
+											GROUP BY
+												qs.DatabaseName
+												,qs.QueryHash
+												,qs.PlanHandle
+												,qs.CreationTime
+												,qs.TimestampUTC
+												,qs.Timestamp
+												,qs.LastSQLServiceRestart
+										)
+										INSERT INTO dbo.fhsmQueryStatisticsReportTemp(
+												DatabaseName, QueryHash, PlanHandle, CreationTime, TimestampUTC, Timestamp, LastSQLServiceRestart
+												,ExecutionCount, TotalWorkerTimeMS, TotalPhysicalReads, TotalLogicalWrites, TotalLogicalReads, TotalClrTimeMS, TotalElapsedTimeMS, TotalRows, TotalSpills
+										)
+										SELECT
+											qs.DatabaseName, qs.QueryHash, qs.PlanHandle, qs.CreationTime, qs.TimestampUTC, qs.Timestamp, qs.LastSQLServiceRestart
+											,qs.ExecutionCount, qs.TotalWorkerTimeMS, qs.TotalPhysicalReads, qs.TotalLogicalWrites, qs.TotalLogicalReads, qs.TotalClrTimeMS, qs.TotalElapsedTimeMS, qs.TotalRows, qs.TotalSpills
+										FROM summarizedQS AS qs
+									END;
+
+									--
+									-- Process delta
+									--
+									BEGIN
+										INSERT INTO dbo.fhsmQueryStatisticsReport(
+											ExecutionCount, WorkerTimeMS, PhysicalReads, LogicalWrites, LogicalReads, ClrTimeMS, ElapsedTimeMS, Rows, Spills
+											,TimestampUTC, Timestamp, DatabaseName, QueryHash
+											,Date, TimeKey, DatabaseKey, QueryStatisticKey
+										)
+										SELECT
+											 SUM(a.ExecutionCount) AS ExecutionCount
+											,SUM(a.WorkerTimeMS) AS WorkerTimeMS
+											,SUM(a.PhysicalReads) AS PhysicalReads
+											,SUM(a.LogicalWrites) AS LogicalWrites
+											,SUM(a.LogicalReads) AS LogicalReads
+											,SUM(a.ClrTimeMS) AS ClrTimeMS
+											,SUM(a.ElapsedTimeMS) AS ElapsedTimeMS
+											,SUM(a.Rows) AS Rows
+											,SUM(a.Spills) AS Spills
+											,a.TimestampUTC
+											,a.Timestamp
+											,a.DatabaseName
+											,a.QueryHash
+											,CAST(a.Timestamp AS date) AS Date
+											,(DATEPART(HOUR, a.Timestamp) * 60 * 60) + (DATEPART(MINUTE, a.Timestamp) * 60) + (DATEPART(SECOND, a.Timestamp)) AS TimeKey
+											,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(a.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
+											,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(a.DatabaseName, CONVERT(nvarchar(18), a.QueryHash, 1), DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS QueryStatisticKey
+										FROM (
+											SELECT
+												CASE
+													WHEN (DATEDIFF(HOUR, prevQS.TimestampUTC, curQS.TimestampUTC) >= 12) THEN NULL															-- Ignore data if distance between current and previous is more than 12 hours
+																																															-- Either it is the first data set for this CreationTime, or the counters had an overflow, or the server har been restarted
+													WHEN (prevQS.ExecutionCount IS NULL) OR (prevQS.ExecutionCount > curQS.ExecutionCount) OR (prevQS.LastSQLServiceRestart <> curQS.LastSQLServiceRestart) THEN curQS.ExecutionCount
+													ELSE curQS.ExecutionCount - prevQS.ExecutionCount																						-- Difference
+												END AS ExecutionCount
+												,CASE
+													WHEN (DATEDIFF(HOUR, prevQS.TimestampUTC, curQS.TimestampUTC) >= 12) THEN NULL
+													WHEN (prevQS.TotalWorkerTimeMS IS NULL) OR (prevQS.TotalWorkerTimeMS > curQS.TotalWorkerTimeMS) OR (prevQS.LastSQLServiceRestart <> curQS.LastSQLServiceRestart) THEN curQS.TotalWorkerTimeMS
+													ELSE curQS.TotalWorkerTimeMS - prevQS.TotalWorkerTimeMS
+												END AS WorkerTimeMS
+												,CASE
+													WHEN (DATEDIFF(HOUR, prevQS.TimestampUTC, curQS.TimestampUTC) >= 12) THEN NULL
+													WHEN (prevQS.TotalPhysicalReads IS NULL) OR (prevQS.TotalPhysicalReads > curQS.TotalPhysicalReads) OR (prevQS.LastSQLServiceRestart <> curQS.LastSQLServiceRestart) THEN curQS.TotalPhysicalReads
+													ELSE curQS.TotalPhysicalReads - prevQS.TotalPhysicalReads
+												END AS PhysicalReads
+												,CASE
+													WHEN (DATEDIFF(HOUR, prevQS.TimestampUTC, curQS.TimestampUTC) >= 12) THEN NULL
+													WHEN (prevQS.TotalLogicalWrites IS NULL) OR (prevQS.TotalLogicalWrites > curQS.TotalLogicalWrites) OR (prevQS.LastSQLServiceRestart <> curQS.LastSQLServiceRestart) THEN curQS.TotalLogicalWrites
+													ELSE curQS.TotalLogicalWrites - prevQS.TotalLogicalWrites
+												END AS LogicalWrites
+												,CASE
+													WHEN (DATEDIFF(HOUR, prevQS.TimestampUTC, curQS.TimestampUTC) >= 12) THEN NULL
+													WHEN (prevQS.TotalLogicalReads IS NULL) OR (prevQS.TotalLogicalReads > curQS.TotalLogicalReads) OR (prevQS.LastSQLServiceRestart <> curQS.LastSQLServiceRestart) THEN curQS.TotalLogicalReads
+													ELSE curQS.TotalLogicalReads - prevQS.TotalLogicalReads
+												END AS LogicalReads
+												,CASE
+													WHEN (DATEDIFF(HOUR, prevQS.TimestampUTC, curQS.TimestampUTC) >= 12) THEN NULL
+													WHEN (prevQS.TotalClrTimeMS IS NULL) OR (prevQS.TotalClrTimeMS > curQS.TotalClrTimeMS) OR (prevQS.LastSQLServiceRestart <> curQS.LastSQLServiceRestart) THEN curQS.TotalClrTimeMS
+													ELSE curQS.TotalClrTimeMS - prevQS.TotalClrTimeMS
+												END AS ClrTimeMS
+												,CASE
+													WHEN (DATEDIFF(HOUR, prevQS.TimestampUTC, curQS.TimestampUTC) >= 12) THEN NULL
+													WHEN (prevQS.TotalElapsedTimeMS IS NULL) OR (prevQS.TotalElapsedTimeMS > curQS.TotalElapsedTimeMS) OR (prevQS.LastSQLServiceRestart <> curQS.LastSQLServiceRestart) THEN curQS.TotalElapsedTimeMS
+													ELSE curQS.TotalElapsedTimeMS - prevQS.TotalElapsedTimeMS
+												END AS ElapsedTimeMS
+												,CASE
+													WHEN (DATEDIFF(HOUR, prevQS.TimestampUTC, curQS.TimestampUTC) >= 12) THEN NULL
+													WHEN (prevQS.TotalRows IS NULL) OR (prevQS.TotalRows > curQS.TotalRows) OR (prevQS.LastSQLServiceRestart <> curQS.LastSQLServiceRestart) THEN curQS.TotalRows
+													ELSE curQS.TotalRows - prevQS.TotalRows
+												END AS Rows
+												,CASE
+													WHEN (DATEDIFF(HOUR, prevQS.TimestampUTC, curQS.TimestampUTC) >= 12) THEN NULL
+													WHEN (prevQS.TotalSpills IS NULL) OR (prevQS.TotalSpills > curQS.TotalSpills) OR (prevQS.LastSQLServiceRestart <> curQS.LastSQLServiceRestart) THEN curQS.TotalSpills
+													ELSE curQS.TotalSpills - prevQS.TotalSpills
+												END AS Spills
+												,curQS.TimestampUTC
+												,curQS.Timestamp
+												,curQS.DatabaseName
+												,curQS.QueryHash
+											FROM dbo.fhsmQueryStatisticsReportTemp AS curQS
+											LEFT OUTER JOIN dbo.fhsmQueryStatisticsReportTemp AS prevQS ON (prevQS.TimestampUTC = @prevUTC)
+												AND (prevQS.DatabaseName = curQS.DatabaseName)
+												AND (prevQS.QueryHash = curQS.QueryHash)
+												AND (prevQS.PlanHandle = curQS.PlanHandle)
+												AND (prevQS.CreationTime = curQS.CreationTime)
+											WHERE (curQS.TimestampUTC = @curUTC)
+										) AS a
+										WHERE
+											(a.ExecutionCount <> 0)
+											OR (a.WorkerTimeMS <> 0)
+											OR (a.PhysicalReads <> 0)
+											OR (a.LogicalWrites <> 0)
+											OR (a.LogicalReads <> 0)
+											OR (a.ClrTimeMS <> 0)
+											OR (a.ElapsedTimeMS <> 0)
+											OR (a.Rows <> 0)
+											OR (a.Spills <> 0)
+										GROUP BY
+											a.TimestampUTC
+											,a.Timestamp
+											,a.DatabaseName
+											,a.QueryHash;
+									END;
+								END;
+
+								--
+								-- Delete all records except _Rnk_ = 1 AND QueryHash <> 0x0
+								--
+								BEGIN
+									DELETE t
+									FROM dbo.fhsmQueryStatisticsTemp AS t
+									WHERE NOT ((t._Rnk_ = 1) AND (t.QueryHash <> 0x0000000000000000));
+								END;
+
+								--
+								-- Insert records into QueryStatement
+								--
+								BEGIN
+									MERGE dbo.fhsmQueryStatement AS tgt
+									USING (
+										SELECT
+											 t.DatabaseName
+											,t.QueryHash
+											,t.PlanHandle
+											,t.CreationTime
+											,t.LastExecutionTime
+											,t.Statement
+											,deqp.encrypted AS Encrypted
+											,deqp.query_plan AS QueryPlan
+										FROM dbo.fhsmQueryStatisticsTemp AS t
+										CROSS APPLY sys.dm_exec_query_plan(t.PlanHandle) AS deqp
+										WHERE (deqp.encrypted = 0)
+									) AS src
+									ON (src.DatabaseName = tgt.DatabaseName) AND (src.QueryHash = tgt.QueryHash)
+									WHEN MATCHED
+										THEN UPDATE SET
+											tgt.LastExecutionTime = src.LastExecutionTime
+											,tgt.Statement = src.Statement
+											,tgt.Encrypted = src.Encrypted
+											,tgt.QueryPlan = src.QueryPlan
+									WHEN NOT MATCHED BY TARGET
+										THEN INSERT(DatabaseName, QueryHash, CreationTime, LastExecutionTime, Statement, Encrypted, QueryPlan, TimestampUTC, Timestamp)
+										VALUES(src.DatabaseName, src.QueryHash, src.CreationTime, src.LastExecutionTime, src.Statement, src.Encrypted, src.QueryPlan, @nowUTC, @now)
+									;
+								END;
+						'';
+						SET @stmt += ''
 							END;
 						'';
 						SET @stmt += ''
 							--
-							-- Insert records into QueryStatistics
+							-- Collect stored procedure statistics DMV data
 							--
 							BEGIN
-								INSERT INTO dbo.fhsmQueryStatistics(
-									DatabaseName, QueryHash, PlanHandle, CreationTime, LastExecutionTime
-									,ExecutionCount, TotalWorkerTimeMS, TotalPhysicalReads, TotalLogicalWrites, TotalLogicalReads, TotalClrTimeMS, TotalElapsedTimeMS, TotalRows, TotalSpills
-									,LastSQLServiceRestart
-									,TimestampUTC, Timestamp)
-								SELECT
-									src.DatabaseName, src.QueryHash, src.PlanHandle, src.CreationTime, src.LastExecutionTime
-									,src.ExecutionCount, src.TotalWorkerTimeMS, src.TotalPhysicalReads, src.TotalLogicalWrites, src.TotalLogicalReads, src.TotalClrTimeMS, src.TotalElapsedTimeMS, src.TotalRows, src.TotalSpills
-									,(SELECT d.create_date FROM sys.databases AS d WITH (NOLOCK) WHERE (d.name = ''''tempdb'''')) AS LastSQLServiceRestart
-									,@nowUTC, @now
-								FROM dbo.fhsmQueryStatisticsTemp AS src;
+								--
+								-- Get the list of databases to process
+								--
+								BEGIN
+									SELECT d.DatabaseName, d.[Order]
+									INTO #dbList
+									FROM dbo.fhsmFNParseDatabasesStr(@databases) AS d;
+								END;
+
+								DECLARE dCur CURSOR LOCAL READ_ONLY FAST_FORWARD FOR
+						'';
+						SET @stmt += ''
+								SELECT dl.DatabaseName, ' + CASE WHEN (@productVersion1 <= 10) THEN 'NULL' ELSE 'd.replica_id' END + ' AS replica_id
+								FROM #dbList AS dl
+								INNER JOIN sys.databases AS d ON (d.name COLLATE DATABASE_DEFAULT = dl.DatabaseName)
+								ORDER BY dl.[Order];
+
+								OPEN dCur;
+
+								WHILE (1 = 1)
+								BEGIN
+									FETCH NEXT FROM dCur
+									INTO @database, @replicaId;
+
+									IF (@@FETCH_STATUS <> 0)
+									BEGIN
+										BREAK;
+									END;
+
+									--
+									-- If is a member of a replica, we will only execute when running on the primary
+									--
+									IF (@replicaId IS NULL)
+			';
+			IF (@productVersion1 >= 11)
+			BEGIN
+				-- SQL Versions SQL2012 or higher
+				SET @stmt += '
+										OR (
+											(
+												SELECT
+												CASE
+													WHEN (dhags.primary_replica = ar.replica_server_name) THEN 1
+													ELSE 0
+												END AS IsPrimaryServer
+												FROM master.sys.availability_groups AS ag
+												INNER JOIN master.sys.availability_replicas AS ar ON ag.group_id = ar.group_id
+												INNER JOIN master.sys.dm_hadr_availability_group_states AS dhags ON ag.group_id = dhags.group_id
+												WHERE (ar.replica_server_name = @@SERVERNAME) AND (ar.replica_id = @replicaId)
+											) = 1
+										)
+				';
+			END;
+			SET @stmt += '
+									BEGIN
+										SET @stmt = ''''
+						'';
+						SET @stmt += ''
+											USE '''' + QUOTENAME(@database) + '''';
+
+											SELECT
+												DB_NAME() AS DatabaseName
+												,sch.name AS SchemaName
+												,a.ObjectName
+												,a.ExecutionCount
+												,a.MinElapsedTime
+												,a.MaxElapsedTime
+												,a.LastElapsedTime
+												,a.TotalElapsedTime
+												,a.SampleAvgElapsedTime
+												,a.CachedTime
+												,a.LastExecutionTime
+												,ISNULL (a.ExecutionCount / DATEDIFF (MINUTE, a.CachedTime, GETDATE ()), 0) AS ExecutionsPerMinute
+												,a.PlanHandle
+												,(SELECT d.create_date FROM sys.databases AS d WITH (NOLOCK) WHERE (d.name = ''''''''tempdb'''''''')) AS LastSQLServiceRestart
+												,@nowUTC, @now
+											FROM (
+												SELECT
+													'''' + CASE WHEN @numberOfStoredProcedures > 0 THEN ''''TOP ('''' + CAST(@numberOfStoredProcedures AS nvarchar) + '''')'''' ELSE '''''''' END + ''''
+													p.schema_id AS SchemaId,
+													p.name AS ObjectName,
+													eps.execution_count AS ExecutionCount,
+													eps.min_elapsed_time AS MinElapsedTime,			-- micro Sec.
+													eps.max_elapsed_time AS MaxElapsedTime,			-- micro Sec.
+													eps.last_elapsed_time AS LastElapsedTime,		-- micro Sec.
+													eps.total_elapsed_time AS TotalElapsedTime,		-- micro Sec.
+													eps.total_elapsed_time / eps.execution_count AS SampleAvgElapsedTime,		-- micro Sec.
+													eps.cached_time AS CachedTime,
+													eps.last_execution_time AS LastExecutionTime,
+													eps.plan_handle AS PlanHandle
+												FROM sys.procedures AS p WITH (NOLOCK)
+												INNER JOIN sys.dm_exec_procedure_stats AS eps WITH (NOLOCK)
+													ON (p.object_id = eps.object_id)
+												WHERE
+													(eps.database_id = DB_ID())
+													AND (DATEDIFF(SECOND, eps.cached_time, GETDATE()) > 60)
+												'''' + CASE WHEN @numberOfStoredProcedures > 0 THEN ''''ORDER BY SampleAvgElapsedTime DESC'''' ELSE '''''''' END + ''''
+											) AS a
+											LEFT OUTER JOIN sys.schemas AS sch ON (sch.schema_id = a.SchemaId)
+											OPTION (RECOMPILE);
+										'''';
+										BEGIN TRY
+											INSERT INTO dbo.fhsmQueryStatisticsStoredProcedures(
+												DatabaseName, SchemaName, ObjectName
+												,ExecutionCount
+												,MinElapsedTime, MaxElapsedTime
+												,LastElapsedTime, TotalElapsedTime, SampleAvgElapsedTime
+												,CachedTime, LastExecutionTime
+												,ExecutionsPerMinute
+												,a.PlanHandle
+												,LastSQLServiceRestart
+												,TimestampUTC, Timestamp
+											)
+											EXEC sp_executesql
+												@stmt
+												,N''''@numberOfStoredProcedures int, @now datetime, @nowUTC datetime''''
+												,@numberOfStoredProcedures = @numberOfStoredProcedures, @now = @now, @nowUTC = @nowUTC;
+										END TRY
+										BEGIN CATCH
+											SET @errorMsg = ERROR_MESSAGE();
+
+											SET @message = ''''Database '''''''''''' + @database + '''''''''''' failed due to - '''' + @errorMsg;
+											EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''''Warning'''', @message = @message;
+										END CATCH;
+									END
+									ELSE BEGIN
+										SET @message = ''''Database '''''''''''' + @database + '''''''''''' is member of a replica but this server is not the primary node'''';
+										EXEC dbo.fhsmSPLog @name = @name, @version = @version, @task = @thisTask, @type = ''''Debug'''', @message = @message;
+									END;
+								END;
+
+								CLOSE dCur;
+								DEALLOCATE dCur;
 							END;
 						'';
 						SET @stmt += ''
 							--
-							-- Insert records into fhsmQueryStatisticsReport
+							-- Insert records into fhsmQueryStatisticsStoredProceduresReport
 							--
 							BEGIN
-								SET @curUTC = (SELECT TOP (1) qs.TimestampUTC FROM dbo.fhsmQueryStatistics AS qs ORDER BY qs.TimestampUTC DESC);
-								SET @prevUTC = (SELECT TOP (1) qs.TimestampUTC FROM dbo.fhsmQueryStatistics AS qs WHERE (qs.TimestampUTC < @curUTC) ORDER BY qs.TimestampUTC DESC);
+								SET @curUTC = (SELECT TOP (1) qs.TimestampUTC FROM dbo.fhsmQueryStatisticsStoredProcedures AS qs ORDER BY qs.TimestampUTC DESC);
+								SET @prevUTC = (SELECT TOP (1) qs.TimestampUTC FROM dbo.fhsmQueryStatisticsStoredProcedures AS qs WHERE (qs.TimestampUTC < @curUTC) ORDER BY qs.TimestampUTC DESC);
 
 								--
 								-- Delete if already processed
 								--
 								BEGIN
 									DELETE qsr
-									FROM dbo.fhsmQueryStatisticsReport AS qsr WHERE (qsr.TimestampUTC = @curUTC);
+									FROM dbo.fhsmQueryStatisticsStoredProceduresReport AS qsr WHERE (qsr.TimestampUTC = @curUTC);
 								END;
 
 								--
 								-- Load base data
 								--
 								BEGIN
-									TRUNCATE TABLE dbo.fhsmQueryStatisticsReportTemp;
+									TRUNCATE TABLE dbo.fhsmQueryStatisticsStoredProceduresReportTemp;
 
-									WITH
-									pairedDates AS (
-										SELECT
-											@curUTC AS curTimestampUTC
-											,@prevUTC AS prevTimestampUTC
-									)
-									,summarizedQS AS (
-										SELECT
-											qs.DatabaseName
-											,qs.QueryHash
-											,qs.PlanHandle
-											,qs.CreationTime
-											,qs.TimestampUTC
-											,qs.Timestamp
-											,qs.LastSQLServiceRestart
-											,SUM(qs.ExecutionCount) AS ExecutionCount
-											,SUM(qs.TotalWorkerTimeMS) AS TotalWorkerTimeMS
-											,SUM(qs.TotalPhysicalReads) AS TotalPhysicalReads
-											,SUM(qs.TotalLogicalWrites) AS TotalLogicalWrites
-											,SUM(qs.TotalLogicalReads) AS TotalLogicalReads
-											,SUM(qs.TotalClrTimeMS) AS TotalClrTimeMS
-											,SUM(qs.TotalElapsedTimeMS) AS TotalElapsedTimeMS
-											,SUM(qs.TotalRows) AS TotalRows
-											,SUM(qs.TotalSpills) AS TotalSpills
-										FROM dbo.fhsmQueryStatistics AS qs
-										WHERE (qs.TimestampUTC IN (@curUTC, @prevUTC))
-										GROUP BY
-											qs.DatabaseName
-											,qs.QueryHash
-											,qs.PlanHandle
-											,qs.CreationTime
-											,qs.TimestampUTC
-											,qs.Timestamp
-											,qs.LastSQLServiceRestart
-									)
-									INSERT INTO dbo.fhsmQueryStatisticsReportTemp(
-											DatabaseName, QueryHash, PlanHandle, CreationTime, TimestampUTC, Timestamp, LastSQLServiceRestart
-											,ExecutionCount, TotalWorkerTimeMS, TotalPhysicalReads, TotalLogicalWrites, TotalLogicalReads, TotalClrTimeMS, TotalElapsedTimeMS, TotalRows, TotalSpills
+									INSERT INTO dbo.fhsmQueryStatisticsStoredProceduresReportTemp(
+										DatabaseName, SchemaName, ObjectName, PlanHandle
+										,TimestampUTC, Timestamp, LastSQLServiceRestart
+										,ExecutionCount, TotalElapsedTime
 									)
 									SELECT
-										qs.DatabaseName, qs.QueryHash, qs.PlanHandle, qs.CreationTime, qs.TimestampUTC, qs.Timestamp, qs.LastSQLServiceRestart
-										,qs.ExecutionCount, qs.TotalWorkerTimeMS, qs.TotalPhysicalReads, qs.TotalLogicalWrites, qs.TotalLogicalReads, qs.TotalClrTimeMS, qs.TotalElapsedTimeMS, qs.TotalRows, qs.TotalSpills
-									FROM summarizedQS AS qs
+										qssp.DatabaseName, qssp.SchemaName, qssp.ObjectName, qssp.PlanHandle
+										,qssp.TimestampUTC, qssp.Timestamp, qssp.LastSQLServiceRestart
+										,qssp.ExecutionCount, qssp.TotalElapsedTime
+									FROM dbo.fhsmQueryStatisticsStoredProcedures AS qssp
+									WHERE (qssp.TimestampUTC IN (@curUTC, @prevUTC))
 								END;
-
+						'';
+						SET @stmt += ''
 								--
 								-- Process delta
 								--
 								BEGIN
-									INSERT INTO dbo.fhsmQueryStatisticsReport(
-										ExecutionCount, WorkerTimeMS, PhysicalReads, LogicalWrites, LogicalReads, ClrTimeMS, ElapsedTimeMS, Rows, Spills
-										,TimestampUTC, Timestamp, DatabaseName, QueryHash
-										,Date, TimeKey, DatabaseKey, QueryStatisticKey
+									INSERT INTO dbo.fhsmQueryStatisticsStoredProceduresReport(
+										ExecutionCount, ElapsedTime
+										,TimestampUTC, Timestamp, DatabaseName, SchemaName, ObjectName, PlanHandle
+										,Date, TimeKey, ObjectKey
 									)
 									SELECT
-										 SUM(a.ExecutionCount) AS ExecutionCount
-										,SUM(a.WorkerTimeMS) AS WorkerTimeMS
-										,SUM(a.PhysicalReads) AS PhysicalReads
-										,SUM(a.LogicalWrites) AS LogicalWrites
-										,SUM(a.LogicalReads) AS LogicalReads
-										,SUM(a.ClrTimeMS) AS ClrTimeMS
-										,SUM(a.ElapsedTimeMS) AS ElapsedTimeMS
-										,SUM(a.Rows) AS Rows
-										,SUM(a.Spills) AS Spills
+										a.ExecutionCount
+										,a.ElapsedTime
 										,a.TimestampUTC
 										,a.Timestamp
 										,a.DatabaseName
-										,a.QueryHash
+										,a.SchemaName
+										,a.ObjectName
+										,a.PlanHandle
 										,CAST(a.Timestamp AS date) AS Date
 										,(DATEPART(HOUR, a.Timestamp) * 60 * 60) + (DATEPART(MINUTE, a.Timestamp) * 60) + (DATEPART(SECOND, a.Timestamp)) AS TimeKey
-										,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(a.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
-										,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(a.DatabaseName, CONVERT(nvarchar(18), a.QueryHash, 1), DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS QueryStatisticKey
+										,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(a.DatabaseName, a.SchemaName, a.ObjectName, DEFAULT, DEFAULT, DEFAULT) AS k) AS ObjectKey
 									FROM (
 										SELECT
 											CASE
@@ -781,113 +1314,28 @@ ELSE BEGIN
 											END AS ExecutionCount
 											,CASE
 												WHEN (DATEDIFF(HOUR, prevQS.TimestampUTC, curQS.TimestampUTC) >= 12) THEN NULL
-												WHEN (prevQS.TotalWorkerTimeMS IS NULL) OR (prevQS.TotalWorkerTimeMS > curQS.TotalWorkerTimeMS) OR (prevQS.LastSQLServiceRestart <> curQS.LastSQLServiceRestart) THEN curQS.TotalWorkerTimeMS
-												ELSE curQS.TotalWorkerTimeMS - prevQS.TotalWorkerTimeMS
-											END AS WorkerTimeMS
-											,CASE
-												WHEN (DATEDIFF(HOUR, prevQS.TimestampUTC, curQS.TimestampUTC) >= 12) THEN NULL
-												WHEN (prevQS.TotalPhysicalReads IS NULL) OR (prevQS.TotalPhysicalReads > curQS.TotalPhysicalReads) OR (prevQS.LastSQLServiceRestart <> curQS.LastSQLServiceRestart) THEN curQS.TotalPhysicalReads
-												ELSE curQS.TotalPhysicalReads - prevQS.TotalPhysicalReads
-											END AS PhysicalReads
-											,CASE
-												WHEN (DATEDIFF(HOUR, prevQS.TimestampUTC, curQS.TimestampUTC) >= 12) THEN NULL
-												WHEN (prevQS.TotalLogicalWrites IS NULL) OR (prevQS.TotalLogicalWrites > curQS.TotalLogicalWrites) OR (prevQS.LastSQLServiceRestart <> curQS.LastSQLServiceRestart) THEN curQS.TotalLogicalWrites
-												ELSE curQS.TotalLogicalWrites - prevQS.TotalLogicalWrites
-											END AS LogicalWrites
-											,CASE
-												WHEN (DATEDIFF(HOUR, prevQS.TimestampUTC, curQS.TimestampUTC) >= 12) THEN NULL
-												WHEN (prevQS.TotalLogicalReads IS NULL) OR (prevQS.TotalLogicalReads > curQS.TotalLogicalReads) OR (prevQS.LastSQLServiceRestart <> curQS.LastSQLServiceRestart) THEN curQS.TotalLogicalReads
-												ELSE curQS.TotalLogicalReads - prevQS.TotalLogicalReads
-											END AS LogicalReads
-											,CASE
-												WHEN (DATEDIFF(HOUR, prevQS.TimestampUTC, curQS.TimestampUTC) >= 12) THEN NULL
-												WHEN (prevQS.TotalClrTimeMS IS NULL) OR (prevQS.TotalClrTimeMS > curQS.TotalClrTimeMS) OR (prevQS.LastSQLServiceRestart <> curQS.LastSQLServiceRestart) THEN curQS.TotalClrTimeMS
-												ELSE curQS.TotalClrTimeMS - prevQS.TotalClrTimeMS
-											END AS ClrTimeMS
-											,CASE
-												WHEN (DATEDIFF(HOUR, prevQS.TimestampUTC, curQS.TimestampUTC) >= 12) THEN NULL
-												WHEN (prevQS.TotalElapsedTimeMS IS NULL) OR (prevQS.TotalElapsedTimeMS > curQS.TotalElapsedTimeMS) OR (prevQS.LastSQLServiceRestart <> curQS.LastSQLServiceRestart) THEN curQS.TotalElapsedTimeMS
-												ELSE curQS.TotalElapsedTimeMS - prevQS.TotalElapsedTimeMS
-											END AS ElapsedTimeMS
-											,CASE
-												WHEN (DATEDIFF(HOUR, prevQS.TimestampUTC, curQS.TimestampUTC) >= 12) THEN NULL
-												WHEN (prevQS.TotalRows IS NULL) OR (prevQS.TotalRows > curQS.TotalRows) OR (prevQS.LastSQLServiceRestart <> curQS.LastSQLServiceRestart) THEN curQS.TotalRows
-												ELSE curQS.TotalRows - prevQS.TotalRows
-											END AS Rows
-											,CASE
-												WHEN (DATEDIFF(HOUR, prevQS.TimestampUTC, curQS.TimestampUTC) >= 12) THEN NULL
-												WHEN (prevQS.TotalSpills IS NULL) OR (prevQS.TotalSpills > curQS.TotalSpills) OR (prevQS.LastSQLServiceRestart <> curQS.LastSQLServiceRestart) THEN curQS.TotalSpills
-												ELSE curQS.TotalSpills - prevQS.TotalSpills
-											END AS Spills
+												WHEN (prevQS.TotalElapsedTime IS NULL) OR (prevQS.TotalElapsedTime > curQS.TotalElapsedTime) OR (prevQS.LastSQLServiceRestart <> curQS.LastSQLServiceRestart) THEN curQS.TotalElapsedTime
+												ELSE curQS.TotalElapsedTime - prevQS.TotalElapsedTime
+											END AS ElapsedTime
 											,curQS.TimestampUTC
 											,curQS.Timestamp
 											,curQS.DatabaseName
-											,curQS.QueryHash
-										FROM dbo.fhsmQueryStatisticsReportTemp AS curQS
-										LEFT OUTER JOIN dbo.fhsmQueryStatisticsReportTemp AS prevQS ON (prevQS.TimestampUTC = @prevUTC)
+											,curQS.SchemaName
+											,curQS.ObjectName
+											,curQS.PlanHandle
+										FROM dbo.fhsmQueryStatisticsStoredProceduresReportTemp AS curQS
+										LEFT OUTER JOIN dbo.fhsmQueryStatisticsStoredProceduresReportTemp AS prevQS ON (prevQS.TimestampUTC = @prevUTC)
 											AND (prevQS.DatabaseName = curQS.DatabaseName)
-											AND (prevQS.QueryHash = curQS.QueryHash)
+											AND (prevQS.SchemaName = curQS.SchemaName)
+											AND (prevQS.ObjectName = curQS.ObjectName)
 											AND (prevQS.PlanHandle = curQS.PlanHandle)
-											AND (prevQS.CreationTime = curQS.CreationTime)
 										WHERE (curQS.TimestampUTC = @curUTC)
 									) AS a
 									WHERE
 										(a.ExecutionCount <> 0)
-										OR (a.WorkerTimeMS <> 0)
-										OR (a.PhysicalReads <> 0)
-										OR (a.LogicalWrites <> 0)
-										OR (a.LogicalReads <> 0)
-										OR (a.ClrTimeMS <> 0)
-										OR (a.ElapsedTimeMS <> 0)
-										OR (a.Rows <> 0)
-										OR (a.Spills <> 0)
-									GROUP BY
-										a.TimestampUTC
-										,a.Timestamp
-										,a.DatabaseName
-										,a.QueryHash;
+										OR (a.ElapsedTime <> 0)
+
 								END;
-							END;
-
-							--
-							-- Delete all records except _Rnk_ = 1 AND QueryHash <> 0x0
-							--
-							BEGIN
-								DELETE t
-								FROM dbo.fhsmQueryStatisticsTemp AS t
-								WHERE NOT ((t._Rnk_ = 1) AND (t.QueryHash <> 0x0000000000000000));
-							END;
-
-							--
-							-- Insert records into QueryStatement
-							--
-							BEGIN
-								MERGE dbo.fhsmQueryStatement AS tgt
-								USING (
-									SELECT
-										 t.DatabaseName
-										,t.QueryHash
-										,t.PlanHandle
-										,t.CreationTime
-										,t.LastExecutionTime
-										,t.Statement
-										,deqp.encrypted AS Encrypted
-										,deqp.query_plan AS QueryPlan
-									FROM dbo.fhsmQueryStatisticsTemp AS t
-									CROSS APPLY sys.dm_exec_query_plan(t.PlanHandle) AS deqp
-									WHERE (deqp.encrypted = 0)
-								) AS src
-								ON (src.DatabaseName = tgt.DatabaseName) AND (src.QueryHash = tgt.QueryHash)
-								WHEN MATCHED
-									THEN UPDATE SET
-										tgt.LastExecutionTime = src.LastExecutionTime
-										,tgt.Statement = src.Statement
-										,tgt.Encrypted = src.Encrypted
-										,tgt.QueryPlan = src.QueryPlan
-								WHEN NOT MATCHED BY TARGET
-									THEN INSERT(DatabaseName, QueryHash, CreationTime, LastExecutionTime, Statement, Encrypted, QueryPlan, TimestampUTC, Timestamp)
-									VALUES(src.DatabaseName, src.QueryHash, src.CreationTime, src.LastExecutionTime, src.Statement, src.Encrypted, src.QueryPlan, @nowUTC, @now)
-								;
 							END;
 						'';
 						SET @stmt += ''
@@ -906,8 +1354,8 @@ ELSE BEGIN
 						'';
 						EXEC sp_executesql
 							@stmt
-							,N''@now datetime, @nowUTC datetime''
-							,@now = @now, @nowUTC = @nowUTC;
+							,N''@name nvarchar(128), @version nvarchar(128), @thisTask nvarchar(128), @databases nvarchar(max), @numberOfStoredProcedures int, @now datetime, @nowUTC datetime''
+							,@name = @name, @version = @version, @thisTask = @thisTask, @databases = @databases, @numberOfStoredProcedures = @numberOfStoredProcedures, @now = @now, @nowUTC = @nowUTC;
 					END;
 
 					RETURN 0;
@@ -1115,6 +1563,28 @@ ELSE BEGIN
 				,1
 				,30
 				,NULL
+
+			UNION ALL
+
+			SELECT
+				1
+				,'dbo.fhsmQueryStatisticsStoredProcedures'
+				,1
+				,'TimestampUTC'
+				,1
+				,30
+				,NULL
+
+			UNION ALL
+
+			SELECT
+				1
+				,'dbo.fhsmQueryStatisticsStoredProceduresReport'
+				,1
+				,'TimestampUTC'
+				,1
+				,30
+				,NULL
 		)
 		MERGE dbo.fhsmRetentions AS tgt
 		USING retention AS src ON (src.TableName = tgt.TableName) AND (src.Sequence = tgt.Sequence)
@@ -1138,7 +1608,7 @@ ELSE BEGIN
 				,CAST('1900-1-1T00:00:00.0000' AS datetime2(0))	AS FromTime
 				,CAST('1900-1-1T23:59:59.0000' AS datetime2(0))	AS ToTime
 				,1, 1, 1, 1, 1, 1, 1							-- Monday..Sunday
-				,'@NumberOfRows=1000'							AS Parameter
+				,'@NumberOfRows=1000 ; @Databases = ''USER_DATABASES, msdb'' ; @NumberOfStoredProcedures=25'	AS Parameter
 		)
 		MERGE dbo.fhsmSchedules AS tgt
 		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
@@ -1155,8 +1625,8 @@ ELSE BEGIN
 		dimensions(
 			DimensionName, DimensionKey
 			,SrcTable, SrcAlias, SrcWhere, SrcDateColumn
-			,SrcColumn1, SrcColumn2
-			,OutputColumn1, OutputColumn2
+			,SrcColumn1, SrcColumn2, SrcColumn3
+			,OutputColumn1, OutputColumn2, OutputColumn3
 		) AS (
 			SELECT
 				'Database' AS DimensionName
@@ -1165,8 +1635,8 @@ ELSE BEGIN
 				,'src' AS SrcAlias
 				,NULL AS SrcWhere
 				,'src.[Timestamp]' AS SrcDateColumn
-				,'src.[DatabaseName]', NULL
-				,'Database', NULL
+				,'src.[DatabaseName]', NULL, NULL
+				,'Database', NULL, NULL
 
 			UNION ALL
 
@@ -1177,8 +1647,20 @@ ELSE BEGIN
 				,'src' AS SrcAlias
 				,NULL AS SrcWhere
 				,'src.[Timestamp]' AS SrcDateColumn
-				,'src.[DatabaseName]', 'CONVERT(nvarchar(18), src.QueryHash, 1)'
-				,'Database', 'Query hash'
+				,'src.[DatabaseName]', 'CONVERT(nvarchar(18), src.QueryHash, 1)', NULL
+				,'Database', 'Query hash', NULL
+
+			UNION ALL
+
+			SELECT
+				'Object' AS DimensionName
+				,'ObjectKey' AS DimensionKey
+				,'dbo.fhsmQueryStatisticsStoredProcedures' AS SrcTable
+				,'src' AS SrcAlias
+				,NULL AS SrcWhere
+				,'src.[Timestamp]' AS SrcDateColumn
+				,'src.[DatabaseName]', 'src.[SchemaName]', 'src.[ObjectName]'
+				,'Database', 'Schema', 'Object'
 		)
 		MERGE dbo.fhsmDimensions AS tgt
 		USING dimensions AS src ON (src.DimensionName = tgt.DimensionName) AND (src.SrcTable = tgt.SrcTable)
@@ -1191,20 +1673,22 @@ ELSE BEGIN
 				,tgt.SrcDateColumn = src.SrcDateColumn
 				,tgt.SrcColumn1 = src.SrcColumn1
 				,tgt.SrcColumn2 = src.SrcColumn2
+				,tgt.SrcColumn3 = src.SrcColumn3
 				,tgt.OutputColumn1 = src.OutputColumn1
 				,tgt.OutputColumn2 = src.OutputColumn2
+				,tgt.OutputColumn3 = src.OutputColumn3
 		WHEN NOT MATCHED BY TARGET
 			THEN INSERT(
 				DimensionName, DimensionKey
 				,SrcTable, SrcAlias, SrcWhere, SrcDateColumn
-				,SrcColumn1, SrcColumn2
-				,OutputColumn1, OutputColumn2
+				,SrcColumn1, SrcColumn2, SrcColumn3
+				,OutputColumn1, OutputColumn2, OutputColumn3
 			)
 			VALUES(
 				src.DimensionName, src.DimensionKey
 				,src.SrcTable, src.SrcAlias, src.SrcWhere, src.SrcDateColumn
-				,src.SrcColumn1, src.SrcColumn2
-				,src.OutputColumn1, src.OutputColumn2
+				,src.SrcColumn1, src.SrcColumn2, src.SrcColumn3
+				,src.OutputColumn1, src.OutputColumn2, src.OutputColumn3
 			);
 	END;
 
@@ -1213,5 +1697,6 @@ ELSE BEGIN
 	--
 	BEGIN
 		EXEC dbo.fhsmSPUpdateDimensions @table = 'dbo.fhsmQueryStatistics', @ignoreAutoIndex = @ignoreAutoIndex;
+		EXEC dbo.fhsmSPUpdateDimensions @table = 'dbo.fhsmQueryStatisticsStoredProcedures', @ignoreAutoIndex = @ignoreAutoIndex;
 	END;
 END;

@@ -3,7 +3,7 @@
   "items": [
     {
       "name": "55ad11e53c8ed7816403",
-      "displayName": "Agent jobs performance",
+      "displayName": "Agent jobs configuration",
       "children": [
         "171fafe079eceab67b60",
         "b5599a581834aaa1d101"
@@ -154,6 +154,22 @@
       ]
     },
     {
+      "name": "369b96a4df8bb6a9d2ed",
+      "displayName": "Log shipping status",
+      "children": [
+        "d05f902f16434b2fe61f",
+        "46762f255213c09991df"
+      ]
+    },
+    {
+      "name": "7161cff4ad99402a0d48",
+      "displayName": "Memory",
+      "children": [
+        "0f166912950e14779310",
+        "fd20937eacde4ccdeccb"
+      ]
+    },
+    {
       "name": "5c6e8aee260200c03067",
       "displayName": "Missing indexes",
       "children": [
@@ -231,6 +247,14 @@
       "children": [
         "c6b19aedb97b0a326da9",
         "19f22bbbb8d51b8f2796"
+      ]
+    },
+    {
+      "name": "10c4640c18d257ccd78a",
+      "displayName": "Stored procedures",
+      "children": [
+        "6695d80fa40a010b784d",
+        "00f26990360a8575d202"
       ]
     },
     {

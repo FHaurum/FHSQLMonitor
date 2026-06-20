@@ -43,3 +43,243 @@ function _toggleButton = ```
 		```
 	lineageTag: 7baffed2-8ee9-4e5c-9945-9396c0c90345
 
+function _indicatorCircle = ```
+		(
+		    circleColor:string
+		) => 
+		VAR _result =
+		"data:image/svg+xml;utf8,
+		<svg xmlns=""http://www.w3.org/2000/svg"" xmlns:xlink=""http://www.w3.org/1999/xlink"" overflow=""hidden"">
+		<defs>
+			<!-- circle -->
+			<g id=""circle"">
+				<circle cx=""10"" cy=""10"" r=""8"" />
+			</g>
+			<g id=""indicator"">
+				<use xlink:href=""#circle"" fill=""" & circleColor & """ stroke=""#BCD9FF"" stroke-width=""1"" transform=""matrix(1.0 0 0 1 1 0)""/>
+			</g>
+		</defs>
+		<g>
+			<svg>
+				<use xlink:href=""#indicator"" transform=""matrix(1.0 0 0 1 1 1)""/>
+			</svg>
+		</g>
+		</svg>
+		"
+		RETURN _result
+		```
+	lineageTag: c270f8b1-ed1e-42ec-a150-218cb349dd12
+
+function _indicatorWarningColor = ```
+		() => 
+		"#f8ebb2"
+		```
+	lineageTag: 23619598-e9dc-479a-baad-7a884be8a1ac
+
+function _indicatorOKColor = ```
+		() => 
+		"#c5e0b3"
+		```
+	lineageTag: 5654e625-6851-4746-b59d-8ea48daa6c12
+
+function _indicatorErrorColor = ```
+		() => 
+		"#fec0bf"
+		```
+	lineageTag: a4f89c6e-d880-4cc1-a6d1-fc564bfb4ef7
+
+function _filterPanelFillColor = ```
+		() => 
+		"#bcd9ff"
+		```
+	lineageTag: 978b06e3-c49f-4294-89a5-1047a4f46dbf
+
+function _filterInfoCardWithFilterBackgroundColor = ```
+		() => 
+		"#f2d13f"
+		```
+	lineageTag: b69e63c2-93b4-42ed-aea4-be87c3c40b88
+
+function _standardFillColor = ```
+		() => 
+		"#f2f7ff"
+		```
+	lineageTag: 6814e244-15bc-46ef-a5cf-85e35079bfe9
+
+function _filterInfoCardWithFilterFontColor = ```
+		() => 
+		"#000000"
+		```
+	lineageTag: f8231dc4-a260-4168-a3d0-7acb561b01db
+
+function _filterPanelClearAllFiltersButtonBorderColor = ```
+		() => 
+		"#75b0fd"
+		```
+	lineageTag: 36371818-d713-4012-856a-9d4bb130add4
+
+function _isFiltersAppliedBackgroundColor = ```
+		() => 
+		VAR _page = SELECTEDVALUE ( 'Report pages'[Page] )
+		VAR _flag = _isFiltersAppliedFlag ()
+		VAR _color =
+		    SWITCH (
+		        TRUE (),
+		        _flag = 0, _standardFillColor (),
+		        _flag = 1, _filterInfoCardWithFilterBackgroundColor (),
+		        BLANK ()
+		    )
+		VAR _result = _color
+		RETURN _result
+		```
+	lineageTag: 38b57ac6-39bf-4a88-828c-90c2dfd74a4a
+
+function _isFiltersAppliedFontColor = ```
+		() => 
+		VAR _page = SELECTEDVALUE ( 'Report pages'[Page] )
+		VAR _flag = _isFiltersAppliedFlag ()
+		VAR _color =
+		    SWITCH (
+		        TRUE (),
+		        _flag = 0, _standardFillColor (),
+		        _flag = 1, _filterInfoCardWithFilterFontColor (),
+		        BLANK ()
+		    )
+		VAR _result = _color
+		RETURN _result
+		```
+	lineageTag: 19c2d77d-43c8-409b-8fce-434ad86cfbf5
+
+function _reportPagesInfoProdFillColor =
+		() =>
+		"#f2f7ff"
+	lineageTag: fcbfb260-1355-4955-bbf1-031a49a59db3
+
+function _reportPagesInfoNonProdFillColor =
+		() =>
+		"#f8ebb2"
+	lineageTag: aa34cacf-3ece-48b9-abda-12dd787061eb
+
+function _frontPageButtonsBackgroundColor = ```
+		() => 
+		"#e2eeff"
+		```
+	lineageTag: 03c5f6ec-583d-4f4c-94fa-8e84723ba19c
+
+function _frontPageVisualsBorderColor = ```
+		() => 
+		"#bcd9ff"
+		```
+	lineageTag: c4289b9f-22a7-4d01-b0fd-dbd477b60ade
+
+function _openFilterButtonTooltip =
+		() =>
+		VAR _page = SELECTEDVALUE ( 'Report pages'[Page] )
+		VAR _flag = _isFiltersAppliedFlag ()
+		VAR _text =
+		    SWITCH (
+		        TRUE (),
+		        _flag = 0, [Filters are not applied text],
+		        _flag = 1, [Filters are applied text],
+		        BLANK ()
+		    )
+		VAR _result = _text
+		RETURN _result
+	lineageTag: ca06f291-9777-45b7-8da5-70422cda957e
+
+function _latestBackupIsOldBackgroundColor = ```
+		(
+		    flag:INT64
+		) => 
+		SWITCH (
+		    TRUE (),
+		    flag = 1, _indicatorWarningColor (),
+		    flag = 2, _indicatorErrorColor (),
+		    BLANK ()
+		)
+		```
+	lineageTag: 146ed328-1a21-4cb7-b7b4-80a708be4885
+
+function _reportPagesVisualsBorderColor = ```
+		() => 
+		"#bcd9ff"
+		```
+	lineageTag: 4d4d82a4-853f-4a2c-8666-a12f8338737f
+
+function _indicatorOKColor2 = ```
+		() => 
+		"#55d290"
+		```
+	lineageTag: f690e1f3-106a-4a06-93a3-03d9db37e3f3
+
+function _indicatorWarningColor1 = ```
+		() => 
+		"#f2d13f"
+		```
+	lineageTag: 8ceccc38-c10f-4ef4-9497-1e9b1c5f3e0b
+
+function _indicatorOKColor1 = ```
+		() => 
+		"#99e3dd"
+		```
+	lineageTag: a2b52ecd-b04e-48ae-b603-a8ea1169b69a
+
+function _isFiltersAppliedFlag =
+		() =>
+		VAR _page = SELECTEDVALUE ( 'Report pages'[Page] )
+		VAR _flag =
+		    SWITCH (
+		        TRUE (),
+		        _page = "Agent jobs configuration", [Is filters applied - Flag - Agent jobs configuration],
+		        _page = "Agent jobs performance", [Is filters applied - Flag - Agent jobs performance],
+		        _page = "Always On configuration", [Is filters applied - Flag - Always On configuration],
+		        _page = "Always On performance", [Is filters applied - Flag - Always On performance],
+		        _page = "Backup", [Is filters applied - Flag - Backup],
+		        _page = "Blocks and deadlocks", [Is filters applied - Flag - Blocks and deadlocks],
+		        _page = "Connections", [Is filters applied - Flag - Connections],
+		        _page = "CPU", [Is filters applied - Flag - CPU],
+		        _page = "Database configuration", [Is filters applied - Flag - Database configuration],
+		        _page = "Database IO", [Is filters applied - Flag - Database IO],
+		        _page = "Database size", [Is filters applied - Flag - Database size],
+		        _page = "Index configuration", [Is filters applied - Flag - Index configuration],
+		        _page = "Index leaf statistics", [Is filters applied - Flag - Index leaf statistics],
+		        _page = "Index optimize", [Is filters applied - Flag - Index optimize],
+		        _page = "Index physical", [Is filters applied - Flag - Index physical],
+		        _page = "Index usage", [Is filters applied - Flag - Index usage],
+		        _page = "Instance status", [Is filters applied - Flag - Instance status],
+		        _page = "Lock statistics", [Is filters applied - Flag - Lock statistics],
+		        _page = "Log shipping configuration", [Is filters applied - Flag - Log shipping configuration],
+		        _page = "Log shipping status", [Is filters applied - Flag - Log shipping status],
+		        _page = "Memory", [Is filters applied - Flag - Memory],
+		        _page = "Missing indexes", [Is filters applied - Flag - Missing indexes],
+		        _page = "Monitor status", [Is filters applied - Flag - Monitor status],
+		        _page = "Ola Hallengren errors", [Is filters applied - Flag - OH errors],
+		        _page = "Partitioned indexes", [Is filters applied - Flag - Partitioned indexes],
+		        _page = "Performance statistics", [Is filters applied - Flag - Performance statistics],
+		        _page = "Plan cache usage", [Is filters applied - Flag - Plan cache usage],
+		        _page = "Plan guides", [Is filters applied - Flag - Plan guides],
+		        _page = "Query statistics", [Is filters applied - Flag - Query statistics],
+		        _page = "Resource Governor", [Is filters applied - Flag - Resource Governor],
+		        _page = "Statistics", [Is filters applied - Flag - Statistics],
+		        _page = "Stored procedures", [Is filters applied - Flag - Stored procedures - Query statistics],
+		        _page = "Table size", [Is filters applied - Flag - Table size],
+		        _page = "Triggers", [Is filters applied - Flag - Triggers],
+		        _page = "Wait statistics", [Is filters applied - Flag - Wait statistics],
+		        BLANK ()
+		    )
+		VAR _result = _flag
+		RETURN _result
+	lineageTag: 5efd8dfd-e9a4-4762-985a-aabf60adecc7
+
+function _indicatorErrorColor1 = ```
+		() => 
+		"#f26e5f"
+		```
+	lineageTag: a8fab9c4-1dcd-4b70-b4d4-5105a0663c1f
+
+function _dividerLineColor = ```
+		() => 
+		"#01b8aa"
+		```
+	lineageTag: 788a5390-35a2-4d2a-971d-38508266ba5f
+

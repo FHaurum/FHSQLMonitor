@@ -1,0 +1,289 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.9.0/schema.json",
+  "name": "ac73bf2ec9c3241d44dd",
+  "position": {
+    "x": 10,
+    "y": 80,
+    "z": 2500,
+    "height": 455,
+    "width": 1900,
+    "tabOrder": 0
+  },
+  "visual": {
+    "visualType": "pivotTable",
+    "query": {
+      "queryState": {
+        "Rows": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Object"
+                    }
+                  },
+                  "Property": "Database"
+                }
+              },
+              "queryRef": "Object.Database",
+              "nativeQueryRef": "Database1",
+              "active": true
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Object"
+                    }
+                  },
+                  "Property": "Schema"
+                }
+              },
+              "queryRef": "Object.Schema",
+              "nativeQueryRef": "Schema",
+              "active": true
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Object"
+                    }
+                  },
+                  "Property": "Object"
+                }
+              },
+              "queryRef": "Object.Object",
+              "nativeQueryRef": "Object",
+              "active": true
+            }
+          ]
+        },
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Elapsed time mS - Stored procedures - Query statistics"
+                }
+              },
+              "queryRef": "_Measures.Elapsed time mS - Stored procedures - Query statistics",
+              "nativeQueryRef": "Elapsed time mS",
+              "displayName": "Elapsed time mS"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Elapsed time mS pr. execution - Stored procedures - Query statistics"
+                }
+              },
+              "queryRef": "_Measures.Elapsed time mS pr. execution - Stored procedures - Query statistics",
+              "nativeQueryRef": "Elapsed time mS pr. exec.",
+              "displayName": "Elapsed time mS pr. exec."
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Execution count - Stored procedures - Query statistics"
+                }
+              },
+              "queryRef": "_Measures.Execution count - Stored procedures - Query statistics",
+              "nativeQueryRef": "Exec. count",
+              "displayName": "Exec. count"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "_Measures"
+                  }
+                },
+                "Property": "Elapsed time mS - Stored procedures - Query statistics"
+              }
+            },
+            "direction": "Descending"
+          }
+        ]
+      }
+    },
+    "expansionStates": [
+      {
+        "roles": [
+          "Rows"
+        ],
+        "levels": [
+          {
+            "queryRefs": [
+              "Object.Database"
+            ],
+            "isPinned": true
+          },
+          {
+            "queryRefs": [
+              "Object.Schema"
+            ],
+            "isPinned": true
+          },
+          {
+            "queryRefs": [
+              "Object.Object"
+            ],
+            "isCollapsed": true,
+            "isPinned": true
+          }
+        ],
+        "root": {}
+      }
+    ],
+    "objects": {
+      "columnHeaders": [
+        {
+          "properties": {
+            "autoSizeColumnWidth": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Stored procedures'"
+                }
+              }
+            },
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "81de9fcc9a513616aec4",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Object"
+              }
+            },
+            "Property": "Database"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "cb6dc3b38b216bec2534",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Object"
+              }
+            },
+            "Property": "Schema"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "d6672e1e76aa452425a9",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Object"
+              }
+            },
+            "Property": "Object"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "f238a6c82878d286890b",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "_Measures"
+              }
+            },
+            "Property": "Execution count - Stored procedures - Query statistics"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "0f41f4afb2ad917d03aa",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "_Measures"
+              }
+            },
+            "Property": "Elapsed time mS pr. execution - Stored procedures - Query statistics"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "2d63769878c870b48708",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "_Measures"
+              }
+            },
+            "Property": "Elapsed time mS - Stored procedures - Query statistics"
+          }
+        },
+        "type": "Advanced"
+      }
+    ]
+  }
+}

@@ -115,14 +115,6 @@ table 'Plan guides'
 
 		annotation SummarizationSetBy = User
 
-	column Message
-		dataType: string
-		lineageTag: af496a72-5989-4aeb-a260-f091122b123c
-		summarizeBy: none
-		sourceColumn: Message
-
-		annotation SummarizationSetBy = Automatic
-
 	column DatabaseKey
 		dataType: int64
 		isHidden
@@ -155,6 +147,26 @@ table 'Plan guides'
 
 		annotation SummarizationSetBy = Automatic
 
+	column ErrorMessage
+		dataType: boolean
+		isHidden
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 1ef47667-98ee-4ab9-9fbd-903de70a2edc
+		summarizeBy: none
+		sourceColumn: ErrorMessage
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Error message'
+		dataType: string
+		lineageTag: 45991a8c-891b-49bf-a57b-deb685277680
+		summarizeBy: none
+		sourceColumn: Error message
+
+		annotation SummarizationSetBy = Automatic
+
 	partition 'Plan guides' = m
 		mode: import
 		queryGroup: Facts
@@ -176,7 +188,8 @@ table 'Plan guides'
 				      "Hints", 
 				      "IsDisabled", 
 				      "IsDisabledTxt", 
-				      "Message",
+				      "ErrorMessage",
+				      "ErrorMessageTxt",
 				      "ModifyDate", 
 				      "MsgNum", 
 				      "Name", 
@@ -196,6 +209,7 @@ table 'Plan guides'
 				    {
 				      {"CreateDate", "Created date"}, 
 				      {"ModifyDate", "Modified date"}, 
+				      {"ErrorMessageTxt", "Error message"}, 
 				      {"IsDisabledTxt", "Is disabled"}, 
 				      {"PlanGuideId", "Plan guide id"}, 
 				      {"QueryText", "Query text"}, 

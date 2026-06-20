@@ -1,5 +1,5 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/report/3.1.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/report/3.3.0/schema.json",
   "themeCollection": {
     "baseTheme": {
       "name": "CY24SU06",
@@ -11,11 +11,11 @@
       "type": "SharedResources"
     },
     "customTheme": {
-      "name": "FHSQLMonitor8706358334452575.json",
+      "name": "FHSQLMonitor1913828500181617.json",
       "reportVersionAtImport": {
-        "visual": "2.6.0",
-        "report": "3.1.0",
-        "page": "2.3.0"
+        "visual": "2.9.0",
+        "report": "3.3.0",
+        "page": "2.3.1"
       },
       "type": "RegisteredResources"
     }
@@ -54,6 +54,11 @@
       "type": "RegisteredResources",
       "items": [
         {
+          "name": "Background-FrontPage3908259055121347.svg",
+          "path": "Background-FrontPage3908259055121347.svg",
+          "type": "Image"
+        },
+        {
           "name": "Background.svg",
           "path": "Background.svg",
           "type": "Image"
@@ -62,6 +67,11 @@
           "name": "Doc.svg",
           "path": "Doc.svg",
           "type": "Image"
+        },
+        {
+          "name": "FHSQLMonitor1913828500181617.json",
+          "path": "FHSQLMonitor1913828500181617.json",
+          "type": "CustomTheme"
         },
         {
           "name": "Home.svg",
@@ -82,16 +92,6 @@
           "name": "Plus.svg",
           "path": "Plus.svg",
           "type": "Image"
-        },
-        {
-          "name": "Background-FrontPage47826618397815934.svg",
-          "path": "Background-FrontPage47826618397815934.svg",
-          "type": "Image"
-        },
-        {
-          "name": "FHSQLMonitor8706358334452575.json",
-          "path": "FHSQLMonitor8706358334452575.json",
-          "type": "CustomTheme"
         }
       ]
     },

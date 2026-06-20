@@ -46,7 +46,7 @@ table Database
 				    Table.SelectRows(
 				      #"Data load", 
 				      each List.Contains(
-				        {"Backup", "Blocks and deadlocks", "CPU", "Database configuration", "Log shipping", "Plan guides", "Triggers", "Who is active"}, 
+				        {"Backup", "Blocks and deadlocks", "CPU", "Database configuration", "Log shipping", "Memory", "Plan guides", "Triggers", "Who is active"}, 
 				        [Service]
 				      )
 				        and List.Contains({"Yes"}, [DataLoad])

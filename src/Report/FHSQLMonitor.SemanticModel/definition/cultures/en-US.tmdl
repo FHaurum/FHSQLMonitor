@@ -1421,7 +1421,7 @@ cultureInfo en-US
 			    "connection": {
 			      "Definition": {
 			        "Binding": {
-			          "ConceptualEntity": "Connections"
+			          "ConceptualEntity": "Sessions"
 			        }
 			      },
 			      "State": "Generated",
@@ -1539,7 +1539,7 @@ cultureInfo en-US
 			    "connection.connection_count": {
 			      "Definition": {
 			        "Binding": {
-			          "ConceptualEntity": "Connections",
+			          "ConceptualEntity": "Sessions",
 			          "ConceptualProperty": "ConnectionCount"
 			        }
 			      },
@@ -1709,148 +1709,10 @@ cultureInfo en-US
 			        }
 			      ]
 			    },
-			    "connection.connection_info_key": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "Connections",
-			          "ConceptualProperty": "ConnectionInfoKey"
-			        }
-			      },
-			      "State": "Generated",
-			      "Visibility": {
-			        "Value": "Hidden"
-			      },
-			      "Terms": [
-			        {
-			          "connection info key": {
-			            "State": "Generated"
-			          }
-			        },
-			        {
-			          "ConnectionInfoKey": {
-			            "Type": "Noun",
-			            "State": "Generated",
-			            "Weight": 0.99
-			          }
-			        },
-			        {
-			          "key": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "info key": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "connection info solution": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.482
-			          }
-			        },
-			        {
-			          "connection info explanation": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.482
-			          }
-			        },
-			        {
-			          "connection info basis": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.482
-			          }
-			        },
-			        {
-			          "connection info recipe": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.482
-			          }
-			        },
-			        {
-			          "connection info interpretation": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.482
-			          }
-			        },
-			        {
-			          "connection info resolution": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.482
-			          }
-			        },
-			        {
-			          "main": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.476
-			          }
-			        },
-			        {
-			          "basic": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.476
-			          }
-			        },
-			        {
-			          "fundamental": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.476
-			          }
-			        },
-			        {
-			          "central": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.476
-			          }
-			        }
-			      ]
-			    },
 			    "connection.date": {
 			      "Definition": {
 			        "Binding": {
-			          "ConceptualEntity": "Connections",
+			          "ConceptualEntity": "Sessions",
 			          "ConceptualProperty": "Date"
 			        }
 			      },
@@ -1890,7 +1752,7 @@ cultureInfo en-US
 			    "connection.is_user_process": {
 			      "Definition": {
 			        "Binding": {
-			          "ConceptualEntity": "Connections",
+			          "ConceptualEntity": "Sessions",
 			          "ConceptualProperty": "IsUserProcess"
 			        }
 			      },
@@ -2316,7 +2178,7 @@ cultureInfo en-US
 			    "connection.time_key": {
 			      "Definition": {
 			        "Binding": {
-			          "ConceptualEntity": "Connections",
+			          "ConceptualEntity": "Sessions",
 			          "ConceptualProperty": "TimeKey"
 			        }
 			      },
@@ -2448,7 +2310,7 @@ cultureInfo en-US
 			    "connection_info": {
 			      "Definition": {
 			        "Binding": {
-			          "ConceptualEntity": "Connection info"
+			          "ConceptualEntity": "Session info"
 			        }
 			      },
 			      "State": "Generated",
@@ -2566,148 +2428,10 @@ cultureInfo en-US
 			        }
 			      ]
 			    },
-			    "connection_info.connection_info_key": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "Connection info",
-			          "ConceptualProperty": "ConnectionInfoKey"
-			        }
-			      },
-			      "State": "Generated",
-			      "Visibility": {
-			        "Value": "Hidden"
-			      },
-			      "Terms": [
-			        {
-			          "connection info key": {
-			            "State": "Generated"
-			          }
-			        },
-			        {
-			          "ConnectionInfoKey": {
-			            "Type": "Noun",
-			            "State": "Generated",
-			            "Weight": 0.99
-			          }
-			        },
-			        {
-			          "key": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "info key": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "connection info solution": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.482
-			          }
-			        },
-			        {
-			          "connection info explanation": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.482
-			          }
-			        },
-			        {
-			          "connection info basis": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.482
-			          }
-			        },
-			        {
-			          "connection info recipe": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.482
-			          }
-			        },
-			        {
-			          "connection info interpretation": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.482
-			          }
-			        },
-			        {
-			          "connection info resolution": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.482
-			          }
-			        },
-			        {
-			          "main": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.476
-			          }
-			        },
-			        {
-			          "basic": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.476
-			          }
-			        },
-			        {
-			          "fundamental": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.476
-			          }
-			        },
-			        {
-			          "central": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.476
-			          }
-			        }
-			      ]
-			    },
 			    "connection_info.database": {
 			      "Definition": {
 			        "Binding": {
-			          "ConceptualEntity": "Connection info",
+			          "ConceptualEntity": "Session info",
 			          "ConceptualProperty": "Database"
 			        }
 			      },
@@ -2793,7 +2517,7 @@ cultureInfo en-US
 			    "connection_info.host": {
 			      "Definition": {
 			        "Binding": {
-			          "ConceptualEntity": "Connection info",
+			          "ConceptualEntity": "Session info",
 			          "ConceptualProperty": "Host"
 			        }
 			      },
@@ -2909,7 +2633,7 @@ cultureInfo en-US
 			    "connection_info.program": {
 			      "Definition": {
 			        "Binding": {
-			          "ConceptualEntity": "Connection info",
+			          "ConceptualEntity": "Session info",
 			          "ConceptualProperty": "Program"
 			        }
 			      },
@@ -14575,122 +14299,6 @@ cultureInfo en-US
 			              "Agent": "Thesaurus"
 			            },
 			            "Weight": 0.476
-			          }
-			        }
-			      ]
-			    },
-			    "plan_guide.message": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "Plan guides",
-			          "ConceptualProperty": "Message"
-			        }
-			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "message": {
-			            "State": "Generated"
-			          }
-			        },
-			        {
-			          "memo": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.491
-			          }
-			        },
-			        {
-			          "memorandum": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.491
-			          }
-			        },
-			        {
-			          "missive": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.491
-			          }
-			        },
-			        {
-			          "communication": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.476
-			          }
-			        },
-			        {
-			          "note": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.476
-			          }
-			        },
-			        {
-			          "letter": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.476
-			          }
-			        },
-			        {
-			          "dispatch": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.476
-			          }
-			        },
-			        {
-			          "significance": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.466
-			          }
-			        },
-			        {
-			          "idea": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.466
-			          }
-			        },
-			        {
-			          "implication": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.466
 			          }
 			        }
 			      ]
@@ -28062,7 +27670,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Filters are not applied"
+			          "ConceptualProperty": "Filters are not applied text"
 			        }
 			      },
 			      "State": "Generated",
@@ -28131,7 +27739,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Front page last refresh"
+			          "ConceptualProperty": "Last refresh - Front page"
 			        }
 			      },
 			      "State": "Generated",
@@ -28265,7 +27873,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Front page parameters text"
+			          "ConceptualProperty": "Parameters text - Front page"
 			        }
 			      },
 			      "State": "Generated",
@@ -28399,7 +28007,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Front page version text"
+			          "ConceptualProperty": "Version text - Front page"
 			        }
 			      },
 			      "State": "Generated",
@@ -28951,7 +28559,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Is disabled - Plan guides"
+			          "ConceptualProperty": "Is disabled - Flag - Plan guides"
 			        }
 			      },
 			      "State": "Generated",
@@ -29091,7 +28699,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Is disabled flag - Triggers"
+			          "ConceptualProperty": "Is disabled - Flag - Triggers"
 			        }
 			      },
 			      "State": "Generated",
@@ -29125,7 +28733,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Is filters applied - CPU"
+			          "ConceptualProperty": "Is filters applied - Flag - CPU"
 			        }
 			      },
 			      "State": "Generated",
@@ -29147,7 +28755,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Is filters applied - Always On performance"
+			          "ConceptualProperty": "Is filters applied - Flag - Always On performance"
 			        }
 			      },
 			      "State": "Generated",
@@ -29169,7 +28777,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Is filters applied - Connections"
+			          "ConceptualProperty": "Is filters applied - Flag - Connections"
 			        }
 			      },
 			      "State": "Generated",
@@ -29291,7 +28899,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Is filters applied - Database IO"
+			          "ConceptualProperty": "Is filters applied - Flag - Database IO"
 			        }
 			      },
 			      "State": "Generated",
@@ -29313,7 +28921,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Is filters applied - Database size"
+			          "ConceptualProperty": "Is filters applied - Flag - Database size"
 			        }
 			      },
 			      "State": "Generated",
@@ -29425,7 +29033,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Is filters applied - Index leaf statistics"
+			          "ConceptualProperty": "Is filters applied - Flag - Index leaf statistics"
 			        }
 			      },
 			      "State": "Generated",
@@ -29447,7 +29055,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Is filters applied - Index optimize"
+			          "ConceptualProperty": "Is filters applied - Flag - Index optimize"
 			        }
 			      },
 			      "State": "Generated",
@@ -29569,7 +29177,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Is filters applied - Index usage"
+			          "ConceptualProperty": "Is filters applied - Flag - Index usage"
 			        }
 			      },
 			      "State": "Generated",
@@ -29691,7 +29299,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Is filters applied - Lock statistics"
+			          "ConceptualProperty": "Is filters applied - Flag - Lock statistics"
 			        }
 			      },
 			      "State": "Generated",
@@ -29813,7 +29421,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Is filters applied - Performance statistics"
+			          "ConceptualProperty": "Is filters applied - Flag - Performance statistics"
 			        }
 			      },
 			      "State": "Generated",
@@ -29935,7 +29543,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Is filters applied - Query statistics"
+			          "ConceptualProperty": "Is filters applied - Flag - Query statistics"
 			        }
 			      },
 			      "State": "Generated",
@@ -30057,7 +29665,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Is filters applied - Resource Governor"
+			          "ConceptualProperty": "Is filters applied - Flag - Resource Governor"
 			        }
 			      },
 			      "State": "Generated",
@@ -30169,7 +29777,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Is filters applied - Table size"
+			          "ConceptualProperty": "Is filters applied - Flag - Table size"
 			        }
 			      },
 			      "State": "Generated",
@@ -30281,7 +29889,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Is filters applied - Wait statistics"
+			          "ConceptualProperty": "Is filters applied - Flag - Wait statistics"
 			        }
 			      },
 			      "State": "Generated",
@@ -30403,7 +30011,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Is filters applied - Plan guides"
+			          "ConceptualProperty": "Is filters applied - Flag - Plan guides"
 			        }
 			      },
 			      "State": "Generated",
@@ -30525,7 +30133,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Is filters applied - Statistics"
+			          "ConceptualProperty": "Is filters applied - Flag - Statistics"
 			        }
 			      },
 			      "State": "Generated",
@@ -30647,7 +30255,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Is filters applied - Triggers"
+			          "ConceptualProperty": "Is filters applied - Flag - Triggers"
 			        }
 			      },
 			      "State": "Generated",
@@ -30669,7 +30277,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Is MS shipped flag - Triggers"
+			          "ConceptualProperty": "Is MS shipped - Flag - Triggers"
 			        }
 			      },
 			      "State": "Generated",
@@ -30691,7 +30299,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Is not for replication flag - Triggers"
+			          "ConceptualProperty": "Is not for replication - Flag - Triggers"
 			        }
 			      },
 			      "State": "Generated",
@@ -30713,7 +30321,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Info last refresh"
+			          "ConceptualProperty": "Last refresh - Report pages"
 			        }
 			      },
 			      "State": "Generated",
@@ -41161,2000 +40769,6 @@ cultureInfo en-US
 			              "Agent": "PowerBI.VisualColumnRename"
 			            },
 			            "Weight": 0.9
-			          }
-			        }
-			      ]
-			    },
-			    "v_Measures_measure.open_filter_button_tooltip__CPU": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Open filter button tooltip - CPU"
-			        }
-			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "open filter button tooltip - CPU": {
-			            "State": "Generated"
-			          }
-			        },
-			        {
-			          "open filter button tooltip CPU": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "tooltip CPU": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "button tooltip CPU": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "filter button tooltip CPU": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        }
-			      ]
-			    },
-			    "v_Measures_measure.open_filter_button_tooltip__always_on_traffic": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Open filter button tooltip - Always On performance"
-			        }
-			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "open filter button tooltip - always on traffic": {
-			            "State": "Generated"
-			          }
-			        },
-			        {
-			          "open filter button tooltip always on traffic": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        }
-			      ]
-			    },
-			    "v_Measures_measure.open_filter_button_tooltip__connections": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Open filter button tooltip - Connections"
-			        }
-			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "open filter button tooltip - connections": {
-			            "State": "Generated"
-			          }
-			        },
-			        {
-			          "open filter button tooltip connections": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "connections": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "tooltip connections": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "button tooltip connections": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "filter button tooltip connections": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "open filter button tooltip acquaintance": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.52
-			          }
-			        },
-			        {
-			          "open filter button tooltip friend": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.52
-			          }
-			        },
-			        {
-			          "filter button tooltip acquaintance": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.514
-			          }
-			        },
-			        {
-			          "filter button tooltip friend": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.514
-			          }
-			        },
-			        {
-			          "button tooltip acquaintance": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.508
-			          }
-			        },
-			        {
-			          "button tooltip friend": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.508
-			          }
-			        },
-			        {
-			          "open filter button tooltip influence": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.504
-			          }
-			        },
-			        {
-			          "open filter button tooltip network": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.504
-			          }
-			        },
-			        {
-			          "open filter button tooltip contact": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.504
-			          }
-			        },
-			        {
-			          "open filter button tooltip associate": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.504
-			          }
-			        }
-			      ]
-			    },
-			    "v_Measures_measure.open_filter_button_tooltip__database_IO": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Open filter button tooltip - Database IO"
-			        }
-			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "open filter button tooltip - database IO": {
-			            "State": "Generated"
-			          }
-			        },
-			        {
-			          "open filter button tooltip database IO": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "IO": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "database IO": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "tooltip database IO": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "button tooltip database IO": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "filter button tooltip database IO": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        }
-			      ]
-			    },
-			    "v_Measures_measure.open_filter_button_tooltip__database_size": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Open filter button tooltip - Database size"
-			        }
-			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "open filter button tooltip - database size": {
-			            "State": "Generated"
-			          }
-			        },
-			        {
-			          "open filter button tooltip database size": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "size": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "database size": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "tooltip database size": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "button tooltip database size": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "filter button tooltip database size": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "filter button tooltip database extent": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.52
-			          }
-			        },
-			        {
-			          "filter button tooltip database magnitude": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.52
-			          }
-			        },
-			        {
-			          "button tooltip database extent": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.514
-			          }
-			        },
-			        {
-			          "button tooltip database magnitude": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.514
-			          }
-			        },
-			        {
-			          "tooltip database extent": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.508
-			          }
-			        },
-			        {
-			          "tooltip database magnitude": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.508
-			          }
-			        },
-			        {
-			          "filter button tooltip database scope": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.504
-			          }
-			        },
-			        {
-			          "database extent": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.5
-			          }
-			        },
-			        {
-			          "database magnitude": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.5
-			          }
-			        },
-			        {
-			          "button tooltip database scope": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.499
-			          }
-			        }
-			      ]
-			    },
-			    "v_Measures_measure.open_filter_button_tooltip__index_leaf_statistics": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Open filter button tooltip - Index leaf statistics"
-			        }
-			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "open filter button tooltip - index leaf statistics": {
-			            "State": "Generated"
-			          }
-			        },
-			        {
-			          "open filter button tooltip index leaf statistics": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "statistics": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "leaf statistics": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "index leaf statistics": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "tooltip index leaf statistics": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "button tooltip index leaf statistics": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "filter button tooltip index leaf statistics": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "button tooltip index leaf data": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.52
-			          }
-			        },
-			        {
-			          "tooltip index leaf data": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.514
-			          }
-			        },
-			        {
-			          "index leaf data": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.508
-			          }
-			        },
-			        {
-			          "button tooltip index leaf figure": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.504
-			          }
-			        },
-			        {
-			          "button tooltip index leaf number": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.504
-			          }
-			        },
-			        {
-			          "leaf data": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.5
-			          }
-			        },
-			        {
-			          "tooltip index leaf figure": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.499
-			          }
-			        },
-			        {
-			          "tooltip index leaf number": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.499
-			          }
-			        },
-			        {
-			          "button tooltip index leaf digit": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.494
-			          }
-			        },
-			        {
-			          "button tooltip index leaf measurement": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.494
-			          }
-			        }
-			      ]
-			    },
-			    "v_Measures_measure.open_filter_button_tooltip__index_optimize": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Open filter button tooltip - Index optimize"
-			        }
-			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "open filter button tooltip - index optimize": {
-			            "State": "Generated"
-			          }
-			        },
-			        {
-			          "open filter button tooltip index optimize": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        }
-			      ]
-			    },
-			    "v_Measures_measure.open_filter_button_tooltip__index_usage": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Open filter button tooltip - Index usage"
-			        }
-			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "open filter button tooltip - index usage": {
-			            "State": "Generated"
-			          }
-			        },
-			        {
-			          "open filter button tooltip index usage": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "usage": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "tooltip index usage": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "button tooltip index usage": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "filter button tooltip index usage": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "filter button tooltip index tradition": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.52
-			          }
-			        },
-			        {
-			          "filter button tooltip index procedure": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.52
-			          }
-			        },
-			        {
-			          "filter button tooltip index convention": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.52
-			          }
-			        },
-			        {
-			          "filter button tooltip index norm": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.52
-			          }
-			        },
-			        {
-			          "button tooltip index tradition": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.514
-			          }
-			        },
-			        {
-			          "button tooltip index procedure": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.514
-			          }
-			        },
-			        {
-			          "button tooltip index convention": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.514
-			          }
-			        },
-			        {
-			          "button tooltip index norm": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.514
-			          }
-			        },
-			        {
-			          "tooltip index tradition": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.508
-			          }
-			        },
-			        {
-			          "tooltip index procedure": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.508
-			          }
-			        }
-			      ]
-			    },
-			    "v_Measures_measure.open_filter_button_tooltip__lock_statistics": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Open filter button tooltip - Lock statistics"
-			        }
-			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "open filter button tooltip - lock statistics": {
-			            "State": "Generated"
-			          }
-			        },
-			        {
-			          "open filter button tooltip lock statistics": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "statistics": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "lock statistics": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "tooltip lock statistics": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "button tooltip lock statistics": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "filter button tooltip lock statistics": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "filter button tooltip lock data": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.52
-			          }
-			        },
-			        {
-			          "button tooltip lock data": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.514
-			          }
-			        },
-			        {
-			          "tooltip lock data": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.508
-			          }
-			        },
-			        {
-			          "filter button tooltip lock figure": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.504
-			          }
-			        },
-			        {
-			          "filter button tooltip lock number": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.504
-			          }
-			        },
-			        {
-			          "lock data": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.5
-			          }
-			        },
-			        {
-			          "button tooltip lock figure": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.499
-			          }
-			        },
-			        {
-			          "button tooltip lock number": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.499
-			          }
-			        },
-			        {
-			          "filter button tooltip lock digit": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.494
-			          }
-			        },
-			        {
-			          "filter button tooltip lock measurement": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.494
-			          }
-			        }
-			      ]
-			    },
-			    "v_Measures_measure.open_filter_button_tooltip__performance_statistics": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Open filter button tooltip - Performance statistics"
-			        }
-			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "open filter button tooltip - performance statistics": {
-			            "State": "Generated"
-			          }
-			        },
-			        {
-			          "open filter button tooltip performance statistics": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "statistics": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "performance statistics": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "tooltip performance statistics": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "button tooltip performance statistics": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "filter button tooltip performance statistics": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "filter button tooltip performance data": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.52
-			          }
-			        },
-			        {
-			          "button tooltip performance data": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.514
-			          }
-			        },
-			        {
-			          "tooltip performance data": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.508
-			          }
-			        },
-			        {
-			          "filter button tooltip performance figure": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.504
-			          }
-			        },
-			        {
-			          "filter button tooltip performance number": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.504
-			          }
-			        },
-			        {
-			          "performance data": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.5
-			          }
-			        },
-			        {
-			          "button tooltip performance figure": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.499
-			          }
-			        },
-			        {
-			          "button tooltip performance number": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.499
-			          }
-			        },
-			        {
-			          "filter button tooltip performance digit": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.494
-			          }
-			        },
-			        {
-			          "filter button tooltip performance measurement": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.494
-			          }
-			        }
-			      ]
-			    },
-			    "v_Measures_measure.open_filter_button_tooltip__plan_guides": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Open filter button tooltip - Plan guides"
-			        }
-			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "open filter button tooltip - plan guides": {
-			            "State": "Generated"
-			          }
-			        },
-			        {
-			          "open filter button tooltip plan guides": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "guides": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "plan guides": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "tooltip plan guides": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "button tooltip plan guides": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "filter button tooltip plan guides": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "filter button tooltip proposal guide": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.624
-			          }
-			        },
-			        {
-			          "filter button tooltip strategy guide": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.624
-			          }
-			        },
-			        {
-			          "filter button tooltip agenda guide": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.624
-			          }
-			        },
-			        {
-			          "filter button tooltip arrangement guide": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.624
-			          }
-			        },
-			        {
-			          "filter button tooltip idea guide": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.624
-			          }
-			        },
-			        {
-			          "filter button tooltip layout guide": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.624
-			          }
-			        },
-			        {
-			          "filter button tooltip policy guide": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.624
-			          }
-			        },
-			        {
-			          "filter button tooltip preparation guide": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.624
-			          }
-			        },
-			        {
-			          "button tooltip proposal guide": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.617
-			          }
-			        },
-			        {
-			          "button tooltip strategy guide": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.617
-			          }
-			        }
-			      ]
-			    },
-			    "v_Measures_measure.open_filter_button_tooltip__query_statistics": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Open filter button tooltip - Query statistics"
-			        }
-			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "open filter button tooltip - query statistics": {
-			            "State": "Generated"
-			          }
-			        },
-			        {
-			          "open filter button tooltip query statistics": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "statistics": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "query statistics": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "tooltip query statistics": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "button tooltip query statistics": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "filter button tooltip query statistics": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "filter button tooltip query data": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.52
-			          }
-			        },
-			        {
-			          "button tooltip query data": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.514
-			          }
-			        },
-			        {
-			          "tooltip query data": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.508
-			          }
-			        },
-			        {
-			          "filter button tooltip query figure": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.504
-			          }
-			        },
-			        {
-			          "filter button tooltip query number": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.504
-			          }
-			        },
-			        {
-			          "query data": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.5
-			          }
-			        },
-			        {
-			          "button tooltip query figure": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.499
-			          }
-			        },
-			        {
-			          "button tooltip query number": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.499
-			          }
-			        },
-			        {
-			          "filter button tooltip query digit": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.494
-			          }
-			        },
-			        {
-			          "filter button tooltip query measurement": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.494
-			          }
-			        }
-			      ]
-			    },
-			    "v_Measures_measure.open_filter_button_tooltip__resource_governor": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Open filter button tooltip - Resource Governor"
-			        }
-			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "open filter button tooltip - resource governor": {
-			            "State": "Generated"
-			          }
-			        },
-			        {
-			          "open filter button tooltip resource governor": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "governor": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "resource governor": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "tooltip resource governor": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "button tooltip resource governor": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "filter button tooltip resource governor": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "filter button tooltip resource director": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.52
-			          }
-			        },
-			        {
-			          "filter button tooltip resource ruler": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.52
-			          }
-			        },
-			        {
-			          "filter button tooltip resource manager": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.52
-			          }
-			        },
-			        {
-			          "filter button tooltip resource administrator": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.52
-			          }
-			        },
-			        {
-			          "filter button tooltip resource regulator": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.52
-			          }
-			        },
-			        {
-			          "filter button tooltip resource controller": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.52
-			          }
-			        },
-			        {
-			          "button tooltip resource director": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.514
-			          }
-			        },
-			        {
-			          "button tooltip resource ruler": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.514
-			          }
-			        },
-			        {
-			          "button tooltip resource manager": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.514
-			          }
-			        },
-			        {
-			          "button tooltip resource administrator": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.514
-			          }
-			        }
-			      ]
-			    },
-			    "v_Measures_measure.open_filter_button_tooltip__statistics": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Open filter button tooltip - Statistics"
-			        }
-			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "open filter button tooltip - statistics": {
-			            "State": "Generated"
-			          }
-			        },
-			        {
-			          "open filter button tooltip statistics": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "statistics": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "tooltip statistics": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "button tooltip statistics": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "filter button tooltip statistics": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "open filter button tooltip data": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.52
-			          }
-			        },
-			        {
-			          "filter button tooltip data": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.514
-			          }
-			        },
-			        {
-			          "button tooltip data": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.508
-			          }
-			        },
-			        {
-			          "open filter button tooltip figure": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.504
-			          }
-			        },
-			        {
-			          "open filter button tooltip number": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.504
-			          }
-			        },
-			        {
-			          "tooltip data": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.5
-			          }
-			        },
-			        {
-			          "filter button tooltip figure": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.499
-			          }
-			        },
-			        {
-			          "filter button tooltip number": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.499
-			          }
-			        },
-			        {
-			          "open filter button tooltip digit": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.494
-			          }
-			        },
-			        {
-			          "open filter button tooltip measurement": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.494
-			          }
-			        }
-			      ]
-			    },
-			    "v_Measures_measure.open_filter_button_tooltip__table_size": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Open filter button tooltip - Table size"
-			        }
-			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "open filter button tooltip - table size": {
-			            "State": "Generated"
-			          }
-			        },
-			        {
-			          "open filter button tooltip table size": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "size": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "table size": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "tooltip table size": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "button tooltip table size": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "filter button tooltip table size": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "filter button tooltip table extent": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.52
-			          }
-			        },
-			        {
-			          "filter button tooltip table magnitude": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.52
-			          }
-			        },
-			        {
-			          "button tooltip table extent": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.514
-			          }
-			        },
-			        {
-			          "button tooltip table magnitude": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.514
-			          }
-			        },
-			        {
-			          "tooltip table extent": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.508
-			          }
-			        },
-			        {
-			          "tooltip table magnitude": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.508
-			          }
-			        },
-			        {
-			          "filter button tooltip table scope": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.504
-			          }
-			        },
-			        {
-			          "table extent": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.5
-			          }
-			        },
-			        {
-			          "table magnitude": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.5
-			          }
-			        },
-			        {
-			          "button tooltip table scope": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.499
-			          }
-			        }
-			      ]
-			    },
-			    "v_Measures_measure.open_filter_button_tooltip__triggers": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Open filter button tooltip - Triggers"
-			        }
-			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "open filter button tooltip - triggers": {
-			            "State": "Generated"
-			          }
-			        },
-			        {
-			          "open filter button tooltip triggers": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "triggers": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "tooltip triggers": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "button tooltip triggers": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "filter button tooltip triggers": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        }
-			      ]
-			    },
-			    "v_Measures_measure.open_filter_button_tooltip__wait_statistics": {
-			      "Definition": {
-			        "Binding": {
-			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Open filter button tooltip - Wait statistics"
-			        }
-			      },
-			      "State": "Generated",
-			      "Terms": [
-			        {
-			          "open filter button tooltip - wait statistics": {
-			            "State": "Generated"
-			          }
-			        },
-			        {
-			          "open filter button tooltip wait statistics": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "statistics": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "wait statistics": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "tooltip wait statistics": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "button tooltip wait statistics": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "filter button tooltip wait statistics": {
-			            "State": "Generated",
-			            "Weight": 0.97
-			          }
-			        },
-			        {
-			          "filter button tooltip wait data": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.52
-			          }
-			        },
-			        {
-			          "button tooltip wait data": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.514
-			          }
-			        },
-			        {
-			          "tooltip wait data": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.508
-			          }
-			        },
-			        {
-			          "filter button tooltip wait figure": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.504
-			          }
-			        },
-			        {
-			          "filter button tooltip wait number": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.504
-			          }
-			        },
-			        {
-			          "wait data": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.5
-			          }
-			        },
-			        {
-			          "button tooltip wait figure": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.499
-			          }
-			        },
-			        {
-			          "button tooltip wait number": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.499
-			          }
-			        },
-			        {
-			          "filter button tooltip wait digit": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.494
-			          }
-			        },
-			        {
-			          "filter button tooltip wait measurement": {
-			            "Type": "Noun",
-			            "State": "Suggested",
-			            "Source": {
-			              "Agent": "Thesaurus"
-			            },
-			            "Weight": 0.494
 			          }
 			        }
 			      ]
@@ -61461,7 +59075,7 @@ cultureInfo en-US
 			      "Definition": {
 			        "Binding": {
 			          "ConceptualEntity": "_Measures",
-			          "ConceptualProperty": "Latest data file usage % flag - Database size"
+			          "ConceptualProperty": "Latest data file usage % - Flag - Database size"
 			        }
 			      },
 			      "State": "Generated"
@@ -61507,6 +59121,285 @@ cultureInfo en-US
 			          }
 			        }
 			      ]
+			    },
+			    "table_measures.avg__cached_size_mb__buffer_pool_usage": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Avg. cached size MB - Buffer pool usage"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Avg. cached size MB": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.avg__mb__memory_clerks": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Avg. MB - Memory clerks"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Avg. MB": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.show_filters_headers__memory": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Show filters Headers - Memory"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Filters": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.show_filters__memory": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Show filters - Memory"
+			        }
+			      },
+			      "State": "Generated"
+			    },
+			    "table_measures.max_connections__connections": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Max connections - Connections"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Max connections": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "instance_extended_events.extendedevent": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Instance extended events",
+			          "ConceptualProperty": "ExtendedEvent"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Event": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "instance_extended_events.createtime": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Instance extended events",
+			          "ConceptualProperty": "CreateTime"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Created": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.execution_count__stored_procedures__query_statistics": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Execution count - Stored procedures - Query statistics"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Exec. count": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.elapsed_time_ms_pr__execution__stored_procedures__query_statistics": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Elapsed time mS pr. execution - Stored procedures - Query statistics"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Elapsed time mS pr. exec.": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.elapsed_time_ms__stored_procedures__query_statistics": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Elapsed time mS - Stored procedures - Query statistics"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Elapsed time mS": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.show_filters_headers__stored_procedures__query_statistics": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Show filters Headers - Stored procedures - Query statistics"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Filters": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.show_filters__stored_procedures__query_statistics": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Show filters - Stored procedures - Query statistics"
+			        }
+			      },
+			      "State": "Generated"
+			    },
+			    "backup_status.duration": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "Backup status",
+			          "ConceptualProperty": "Duration"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Duration sec.": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.show_filters_headers__log_shipping_status": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Show filters Headers - Log shipping status"
+			        }
+			      },
+			      "State": "Generated",
+			      "Terms": [
+			        {
+			          "Filters": {
+			            "State": "Suggested",
+			            "Source": {
+			              "Type": "External",
+			              "Agent": "PowerBI.VisualColumnRename"
+			            },
+			            "Weight": 0.9
+			          }
+			        }
+			      ]
+			    },
+			    "table_measures.show_filters__log_shipping_status": {
+			      "Definition": {
+			        "Binding": {
+			          "ConceptualEntity": "_Measures",
+			          "ConceptualProperty": "Show filters - Log shipping status"
+			        }
+			      },
+			      "State": "Generated"
 			    }
 			  },
 			  "Relationships": {
@@ -61872,7 +59765,7 @@ cultureInfo en-US
 			    },
 			    "connection_has_connection_info": {
 			      "Binding": {
-			        "ConceptualEntity": "Connections"
+			        "ConceptualEntity": "Sessions"
 			      },
 			      "State": "Generated",
 			      "Roles": {
@@ -61890,7 +59783,7 @@ cultureInfo en-US
 			    },
 			    "connection_has_date": {
 			      "Binding": {
-			        "ConceptualEntity": "Connections"
+			        "ConceptualEntity": "Sessions"
 			      },
 			      "State": "Generated",
 			      "Roles": {
@@ -61908,7 +59801,7 @@ cultureInfo en-US
 			    },
 			    "connection_has_max_sessions__connections": {
 			      "Binding": {
-			        "ConceptualEntity": "Connections"
+			        "ConceptualEntity": "Sessions"
 			      },
 			      "State": "Generated",
 			      "Roles": {
@@ -61926,7 +59819,7 @@ cultureInfo en-US
 			    },
 			    "connection_has_min_sessions__connections": {
 			      "Binding": {
-			        "ConceptualEntity": "Connections"
+			        "ConceptualEntity": "Sessions"
 			      },
 			      "State": "Generated",
 			      "Roles": {
@@ -61944,7 +59837,7 @@ cultureInfo en-US
 			    },
 			    "connection_has_time": {
 			      "Binding": {
-			        "ConceptualEntity": "Connections"
+			        "ConceptualEntity": "Sessions"
 			      },
 			      "State": "Generated",
 			      "Roles": {
@@ -61962,7 +59855,7 @@ cultureInfo en-US
 			    },
 			    "connection_has_v_Measures_measure_avg_sessions__connections": {
 			      "Binding": {
-			        "ConceptualEntity": "Connections"
+			        "ConceptualEntity": "Sessions"
 			      },
 			      "State": "Generated",
 			      "Roles": {
@@ -61980,7 +59873,7 @@ cultureInfo en-US
 			    },
 			    "connection_has_v_Measures_measure_avg_system_sessions_latest_day__connections": {
 			      "Binding": {
-			        "ConceptualEntity": "Connections"
+			        "ConceptualEntity": "Sessions"
 			      },
 			      "State": "Generated",
 			      "Roles": {
@@ -61998,7 +59891,7 @@ cultureInfo en-US
 			    },
 			    "connection_has_v_Measures_measure_avg_user_sessions_latest_day__connections": {
 			      "Binding": {
-			        "ConceptualEntity": "Connections"
+			        "ConceptualEntity": "Sessions"
 			      },
 			      "State": "Generated",
 			      "Roles": {
@@ -62016,7 +59909,7 @@ cultureInfo en-US
 			    },
 			    "connection_has_v_Measures_measure_data_range__connections": {
 			      "Binding": {
-			        "ConceptualEntity": "Connections"
+			        "ConceptualEntity": "Sessions"
 			      },
 			      "State": "Generated",
 			      "Roles": {
@@ -62034,7 +59927,7 @@ cultureInfo en-US
 			    },
 			    "connection_has_v_Measures_measure_data_size_ratio_of_total__connections": {
 			      "Binding": {
-			        "ConceptualEntity": "Connections"
+			        "ConceptualEntity": "Sessions"
 			      },
 			      "State": "Generated",
 			      "Roles": {
@@ -62052,7 +59945,7 @@ cultureInfo en-US
 			    },
 			    "connection_has_v_Measures_measure_data_title__connections": {
 			      "Binding": {
-			        "ConceptualEntity": "Connections"
+			        "ConceptualEntity": "Sessions"
 			      },
 			      "State": "Generated",
 			      "Roles": {
@@ -62070,7 +59963,7 @@ cultureInfo en-US
 			    },
 			    "connection_has_v_Measures_measure_latest_sessions__connections": {
 			      "Binding": {
-			        "ConceptualEntity": "Connections"
+			        "ConceptualEntity": "Sessions"
 			      },
 			      "State": "Generated",
 			      "Roles": {
@@ -62088,7 +59981,7 @@ cultureInfo en-US
 			    },
 			    "connection_has_v_Measures_measure_latest_system_sessions__connections": {
 			      "Binding": {
-			        "ConceptualEntity": "Connections"
+			        "ConceptualEntity": "Sessions"
 			      },
 			      "State": "Generated",
 			      "Roles": {
@@ -62106,7 +59999,7 @@ cultureInfo en-US
 			    },
 			    "connection_has_v_Measures_measure_latest_user_sessions__connections": {
 			      "Binding": {
-			        "ConceptualEntity": "Connections"
+			        "ConceptualEntity": "Sessions"
 			      },
 			      "State": "Generated",
 			      "Roles": {
@@ -62124,7 +60017,7 @@ cultureInfo en-US
 			    },
 			    "connection_has_v_Measures_measure_past_avg_system_sessions__connections": {
 			      "Binding": {
-			        "ConceptualEntity": "Connections"
+			        "ConceptualEntity": "Sessions"
 			      },
 			      "State": "Generated",
 			      "Roles": {
@@ -62142,7 +60035,7 @@ cultureInfo en-US
 			    },
 			    "connection_has_v_Measures_measure_past_avg_user_sessions__connections": {
 			      "Binding": {
-			        "ConceptualEntity": "Connections"
+			        "ConceptualEntity": "Sessions"
 			      },
 			      "State": "Generated",
 			      "Roles": {
@@ -62160,7 +60053,7 @@ cultureInfo en-US
 			    },
 			    "connection_has_v_Measures_measure_past_date__connections": {
 			      "Binding": {
-			        "ConceptualEntity": "Connections"
+			        "ConceptualEntity": "Sessions"
 			      },
 			      "State": "Generated",
 			      "Roles": {
@@ -62178,7 +60071,7 @@ cultureInfo en-US
 			    },
 			    "connection_has_v_Measures_measure_system_sessions_ratio_of_total__connections": {
 			      "Binding": {
-			        "ConceptualEntity": "Connections"
+			        "ConceptualEntity": "Sessions"
 			      },
 			      "State": "Generated",
 			      "Roles": {
@@ -62196,7 +60089,7 @@ cultureInfo en-US
 			    },
 			    "connection_info_has_client_interface": {
 			      "Binding": {
-			        "ConceptualEntity": "Connection info"
+			        "ConceptualEntity": "Session info"
 			      },
 			      "State": "Generated",
 			      "Roles": {
@@ -62229,7 +60122,7 @@ cultureInfo en-US
 			    },
 			    "connection_info_has_database": {
 			      "Binding": {
-			        "ConceptualEntity": "Connection info"
+			        "ConceptualEntity": "Session info"
 			      },
 			      "State": "Generated",
 			      "Roles": {
@@ -62262,7 +60155,7 @@ cultureInfo en-US
 			    },
 			    "connection_info_has_host": {
 			      "Binding": {
-			        "ConceptualEntity": "Connection info"
+			        "ConceptualEntity": "Session info"
 			      },
 			      "State": "Generated",
 			      "Roles": {
@@ -62295,7 +60188,7 @@ cultureInfo en-US
 			    },
 			    "connection_info_has_program": {
 			      "Binding": {
-			        "ConceptualEntity": "Connection info"
+			        "ConceptualEntity": "Session info"
 			      },
 			      "State": "Generated",
 			      "Roles": {

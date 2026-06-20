@@ -1,12 +1,13 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.3.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.9.0/schema.json",
   "name": "3ad2c713d4caf73c695d",
   "position": {
     "x": 10,
     "y": 355,
     "z": 3000,
     "height": 245,
-    "width": 770
+    "width": 920,
+    "tabOrder": 5000
   },
   "visualGroup": {
     "displayName": "Performance",

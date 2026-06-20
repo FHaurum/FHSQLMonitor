@@ -44,10 +44,15 @@ table 'Agent alerts'
 
 	column Indicator = ```
 			
-			IF ( 'Agent alerts'[AlertExists] = 0, UNICHAR ( 128993 ), UNICHAR ( 128994 ) )
+			IF (
+			    'Agent alerts'[AlertExists] = 0,
+			    _indicatorCircle ( _indicatorWarningColor1 () ),
+			    _indicatorCircle ( _indicatorOKColor2 () )
+			)
 			
 			```
 		lineageTag: ee96faa9-7f18-4867-81c3-4c74bb1d0834
+		dataCategory: ImageUrl
 		summarizeBy: none
 
 		annotation SummarizationSetBy = Automatic

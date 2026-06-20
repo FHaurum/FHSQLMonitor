@@ -70,7 +70,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.12.0';
+		SET @version = '2.13.0';
 
 		SET @DEFAULT_SEVERITY_LEVEL = 17;
 
@@ -3180,6 +3180,32 @@ ELSE BEGIN
 						END;
 
 						--
+						-- Get Extended events configuration
+						--
+						BEGIN
+							INSERT INTO #inventory(Query, Category, [Key], Value)
+							SELECT 30 AS Query, unpvt.SessionName AS Category, unpvt.K, unpvt.V
+							FROM (
+
+								SELECT
+									ses.name AS SessionName,
+									CAST(CASE
+										WHEN dxs.address IS NOT NULL THEN ''Running''
+										ELSE ''Stopped''
+									END AS nvarchar(max)) AS State,
+									CONVERT(nvarchar(max), dxs.create_time, 126) AS CreateTime
+								FROM sys.server_event_sessions AS ses
+								LEFT OUTER JOIN sys.dm_xe_sessions AS dxs ON (ses.name = dxs.name)
+							) AS p
+							UNPIVOT(
+								V FOR K IN (
+									p.State
+									,p.CreateTime
+								)
+							) AS unpvt OPTION (RECOMPILE);
+						END;
+
+						--
 						-- Remove records where Value is NULL
 						--
 						BEGIN
@@ -3763,7 +3789,8 @@ ELSE BEGIN
 											,CAST(el.LogDate AS date)	AS Date
 										FROM dbo.fhsmErrorLog AS el
 										WHERE (el.Heartbeat = 0) AND (el.Severity >= 0)
-											AND (DATEDIFF(DAY, el.LogDate, (SELECT MAX(el2.LogDate) FROM dbo.fhsmErrorLog AS el2)) < '' + CAST(@days AS nvarchar) + '');
+											AND (DATEDIFF(DAY, el.LogDate, (SELECT MAX(el2.LogDate) FROM dbo.fhsmErrorLog AS el2)) < '' + CAST(@days AS nvarchar) + '')
+										ORDER BY el.LogDate DESC;
 								'';
 								EXEC(@stmt);
 							END;
@@ -3860,7 +3887,8 @@ ELSE BEGIN
 											,CAST(el.LogDate AS date)	AS Date
 										FROM dbo.fhsmErrorLog AS el
 										WHERE (el.Heartbeat = 0) AND (el.Severity < 0)
-											AND (DATEDIFF(DAY, el.LogDate, (SELECT MAX(el2.LogDate) FROM dbo.fhsmErrorLog AS el2)) < '' + CAST(@days AS nvarchar) + '');
+											AND (DATEDIFF(DAY, el.LogDate, (SELECT MAX(el2.LogDate) FROM dbo.fhsmErrorLog AS el2)) < '' + CAST(@days AS nvarchar) + '')
+										ORDER BY el.LogDate DESC;
 								'';
 								EXEC(@stmt);
 							END;
@@ -4400,6 +4428,55 @@ ELSE BEGIN
 			--
 			BEGIN
 				SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Instance dump files');
+				SET @objName = PARSENAME(@objectName, 1);
+				SET @schName = PARSENAME(@objectName, 2);
+
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMVersion', @propertyValue = @version;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreated', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 0, @propertyName = 'FHSMCreatedBy', @propertyValue = @myUserName;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModified', @propertyValue = @nowUTCStr;
+				EXEC dbo.fhsmSPExtendedProperties @objectType = 'View', @level0name = @schName, @level1name = @objName, @updateIfExists = 1, @propertyName = 'FHSMModifiedBy', @propertyValue = @myUserName;
+			END;
+		END;
+
+		--
+		-- Create fact view @pbiSchema.[Instance Extended Events]
+		--
+		BEGIN
+			BEGIN
+				SET @stmt = '
+					IF OBJECT_ID(''' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Instance Extended Events') + ''', ''V'') IS NULL
+					BEGIN
+						EXEC(''CREATE VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Instance Extended Events') + ' AS SELECT ''''dummy'''' AS Txt'');
+					END;
+				';
+				EXEC(@stmt);
+
+				SET @stmt = '
+					ALTER VIEW ' + QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Instance Extended Events') + '
+					AS
+						SELECT
+							pvt.Category AS ExtendedEvent
+							,pvt.State
+							,REVERSE(SUBSTRING(REVERSE(pvt.CreateTime), CHARINDEX(''.'', REVERSE(pvt.CreateTime)) + 1, LEN(pvt.CreateTime))) AS CreateTime
+						FROM (
+							SELECT iState.Category, iState.[Key], iState.Value AS _Value_
+							FROM dbo.fhsmInstanceState AS iState
+							WHERE (iState.Query = 30) AND (iState.ValidTo = ''9999-12-31T23:59:59'')
+						) AS p
+						PIVOT (
+							MAX(_Value_)
+							FOR [Key] IN ([State], [CreateTime])
+						) AS pvt
+					';
+				EXEC(@stmt);
+			END;
+
+			--
+			-- Register extended properties on fact view @pbiSchema.[Instance Extended Events]
+			--
+			BEGIN
+				SET @objectName = QUOTENAME(@pbiSchema) + '.' + QUOTENAME('Instance Extended Events');
 				SET @objName = PARSENAME(@objectName, 1);
 				SET @schName = PARSENAME(@objectName, 2);
 

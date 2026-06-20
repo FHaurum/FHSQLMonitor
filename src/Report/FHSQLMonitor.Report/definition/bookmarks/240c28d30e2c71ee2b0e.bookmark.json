@@ -1,5 +1,5 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/bookmark/1.4.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/bookmark/2.1.0/schema.json",
   "displayName": "Filter panel closed  - Log shipping configuration",
   "name": "240c28d30e2c71ee2b0e",
   "options": {
@@ -34,7 +34,7 @@
                 "From": [
                   {
                     "Name": "d",
-                    "Entity": "Documentation - report pages",
+                    "Entity": "Report pages",
                     "Type": 0
                   }
                 ],
@@ -72,7 +72,7 @@
                 "Column": {
                   "Expression": {
                     "SourceRef": {
-                      "Entity": "Documentation - report pages"
+                      "Entity": "Report pages"
                     }
                   },
                   "Property": "Page"
@@ -467,7 +467,7 @@
                           "Entity": "_Measures"
                         }
                       },
-                      "Property": "Info last refresh"
+                      "Property": "Last refresh - Report pages"
                     }
                   },
                   "howCreated": 0

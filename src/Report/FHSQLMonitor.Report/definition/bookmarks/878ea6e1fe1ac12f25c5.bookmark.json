@@ -1,5 +1,5 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/bookmark/1.4.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/bookmark/2.1.0/schema.json",
   "displayName": "Filter panel opened - Connections",
   "name": "878ea6e1fe1ac12f25c5",
   "options": {
@@ -70,7 +70,7 @@
                     "Column": {
                       "Expression": {
                         "SourceRef": {
-                          "Entity": "Connection info"
+                          "Entity": "Session info"
                         }
                       },
                       "Property": "Database"
@@ -85,7 +85,7 @@
                     "Column": {
                       "Expression": {
                         "SourceRef": {
-                          "Entity": "Connection info"
+                          "Entity": "Session info"
                         }
                       },
                       "Property": "Program"
@@ -100,7 +100,7 @@
                     "Column": {
                       "Expression": {
                         "SourceRef": {
-                          "Entity": "Connection info"
+                          "Entity": "Session info"
                         }
                       },
                       "Property": "Host"
@@ -254,7 +254,7 @@
                     "Column": {
                       "Expression": {
                         "SourceRef": {
-                          "Entity": "Connection info"
+                          "Entity": "Session info"
                         }
                       },
                       "Property": "Database"
@@ -476,7 +476,7 @@
                           "Entity": "_Measures"
                         }
                       },
-                      "Property": "Info last refresh"
+                      "Property": "Last refresh - Report pages"
                     }
                   },
                   "howCreated": 0
@@ -758,7 +758,7 @@
                     "Column": {
                       "Expression": {
                         "SourceRef": {
-                          "Entity": "Connection info"
+                          "Entity": "Session info"
                         }
                       },
                       "Property": "Database"
@@ -830,7 +830,7 @@
                     "Column": {
                       "Expression": {
                         "SourceRef": {
-                          "Entity": "Connection info"
+                          "Entity": "Session info"
                         }
                       },
                       "Property": "Database"
@@ -948,7 +948,7 @@
                     "Column": {
                       "Expression": {
                         "SourceRef": {
-                          "Entity": "Connection info"
+                          "Entity": "Session info"
                         }
                       },
                       "Property": "Host"
@@ -1020,7 +1020,7 @@
                     "Column": {
                       "Expression": {
                         "SourceRef": {
-                          "Entity": "Connection info"
+                          "Entity": "Session info"
                         }
                       },
                       "Property": "Host"
@@ -1040,7 +1040,7 @@
                     "Column": {
                       "Expression": {
                         "SourceRef": {
-                          "Entity": "Connection info"
+                          "Entity": "Session info"
                         }
                       },
                       "Property": "Program"
@@ -1112,7 +1112,7 @@
                     "Column": {
                       "Expression": {
                         "SourceRef": {
-                          "Entity": "Connection info"
+                          "Entity": "Session info"
                         }
                       },
                       "Property": "Program"

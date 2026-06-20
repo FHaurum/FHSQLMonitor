@@ -1,5 +1,5 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/bookmark/1.4.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/bookmark/2.1.0/schema.json",
   "displayName": "Filter panel opened - Index usage",
   "name": "6ae9f050909181290faf",
   "options": {
@@ -440,7 +440,7 @@
                           "Entity": "_Measures"
                         }
                       },
-                      "Property": "Info last refresh"
+                      "Property": "Last refresh - Report pages"
                     }
                   },
                   "howCreated": 0

@@ -1,35 +1,20 @@
 table Connections
-	lineageTag: 216132ac-6fa1-4eb0-aa30-4b09dda2fb1a
+	lineageTag: c86da079-3b10-41e9-82ca-fbc2568a8f86
 
-	column IsUserProcess
-		dataType: boolean
-		isHidden
-		formatString: """TRUE"";""TRUE"";""FALSE"""
-		lineageTag: 15d19c35-86df-42c4-8c2c-af9a0990549d
-		summarizeBy: none
-		sourceColumn: IsUserProcess
-
-		changedProperty = IsHidden
+	column NumberOfConnections
+		dataType: int64
+		formatString: 0
+		lineageTag: 7ca7d58d-a13b-4752-a2e8-9e115ed4962c
+		summarizeBy: sum
+		sourceColumn: NumberOfConnections
 
 		annotation SummarizationSetBy = Automatic
-
-	column ConnectionCount
-		dataType: int64
-		isHidden
-		formatString: 0
-		lineageTag: b410ed99-b90d-434a-8f7a-8dd9b1d478ae
-		summarizeBy: none
-		sourceColumn: ConnectionCount
-
-		changedProperty = IsHidden
-
-		annotation SummarizationSetBy = User
 
 	column Date
 		dataType: dateTime
 		isHidden
 		formatString: Long Date
-		lineageTag: df0e6259-c740-4fa1-9c1d-46900e43f29b
+		lineageTag: fcde8d0e-8d7a-4bd6-9016-8e4e42e1c7d2
 		summarizeBy: none
 		sourceColumn: Date
 
@@ -43,7 +28,7 @@ table Connections
 		dataType: int64
 		isHidden
 		formatString: 0
-		lineageTag: a9649101-fb34-4a0b-bead-95e7e4804f41
+		lineageTag: cb8c301e-656c-4aac-9018-07da3657c2b1
 		summarizeBy: none
 		sourceColumn: TimeKey
 
@@ -55,7 +40,7 @@ table Connections
 		dataType: int64
 		isHidden
 		formatString: 0
-		lineageTag: 0c76e511-e3f5-4634-9928-88855fceadee
+		lineageTag: da91b1c0-71f5-4059-af51-9984a6f1f7e4
 		summarizeBy: none
 		sourceColumn: ConnectionInfoKey
 
@@ -80,8 +65,7 @@ table Connections
 				  selectColumns = Table.SelectColumns(
 				    datasetToUse, 
 				    {
-				      "IsUserProcess", 
-				      "ConnectionCount", 
+				      "NumberOfConnections", 
 				      "Date", 
 				      "TimeKey", 
 				      "ConnectionInfoKey"
@@ -91,7 +75,7 @@ table Connections
 				  selectColumns
 				```
 
-	annotation PBI_ResultType = Table
-
 	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
 

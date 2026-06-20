@@ -1,5 +1,5 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.1.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.9.0/schema.json",
   "name": "23cb09d13b0c96406a22",
   "position": {
     "x": 810,
@@ -203,63 +203,13 @@
               "solid": {
                 "color": {
                   "expr": {
-                    "Conditional": {
-                      "Cases": [
-                        {
-                          "Condition": {
-                            "Comparison": {
-                              "ComparisonKind": 0,
-                              "Left": {
-                                "Measure": {
-                                  "Expression": {
-                                    "SourceRef": {
-                                      "Entity": "_Measures"
-                                    }
-                                  },
-                                  "Property": "Threshold alert enabled - Monitor secondary database - Log shipping configuration"
-                                }
-                              },
-                              "Right": {
-                                "Literal": {
-                                  "Value": "1D"
-                                }
-                              }
-                            }
-                          },
-                          "Value": {
-                            "Literal": {
-                              "Value": "'#99e3dd'"
-                            }
-                          }
-                        },
-                        {
-                          "Condition": {
-                            "Comparison": {
-                              "ComparisonKind": 0,
-                              "Left": {
-                                "Measure": {
-                                  "Expression": {
-                                    "SourceRef": {
-                                      "Entity": "_Measures"
-                                    }
-                                  },
-                                  "Property": "Threshold alert enabled - Monitor secondary database - Log shipping configuration"
-                                }
-                              },
-                              "Right": {
-                                "Literal": {
-                                  "Value": "0D"
-                                }
-                              }
-                            }
-                          },
-                          "Value": {
-                            "Literal": {
-                              "Value": "'#fec0bf'"
-                            }
-                          }
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "_Measures"
                         }
-                      ]
+                      },
+                      "Property": "Threshold alert enabled - Background color - Monitor secondary database - Log shipping configuration"
                     }
                   }
                 }
@@ -313,5 +263,135 @@
       ]
     },
     "drillFilterOtherVisuals": true
+  },
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "3bed098974ec39427ce0",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Server"
+              }
+            },
+            "Property": "Server"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "9392d14f50cb59b0d2da",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Database"
+              }
+            },
+            "Property": "Database - Drill-through for Log shipping history"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "acd69c03d209e8708e29",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Log shipping monitor secondary database state"
+              }
+            },
+            "Property": "Primary server"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "5557cbf80ad5b8ca0b9b",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Log shipping monitor secondary database state"
+              }
+            },
+            "Property": "Primary database"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "23b7e9b7aee1e99d1274",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Log shipping monitor secondary database state"
+              }
+            },
+            "Property": "Restore threshold"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "56902c4a9e69d00a91ce",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Log shipping monitor secondary database state"
+              }
+            },
+            "Property": "Threshold alert"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "ddabbd3e509b15b41008",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Log shipping monitor secondary database state"
+              }
+            },
+            "Property": "History retention period"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "f9c51976dba31cd46867",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Log shipping monitor secondary database state"
+              }
+            },
+            "Property": "Min. timestamp"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "306e4738052659886eb9",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Log shipping monitor secondary database state"
+              }
+            },
+            "Property": "Max. timestamp"
+          }
+        },
+        "type": "Categorical"
+      }
+    ]
   }
 }

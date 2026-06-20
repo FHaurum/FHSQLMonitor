@@ -1,5 +1,5 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.4.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.9.0/schema.json",
   "name": "3f2b9b9c7a5582dc0b70",
   "position": {
     "x": 60,
@@ -79,8 +79,13 @@
               "solid": {
                 "color": {
                   "expr": {
-                    "Literal": {
-                      "Value": "'#F2F7FF'"
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "_Measures"
+                        }
+                      },
+                      "Property": "Standard fill color"
                     }
                   }
                 }
@@ -139,7 +144,7 @@
                       "Entity": "_Measures"
                     }
                   },
-                  "Property": "Open filter button tooltip - Index leaf statistics"
+                  "Property": "Open filter button tooltip"
                 }
               }
             },

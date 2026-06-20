@@ -1,6 +1,7 @@
 model Model
 	culture: en-US
 	defaultPowerBIDataSourceVersion: powerBI_V3
+	discourageImplicitMeasures
 	sourceQueryCulture: en-DK
 	dataAccessOptions
 		legacyRedirects
@@ -30,7 +31,7 @@ annotation __PBI_TimeIntelligenceEnabled = 0
 
 annotation PBI_ProTooling = ["DevMode"]
 
-annotation PBI_QueryOrder = ["Agent job","Agent job status","Always On group-replica","Blocks and deadlocks","Connection info","Database","Database file","Database scoped configuration","Agent alerts","Agent jobs","Agent jobs - grid","Agent jobs - list","Agent jobs - not scheduled","Agent jobs performance","Agent jobs performance errors","Allocation units","Always On database states","Always On group states","Always On read only routing","Always On replicas","Always On synchronization lag","Backup age","Backup status","Blocked process","Connections","CPU per database","CPU utilization","Database IO","Database scoped configurations","Database size","Database state","Database state history","Deadlock","Disk size","Error logs","Index configuration","Index not used","Index operational","Index optimize","Index physical","Index usage","Instance configurations","Instance configurations history","Instance dump files","Instance hardware","Instance hardware history","Instance services","Instance SQL agent properties","Instance SQL agent properties history","Instance suspect pages","Lifecycle","Log messages","Log shipping monitor error details","Log shipping monitor history details","Log shipping monitor primaries","Log shipping monitor primary database state","Log shipping monitor secondary copies","Log shipping monitor secondary database state","Log shipping monitor secondary restores","Log shipping primary database state","Log shipping primary databases","Log shipping primary secondary database state","Log shipping secondaries","Log shipping secondary database state","Log shipping secondary databases","Log shipping secondary primary database state","Log shipping state history","Memory grants pending","Missing indexes","Missing indexes - Index details","OH errors","Partitioned indexes","Performance statistics","Plan cache usage","Plan guides","Query statements","Query statistics","Resource governor configuration","Resource governor external resource pool affinity","Resource governor external resource pools","Resource governor resource pool affinity","Resource governor resource pools","Resource governor workload groups","Statistics age","Statistics age incremental","Date","Disk","File group","Index","Index alloc type","Junk dimensions","Missing index statement","_Measures","Server name","Database name","Schema name","Data load list","Configurations","Data load","LastRefresh","Log","LogNonDebugInfo","Processing","Retentions","Schedules","Table size","Trace flags","Trace flags history","Triggers","VLF size","Object","Object partition","Performance counter","Query statistic","Server","Time","Wait type","Wait statistics","Who is active","WSFC quorum members","Task name version","WSFC quorum state"]
+annotation PBI_QueryOrder = ["Agent job","Agent job status","Always On group-replica","Blocks and deadlocks","Connection info","Database","Database file","Database scoped configuration","Agent alerts","Agent jobs","Agent jobs - grid","Agent jobs - list","Agent jobs - not scheduled","Agent jobs performance","Agent jobs performance errors","Allocation units","Always On database states","Always On group states","Always On read only routing","Always On replicas","Always On synchronization lag","Backup age","Backup status","Blocked process","Buffer pool usage","Connections","CPU per database","CPU utilization","Database IO","Database scoped configurations","Database size","Database state","Database state history","Deadlock","Disk size","Error logs","Index configuration","Index not used","Index operational","Index optimize","Index physical","Index usage","Instance configurations","Instance configurations history","Instance dump files","Instance extended events","Instance hardware","Instance hardware history","Instance services","Instance SQL agent properties","Instance SQL agent properties history","Instance suspect pages","Lifecycle","Log messages","Log shipping monitor error details","Log shipping monitor history details","Log shipping monitor primaries","Log shipping monitor primary database state","Log shipping monitor secondary copies","Log shipping monitor secondary database state","Log shipping monitor secondary restores","Log shipping primary database state","Log shipping primary databases","Log shipping primary secondary database state","Log shipping secondaries","Log shipping secondary database state","Log shipping secondary databases","Log shipping secondary primary database state","Log shipping state history","Memory clerks","Memory grants pending","Missing indexes","Missing indexes - Index details","OH errors","Partitioned indexes","Performance statistics","Plan cache usage","Plan guides","Query statements","Query statistics","Query statistics stored procedures","Resource governor configuration","Resource governor external resource pool affinity","Resource governor external resource pools","Resource governor resource pool affinity","Resource governor resource pools","Resource governor workload groups","Sessions","Statistics age","Statistics age incremental","Date","Disk","File group","Index","Index alloc type","Junk dimensions","Memory clerk type","Missing index statement","_Measures","Server name","Database name","Schema name","Data load list","Configurations","Data load","LastRefresh","Log","LogNonDebugInfo","Processing","Retentions","Schedules","Table size","Trace flags","Trace flags history","Triggers","VLF size","Object","Object partition","Performance counter","Query statistic","Server","Session info","Time","Wait type","Wait statistics","Who is active","WSFC quorum members","Task name version","WSFC quorum state"]
 
 annotation __TEdtr = 1
 
@@ -43,9 +44,9 @@ ref table Tally1
 ref table 'Table size'
 ref table Object
 ref table Log
-ref table Connections
+ref table Sessions
 ref table Time
-ref table 'Connection info'
+ref table 'Session info'
 ref table 'CPU utilization'
 ref table 'CPU per database'
 ref table Database
@@ -132,8 +133,8 @@ ref table 'Schema name'
 ref table 'Log type'
 ref table Processing
 ref table 'Task name version'
-ref table 'Documentation - report pages'
-ref table 'Documentation - hidden pages'
+ref table 'Report pages'
+ref table 'Hidden pages'
 ref table Lifecycle
 ref table 'Disk size'
 ref table Disk
@@ -176,6 +177,13 @@ ref table 'Single value table #4'
 ref table LogNonDebugInfo
 ref table 'Memory grants pending'
 ref table 'Log messages'
+ref table 'Buffer pool usage'
+ref table 'Memory clerks'
+ref table 'Memory clerk type'
+ref table 'Connection info'
+ref table Connections
+ref table 'Instance extended events'
+ref table 'Query statistics stored procedures'
 
 ref cultureInfo en-US
 

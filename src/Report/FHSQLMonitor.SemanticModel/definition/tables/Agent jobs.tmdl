@@ -62,10 +62,15 @@ table 'Agent jobs'
 
 	column 'Job enabled' = ```
 			
-			IF ( 'Agent jobs'[JobEnabled] = FALSE, UNICHAR ( 128993 ), UNICHAR ( 128994 ) )
+			IF (
+			    'Agent jobs'[JobEnabled] = FALSE,
+			    _indicatorCircle ( _indicatorWarningColor1 () ),
+			    _indicatorCircle ( _indicatorOKColor2 () )
+			)
 			
 			```
 		lineageTag: d7ca6148-ab0d-4f7f-9a43-212177a9fe2b
+		dataCategory: ImageUrl
 		summarizeBy: none
 
 		annotation SummarizationSetBy = Automatic
@@ -74,12 +79,13 @@ table 'Agent jobs'
 			
 			IF (
 			    'Agent jobs'[NumberOfEnabledSchedules] = 0,
-			    UNICHAR ( 128993 ),
-			    UNICHAR ( 128994 )
+			    _indicatorCircle ( _indicatorWarningColor1 () ),
+			    _indicatorCircle ( _indicatorOKColor2 () )
 			)
 			
 			```
 		lineageTag: ea0657fe-a4fd-4f75-a2eb-07020355e6ab
+		dataCategory: ImageUrl
 		summarizeBy: none
 
 		annotation SummarizationSetBy = Automatic
@@ -88,12 +94,13 @@ table 'Agent jobs'
 			
 			IF (
 			    'Agent jobs'[NotifyEmailOperatorId] = 0,
-			    UNICHAR ( 128993 ),
-			    UNICHAR ( 128994 )
+			    _indicatorCircle ( _indicatorWarningColor1 () ),
+			    _indicatorCircle ( _indicatorOKColor2 () )
 			)
 			
 			```
 		lineageTag: 00394c2f-5e74-47df-9893-0e48245d07e6
+		dataCategory: ImageUrl
 		summarizeBy: none
 
 		annotation SummarizationSetBy = Automatic
@@ -102,12 +109,13 @@ table 'Agent jobs'
 			
 			IF (
 			    'Agent jobs'[NotifyLevelEmail] = 0,
-			    UNICHAR ( 128993 ),
-			    UNICHAR ( 128994 )
+			    _indicatorCircle ( _indicatorWarningColor1 () ),
+			    _indicatorCircle ( _indicatorOKColor2 () )
 			)
 			
 			```
 		lineageTag: 387ef1af-261d-4076-bf07-bccef61cac4b
+		dataCategory: ImageUrl
 		summarizeBy: none
 
 		annotation SummarizationSetBy = Automatic

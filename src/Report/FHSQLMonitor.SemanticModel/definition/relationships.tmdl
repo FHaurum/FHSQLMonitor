@@ -15,16 +15,12 @@ relationship fb06ae7e-4b2b-1369-aab3-3e45f8e49ab1
 	toColumn: Date.Date
 
 relationship 64b1912c-46fe-1a50-2771-3ff3a618e3b2
-	fromColumn: Connections.Date
+	fromColumn: Sessions.Date
 	toColumn: Date.Date
 
 relationship 62985929-a0af-0cec-15a6-1d2dcb4a0eb4
-	fromColumn: Connections.TimeKey
+	fromColumn: Sessions.TimeKey
 	toColumn: Time.TimeKey
-
-relationship 63aa51ee-2382-625a-71c1-fa85c4fb041f
-	fromColumn: Connections.ConnectionInfoKey
-	toColumn: 'Connection info'.ConnectionInfoKey
 
 relationship 6ebb2194-ce91-08fe-ee27-c501523d8c70
 	fromColumn: 'CPU utilization'.Date
@@ -636,4 +632,56 @@ relationship d3f68303-f8fc-a8c0-71ee-4c39f5ee7a1a
 relationship 200a03cf-af53-22fa-c758-b03ccae91f47
 	fromColumn: 'Log messages'.Date
 	toColumn: Date.Date
+
+relationship 3cfa56b6-6234-da8b-b0e8-ac4bcc9f9bd5
+	fromColumn: 'Buffer pool usage'.DatabaseKey
+	toColumn: Database.DatabaseKey
+
+relationship 9bffc2f4-b567-2095-b9d3-e2a498d6f30d
+	fromColumn: 'Buffer pool usage'.Date
+	toColumn: Date.Date
+
+relationship e458bd3f-7c3c-86ab-53a5-f6e958b75de4
+	fromColumn: 'Buffer pool usage'.TimeKey
+	toColumn: Time.TimeKey
+
+relationship e1b828d5-b100-e7a9-f26a-0a79b339ea3e
+	fromColumn: 'Memory clerks'.MemoryClerkTypeKey
+	toColumn: 'Memory clerk type'.MemoryClerkTypeKey
+
+relationship be2996af-0ced-ec10-87cf-552c3746b246
+	fromColumn: 'Memory clerks'.Date
+	toColumn: Date.Date
+
+relationship b280dd2a-37a5-7d2c-7280-de95eded1dc5
+	fromColumn: 'Memory clerks'.TimeKey
+	toColumn: Time.TimeKey
+
+relationship 366a8e89-fd76-2861-112c-af0c72a7c67a
+	fromColumn: Sessions.SessionInfoKey
+	toColumn: 'Session info'.SessionInfoKey
+
+relationship c839082b-9377-4fae-ebb5-6c48aaf9d1e4
+	fromColumn: Connections.ConnectionInfoKey
+	toColumn: 'Connection info'.ConnectionInfoKey
+
+relationship b31d081f-ab9a-2c2d-5121-36ec29d05bcc
+	fromColumn: Connections.Date
+	toColumn: Date.Date
+
+relationship d0f8d540-d178-954f-b8a7-e2e3b891d7d4
+	fromColumn: Connections.TimeKey
+	toColumn: Time.TimeKey
+
+relationship a2f9289f-d6a5-5819-3241-d526c5dbca2f
+	fromColumn: 'Query statistics stored procedures'.Date
+	toColumn: Date.Date
+
+relationship 2da921b4-4225-aacb-c567-4aa5ff16d130
+	fromColumn: 'Query statistics stored procedures'.TimeKey
+	toColumn: Time.TimeKey
+
+relationship 5b03acec-c539-51fa-d80b-d8d967af4304
+	fromColumn: 'Query statistics stored procedures'.ObjectKey
+	toColumn: Object.ObjectKey
 

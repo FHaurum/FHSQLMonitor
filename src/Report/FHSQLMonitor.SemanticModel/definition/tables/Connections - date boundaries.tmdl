@@ -21,8 +21,8 @@ table 'Connections - date boundaries'
 				
 				DISTINCT (
 				    UNION (
-				        { MIN ( 'Connections'[Date] ) },
-				        { MAX ( 'Connections'[Date] ) }
+				        { MIN ( 'Sessions'[Date] ) },
+				        { MAX ( 'Sessions'[Date] ) }
 				    )
 				)
 				

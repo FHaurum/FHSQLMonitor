@@ -1,13 +1,13 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.3.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.9.0/schema.json",
   "name": "0918578cfb21f95688dc",
   "position": {
     "x": 0,
     "y": 0,
     "z": 0,
     "height": 90,
-    "width": 620,
-    "tabOrder": 1000
+    "width": 580,
+    "tabOrder": 0
   },
   "visual": {
     "visualType": "card",
@@ -23,11 +23,11 @@
                       "Entity": "_Measures"
                     }
                   },
-                  "Property": "Front page version text"
+                  "Property": "Version text - Front page"
                 }
               },
               "queryRef": "_Measures.Front page version text",
-              "nativeQueryRef": "Front page version text1"
+              "nativeQueryRef": "Version text - Front page"
             }
           ]
         }
@@ -67,7 +67,7 @@
                           "Entity": "_Measures"
                         }
                       },
-                      "Property": "Front page fill color - Version"
+                      "Property": "Fill color - Version - Front page"
                     }
                   }
                 }

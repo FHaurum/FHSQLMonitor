@@ -12,9 +12,7 @@ END;
 -- Declare variables
 --
 BEGIN
-	DECLARE @msg nvarchar(max);
 	DECLARE @returnValue int;
-	DECLARE @stmt nvarchar(max);
 END;
 
 --
@@ -106,19 +104,19 @@ ELSE BEGIN
 	END;
 
 	--
-	-- Update parameter for fhsmSPWhoIsActive if it is the default
+	-- Update parameter for fhsmSPSchedules if it is the default
 	--
 	BEGIN
 		WITH
 		schedules(Name, Task, Parameter) AS(
 			SELECT
-				'Who is active'							AS Name
-				,PARSENAME('dbo.fhsmSPWhoIsActive', 1)	AS Task
-				,'@format_output = 0, @get_transaction_info = 1, @get_outer_command = 1, @get_plans = 1, @destination_table = ''<FHSQLMonitorDatabase>.dbo.fhsmWhoIsActive'''
+				'Schedules'								AS Name
+				,PARSENAME('dbo.fhsmSPSchedules', 1)	AS Task
+				,'@SampleCnt = 10; @ThresholdFactor = 10; @ThresholdTime = 60'
 		)
 		MERGE dbo.fhsmSchedules AS tgt
 		USING schedules AS src ON (src.Name = tgt.Name COLLATE SQL_Latin1_General_CP1_CI_AS)
-		WHEN MATCHED AND (tgt.Parameter = '@format_output = 0, @get_transaction_info = 1, @get_outer_command = 1, @get_plans = 1, @destination_table = ''' + QUOTENAME(DB_NAME()) + '.dbo.fhsmWhoIsActive''')
+		WHEN MATCHED AND (tgt.Parameter = '@SampleCnt = 10 ; @ThresholdFactor = 50')
 			THEN UPDATE SET
 				tgt.Parameter = src.Parameter;
 	END;

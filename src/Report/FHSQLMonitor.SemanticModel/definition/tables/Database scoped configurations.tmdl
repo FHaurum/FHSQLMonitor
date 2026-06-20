@@ -54,12 +54,13 @@ table 'Database scoped configurations'
 			
 			IF (
 			    'Database scoped configurations'[DefaultState] = 0,
-			    UNICHAR ( 128993 ),
-			    UNICHAR ( 128994 )
+			    _indicatorCircle ( _indicatorWarningColor1 () ),
+			    _indicatorCircle ( _indicatorOKColor2 () )
 			)
 			
 			```
 		lineageTag: 07903390-5197-4f62-a663-072a3eeb8311
+		dataCategory: ImageUrl
 		summarizeBy: none
 
 		annotation SummarizationSetBy = Automatic

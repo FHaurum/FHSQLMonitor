@@ -1,5 +1,5 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.6.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.9.0/schema.json",
   "name": "12dbb32b54e4023eb76d",
   "position": {
     "x": 10,
@@ -223,6 +223,34 @@
           ]
         },
         "howCreated": "User"
+      },
+      {
+        "name": "cc4ce4289cbdd125700d",
+        "field": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "Memory grants pending"
+              }
+            },
+            "Property": "Timestamp"
+          }
+        },
+        "type": "Categorical"
+      },
+      {
+        "name": "9325d90c802b685d9479",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "_Measures"
+              }
+            },
+            "Property": "Memory grants pending - Performance statistics"
+          }
+        },
+        "type": "Advanced"
       }
     ]
   }

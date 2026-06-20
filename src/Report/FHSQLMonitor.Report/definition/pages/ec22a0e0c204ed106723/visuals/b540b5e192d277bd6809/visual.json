@@ -1,0 +1,115 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.9.0/schema.json",
+  "name": "b540b5e192d277bd6809",
+  "position": {
+    "x": 930,
+    "y": 80,
+    "z": 2000,
+    "height": 700,
+    "width": 500,
+    "tabOrder": 11000
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Show filters Headers - Stored procedures - Query statistics"
+                }
+              },
+              "queryRef": "_Measures.Show filters Headers - Stored procedures - Query statistics",
+              "nativeQueryRef": "Filters",
+              "displayName": "Filters"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Show filters - Stored procedures - Query statistics"
+                }
+              },
+              "queryRef": "_Measures.Show filters - Stored procedures - Query statistics",
+              "nativeQueryRef": " ",
+              "displayName": " "
+            }
+          ]
+        }
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Info Table'"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "visualHeader": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  },
+  "parentGroupName": "fc2b27bf937b0a631a0c",
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "53705af8a7d3087355eb",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "_Measures"
+              }
+            },
+            "Property": "Show filters Headers - Stored procedures - Query statistics"
+          }
+        },
+        "type": "Advanced"
+      },
+      {
+        "name": "e8243e37e007ea641254",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "_Measures"
+              }
+            },
+            "Property": "Show filters - Stored procedures - Query statistics"
+          }
+        },
+        "type": "Advanced"
+      }
+    ]
+  }
+}

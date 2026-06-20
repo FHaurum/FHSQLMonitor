@@ -1,0 +1,53 @@
+table 'Memory clerk type'
+	lineageTag: 7317bd22-e769-4251-9699-c1635dd1551b
+
+	column Type
+		dataType: string
+		lineageTag: ae9e788a-ac7c-4286-b742-ddd9c29f4394
+		summarizeBy: none
+		sourceColumn: Type
+
+		annotation SummarizationSetBy = Automatic
+
+	column MemoryClerkTypeKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 49266654-d92a-484b-a159-a9b44a140c9c
+		summarizeBy: none
+		sourceColumn: MemoryClerkTypeKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Memory clerk type' = m
+		mode: import
+		queryGroup: Dimensions
+		source = ```
+				let
+				  loadConfigFirstMatch = Table.First(
+				    Table.SelectRows(
+				      #"Data load", 
+				      each List.Contains({"Memory"}, [Service])
+				        and List.Contains({"Yes"}, [DataLoad])
+				    )
+				  ), 
+				  loadConfig = 
+				    if (loadConfigFirstMatch = null) then
+				      "No"
+				    else
+				      Record.Field(loadConfigFirstMatch, "DataLoad"), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db     = dbList{[Name = #"Database name"]}[Data], 
+				  table  = db{[Schema = #"Schema name", Item = "Memory clerk type"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset
+				in
+				  datasetToUse
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

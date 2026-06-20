@@ -1,0 +1,42 @@
+table 'Hidden pages'
+	lineageTag: dacd82b7-5467-4e9f-9f36-76144f129ed8
+
+	column Page
+		lineageTag: a5f3e3ab-ed35-46e3-9bf5-a52eae234ad9
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Page]
+
+		annotation SummarizationSetBy = Automatic
+
+	column DocURL
+		lineageTag: 73de58b9-6f08-49ed-938c-e97121708827
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [DocURL]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Hidden pages' = calculated
+		mode: import
+		source =
+				
+				DATATABLE (
+				    "Page", STRING,
+				    "DocURL", STRING,
+				    {
+				        { "Blocks details", "blocks-and-deadlocks/#blocks-details" },
+				        { "Database configuration history", "database-configuration/#history" },
+				        { "Deadlock details" , "blocks-and-deadlocks/#deadlock-details" },
+				        { "Index details" , "missing-indexes/#index-details" },
+				        { "Instance configurations history", "instance-configuration/#configurations-history" },
+				        { "Instance hardware history", "instance-configuration/#instance-hardware-history" },
+				        { "Instance SQL agent properties history", "instance-configuration/#sql-agent-properties-history" },
+				        { "Instance trace flags history" , "instance-configuration/#trace-flags-history" },
+				        { "Log shipping configuration history", "log-shipping-configuration/#history" },
+				        { "Processing details" , "monitor-status/#processing-details" }
+				    }
+				)
+
+	annotation PBI_Id = 9b94e856fc804790b266ee5afcce9f80
+

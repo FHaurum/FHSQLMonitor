@@ -1,0 +1,84 @@
+table 'Memory clerks'
+	lineageTag: 13d545f6-951b-41e2-af50-3fd82cfb737a
+
+	column PagesKB
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: af1bc7d0-0096-4133-a1c5-2a701d7c353c
+		summarizeBy: sum
+		sourceColumn: PagesKB
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column Date
+		dataType: dateTime
+		isHidden
+		formatString: Long Date
+		lineageTag: cde02406-dc5a-43c4-8e20-82c412eaf4c9
+		summarizeBy: none
+		sourceColumn: Date
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column TimeKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 3dde7970-b14b-4ec1-a084-2442a8e897d3
+		summarizeBy: none
+		sourceColumn: TimeKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	column MemoryClerkTypeKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 0877803b-df0d-4376-ba6b-5812a0bd1a55
+		summarizeBy: none
+		sourceColumn: MemoryClerkTypeKey
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Memory clerks' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Memory")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db     = dbList{[Name = #"Database name"]}[Data], 
+				  table  = db{[Schema = #"Schema name", Item = "Memory clerks"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset, 
+				  selectColumns = Table.SelectColumns(
+				    datasetToUse, 
+				    {
+				      "PagesKB", 
+				      "Date", 
+				      "TimeKey", 
+				      "MemoryClerkTypeKey"
+				    }
+				  )
+				in
+				  selectColumns
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

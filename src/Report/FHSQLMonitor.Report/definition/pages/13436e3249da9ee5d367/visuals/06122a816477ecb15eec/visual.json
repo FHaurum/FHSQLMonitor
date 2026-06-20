@@ -1,0 +1,16 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.9.0/schema.json",
+  "name": "06122a816477ecb15eec",
+  "position": {
+    "x": 1780,
+    "y": 10,
+    "z": 6000,
+    "height": 40,
+    "width": 100,
+    "tabOrder": 6000
+  },
+  "visualGroup": {
+    "displayName": "Filter panel closed",
+    "groupMode": "ScaleMode"
+  }
+}

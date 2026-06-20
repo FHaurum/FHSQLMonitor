@@ -1,0 +1,49 @@
+table 'Instance extended events'
+	lineageTag: 87e6321d-609c-4de8-9e7f-59ef336f0815
+
+	column ExtendedEvent
+		dataType: string
+		lineageTag: e3bae6f0-e01d-4fd0-9038-a969560093e2
+		summarizeBy: none
+		sourceColumn: ExtendedEvent
+
+		annotation SummarizationSetBy = Automatic
+
+	column State
+		dataType: string
+		lineageTag: e8e284b8-ef54-41a2-93bb-07821f1af501
+		summarizeBy: none
+		sourceColumn: State
+
+		annotation SummarizationSetBy = Automatic
+
+	column CreateTime
+		dataType: string
+		lineageTag: 25e532b7-87e5-4f71-9d59-3709d31b8b0a
+		summarizeBy: none
+		sourceColumn: CreateTime
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Instance extended events' = m
+		mode: import
+		queryGroup: Facts
+		source = ```
+				let
+				  loadConfig = Record.Field(
+				    Table.First(Table.SelectRows(#"Data load", each [Service] = "Instance configuration")), 
+				    "DataLoad"
+				  ), 
+				  dbList = Sql.Databases(#"Server name"), 
+				  db     = dbList{[Name = #"Database name"]}[Data], 
+				  table  = db{[Schema = #"Schema name", Item = "Instance Extended Events"]}[Data], 
+				  emptyDataset = Table.FirstN(table, 0), 
+				  datasetToUse = if (loadConfig = "Yes") then table else emptyDataset
+				in
+				  datasetToUse
+				```
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
+

@@ -68,7 +68,7 @@ ELSE BEGIN
 		SET @nowUTC = SYSUTCDATETIME();
 		SET @nowUTCStr = CONVERT(nvarchar(128), @nowUTC, 126);
 		SET @pbiSchema = dbo.fhsmFNGetConfiguration('PBISchema');
-		SET @version = '2.12.0';
+		SET @version = '2.13.0';
 
 		SET @productVersion = CAST(SERVERPROPERTY('ProductVersion') AS nvarchar);
 		SET @productStartPos = 1;
@@ -221,14 +221,18 @@ ELSE BEGIN
 					END AS IsDisabledTxt
 					,pg.QueryText
 					,pg.ScopeTypeDesc
-					,QUOTENAME(pg.ScopedSchema) + ''.'' + QUOTENAME(ScopedObject) AS ScopedObject
+					,QUOTENAME(pg.ScopedSchema) + ''.'' + QUOTENAME(pg.ScopedObject) AS ScopedObject
 					,pg.ScopeBatch
 					,pg.Parameters
 					,pg.Hints
 					,pg.MsgNum
 					,pg.Severity
 					,pg.State
-					,pg.Message
+					,CAST(CASE
+						WHEN pg.Message IS NULL THEN 0
+						ELSE 1
+					END AS bit) AS ErrorMessage
+					,pg.Message AS ErrorMessageTxt
 					,(SELECT k.[Key] FROM dbo.fhsmFNGenerateKey(pg.DatabaseName, DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT) AS k) AS DatabaseKey
 				FROM dbo.fhsmPlanGuides AS pg
 				WHERE

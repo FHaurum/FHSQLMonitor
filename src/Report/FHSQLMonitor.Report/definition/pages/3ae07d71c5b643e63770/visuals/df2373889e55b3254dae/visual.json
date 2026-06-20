@@ -1,13 +1,13 @@
 {
-  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.3.0/schema.json",
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.9.0/schema.json",
   "name": "df2373889e55b3254dae",
   "position": {
-    "x": 1355,
+    "x": 1280,
     "y": 0,
     "z": 0,
     "height": 90,
     "width": 360,
-    "tabOrder": 1000
+    "tabOrder": 0
   },
   "visual": {
     "visualType": "card",
@@ -23,11 +23,11 @@
                       "Entity": "_Measures"
                     }
                   },
-                  "Property": "Front page last refresh"
+                  "Property": "Last refresh - Front page"
                 }
               },
               "queryRef": "_Measures.Front page last refresh",
-              "nativeQueryRef": "Front page last refresh1"
+              "nativeQueryRef": "Last refresh - Front page"
             }
           ]
         }
@@ -97,17 +97,6 @@
                   "Value": "10D"
                 }
               }
-            },
-            "color": {
-              "solid": {
-                "color": {
-                  "expr": {
-                    "Literal": {
-                      "Value": "'#BCD9FF'"
-                    }
-                  }
-                }
-              }
             }
           }
         }
@@ -148,5 +137,23 @@
     },
     "drillFilterOtherVisuals": true
   },
-  "parentGroupName": "4f1e5da99e29145b5f1f"
+  "parentGroupName": "4f1e5da99e29145b5f1f",
+  "filterConfig": {
+    "filters": [
+      {
+        "name": "af33a8a4663cc2a161b9",
+        "field": {
+          "Measure": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "_Measures"
+              }
+            },
+            "Property": "Last refresh - Front page"
+          }
+        },
+        "type": "Advanced"
+      }
+    ]
+  }
 }
